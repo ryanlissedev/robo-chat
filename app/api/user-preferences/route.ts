@@ -114,7 +114,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Prepare update object with only provided fields
-    const updateData: any = {}
+    const updateData: Record<string, unknown> = {}
     if (layout !== undefined) updateData.layout = layout
     if (prompt_suggestions !== undefined)
       updateData.prompt_suggestions = prompt_suggestions

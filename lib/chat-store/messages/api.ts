@@ -3,6 +3,11 @@ import { isSupabaseEnabled } from "@/lib/supabase/config"
 import type { Message as MessageAISDK } from "ai"
 import { readFromIndexedDB, writeToIndexedDB } from "../persist"
 
+interface MessageWithExtensions extends MessageAISDK {
+  message_group_id?: string
+  model?: string
+}
+
 export async function getMessagesFromDb(
   chatId: string
 ): Promise<MessageAISDK[]> {
@@ -49,8 +54,8 @@ async function insertMessageToDb(chatId: string, message: MessageAISDK) {
     content: message.content,
     experimental_attachments: message.experimental_attachments,
     created_at: message.createdAt?.toISOString() || new Date().toISOString(),
-    message_group_id: (message as any).message_group_id || null,
-    model: (message as any).model || null,
+    message_group_id: (message as MessageWithExtensions).message_group_id || null,
+    model: (message as MessageWithExtensions).model || null,
   })
 }
 
@@ -64,8 +69,8 @@ async function insertMessagesToDb(chatId: string, messages: MessageAISDK[]) {
     content: message.content,
     experimental_attachments: message.experimental_attachments,
     created_at: message.createdAt?.toISOString() || new Date().toISOString(),
-    message_group_id: (message as any).message_group_id || null,
-    model: (message as any).model || null,
+    message_group_id: (message as MessageWithExtensions).message_group_id || null,
+    model: (message as MessageWithExtensions).model || null,
   }))
 
   await supabase.from("messages").insert(payload)

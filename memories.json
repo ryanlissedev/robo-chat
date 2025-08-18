@@ -1,0 +1,22 @@
+{
+  "memories": [
+    {
+      "id": "mem_1755516207317_pp3lqwdgg",
+      "content": "Found that PR #3 was recently merged, adding Claude GitHub Actions workflows. No currently open PRs found. The recent commits show GitHub Actions setup for automated code review and PR assistance.",
+      "type": "config",
+      "tags": [
+        "config",
+        "PR",
+        "GitHub Actions",
+        "claude workflows"
+      ],
+      "timestamp": "2025-08-18T11:23:27.317Z",
+      "context": "PR review task",
+      "accessCount": 0,
+      "lastAccessed": "2025-08-18T11:23:27.317Z",
+      "lastVerified": "2025-08-18T11:23:27.317Z",
+      "status": "fresh"
+    }
+  ],
+  "lastUpdated": "2025-08-18T11:23:27.317Z"
+}

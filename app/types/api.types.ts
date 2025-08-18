@@ -27,6 +27,7 @@ export interface Message {
   role: "user" | "assistant" | "system" | "data" | "tool" | "tool-call"
   content: string | null | ContentPart[]
   reasoning?: string
+  model?: string
 }
 
 export interface ChatApiParams {

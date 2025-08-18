@@ -11,6 +11,10 @@ import { useModel } from "@/lib/model-store/provider"
 import { useUser } from "@/lib/user-store/provider"
 import { cn } from "@/lib/utils"
 import { Message as MessageType } from "@ai-sdk/react"
+
+interface MessageWithModel extends MessageType {
+  model?: string
+}
 import { AnimatePresence, motion } from "motion/react"
 import { useCallback, useMemo, useState } from "react"
 import { MultiChatInput } from "./multi-chat-input"
@@ -53,8 +57,8 @@ export function MultiChat() {
 
   const modelsFromPersisted = useMemo(() => {
     return persistedMessages
-      .filter((msg) => (msg as any).model)
-      .map((msg) => (msg as any).model)
+      .filter((msg): msg is MessageWithModel & { model: string } => Boolean((msg as MessageWithModel).model))
+      .map((msg) => msg.model)
   }, [persistedMessages])
 
   const modelsFromLastGroup = useMemo(() => {
@@ -66,10 +70,10 @@ export function MultiChat() {
 
     const modelsInLastGroup: string[] = []
     for (let i = lastUserIndex + 1; i < persistedMessages.length; i++) {
-      const msg = persistedMessages[i]
+      const msg = persistedMessages[i] as MessageWithModel
       if (msg.role === "user") break
-      if (msg.role === "assistant" && (msg as any).model) {
-        modelsInLastGroup.push((msg as any).model)
+      if (msg.role === "assistant" && msg.model) {
+        modelsInLastGroup.push(msg.model)
       }
     }
     return modelsInLastGroup
@@ -142,7 +146,7 @@ export function MultiChat() {
           userMessage: group.userMessage,
           responses: group.assistantMessages.map((msg, index) => {
             const model =
-              (msg as any).model || selectedModelIds[index] || `model-${index}`
+              (msg as MessageWithModel).model || selectedModelIds[index] || `model-${index}`
             const provider =
               models.find((m) => m.id === model)?.provider || "unknown"
 
@@ -381,7 +385,7 @@ export function MultiChat() {
             transition={{ layout: { duration: 0 } }}
           >
             <h1 className="mb-6 text-3xl font-medium tracking-tight">
-              What's on your mind?
+              What&apos;s on your mind?
             </h1>
           </motion.div>
         ) : (
