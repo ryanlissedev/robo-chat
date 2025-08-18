@@ -10,7 +10,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { getModelInfo } from "@/lib/models"
 import { ArrowUpIcon, StopIcon } from "@phosphor-icons/react"
-import { useCallback, useEffect, useMemo, useRef } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { ReasoningEffortCompact, type ReasoningEffort } from "../chat/reasoning-effort-selector"
 import { PromptSystem } from "../suggestions/prompt-system"
 import { ButtonFileUpload } from "./button-file-upload"
 import { ButtonSearch } from "./button-search"
@@ -35,6 +36,8 @@ type ChatInputProps = {
   setEnableSearch: (enabled: boolean) => void
   enableSearch: boolean
   quotedText?: { text: string; messageId: string } | null
+  reasoningEffort?: ReasoningEffort
+  onReasoningEffortChange?: (effort: ReasoningEffort) => void
 }
 
 export function ChatInput({
@@ -55,11 +58,23 @@ export function ChatInput({
   setEnableSearch,
   enableSearch,
   quotedText,
+  reasoningEffort,
+  onReasoningEffortChange,
 }: ChatInputProps) {
   const selectModelConfig = getModelInfo(selectedModel)
   const hasSearchSupport = Boolean(selectModelConfig?.webSearch)
   const isOnlyWhitespace = (text: string) => !/[^\s]/.test(text)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  
+  // Show reasoning effort selector only for GPT-5 models
+  const isGPT5Model = selectedModel.startsWith('gpt-5')
+  const [localReasoningEffort, setLocalReasoningEffort] = useState<ReasoningEffort>('medium')
+  const currentReasoningEffort = reasoningEffort || localReasoningEffort
+  
+  const handleReasoningEffortChange = useCallback((effort: ReasoningEffort) => {
+    setLocalReasoningEffort(effort)
+    onReasoningEffortChange?.(effort)
+  }, [onReasoningEffortChange])
 
   const handleSend = useCallback(() => {
     if (isSubmitting) {
@@ -203,6 +218,13 @@ export function ChatInput({
                   isAuthenticated={isUserAuthenticated}
                 />
               ) : null}
+              {isGPT5Model && (
+                <ReasoningEffortCompact
+                  value={currentReasoningEffort}
+                  onChange={handleReasoningEffortChange}
+                  className="ml-1"
+                />
+              )}
             </div>
             <PromptInputAction
               tooltip={status === "streaming" ? "Stop" : "Send"}

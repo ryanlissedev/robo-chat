@@ -52,6 +52,8 @@ export interface StoreAssistantMessageParams {
   messages: Message[]
   message_group_id?: string
   model?: string
+  langsmithRunId?: string | null
+  reasoningEffort?: 'low' | 'medium' | 'high'
 }
 
 export interface ApiErrorResponse {

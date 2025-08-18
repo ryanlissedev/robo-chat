@@ -74,17 +74,32 @@ export function openproviders<T extends SupportedModel>(
   const provider = getProviderForModel(modelId)
 
   if (provider === "openai") {
+    // Extract custom settings for GPT-5 models
+    const { enableSearch, reasoningEffort, headers, ...openaiSettings } = (settings || {}) as any
+    
+    // Configure headers for reasoning effort if it's a GPT-5 model
+    const customHeaders = modelId.startsWith('gpt-5') && reasoningEffort
+      ? { ...headers, 'X-Reasoning-Effort': reasoningEffort }
+      : headers
+    
     if (apiKey) {
       const openaiProvider = createOpenAI({
         apiKey,
         compatibility: "strict",
+        headers: customHeaders,
       })
       return openaiProvider(
         modelId as OpenAIModel,
-        settings as OpenAIChatSettings
+        openaiSettings as OpenAIChatSettings
       )
     }
-    return openai(modelId as OpenAIModel, settings as OpenAIChatSettings)
+    
+    // For default OpenAI provider, we need to pass headers through settings
+    const enhancedSettings = customHeaders 
+      ? { ...openaiSettings, headers: customHeaders }
+      : openaiSettings
+      
+    return openai(modelId as OpenAIModel, enhancedSettings as OpenAIChatSettings)
   }
 
   if (provider === "mistral") {

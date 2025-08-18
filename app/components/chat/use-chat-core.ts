@@ -54,6 +54,7 @@ export function useChatCore({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasDialogAuth, setHasDialogAuth] = useState(false)
   const [enableSearch, setEnableSearch] = useState(false)
+  const [reasoningEffort, setReasoningEffort] = useState<'low' | 'medium' | 'high'>('medium')
 
   // Refs and derived state
   const hasSentFirstMessageRef = useRef(false)
@@ -195,6 +196,7 @@ export function useChatCore({
           isAuthenticated,
           systemPrompt: systemPrompt || SYSTEM_PROMPT_DEFAULT,
           enableSearch,
+          reasoningEffort,
         },
         experimental_attachments: attachments || undefined,
       }
@@ -231,6 +233,7 @@ export function useChatCore({
     isAuthenticated,
     systemPrompt,
     enableSearch,
+    reasoningEffort,
     handleSubmit,
     cacheAndAddMessage,
     clearDraft,
@@ -281,6 +284,7 @@ export function useChatCore({
             model: selectedModel,
             isAuthenticated,
             systemPrompt: SYSTEM_PROMPT_DEFAULT,
+            reasoningEffort,
           },
         }
 
@@ -308,6 +312,7 @@ export function useChatCore({
       isAuthenticated,
       setMessages,
       setIsSubmitting,
+      reasoningEffort,
     ]
   )
 
@@ -325,11 +330,12 @@ export function useChatCore({
         model: selectedModel,
         isAuthenticated,
         systemPrompt: systemPrompt || SYSTEM_PROMPT_DEFAULT,
+        reasoningEffort,
       },
     }
 
     reload(options)
-  }, [user, chatId, selectedModel, isAuthenticated, systemPrompt, reload])
+  }, [user, chatId, selectedModel, isAuthenticated, systemPrompt, reasoningEffort, reload])
 
   // Handle input change - now with access to the real setInput function!
   const { setDraftValue } = useChatDraft(chatId)
@@ -364,6 +370,8 @@ export function useChatCore({
     setHasDialogAuth,
     enableSearch,
     setEnableSearch,
+    reasoningEffort,
+    setReasoningEffort,
 
     // Actions
     submit,
