@@ -25,7 +25,7 @@ const openaiModels: ModelConfig[] = [
     modelPage: "https://platform.openai.com/docs/models/gpt-5-mini",
     icon: "openai",
     apiSdk: (apiKey?: string, settings?: any) =>
-      openproviders("gpt-5-mini", undefined, apiKey, settings),
+      openproviders("gpt-5-mini", settings, apiKey),
   },
   {
     id: "gpt-5",
@@ -50,7 +50,7 @@ const openaiModels: ModelConfig[] = [
     modelPage: "https://platform.openai.com/docs/models/gpt-5",
     icon: "openai",
     apiSdk: (apiKey?: string, settings?: any) =>
-      openproviders("gpt-5", undefined, apiKey, settings),
+      openproviders("gpt-5", settings, apiKey),
   },
   {
     id: "gpt-5-pro",
@@ -75,7 +75,7 @@ const openaiModels: ModelConfig[] = [
     modelPage: "https://platform.openai.com/docs/models/gpt-5-pro",
     icon: "openai",
     apiSdk: (apiKey?: string, settings?: any) =>
-      openproviders("gpt-5-pro", undefined, apiKey, settings),
+      openproviders("gpt-5-pro", settings, apiKey),
   },
 ]
 

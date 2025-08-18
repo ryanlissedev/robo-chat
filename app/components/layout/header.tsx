@@ -7,6 +7,7 @@ import { UserMenu } from "@/app/components/layout/user-menu"
 import { useBreakpoint } from "@/app/hooks/use-breakpoint"
 import { RoboRailIcon } from "@/components/icons/roborail"
 import { Button } from "@/components/ui/button"
+import { DayNightSwitch } from "@/components/ui/day-night-switch"
 import { APP_NAME } from "@/lib/config"
 import { useUserPreferences } from "@/lib/user-preference-store/provider"
 import { useUser } from "@/lib/user-store/provider"
@@ -14,14 +15,20 @@ import { Info } from "@phosphor-icons/react"
 import Link from "next/link"
 import { DialogPublish } from "./dialog-publish"
 import { HeaderSidebarTrigger } from "./header-sidebar-trigger"
+import { useTheme } from "next-themes"
 
 export function Header({ hasSidebar }: { hasSidebar: boolean }) {
   const isMobile = useBreakpoint(768)
   const { user } = useUser()
   const { preferences } = useUserPreferences()
   const isMultiModelEnabled = preferences.multiModelEnabled
+  const { theme, setTheme } = useTheme()
 
   const isLoggedIn = !!user
+
+  const handleThemeToggle = (isDark: boolean) => {
+    setTheme(isDark ? "dark" : "light")
+  }
 
   return (
     <header className="h-app-header pointer-events-none fixed top-0 right-0 left-0 z-50">
@@ -42,6 +49,11 @@ export function Header({ hasSidebar }: { hasSidebar: boolean }) {
           <div />
           {!isLoggedIn ? (
             <div className="pointer-events-auto flex flex-1 items-center justify-end gap-4">
+              <DayNightSwitch
+                defaultChecked={theme === "light"}
+                onToggle={handleThemeToggle}
+                className="h-8 w-16"
+              />
               <AppInfoTrigger
                 trigger={
                   <Button
@@ -63,6 +75,11 @@ export function Header({ hasSidebar }: { hasSidebar: boolean }) {
             </div>
           ) : (
             <div className="pointer-events-auto flex flex-1 items-center justify-end gap-2">
+              <DayNightSwitch
+                defaultChecked={theme === "light"}
+                onToggle={handleThemeToggle}
+                className="h-8 w-16"
+              />
               {!isMultiModelEnabled && <DialogPublish />}
               <ButtonNewChat />
               {!hasSidebar && <HistoryTrigger hasSidebar={hasSidebar} />}

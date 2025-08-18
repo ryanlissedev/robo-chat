@@ -51,10 +51,8 @@ const getOllamaBaseURL = () => {
   }
 
   // Server-side: check environment variables
-  return (
-    process.env.OLLAMA_BASE_URL?.replace(/\/+$/, "") + "/v1" ||
-    "http://localhost:11434/v1"
-  )
+  const base = process.env.OLLAMA_BASE_URL?.replace(/\/+$/, "")
+  return base ? `${base}/v1` : "http://localhost:11434/v1"
 }
 
 // Create Ollama provider instance with configurable baseURL
@@ -74,8 +72,13 @@ export function openproviders<T extends SupportedModel>(
   const provider = getProviderForModel(modelId)
 
   if (provider === "openai") {
-    // Extract custom settings for GPT-5 models
-    const { enableSearch, reasoningEffort, headers, ...openaiSettings } = (settings || {}) as any
+    // Extract custom settings for GPT-5 models (typed, without any)
+    type OpenAIExtraSettings = OpenAIChatSettings & {
+      reasoningEffort?: "low" | "medium" | "high"
+      headers?: Record<string, string>
+    }
+    const { reasoningEffort, headers, ...openaiSettings } =
+      ((settings as unknown as OpenAIExtraSettings) || {})
     
     // Configure headers for reasoning effort if it's a GPT-5 model
     const customHeaders = modelId.startsWith('gpt-5') && reasoningEffort

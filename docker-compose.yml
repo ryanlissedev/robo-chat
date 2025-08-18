@@ -1,5 +1,5 @@
 services:
-  zola:
+  RoborailAssistant:
     build:
       context: .
       dockerfile: Dockerfile

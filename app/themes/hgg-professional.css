@@ -1,0 +1,125 @@
+/* HGG Professional Theme - Variant 1 */
+/* Based on HGG Group's official branding colors and professional aesthetic */
+
+.theme-hgg-professional {
+  /* HGG Brand Colors */
+  --hgg-primary-blue: #03189B;
+  --hgg-secondary-blue: #00AEEF;
+  --hgg-accent-orange: #FF542D;
+  
+  /* Light theme variables */
+  --background: oklch(98% 0 0);
+  --foreground: oklch(0.15 0.008 258);
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(0.15 0.008 258);
+  --popover: oklch(100% 0 0);
+  --popover-foreground: oklch(0.15 0.008 258);
+  --primary: var(--hgg-primary-blue);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.96 0.002 258);
+  --secondary-foreground: var(--hgg-primary-blue);
+  --muted: oklch(0.96 0.002 258);
+  --muted-foreground: oklch(0.6 0.015 258);
+  --accent: var(--hgg-secondary-blue);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.65 0.15 15);
+  --destructive-foreground: oklch(0.98 0.01 15);
+  --border: oklch(0.92 0.004 258);
+  --input: oklch(0.92 0.004 258);
+  --ring: var(--hgg-secondary-blue);
+  
+  /* Sidebar specific colors */
+  --sidebar: oklch(99% 0 0);
+  --sidebar-foreground: oklch(0.15 0.008 258);
+  --sidebar-primary: var(--hgg-primary-blue);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: var(--hgg-accent-orange);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.92 0.004 258);
+  --sidebar-ring: var(--hgg-secondary-blue);
+  
+  /* Professional shadows and borders */
+  --shadow-professional: 0 2px 8px -2px rgba(3, 24, 155, 0.1);
+  --shadow-card: 0 1px 3px rgba(3, 24, 155, 0.12), 0 1px 2px rgba(3, 24, 155, 0.24);
+  --border-radius-professional: 8px;
+}
+
+.theme-hgg-professional.dark {
+  /* Dark theme for HGG Professional */
+  --background: oklch(0.08 0.005 258);
+  --foreground: oklch(0.98 0.002 258);
+  --card: oklch(0.12 0.006 258);
+  --card-foreground: oklch(0.98 0.002 258);
+  --popover: oklch(0.15 0.007 258);
+  --popover-foreground: oklch(0.98 0.002 258);
+  --primary: var(--hgg-secondary-blue);
+  --primary-foreground: oklch(0.05 0.005 258);
+  --secondary: oklch(0.18 0.008 258);
+  --secondary-foreground: oklch(0.98 0.002 258);
+  --muted: oklch(0.15 0.007 258);
+  --muted-foreground: oklch(0.7 0.01 258);
+  --accent: var(--hgg-accent-orange);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.7 0.16 15);
+  --destructive-foreground: oklch(0.98 0.01 15);
+  --border: oklch(0.18 0.008 258);
+  --input: oklch(0.2 0.009 258);
+  --ring: var(--hgg-accent-orange);
+  
+  /* Dark sidebar */
+  --sidebar: oklch(0.1 0.006 258);
+  --sidebar-foreground: oklch(0.98 0.002 258);
+  --sidebar-primary: oklch(0.15 0.007 258);
+  --sidebar-primary-foreground: oklch(0.98 0.002 258);
+  --sidebar-accent: var(--hgg-accent-orange);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.18 0.008 258);
+  --sidebar-ring: var(--hgg-accent-orange);
+  
+  /* Professional shadows for dark theme */
+  --shadow-professional: 0 4px 16px -4px rgba(0, 174, 239, 0.15);
+  --shadow-card: 0 2px 6px rgba(0, 174, 239, 0.15), 0 1px 3px rgba(0, 174, 239, 0.25);
+}
+
+/* Professional styling enhancements */
+.theme-hgg-professional .card {
+  box-shadow: var(--shadow-card);
+  border-radius: var(--border-radius-professional);
+}
+
+.theme-hgg-professional .button-primary {
+  background: linear-gradient(135deg, var(--hgg-primary-blue) 0%, var(--hgg-secondary-blue) 100%);
+  box-shadow: 0 2px 4px rgba(3, 24, 155, 0.2);
+  transition: all 0.2s ease;
+}
+
+.theme-hgg-professional .button-primary:hover {
+  box-shadow: 0 4px 8px rgba(3, 24, 155, 0.3);
+  transform: translateY(-1px);
+}
+
+.theme-hgg-professional .chat-message {
+  border-radius: var(--border-radius-professional);
+  box-shadow: var(--shadow-professional);
+}
+
+.theme-hgg-professional .sidebar-item:hover {
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 174, 239, 0.1) 100%);
+  border-left: 3px solid var(--hgg-secondary-blue);
+}
+
+/* Professional typography enhancements */
+.theme-hgg-professional h1,
+.theme-hgg-professional h2,
+.theme-hgg-professional h3 {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.theme-hgg-professional .brand-text {
+  background: linear-gradient(135deg, var(--hgg-primary-blue) 0%, var(--hgg-secondary-blue) 70%, var(--hgg-accent-orange) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+}

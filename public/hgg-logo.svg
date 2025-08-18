@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Blue background -->
+  <rect width="400" height="400" fill="#1E3A8A"/>
+  
+  <!-- HGG Text -->
+  <text x="200" y="160" text-anchor="middle" fill="white" font-family="Arial Black, sans-serif" font-size="120" font-weight="900">HGG</text>
+  
+  <!-- Circular logo with crossed elements -->
+  <g transform="translate(200, 280)">
+    <!-- White circle background -->
+    <circle cx="0" cy="0" r="80" fill="white"/>
+    
+    <!-- Blue crossed elements inside circle -->
+    <g fill="#1E3A8A">
+      <!-- Horizontal bar -->
+      <rect x="-50" y="-8" width="100" height="16"/>
+      <!-- Vertical bar -->
+      <rect x="-8" y="-50" width="16" height="100"/>
+      <!-- Diagonal bars -->
+      <rect x="-45" y="-8" width="90" height="16" transform="rotate(45)"/>
+      <rect x="-45" y="-8" width="90" height="16" transform="rotate(-45)"/>
+      <!-- Arrow-like elements -->
+      <polygon points="-60,-20 -40,-20 -50,-30"/>
+      <polygon points="40,-20 60,-20 50,-30"/>
+      <polygon points="20,-60 20,-40 30,-50"/>
+      <polygon points="20,40 20,60 30,50"/>
+    </g>
+  </g>
+</svg>

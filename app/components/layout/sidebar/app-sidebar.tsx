@@ -120,7 +120,7 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="border-border/40 mb-2 border-t p-3">
         <a
-          href="https://github.com/ibelick/zola"
+          href="https://github.com/HGG-Profiling/roborail-assistant"
           className="hover:bg-muted flex items-center gap-2 rounded-md p-2"
           target="_blank"
           aria-label="Star the repo on GitHub"
@@ -130,7 +130,7 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col">
             <div className="text-sidebar-foreground text-sm font-medium">
-              Zola is open source
+              RoboRail Assistant is open source
             </div>
             <div className="text-sidebar-foreground/70 text-xs">
               Star the repo on GitHub!

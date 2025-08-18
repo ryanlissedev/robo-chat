@@ -57,7 +57,7 @@ export default async function RootLayout({
         />
       ) : null}
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} theme-hgg-professional antialiased`}
       >
         <TanstackQueryProvider>
           <LayoutClient />
@@ -75,7 +75,7 @@ export default async function RootLayout({
                     >
                       <ThemeProvider
                         attribute="class"
-                        defaultTheme="light"
+                        defaultTheme="dark"
                         enableSystem
                         disableTransitionOnChange
                       >

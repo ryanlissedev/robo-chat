@@ -1,35 +1,33 @@
-# RoboRail 🛡️
+# RoboRail Assistant 🤖
 
-**Advanced AI Safety & Security Chat Platform**
+**AI-Powered Technical Support for HGG RoboRail Machine**
 
-[roborail.chat](https://roborail.chat)
+![HGG Logo](./public/hgg-logo.svg)
 
-RoboRail is the open-source AI assistant specialized in AI safety, security, and production deployment. Built on GPT-5 with advanced reasoning capabilities, file search, and comprehensive observability through LangSmith.
-
-![RoboRail Cover](./public/cover_roborail.jpg)
+The RoboRail Assistant is an intelligent AI-powered support system designed specifically for the RoboRail machine manufactured by HGG Profiling Equipment b.v. Built on GPT-5 with advanced reasoning capabilities, it provides instant access to technical documentation, troubleshooting guidance, and operational instructions.
 
 ## 🚀 Core Features
 
-### GPT-5 Integration
-- **GPT-5 Mini**: Fast, efficient responses with file search (default)
-- **GPT-5 Standard**: Balanced performance for complex tasks
-- **GPT-5 Pro**: Maximum capabilities for deep analysis
+### Intelligent Technical Support
+- **Instant Answers**: 24/7 access to RoboRail technical information
+- **Multi-Turn Conversations**: Natural dialogue for complex troubleshooting
+- **Voice Interaction**: Hands-free operation support via speech-to-speech
+- **Document Search**: RAG-powered search through technical manuals
 
-### Advanced Capabilities
-- **🔍 File Search**: Native OpenAI document retrieval and vector search
+### Advanced AI Capabilities
 - **🧠 Adjustable Reasoning**: Control analysis depth (Low/Medium/High)
+- **📁 Multi-format Support**: PDF, DOCX, HTML documentation processing
+- **🔍 Contextual Search**: Find relevant information across all manuals
 - **📊 LangSmith Integration**: Complete observability and tracing
 - **👍 Feedback System**: Upvote/downvote with optional comments
-- **🔐 Security-First**: Built-in safety guardrails and content moderation
-- **📁 Multi-format Support**: PDF, code files, documentation analysis
 
-### Specialized Expertise
-- AI security frameworks and red teaming
-- Production AI system deployment
-- Advanced RAG pipelines and vector optimization
-- Security-first development practices
-- Multi-agent orchestration
-- Evaluation and testing frameworks
+### RoboRail Expertise
+- Machine operation procedures and best practices
+- Maintenance schedules and repair instructions
+- Safety protocols and compliance guidelines
+- Troubleshooting guides for common issues
+- Technical specifications and part information
+- Emergency procedures and safety warnings
 
 ## 🛠️ Quick Start
 
@@ -37,14 +35,14 @@ RoboRail is the open-source AI assistant specialized in AI safety, security, and
 - Node.js 18+
 - OpenAI API key with GPT-5 access
 - (Optional) LangSmith API key for observability
-- (Optional) Supabase project for persistence
+- (Optional) Supabase project for conversation history
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/roborail.git
-cd roborail
+git clone https://github.com/HGG-Profiling/roborail-assistant.git
+cd roborail-assistant
 
 # Install dependencies
 npm install
@@ -57,56 +55,62 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Visit `http://localhost:3000` to start using RoboRail!
+Visit `http://localhost:3000` to start using the RoboRail Assistant!
 
 ### Docker Deployment
 
 ```bash
 # Build and run with Docker
-docker build -t roborail .
-docker run -p 3000:3000 --env-file .env.local roborail
+docker build -t roborail-assistant .
+docker run -p 3000:3000 --env-file .env.local roborail-assistant
 ```
 
 ### Production Deployment
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-org/roborail)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/HGG-Profiling/roborail-assistant)
 
-## 💬 Example Prompts
+## 👥 User Personas
 
-### AI Security & Safety
-- "Help me implement input validation and sanitization for my LLM application"
-- "Design a red teaming framework for testing AI model robustness"
-- "Create a content moderation pipeline with safety classifiers"
-- "Implement rate limiting and abuse prevention for an AI API"
-- "Build a prompt injection detection system"
+### Machine Operator
+- Responsible for day-to-day RoboRail operation
+- Needs quick access to operating procedures and basic troubleshooting
+- Benefits from voice interaction while working hands-on
 
-### Production Deployment
-- "Set up monitoring and alerting for AI model performance degradation"
-- "Design a blue-green deployment strategy for model updates"
-- "Implement A/B testing for different model versions"
-- "Create a rollback strategy for failed model deployments"
-- "Build an observability stack for AI system metrics"
+### Maintenance Technician  
+- Performs routine maintenance and repairs
+- Requires detailed technical specifications and maintenance schedules
+- Uses advanced troubleshooting guides and repair procedures
 
-### RAG & Vector Search
-- "Optimize my RAG pipeline for better retrieval accuracy"
-- "Implement hybrid search with keyword and semantic matching"
-- "Design a chunking strategy for technical documentation"
-- "Create a multi-index architecture for different document types"
-- "Build a reranking system for search results"
+### Safety Officer
+- Ensures safe and compliant operations
+- Needs access to safety manuals and emergency procedures
+- Reviews compliance guidelines and safety protocols
 
-### Evaluation & Testing
-- "Create a comprehensive evaluation suite for my chatbot"
-- "Design regression tests for model updates"
-- "Implement automated quality checks for AI responses"
-- "Build a benchmark dataset for my specific use case"
-- "Create a human-in-the-loop evaluation workflow"
+## 💬 Example Questions
 
-### Multi-Agent Systems
-- "Design an agent orchestration system for complex workflows"
-- "Implement tool use validation and error handling"
-- "Create a supervisor agent for quality control"
-- "Build a consensus mechanism for multi-agent decisions"
-- "Design fault-tolerant agent communication"
+### Operation & Procedures
+- "How do I start up the RoboRail machine safely?"
+- "What are the daily pre-operation checks I need to perform?"
+- "Show me the proper cutting sequence for steel beams"
+- "What safety equipment is required when operating the machine?"
+
+### Maintenance & Troubleshooting
+- "The cutting head is producing rough edges - what should I check?"
+- "When was the last recommended maintenance for the hydraulic system?"
+- "How do I replace the cutting torch consumables?"
+- "The machine stopped mid-cut - what are the possible causes?"
+
+### Technical Specifications
+- "What is the maximum cutting thickness for stainless steel?"
+- "Show me the wiring diagram for the control panel"
+- "What are the recommended cutting speeds for different materials?"
+- "Where can I find the part number for the drive motor?"
+
+### Safety & Emergency
+- "What should I do if there's a gas leak during operation?"
+- "Show me the emergency stop procedures"
+- "What personal protective equipment is required?"
+- "How do I safely shut down the machine for maintenance?"
 
 ## 🔧 Configuration
 
@@ -119,15 +123,15 @@ ROBORAIL_MODE=production           # App mode: development/staging/production
 
 # LangSmith Observability (Recommended)
 LANGSMITH_API_KEY=ls-...           # LangSmith API key
-LANGSMITH_PROJECT=roborail         # Project name for tracing
+LANGSMITH_PROJECT=roborail-assistant # Project name for tracing
 LANGSMITH_TRACING=true             # Enable tracing
 
-# Supabase (Optional - for persistence)
+# Supabase (Optional - for conversation history)
 NEXT_PUBLIC_SUPABASE_URL=...       # Supabase project URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...  # Supabase anonymous key
 SUPABASE_SERVICE_ROLE=...          # Service role key
 
-# Security
+# Security & Rate Limiting
 CSRF_SECRET=...                    # 32-character random string
 RATE_LIMIT_ENABLED=true           # Enable rate limiting
 MAX_REQUESTS_PER_MINUTE=60        # Rate limit threshold
@@ -142,22 +146,22 @@ Configure the default reasoning effort in your chat:
 
 ## 📊 Observability with LangSmith
 
-RoboRail includes comprehensive LangSmith integration for:
-- **Trace Analysis**: View complete execution traces
-- **Performance Metrics**: Token usage, latency, throughput
-- **User Feedback**: Correlate feedback with specific runs
-- **Error Tracking**: Identify and debug issues
-- **A/B Testing**: Compare different configurations
+The RoboRail Assistant includes comprehensive LangSmith integration for:
+- **Trace Analysis**: View complete execution traces for troubleshooting sessions
+- **Performance Metrics**: Token usage, latency, and response times
+- **User Feedback**: Correlate technician feedback with specific interactions
+- **Error Tracking**: Identify and debug technical support issues
+- **Usage Analytics**: Monitor which topics are most frequently asked
 
-Access your traces at: `https://smith.langchain.com/project/roborail`
+Access your traces at: `https://smith.langchain.com/project/roborail-assistant`
 
 ## 🗄️ Database Schema
 
-When using Supabase, RoboRail automatically manages:
-- Chat history and message storage
-- User feedback and ratings
-- File attachments and vector stores
-- Usage analytics and metrics
+When using Supabase, the RoboRail Assistant automatically manages:
+- Conversation history and technical support sessions
+- User feedback and satisfaction ratings
+- Document attachments and technical manuals
+- Usage analytics and support metrics
 
 Run migrations:
 ```bash
@@ -166,16 +170,59 @@ npx supabase migration up
 
 ## 🔐 Security Features
 
-- **Input Validation**: Automatic sanitization of user inputs
-- **Rate Limiting**: Configurable per-user and per-IP limits
-- **Content Filtering**: Built-in safety classifiers
-- **Audit Logging**: Complete activity tracking
-- **RLS Policies**: Row-level security for multi-tenancy
+- **Input Validation**: Automatic sanitization of technical queries
+- **Rate Limiting**: Configurable limits to prevent system overload
+- **Data Privacy**: Secure handling of proprietary technical information
+- **Audit Logging**: Complete tracking of support interactions
+- **Access Control**: Role-based access for different user types
 - **CSRF Protection**: Token-based request validation
 
 ## 🛠️ Development
 
-### Tech Stack
+### Tech Stack Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    RoboRail Assistant Architecture              │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Frontend Layer                 Backend Layer                   │
+│  ┌─────────────────┐           ┌─────────────────┐              │
+│  │   Next.js 14    │◄────────► │   API Routes    │              │
+│  │   React 18      │           │   (Next.js)     │              │
+│  │   TypeScript    │           └─────────────────┘              │
+│  └─────────────────┘                     │                     │
+│           │                              │                     │
+│           ▼                              ▼                     │
+│  ┌─────────────────┐           ┌─────────────────┐              │
+│  │ UI Components   │           │   AI Services   │              │
+│  │ ├─Tailwind CSS  │           │ ├─OpenAI GPT-5  │              │
+│  │ ├─shadcn/ui     │◄────────► │ ├─Vercel AI SDK │              │
+│  │ ├─Radix UI      │           │ └─RAG System    │              │
+│  │ └─Phosphor Icons│           └─────────────────┘              │
+│  └─────────────────┘                     │                     │
+│           │                              │                     │
+│           ▼                              ▼                     │
+│  ┌─────────────────┐           ┌─────────────────┐              │
+│  │ User Interface  │           │   Data Layer    │              │
+│  │ ├─Chat Input    │◄────────► │ ├─Supabase      │              │
+│  │ ├─Reasoning UI  │           │ ├─PostgreSQL    │              │
+│  │ ├─File Upload   │           │ └─Vector Store  │              │
+│  │ └─Voice I/O     │           └─────────────────┘              │
+│  └─────────────────┘                     │                     │
+│                                          │                     │
+│                                          ▼                     │
+│           Observability & Monitoring                           │
+│           ┌─────────────────────────────┐                      │
+│           │ ├─LangSmith Tracing         │                      │
+│           │ ├─Performance Metrics       │                      │
+│           │ ├─User Feedback System      │                      │
+│           │ └─Error Tracking            │                      │
+│           └─────────────────────────────┘                      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Core Technologies
 - **Frontend**: Next.js 14, React 18, TypeScript
 - **UI**: Tailwind CSS, shadcn/ui, Radix UI
 - **AI**: OpenAI GPT-5, Vercel AI SDK
@@ -207,19 +254,79 @@ npm audit
 npm run type-check
 ```
 
-## 📚 Documentation
+## 📚 Documentation & Learning Resources
 
-- [Installation Guide](./docs/INSTALL.md)
+### Installation Guides
+- [General Installation Guide](./INSTALL.md)
+- [Windows Installation Guide](./docs/WINDOWS_INSTALL.md) - Complete step-by-step guide for Windows
 - [Configuration Reference](./docs/CONFIG.md)
-- [API Documentation](./docs/API.md)
-- [Security Best Practices](./docs/SECURITY.md)
 - [Deployment Guide](./docs/DEPLOY.md)
+
+### Learning Resources
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Learning Path for Developers                │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Beginner Path              Advanced Path                       │
+│  ┌─────────────────┐       ┌─────────────────┐                 │
+│  │   JavaScript    │       │   TypeScript    │                 │
+│  │   Fundamentals  │────► │   Advanced      │                 │
+│  │                 │       │                 │                 │
+│  └─────────────────┘       └─────────────────┘                 │
+│           │                          │                         │
+│           ▼                          ▼                         │
+│  ┌─────────────────┐       ┌─────────────────┐                 │
+│  │     React       │       │    Next.js      │                 │
+│  │   Components    │────► │   App Router    │                 │
+│  │     & Hooks     │       │   & Server      │                 │
+│  └─────────────────┘       └─────────────────┘                 │
+│           │                          │                         │
+│           ▼                          ▼                         │
+│  ┌─────────────────┐       ┌─────────────────┐                 │
+│  │   Tailwind CSS  │       │   AI/LLM APIs   │                 │
+│  │   & shadcn/ui   │────► │   Integration   │                 │
+│  │                 │       │                 │                 │
+│  └─────────────────┘       └─────────────────┘                 │
+│                                     │                         │
+│                                     ▼                         │
+│                           ┌─────────────────┐                 │
+│                           │  RoboRail Dev   │                 │
+│                           │   Ready! 🎯     │                 │
+│                           └─────────────────┘                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Frontend Development
+- **JavaScript**: [MDN JavaScript Guide](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide)
+- **TypeScript**: [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+- **React**: [React Documentation](https://react.dev/learn)
+- **Next.js**: [Next.js Documentation](https://nextjs.org/docs)
+
+#### Styling & UI
+- **Tailwind CSS**: [Tailwind CSS Docs](https://tailwindcss.com/docs)
+- **shadcn/ui**: [shadcn/ui Components](https://ui.shadcn.com/)
+- **Radix UI**: [Radix UI Primitives](https://www.radix-ui.com/docs/primitives)
+
+#### AI & Backend
+- **OpenAI API**: [OpenAI Platform Docs](https://platform.openai.com/docs)
+- **Vercel AI SDK**: [AI SDK Documentation](https://sdk.vercel.ai/docs)
+- **LangSmith**: [LangSmith Docs](https://docs.smith.langchain.com/)
+
+#### Database & Storage
+- **Supabase**: [Supabase Documentation](https://supabase.com/docs)
+- **PostgreSQL**: [PostgreSQL Tutorial](https://www.postgresql.org/docs/)
 
 ## 🤝 Support
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/your-org/roborail/issues)
-- **Discord**: [Join our community](https://discord.gg/roborail)
-- **Documentation**: [docs.roborail.ai](https://docs.roborail.ai)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/HGG-Profiling/roborail-assistant/issues)
+- **HGG Support**: Contact your local HGG representative
+- **Technical Documentation**: Access through the assistant interface
+
+## 🏢 About HGG Profiling Equipment b.v.
+
+HGG Profiling Equipment is a leading manufacturer of automated cutting and drilling machines for the steel construction and shipbuilding industries. The RoboRail machine is designed for high-precision profiling of steel beams and structural components.
 
 ## 📄 License
 
@@ -234,14 +341,13 @@ Built with:
 - [shadcn/ui](https://ui.shadcn.com) — UI components
 - [Supabase](https://supabase.com) — Backend infrastructure
 
-## ⚠️ Disclaimer
+## 📋 Success Metrics
 
-RoboRail is designed for defensive security and safety applications. It should not be used for:
-- Creating malicious code or exploits
-- Bypassing security measures
-- Unauthorized access or attacks
-- Any illegal or unethical activities
+- **User Satisfaction**: Measured through feedback ratings
+- **Issue Resolution**: Percentage of queries successfully resolved
+- **Support Efficiency**: Reduction in traditional support ticket volume
+- **Adoption Rate**: Active users across different roles
 
 ---
 
-**RoboRail** - Your AI Safety & Security Copilot 🛡️
+**RoboRail Assistant** - Your AI-Powered Technical Support System 🤖

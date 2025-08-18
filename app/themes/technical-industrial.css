@@ -1,0 +1,212 @@
+/* Technical Industrial Theme - Variant 2 */
+/* Designed for industrial/manufacturing environments with high contrast and clarity */
+
+.theme-technical-industrial {
+  /* Industrial color palette */
+  --industrial-steel: #2D3748;
+  --industrial-orange: #FF6B35;
+  --industrial-yellow: #F7931E;
+  --industrial-green: #38A169;
+  --industrial-red: #E53E3E;
+  
+  /* Light theme variables */
+  --background: oklch(0.98 0.005 220);
+  --foreground: oklch(0.15 0.01 220);
+  --card: oklch(0.99 0.003 220);
+  --card-foreground: oklch(0.15 0.01 220);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0.01 220);
+  --primary: var(--industrial-steel);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.94 0.006 220);
+  --secondary-foreground: var(--industrial-steel);
+  --muted: oklch(0.94 0.006 220);
+  --muted-foreground: oklch(0.55 0.015 220);
+  --accent: var(--industrial-orange);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: var(--industrial-red);
+  --destructive-foreground: oklch(0.98 0.01 15);
+  --border: oklch(0.88 0.008 220);
+  --input: oklch(0.88 0.008 220);
+  --ring: var(--industrial-orange);
+  
+  /* Status colors for industrial applications */
+  --status-operational: var(--industrial-green);
+  --status-warning: var(--industrial-yellow);
+  --status-error: var(--industrial-red);
+  --status-info: #3182CE;
+  
+  /* Sidebar with industrial feel */
+  --sidebar: oklch(0.96 0.004 220);
+  --sidebar-foreground: oklch(0.15 0.01 220);
+  --sidebar-primary: var(--industrial-steel);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: var(--industrial-orange);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.88 0.008 220);
+  --sidebar-ring: var(--industrial-orange);
+  
+  /* Industrial design elements */
+  --shadow-industrial: 0 2px 4px rgba(45, 55, 72, 0.1), 0 1px 2px rgba(45, 55, 72, 0.06);
+  --border-industrial: 2px solid var(--border);
+  --border-radius-industrial: 4px;
+}
+
+.theme-technical-industrial.dark {
+  /* Dark theme for industrial environments */
+  --background: oklch(0.12 0.008 220);
+  --foreground: oklch(0.95 0.003 220);
+  --card: oklch(0.16 0.01 220);
+  --card-foreground: oklch(0.95 0.003 220);
+  --popover: oklch(0.18 0.01 220);
+  --popover-foreground: oklch(0.95 0.003 220);
+  --primary: var(--industrial-orange);
+  --primary-foreground: oklch(0.1 0.008 220);
+  --secondary: oklch(0.22 0.012 220);
+  --secondary-foreground: oklch(0.95 0.003 220);
+  --muted: oklch(0.18 0.01 220);
+  --muted-foreground: oklch(0.65 0.015 220);
+  --accent: var(--industrial-yellow);
+  --accent-foreground: oklch(0.1 0.008 220);
+  --destructive: oklch(0.75 0.15 15);
+  --destructive-foreground: oklch(0.95 0.003 220);
+  --border: oklch(0.25 0.015 220);
+  --input: oklch(0.22 0.012 220);
+  --ring: var(--industrial-yellow);
+  
+  /* Dark sidebar */
+  --sidebar: oklch(0.14 0.009 220);
+  --sidebar-foreground: oklch(0.95 0.003 220);
+  --sidebar-primary: oklch(0.18 0.01 220);
+  --sidebar-primary-foreground: oklch(0.95 0.003 220);
+  --sidebar-accent: var(--industrial-orange);
+  --sidebar-accent-foreground: oklch(0.1 0.008 220);
+  --sidebar-border: oklch(0.25 0.015 220);
+  --sidebar-ring: var(--industrial-orange);
+  
+  /* Industrial shadows for dark theme */
+  --shadow-industrial: 0 4px 8px rgba(255, 107, 53, 0.1), 0 2px 4px rgba(255, 107, 53, 0.06);
+  --border-industrial: 2px solid var(--border);
+}
+
+/* Industrial UI enhancements */
+.theme-technical-industrial .card {
+  border: var(--border-industrial);
+  border-radius: var(--border-radius-industrial);
+  box-shadow: var(--shadow-industrial);
+}
+
+.theme-technical-industrial .button {
+  border-radius: var(--border-radius-industrial);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.875rem;
+}
+
+.theme-technical-industrial .button-primary {
+  background: linear-gradient(135deg, var(--industrial-steel) 0%, var(--industrial-orange) 100%);
+  border: 2px solid transparent;
+  box-shadow: 0 2px 4px rgba(45, 55, 72, 0.2);
+}
+
+.theme-technical-industrial .button-primary:hover {
+  box-shadow: 0 4px 8px rgba(45, 55, 72, 0.3);
+  transform: translateY(-1px);
+}
+
+.theme-technical-industrial .status-indicator {
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.theme-technical-industrial .status-operational {
+  background: var(--status-operational);
+}
+
+.theme-technical-industrial .status-warning {
+  background: var(--status-warning);
+}
+
+.theme-technical-industrial .status-error {
+  background: var(--status-error);
+}
+
+.theme-technical-industrial .status-info {
+  background: var(--status-info);
+}
+
+.theme-technical-industrial .chat-message {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-industrial);
+  box-shadow: var(--shadow-industrial);
+}
+
+.theme-technical-industrial .chat-message.assistant {
+  border-left: 4px solid var(--industrial-orange);
+}
+
+.theme-technical-industrial .chat-message.user {
+  border-left: 4px solid var(--industrial-steel);
+}
+
+.theme-technical-industrial .sidebar-item {
+  border-radius: var(--border-radius-industrial);
+  margin-bottom: 2px;
+}
+
+.theme-technical-industrial .sidebar-item:hover {
+  background: var(--industrial-orange);
+  color: white;
+  transform: translateX(4px);
+  transition: all 0.2s ease;
+}
+
+.theme-technical-industrial .sidebar-item.active {
+  background: var(--industrial-steel);
+  color: white;
+  border-left: 4px solid var(--industrial-orange);
+}
+
+/* Industrial typography */
+.theme-technical-industrial {
+  font-family: 'Inter', 'Roboto', system-ui, sans-serif;
+}
+
+.theme-technical-industrial h1,
+.theme-technical-industrial h2,
+.theme-technical-industrial h3 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.theme-technical-industrial .code {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-industrial);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.theme-technical-industrial .alert {
+  border: var(--border-industrial);
+  border-radius: var(--border-radius-industrial);
+}
+
+.theme-technical-industrial .alert.warning {
+  border-color: var(--status-warning);
+  background: oklch(from var(--status-warning) l c h / 0.1);
+}
+
+.theme-technical-industrial .alert.error {
+  border-color: var(--status-error);
+  background: oklch(from var(--status-error) l c h / 0.1);
+}
+
+.theme-technical-industrial .alert.success {
+  border-color: var(--status-operational);
+  background: oklch(from var(--status-operational) l c h / 0.1);
+}

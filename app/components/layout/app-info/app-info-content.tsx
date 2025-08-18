@@ -2,18 +2,19 @@ export function AppInfoContent() {
   return (
     <div className="space-y-4">
       <p className="text-foreground leading-relaxed">
-        <span className="font-medium">Zola</span> is the open-source interface
-        for AI chat.
+        <span className="font-medium">RoboRail Assistant</span> is an AI-powered technical support system
+        designed specifically for the HGG RoboRail machine.
         <br />
-        Multi-model, BYOK-ready, and fully self-hostable.
+        Built on GPT-5 with advanced reasoning capabilities for instant access
+        to technical documentation, troubleshooting guidance, and operational instructions.
         <br />
-        Use Claude, OpenAI, Gemini, local models, and more, all in one place.
+        Multi-model support with BYOK functionality and fully self-hostable.
         <br />
       </p>
       <p className="text-foreground leading-relaxed">
         The code is available on{" "}
         <a
-          href="https://github.com/ibelick/zola"
+          href="https://github.com/HGG-Profiling/roborail-assistant"
           target="_blank"
           rel="noopener noreferrer"
           className="underline"

@@ -1,9 +1,10 @@
-import { SYSTEM_PROMPT_DEFAULT, FILE_SEARCH_SYSTEM_PROMPT } from "@/lib/config"
+import { FILE_SEARCH_SYSTEM_PROMPT } from "@/lib/config"
 import { getAllModels } from "@/lib/models"
 import { getProviderForModel } from "@/lib/openproviders/provider-map"
 import type { ProviderWithoutOllama } from "@/lib/user-keys"
-import { Attachment } from "@ai-sdk/ui-utils"
-import { Message as MessageAISDK, streamText, ToolSet } from "ai"
+import type { Attachment } from "@ai-sdk/ui-utils"
+import { streamText } from "ai"
+import type { Message as MessageAISDK, ToolSet } from "ai"
 import { fileSearchTool } from "@/lib/tools/file-search"
 import {
   isLangSmithEnabled,
@@ -42,8 +43,8 @@ export async function POST(req: Request) {
       userId,
       model,
       isAuthenticated,
-      systemPrompt,
-      enableSearch,
+      systemPrompt: _systemPrompt,
+      enableSearch: _enableSearch,
       message_group_id,
       reasoningEffort = 'medium',
     } = (await req.json()) as ChatRequest
@@ -88,11 +89,9 @@ export async function POST(req: Request) {
       throw new Error(`Model ${model} not found`)
     }
 
-    // Use file search system prompt for GPT-5 models with file search enabled
+    // Always enable file search for this app
     const isGPT5Model = model.startsWith('gpt-5')
-    const effectiveSystemPrompt = enableSearch && isGPT5Model 
-      ? FILE_SEARCH_SYSTEM_PROMPT 
-      : (systemPrompt || SYSTEM_PROMPT_DEFAULT)
+    const effectiveSystemPrompt = FILE_SEARCH_SYSTEM_PROMPT
 
     let apiKey: string | undefined
     if (isAuthenticated && userId) {
@@ -112,7 +111,7 @@ export async function POST(req: Request) {
           model,
           messages: messages.map(m => ({ role: m.role, content: m.content })),
           reasoningEffort,
-          enableSearch,
+          enableSearch: true,
         },
         runType: 'chain',
         metadata: {
@@ -120,20 +119,18 @@ export async function POST(req: Request) {
           chatId,
           model,
           reasoningEffort,
-          enableSearch,
+          enableSearch: true,
         },
       })
       langsmithRunId = run?.id || null
     }
 
-    // Configure tools based on file search enablement
-    const tools: ToolSet = enableSearch && isGPT5Model 
-      ? { fileSearch: fileSearchTool } 
-      : ({} as ToolSet)
+    // Always register file search tool
+    const tools: ToolSet = { fileSearch: fileSearchTool }
 
-    // Configure model settings with reasoning effort
+    // Configure model settings with reasoning effort (search always enabled)
     const modelSettings = {
-      enableSearch,
+      enableSearch: true,
       reasoningEffort,
       headers: isGPT5Model ? {
         'X-Reasoning-Effort': reasoningEffort,
@@ -145,7 +142,7 @@ export async function POST(req: Request) {
       system: effectiveSystemPrompt,
       messages: messages,
       tools,
-      maxSteps: enableSearch && isGPT5Model ? 10 : 1,
+      maxSteps: 10,
       onError: (err: unknown) => {
         console.error("Streaming error occurred:", err)
         // Don't set streamError anymore - let the AI SDK handle it through the stream
@@ -171,24 +168,30 @@ export async function POST(req: Request) {
 
         // Update LangSmith run if enabled
         if (actualRunId && isLangSmithEnabled()) {
+          type Usage = {
+            totalTokens?: number
+            promptTokens?: number
+            completionTokens?: number
+          } | undefined
+          const usage = (response as unknown as { usage?: Usage }).usage
           await updateRun({
             runId: actualRunId,
             outputs: {
               messages: response.messages,
-              usage: response.usage,
+              usage,
             },
           })
 
           // Log metrics
-          if (response.usage) {
+          if (usage) {
             await logMetrics({
               runId: actualRunId,
               metrics: {
-                totalTokens: response.usage.totalTokens,
-                promptTokens: response.usage.promptTokens,
-                completionTokens: response.usage.completionTokens,
+                totalTokens: usage.totalTokens,
+                promptTokens: usage.promptTokens,
+                completionTokens: usage.completionTokens,
                 reasoningEffort,
-                enableSearch,
+                enableSearch: true,
               },
             })
           }

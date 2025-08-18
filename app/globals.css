@@ -3,6 +3,11 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
+/* HGG Theme Variants */
+@import "./themes/hgg-professional.css";
+@import "./themes/technical-industrial.css";
+@import "./themes/modern-minimalist.css";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme {
