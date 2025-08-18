@@ -31,107 +31,107 @@ export const APP_DOMAIN = "https://roborail.chat"
 
 export const SUGGESTIONS = [
   {
-    label: "Security",
-    highlight: "Implement",
-    prompt: `Implement`,
+    label: "RoboRail Equipment",
+    highlight: "Optimize",
+    prompt: `Optimize`,
     items: [
-      "Implement input validation and sanitization for my LLM application",
-      "Implement rate limiting and abuse prevention for an AI API",
-      "Implement a prompt injection detection system",
-      "Implement secure API key management for production",
+      "Optimize rail grinding patterns for maximum efficiency on curved tracks",
+      "Optimize cutting parameters for different steel grades in rail maintenance",
+      "Optimize RoboRail positioning system for complex track geometries",
+      "Optimize maintenance scheduling for RoboRail fleet operations",
     ],
     icon: Code,
   },
   {
-    label: "Red Team",
+    label: "Track Analysis",
+    highlight: "Analyze",
+    prompt: `Analyze`,
+    items: [
+      "Analyze track wear patterns and predict maintenance intervals",
+      "Analyze rail surface defects and recommend grinding strategies",
+      "Analyze track geometry data for safety compliance",
+      "Analyze vibration data from RoboRail operations for equipment health",
+    ],
+    icon: Brain,
+  },
+  {
+    label: "Safety Protocols",
     highlight: "Design",
     prompt: `Design`,
     items: [
-      "Design a red teaming framework for testing AI model robustness",
-      "Design adversarial test cases for my chatbot",
-      "Design a jailbreak detection system",
-      "Design security benchmarks for LLM applications",
+      "Design safety protocols for RoboRail operations in active rail corridors",
+      "Design emergency stop procedures for automated rail maintenance",
+      "Design worker safety zones around RoboRail equipment",
+      "Design communication protocols between RoboRail and train dispatchers",
     ],
     icon: PaintBrush,
   },
   {
-    label: "Production",
-    highlight: "Create",
-    prompt: `Create`,
+    label: "Automation",
+    highlight: "Implement",
+    prompt: `Implement`,
     items: [
-      "Create a monitoring dashboard for AI model performance",
-      "Create a rollback strategy for failed model deployments",
-      "Create an A/B testing framework for model versions",
-      "Create a CI/CD pipeline for safe model updates",
+      "Implement autonomous navigation for RoboRail on complex track layouts",
+      "Implement predictive maintenance algorithms for grinding equipment",
+      "Implement real-time quality monitoring for rail surface finishing",
+      "Implement automated reporting systems for track maintenance operations",
     ],
     icon: Sparkle,
   },
   {
-    label: "RAG & Search",
-    highlight: "Optimize",
-    prompt: `Optimize`,
+    label: "Technical Support",
+    highlight: "Troubleshoot",
+    prompt: `Troubleshoot`,
     items: [
-      "Optimize my RAG pipeline for better retrieval accuracy",
-      "Optimize chunking strategies for technical documentation",
-      "Optimize vector embeddings for semantic search",
-      "Optimize reranking for multi-index architectures",
-    ],
-    icon: BookOpenText,
-  },
-  {
-    label: "Evaluation",
-    highlight: "Build",
-    prompt: `Build`,
-    items: [
-      "Build a comprehensive evaluation suite for my chatbot",
-      "Build automated quality checks for AI responses",
-      "Build regression tests for model updates",
-      "Build a human-in-the-loop evaluation workflow",
+      "Troubleshoot hydraulic system pressure irregularities in RoboRail",
+      "Troubleshoot grinding wheel wear patterns and replacement timing",
+      "Troubleshoot positioning accuracy issues in curved track sections",
+      "Troubleshoot communication errors between RoboRail control systems",
     ],
     icon: Notepad,
   },
   {
-    label: "Multi-Agent",
-    highlight: "Architect",
-    prompt: `Architect`,
+    label: "Process Planning",
+    highlight: "Plan",
+    prompt: `Plan`,
     items: [
-      "Architect an agent orchestration system for complex workflows",
-      "Architect tool use validation and error handling",
-      "Architect a supervisor agent for quality control",
-      "Architect fault-tolerant agent communication",
+      "Plan efficient work sequences for multi-kilometer rail grinding projects",
+      "Plan RoboRail deployment strategy for high-traffic corridors",
+      "Plan preventive maintenance schedules for optimal equipment uptime",
+      "Plan operator training programs for new RoboRail technology",
     ],
-    icon: Brain,
+    icon: BookOpenText,
   },
   {
     label: "Best Practices",
     highlight: "Explain",
     prompt: `Explain`,
     items: [
-      "Explain OWASP Top 10 for LLM applications",
-      "Explain defense-in-depth for AI systems",
-      "Explain responsible AI disclosure practices",
-      "Explain compliance requirements for AI in production",
+      "Explain proper grinding techniques for different rail profiles and conditions",
+      "Explain environmental considerations for rail maintenance operations",
+      "Explain quality standards and acceptance criteria for rail surface finishing",
+      "Explain integration of RoboRail systems with existing railway infrastructure",
     ],
     icon: Lightbulb,
   },
 ]
 
-export const ROBORAIL_SYSTEM_PROMPT = `You are the RoboRail Assistant, an expert technical advisor specializing in AI safety, security, and production deployment. Your expertise spans:
+export const ROBORAIL_SYSTEM_PROMPT = `You are the RoboRail Assistant, an expert technical advisor specializing in railway maintenance automation and HGG RoboRail equipment systems. Your expertise spans:
 
-- AI security frameworks and red teaming methodologies
-- Production AI system deployment and monitoring
-- Advanced RAG pipelines and vector search optimization
-- Security-first development practices and compliance
-- Multi-agent orchestration and evaluation frameworks
+- Railway track maintenance and grinding operations
+- RoboRail automated equipment operation and optimization
+- Track analysis, defect detection, and predictive maintenance
+- Rail industry safety protocols and compliance standards
+- Industrial automation and control systems
 
 You provide precise, actionable guidance on:
-- Implementing safety guardrails and content moderation
-- Designing secure AI architectures with proper isolation
-- Optimizing retrieval systems for accuracy and relevance
-- Building robust evaluation and testing frameworks
-- Establishing monitoring and observability for AI systems
+- Operating and optimizing RoboRail grinding equipment
+- Analyzing track conditions and planning maintenance schedules
+- Implementing safety protocols for railway maintenance operations
+- Troubleshooting hydraulic, mechanical, and control systems
+- Integrating automated systems with existing railway infrastructure
 
-Your responses are technical, detailed, and security-conscious. You emphasize defensive coding, proper authentication, rate limiting, and audit logging. When discussing implementations, you provide specific code examples and architectural patterns that prioritize safety and reliability.`
+Your responses are technical, detailed, and safety-focused. You emphasize proper maintenance procedures, operator safety, equipment reliability, and regulatory compliance. When discussing implementations, you provide specific technical guidance and operational best practices that prioritize worker safety and equipment efficiency.`
 
 export const SYSTEM_PROMPT_DEFAULT = ROBORAIL_SYSTEM_PROMPT
 
