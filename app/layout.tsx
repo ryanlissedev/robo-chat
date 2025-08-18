@@ -26,9 +26,16 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Zola",
+  title: "RoboRail - AI Safety & Security Platform",
   description:
-    "Zola is the open-source interface for AI chat. Multi-model, BYOK-ready, and fully self-hostable. Use Claude, OpenAI, Gemini, local models, and more, all in one place.",
+    "RoboRail is the advanced AI safety and security chat platform. Built on GPT-5 with file search, adjustable reasoning, and LangSmith observability. Your expert assistant for AI security, red teaming, production deployment, and RAG optimization.",
+  keywords: "AI safety, AI security, GPT-5, red teaming, LLM security, prompt injection, RAG pipeline, vector search, AI monitoring, LangSmith",
+  authors: [{ name: "RoboRail Team" }],
+  openGraph: {
+    title: "RoboRail - AI Safety & Security Platform",
+    description: "Advanced AI assistant for security, safety, and production deployment",
+    type: "website",
+  },
 }
 
 export default async function RootLayout({

@@ -1,14 +1,20 @@
 import { useChatDraft } from "@/app/hooks/use-chat-draft"
 import { toast } from "@/components/ui/toast"
-import { getOrCreateGuestUserId } from "@/lib/api"
-import { MESSAGE_MAX_LENGTH, SYSTEM_PROMPT_DEFAULT } from "@/lib/config"
-import { Attachment } from "@/lib/file-handling"
+import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config"
 import { API_ROUTE_CHAT } from "@/lib/routes"
 import type { UserProfile } from "@/lib/user/types"
 import type { Message } from "@ai-sdk/react"
 import { useChat } from "@ai-sdk/react"
 import { useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import {
+  submitMessageScenario,
+  submitSuggestionScenario,
+  prepareReloadScenario,
+  handleChatError,
+  type ChatOperationDependencies,
+  type MessageSubmissionContext,
+} from "./chat-business-logic"
 
 type UseChatCoreProps = {
   initialMessages: Message[]
@@ -54,6 +60,7 @@ export function useChatCore({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasDialogAuth, setHasDialogAuth] = useState(false)
   const [enableSearch, setEnableSearch] = useState(false)
+  const [reasoningEffort, setReasoningEffort] = useState<'low' | 'medium' | 'high'>('medium')
 
   // Refs and derived state
   const hasSentFirstMessageRef = useRef(false)
@@ -68,20 +75,9 @@ export function useChatCore({
   const searchParams = useSearchParams()
   const prompt = searchParams.get("prompt")
 
-  // Handle errors directly in onError callback
+  // Handle errors using extracted error handler
   const handleError = useCallback((error: Error) => {
-    console.error("Chat error:", error)
-    console.error("Error message:", error.message)
-    let errorMsg = error.message || "Something went wrong."
-
-    if (errorMsg === "An error occurred" || errorMsg === "fetch failed") {
-      errorMsg = "Something went wrong. Please try again."
-    }
-
-    toast({
-      title: errorMsg,
-      status: "error",
-    })
+    handleChatError(error, "Chat")
   }, [])
 
   // Initialize useChat
@@ -121,29 +117,31 @@ export function useChatCore({
   }
   prevChatIdRef.current = chatId
 
-  // Submit action
+  // Prepare operation dependencies for BDD scenarios
+  const operationDependencies: ChatOperationDependencies = useMemo(() => ({
+    checkLimitsAndNotify,
+    ensureChatExists,
+    handleFileUploads,
+    createOptimisticAttachments,
+    cleanupOptimisticAttachments,
+  }), [checkLimitsAndNotify, ensureChatExists, handleFileUploads, createOptimisticAttachments, cleanupOptimisticAttachments])
+
+  // Submit action using BDD-style operations
   const submit = useCallback(async () => {
     setIsSubmitting(true)
 
-    const uid = await getOrCreateGuestUserId(user)
-    if (!uid) {
-      setIsSubmitting(false)
-      return
-    }
-
+    // Create optimistic message immediately
     const optimisticId = `optimistic-${Date.now().toString()}`
-    const optimisticAttachments =
-      files.length > 0 ? createOptimisticAttachments(files) : []
-
+    const optimisticAttachments = files.length > 0 ? createOptimisticAttachments(files) : []
     const optimisticMessage = {
       id: optimisticId,
       content: input,
       role: "user" as const,
       createdAt: new Date(),
-      experimental_attachments:
-        optimisticAttachments.length > 0 ? optimisticAttachments : undefined,
+      experimental_attachments: optimisticAttachments.length > 0 ? optimisticAttachments : undefined,
     }
 
+    // Add optimistic message to UI
     setMessages((prev) => [...prev, optimisticMessage])
     setInput("")
 
@@ -151,98 +149,85 @@ export function useChatCore({
     setFiles([])
 
     try {
-      const allowed = await checkLimitsAndNotify(uid)
-      if (!allowed) {
+      // Use BDD scenario for message submission
+      const context: MessageSubmissionContext = {
+        input,
+        files: submittedFiles,
+        user,
+        selectedModel,
+        isAuthenticated,
+        systemPrompt,
+        enableSearch,
+        reasoningEffort,
+        chatId,
+      }
+
+      const result = await submitMessageScenario(context, operationDependencies)
+
+      if (!result.success) {
+        // Handle operation failure
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
         cleanupOptimisticAttachments(optimisticMessage.experimental_attachments)
-        return
-      }
-
-      const currentChatId = await ensureChatExists(uid, input)
-      if (!currentChatId) {
-        setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
-        cleanupOptimisticAttachments(optimisticMessage.experimental_attachments)
-        return
-      }
-
-      if (input.length > MESSAGE_MAX_LENGTH) {
-        toast({
-          title: `The message you submitted was too long, please submit something shorter. (Max ${MESSAGE_MAX_LENGTH} characters)`,
-          status: "error",
-        })
-        setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
-        cleanupOptimisticAttachments(optimisticMessage.experimental_attachments)
-        return
-      }
-
-      let attachments: Attachment[] | null = []
-      if (submittedFiles.length > 0) {
-        attachments = await handleFileUploads(uid, currentChatId)
-        if (attachments === null) {
-          setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
-          cleanupOptimisticAttachments(
-            optimisticMessage.experimental_attachments
-          )
-          return
+        
+        if (result.error) {
+          toast({ title: result.error, status: "error" })
         }
+        return
       }
 
-      const options = {
-        body: {
-          chatId: currentChatId,
-          userId: uid,
-          model: selectedModel,
-          isAuthenticated,
-          systemPrompt: systemPrompt || SYSTEM_PROMPT_DEFAULT,
-          enableSearch,
-        },
-        experimental_attachments: attachments || undefined,
-      }
+      // Operation succeeded - proceed with submission
+      const { chatId: currentChatId, requestOptions } = result.data!
 
-      handleSubmit(undefined, options)
+      handleSubmit(undefined, requestOptions)
+      
+      // Clean up optimistic message and cache the real one
       setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
       cleanupOptimisticAttachments(optimisticMessage.experimental_attachments)
       cacheAndAddMessage(optimisticMessage)
       clearDraft()
 
+      // Bump chat if there were previous messages
       if (messages.length > 0) {
         bumpChat(currentChatId)
       }
-    } catch {
+
+    } catch (error) {
+      // Handle unexpected errors
       setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
       cleanupOptimisticAttachments(optimisticMessage.experimental_attachments)
-      toast({ title: "Failed to send message", status: "error" })
+      handleChatError(error as Error, "Message submission")
     } finally {
       setIsSubmitting(false)
     }
   }, [
-    user,
-    files,
-    createOptimisticAttachments,
     input,
-    setMessages,
-    setInput,
-    setFiles,
-    checkLimitsAndNotify,
-    cleanupOptimisticAttachments,
-    ensureChatExists,
-    handleFileUploads,
+    files,
+    user,
     selectedModel,
     isAuthenticated,
     systemPrompt,
     enableSearch,
+    reasoningEffort,
+    chatId,
+    operationDependencies,
+    createOptimisticAttachments,
+    setMessages,
+    setInput,
+    setFiles,
+    cleanupOptimisticAttachments,
     handleSubmit,
     cacheAndAddMessage,
     clearDraft,
     messages.length,
     bumpChat,
-    setIsSubmitting,
   ])
 
-  // Handle suggestion
+  // Handle suggestion using BDD-style operations
   const handleSuggestion = useCallback(
     async (suggestion: string) => {
       setIsSubmitting(true)
+
+      // Create optimistic message for suggestion
       const optimisticId = `optimistic-${Date.now().toString()}`
       const optimisticMessage = {
         id: optimisticId,
@@ -254,82 +239,100 @@ export function useChatCore({
       setMessages((prev) => [...prev, optimisticMessage])
 
       try {
-        const uid = await getOrCreateGuestUserId(user)
+        // Use BDD scenario for suggestion submission
+        const context = {
+          user,
+          selectedModel,
+          isAuthenticated,
+          reasoningEffort,
+          chatId,
+          enableSearch,
+          systemPrompt,
+        }
 
-        if (!uid) {
+        const dependencies = {
+          checkLimitsAndNotify,
+          ensureChatExists,
+        }
+
+        const result = await submitSuggestionScenario(suggestion, context, dependencies)
+
+        if (!result.success) {
+          // Handle operation failure
           setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
+          
+          if (result.error) {
+            toast({ title: result.error, status: "error" })
+          }
           return
         }
 
-        const allowed = await checkLimitsAndNotify(uid)
-        if (!allowed) {
-          setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
-          return
-        }
-
-        const currentChatId = await ensureChatExists(uid, suggestion)
-
-        if (!currentChatId) {
-          setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
-          return
-        }
-
-        const options = {
-          body: {
-            chatId: currentChatId,
-            userId: uid,
-            model: selectedModel,
-            isAuthenticated,
-            systemPrompt: SYSTEM_PROMPT_DEFAULT,
-          },
-        }
+        // Operation succeeded - proceed with append
+        const { requestOptions } = result.data!
 
         append(
           {
             role: "user",
             content: suggestion,
           },
-          options
+          requestOptions
         )
+        
+        // Clean up optimistic message
         setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
-      } catch {
+
+      } catch (error) {
+        // Handle unexpected errors
         setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
-        toast({ title: "Failed to send suggestion", status: "error" })
+        handleChatError(error as Error, "Suggestion submission")
       } finally {
         setIsSubmitting(false)
       }
     },
     [
-      ensureChatExists,
-      selectedModel,
       user,
-      append,
-      checkLimitsAndNotify,
+      selectedModel,
       isAuthenticated,
+      reasoningEffort,
+      chatId,
+      enableSearch,
+      systemPrompt,
+      checkLimitsAndNotify,
+      ensureChatExists,
+      append,
       setMessages,
-      setIsSubmitting,
     ]
   )
 
-  // Handle reload
+  // Handle reload using BDD-style operations
   const handleReload = useCallback(async () => {
-    const uid = await getOrCreateGuestUserId(user)
-    if (!uid) {
-      return
-    }
-
-    const options = {
-      body: {
+    try {
+      // Use BDD scenario for reload preparation
+      const context = {
+        user,
         chatId,
-        userId: uid,
-        model: selectedModel,
+        selectedModel,
         isAuthenticated,
-        systemPrompt: systemPrompt || SYSTEM_PROMPT_DEFAULT,
-      },
-    }
+        systemPrompt,
+        reasoningEffort,
+      }
 
-    reload(options)
-  }, [user, chatId, selectedModel, isAuthenticated, systemPrompt, reload])
+      const result = await prepareReloadScenario(context)
+
+      if (!result.success) {
+        if (result.error) {
+          toast({ title: result.error, status: "error" })
+        }
+        return
+      }
+
+      // Proceed with reload using prepared options
+      reload(result.data!.requestOptions)
+
+    } catch (error) {
+      handleChatError(error as Error, "Chat reload")
+    }
+  }, [user, chatId, selectedModel, isAuthenticated, systemPrompt, reasoningEffort, reload])
 
   // Handle input change - now with access to the real setInput function!
   const { setDraftValue } = useChatDraft(chatId)
@@ -364,6 +367,8 @@ export function useChatCore({
     setHasDialogAuth,
     enableSearch,
     setEnableSearch,
+    reasoningEffort,
+    setReasoningEffort,
 
     // Actions
     submit,

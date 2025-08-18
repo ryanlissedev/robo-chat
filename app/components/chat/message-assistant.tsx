@@ -10,6 +10,7 @@ import type { Message as MessageAISDK } from "@ai-sdk/react"
 import { ArrowClockwise, Check, Copy } from "@phosphor-icons/react"
 import { useCallback, useRef } from "react"
 import { getSources } from "./get-sources"
+import { MessageFeedback } from "./message-feedback"
 import { QuoteButton } from "./quote-button"
 import { Reasoning } from "./reasoning"
 import { SearchImages } from "./search-images"
@@ -29,6 +30,7 @@ type MessageAssistantProps = {
   className?: string
   messageId: string
   onQuote?: (text: string, messageId: string) => void
+  langsmithRunId?: string
 }
 
 export function MessageAssistant({
@@ -43,6 +45,7 @@ export function MessageAssistant({
   className,
   messageId,
   onQuote,
+  langsmithRunId,
 }: MessageAssistantProps) {
   const { preferences } = useUserPreferences()
   const sources = getSources(parts)
@@ -169,6 +172,11 @@ export function MessageAssistant({
                 </button>
               </MessageAction>
             ) : null}
+            <MessageFeedback
+              messageId={messageId}
+              langsmithRunId={langsmithRunId}
+              className="ml-1"
+            />
           </MessageActions>
         )}
 
