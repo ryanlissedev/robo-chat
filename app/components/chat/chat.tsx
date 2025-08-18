@@ -112,6 +112,8 @@ export function Chat() {
     isSubmitting,
     enableSearch,
     setEnableSearch,
+    reasoningEffort,
+    setReasoningEffort,
     submit,
     handleSuggestion,
     handleReload,
@@ -175,6 +177,8 @@ export function Chat() {
       setEnableSearch,
       enableSearch,
       quotedText,
+      reasoningEffort,
+      onReasoningEffortChange: setReasoningEffort,
     }),
     [
       input,
@@ -196,6 +200,8 @@ export function Chat() {
       setEnableSearch,
       enableSearch,
       quotedText,
+      reasoningEffort,
+      setReasoningEffort,
     ]
   )
 
