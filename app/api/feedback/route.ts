@@ -49,7 +49,6 @@ export async function POST(req: Request) {
         feedback,
         comment,
         langsmith_run_id: runId,
-        created_at: new Date().toISOString(),
       }, {
         onConflict: 'message_id,user_id',
       })
@@ -65,13 +64,17 @@ export async function POST(req: Request) {
     // Send to LangSmith if run ID is provided
     let langsmithResult = null
     if (runId) {
-      langsmithResult = await createLangSmithFeedback({
-        runId,
-        feedback,
-        score: feedback === 'upvote' ? 1 : (feedback === 'downvote' ? 0 : undefined),
-        comment,
-        userId: user.id,
-      })
+      try {
+        langsmithResult = await createLangSmithFeedback({
+          runId,
+          feedback,
+          score: feedback === 'upvote' ? 1 : (feedback === 'downvote' ? 0 : undefined),
+          comment,
+          userId: user.id,
+        })
+      } catch (e) {
+        console.warn('LangSmith feedback failed; continuing without it.', e)
+      }
     }
 
     return NextResponse.json({

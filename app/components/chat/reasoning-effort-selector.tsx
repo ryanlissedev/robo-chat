@@ -10,8 +10,9 @@ import {
 } from '@/components/ui/select'
 import { Brain, Lightning, Gauge } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
+import type { ReasoningEffort } from '@/lib/openproviders/types'
 
-export type ReasoningEffort = 'low' | 'medium' | 'high'
+export type { ReasoningEffort }
 
 interface ReasoningEffortSelectorProps {
   value: ReasoningEffort
@@ -128,6 +129,8 @@ export function ReasoningEffortCompact({
             key={option.value}
             onClick={() => !disabled && onChange(option.value)}
             disabled={disabled}
+            type="button"
+            aria-pressed={isSelected}
             className={cn(
               'p-1.5 rounded-md transition-all',
               'hover:bg-accent/50',

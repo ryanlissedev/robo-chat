@@ -145,13 +145,16 @@ export async function POST(req: Request) {
       system: effectiveSystemPrompt,
       messages: messages,
       tools,
-      maxSteps: enableSearch ? 10 : 1,
+      maxSteps: enableSearch && isGPT5Model ? 10 : 1,
       onError: (err: unknown) => {
         console.error("Streaming error occurred:", err)
         // Don't set streamError anymore - let the AI SDK handle it through the stream
       },
 
       onFinish: async ({ response }) => {
+        // Resolve final run ID from response (if available)
+        const actualRunId = extractRunId(response) || langsmithRunId
+
         // Store assistant message with LangSmith run ID
         if (supabase) {
           await storeAssistantMessage({
@@ -161,16 +164,15 @@ export async function POST(req: Request) {
               response.messages as unknown as import("@/app/types/api.types").Message[],
             message_group_id,
             model,
-            langsmithRunId,
+            langsmithRunId: actualRunId,
             reasoningEffort,
           })
         }
 
         // Update LangSmith run if enabled
-        if (langsmithRunId && isLangSmithEnabled()) {
-          const runId = extractRunId(response) || langsmithRunId
+        if (actualRunId && isLangSmithEnabled()) {
           await updateRun({
-            runId,
+            runId: actualRunId,
             outputs: {
               messages: response.messages,
               usage: response.usage,
@@ -180,7 +182,7 @@ export async function POST(req: Request) {
           // Log metrics
           if (response.usage) {
             await logMetrics({
-              runId,
+              runId: actualRunId,
               metrics: {
                 totalTokens: response.usage.totalTokens,
                 promptTokens: response.usage.promptTokens,
