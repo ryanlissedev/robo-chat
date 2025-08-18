@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
-type ThemeVariant = "hgg-professional" | "technical-industrial" | "modern-minimalist";
+type ThemeVariant = "tangerine" | "hgg-professional" | "technical-industrial" | "modern-minimalist";
 
 interface ThemeOption {
   id: ThemeVariant;
@@ -27,6 +27,18 @@ interface ThemeOption {
 }
 
 const themeOptions: ThemeOption[] = [
+  {
+    id: "tangerine",
+    name: "Tangerine",
+    description: "Modern vibrant theme with warm orange accents and clean design",
+    colors: {
+      primary: "oklch(0.6397 0.1720 36.4421)",
+      secondary: "oklch(0.9670 0.0029 264.5419)",
+      accent: "oklch(0.9119 0.0222 243.8174)"
+    },
+    features: ["Modern Design", "Warm Colors", "OKLCH Color Space", "Smooth Gradients"],
+    preview: "Contemporary interface with vibrant orange highlights and excellent readability"
+  },
   {
     id: "hgg-professional",
     name: "HGG Professional",
@@ -71,7 +83,7 @@ interface ThemeSelectorProps {
 
 export function ThemeSelector({ className }: ThemeSelectorProps) {
   const { theme, setTheme } = useTheme();
-  const [selectedVariant, setSelectedVariant] = React.useState<ThemeVariant>("hgg-professional");
+  const [selectedVariant, setSelectedVariant] = React.useState<ThemeVariant>("tangerine");
   const [isDarkMode, setIsDarkMode] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
 
@@ -88,6 +100,7 @@ export function ThemeSelector({ className }: ThemeSelectorProps) {
     
     // Apply theme variant class to document
     document.documentElement.classList.remove(
+      "theme-tangerine",
       "theme-hgg-professional",
       "theme-technical-industrial", 
       "theme-modern-minimalist"
@@ -133,7 +146,7 @@ export function ThemeSelector({ className }: ThemeSelectorProps) {
       </CardHeader>
       <CardContent>
         <Tabs value={selectedVariant} onValueChange={handleVariantSelect} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             {themeOptions.map((option) => (
               <TabsTrigger
                 key={option.id}

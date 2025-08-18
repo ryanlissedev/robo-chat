@@ -1,0 +1,264 @@
+/* Tangerine Theme - Modern vibrant theme with warm orange accents */
+/* Based on the Tangerine theme from shadcn/ui */
+
+.theme-tangerine {
+  /* Tangerine color palette */
+  --tangerine-primary: oklch(0.6397 0.1720 36.4421);
+  --tangerine-accent: oklch(0.9119 0.0222 243.8174);
+  --tangerine-secondary: oklch(0.9670 0.0029 264.5419);
+  
+  /* Light theme variables */
+  --background: oklch(0.9383 0.0042 236.4993);
+  --foreground: oklch(0.3211 0 0);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0.3211 0 0);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.3211 0 0);
+  --primary: var(--tangerine-primary);
+  --primary-foreground: oklch(1.0000 0 0);
+  --secondary: var(--tangerine-secondary);
+  --secondary-foreground: oklch(0.4461 0.0263 256.8018);
+  --muted: oklch(0.9846 0.0017 247.8389);
+  --muted-foreground: oklch(0.5510 0.0234 264.3637);
+  --accent: var(--tangerine-accent);
+  --accent-foreground: oklch(0.3791 0.1378 265.5222);
+  --destructive: oklch(0.6368 0.2078 25.3313);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.9022 0.0052 247.8822);
+  --input: oklch(0.9700 0.0029 264.5420);
+  --ring: var(--tangerine-primary);
+  
+  /* Chart colors */
+  --chart-1: oklch(0.7156 0.0605 248.6845);
+  --chart-2: oklch(0.7875 0.0917 35.9616);
+  --chart-3: oklch(0.5778 0.0759 254.1573);
+  --chart-4: oklch(0.5016 0.0849 259.4902);
+  --chart-5: oklch(0.4241 0.0952 264.0306);
+  
+  /* Sidebar specific colors */
+  --sidebar: oklch(0.9030 0.0046 258.3257);
+  --sidebar-foreground: oklch(0.3211 0 0);
+  --sidebar-primary: var(--tangerine-primary);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: var(--tangerine-accent);
+  --sidebar-accent-foreground: oklch(0.3791 0.1378 265.5222);
+  --sidebar-border: oklch(0.9276 0.0058 264.5313);
+  --sidebar-ring: var(--tangerine-primary);
+  
+  /* Tangerine design elements */
+  --shadow-tangerine: 0px 1px 3px 0px hsl(0 0% 0% / 0.10), 0px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --border-radius-tangerine: 0.75rem;
+  --spacing-tangerine: 0.25rem;
+}
+
+.dark .theme-tangerine {
+  /* Dark theme for Tangerine */
+  --background: oklch(0.2598 0.0306 262.6666);
+  --foreground: oklch(0.9219 0 0);
+  --card: oklch(0.3106 0.0301 268.6365);
+  --card-foreground: oklch(0.9219 0 0);
+  --popover: oklch(0.2900 0.0249 268.3986);
+  --popover-foreground: oklch(0.9219 0 0);
+  --primary: var(--tangerine-primary);
+  --primary-foreground: oklch(1.0000 0 0);
+  --secondary: oklch(0.3095 0.0266 266.7132);
+  --secondary-foreground: oklch(0.9219 0 0);
+  --muted: oklch(0.3095 0.0266 266.7132);
+  --muted-foreground: oklch(0.7155 0 0);
+  --accent: oklch(0.3380 0.0589 267.5867);
+  --accent-foreground: oklch(0.8823 0.0571 254.1284);
+  --destructive: oklch(0.6368 0.2078 25.3313);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.3843 0.0301 269.7337);
+  --input: oklch(0.3843 0.0301 269.7337);
+  --ring: var(--tangerine-primary);
+  
+  /* Chart colors for dark theme */
+  --chart-1: oklch(0.7156 0.0605 248.6845);
+  --chart-2: oklch(0.7693 0.0876 34.1875);
+  --chart-3: oklch(0.5778 0.0759 254.1573);
+  --chart-4: oklch(0.5016 0.0849 259.4902);
+  --chart-5: oklch(0.4241 0.0952 264.0306);
+  
+  /* Dark sidebar */
+  --sidebar: oklch(0.3100 0.0283 267.7408);
+  --sidebar-foreground: oklch(0.9219 0 0);
+  --sidebar-primary: var(--tangerine-primary);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.3380 0.0589 267.5867);
+  --sidebar-accent-foreground: oklch(0.8823 0.0571 254.1284);
+  --sidebar-border: oklch(0.3843 0.0301 269.7337);
+  --sidebar-ring: var(--tangerine-primary);
+}
+
+/* Tangerine theme enhancements */
+.theme-tangerine {
+  --font-sans: Inter, sans-serif;
+  --font-serif: Source Serif 4, serif;
+  --font-mono: JetBrains Mono, monospace;
+  
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+
+.theme-tangerine .card {
+  border-radius: var(--border-radius-tangerine);
+  box-shadow: var(--shadow-tangerine);
+  border: 1px solid var(--border);
+}
+
+.theme-tangerine .button {
+  border-radius: var(--border-radius-tangerine);
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.theme-tangerine .button-primary {
+  background: var(--tangerine-primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.theme-tangerine .button-primary:hover {
+  background: oklch(from var(--tangerine-primary) calc(l - 0.05) c h);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.18);
+}
+
+.theme-tangerine .chat-message {
+  border-radius: var(--border-radius-tangerine);
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-tangerine);
+}
+
+.theme-tangerine .chat-message.assistant {
+  background: var(--muted);
+  border-left: 3px solid var(--tangerine-accent);
+}
+
+.theme-tangerine .chat-message.user {
+  background: oklch(from var(--tangerine-primary) l c h / 0.1);
+  border-left: 3px solid var(--tangerine-primary);
+}
+
+.theme-tangerine .sidebar {
+  border-right: 1px solid var(--border);
+  background: var(--sidebar);
+}
+
+.theme-tangerine .sidebar-item {
+  border-radius: calc(var(--border-radius-tangerine) - 4px);
+  padding: 12px 16px;
+  margin: 2px 8px;
+  transition: all 0.15s ease;
+}
+
+.theme-tangerine .sidebar-item:hover {
+  background: var(--muted);
+  transform: translateX(2px);
+}
+
+.theme-tangerine .sidebar-item.active {
+  background: var(--tangerine-primary);
+  color: var(--primary-foreground);
+}
+
+.theme-tangerine .input {
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-tangerine);
+  background: var(--input);
+  padding: 12px 16px;
+  transition: all 0.15s ease;
+}
+
+.theme-tangerine .input:focus {
+  border-color: var(--tangerine-primary);
+  box-shadow: 0 0 0 3px oklch(from var(--tangerine-primary) l c h / 0.2);
+  outline: none;
+}
+
+/* Tangerine typography */
+.theme-tangerine h1 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 2.25rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+  color: var(--foreground);
+}
+
+.theme-tangerine h2 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.875rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.75rem;
+  color: var(--foreground);
+}
+
+.theme-tangerine h3 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.5rem;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+  color: var(--foreground);
+}
+
+.theme-tangerine p {
+  margin-bottom: 1rem;
+  color: var(--foreground);
+}
+
+.theme-tangerine .text-muted {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.theme-tangerine .code {
+  font-family: var(--font-mono);
+  background: var(--muted);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.875em;
+  border: 1px solid var(--border);
+}
+
+.theme-tangerine .code-block {
+  font-family: var(--font-mono);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-tangerine);
+  padding: 16px;
+  overflow-x: auto;
+}
+
+/* Focus states for accessibility */
+.theme-tangerine *:focus-visible {
+  outline: 2px solid var(--tangerine-primary);
+  outline-offset: 2px;
+}
+
+/* Tangerine scrollbars */
+.theme-tangerine ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.theme-tangerine ::-webkit-scrollbar-track {
+  background: var(--muted);
+  border-radius: 4px;
+}
+
+.theme-tangerine ::-webkit-scrollbar-thumb {
+  background: var(--tangerine-primary);
+  border-radius: 4px;
+}
+
+.theme-tangerine ::-webkit-scrollbar-thumb:hover {
+  background: oklch(from var(--tangerine-primary) calc(l - 0.1) c h);
+}

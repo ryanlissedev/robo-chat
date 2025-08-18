@@ -57,7 +57,7 @@ export default async function RootLayout({
         />
       ) : null}
       <body
-        className={`${geistSans.variable} ${geistMono.variable} theme-hgg-professional antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} theme-tangerine antialiased`}
       >
         <TanstackQueryProvider>
           <LayoutClient />
