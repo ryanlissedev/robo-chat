@@ -48,7 +48,11 @@ const safePropertyList = [
 safePropertyList.forEach((property) => {
   if (window[property as keyof Window] && !(property in globalThis)) {
     try {
-      globalThis[property as keyof typeof globalThis] = window[property as keyof Window] as any
+      Object.defineProperty(globalThis, property, {
+        value: window[property as keyof Window],
+        writable: true,
+        configurable: true
+      })
     } catch (e) {
       // Skip readonly properties
     }
@@ -56,10 +60,10 @@ safePropertyList.forEach((property) => {
 })
 
 // Ensure critical DOM APIs are available
-globalThis.HTMLElement = window.HTMLElement
-globalThis.Element = window.Element
-globalThis.Document = window.Document
-globalThis.Node = window.Node
+Object.defineProperty(globalThis, 'HTMLElement', { value: window.HTMLElement, writable: true, configurable: true })
+Object.defineProperty(globalThis, 'Element', { value: window.Element, writable: true, configurable: true })
+Object.defineProperty(globalThis, 'Document', { value: window.Document, writable: true, configurable: true })
+Object.defineProperty(globalThis, 'Node', { value: window.Node, writable: true, configurable: true })
 
 // Set up commonly used HTML elements
 const elementTypes = [
@@ -71,7 +75,11 @@ const elementTypes = [
 
 elementTypes.forEach(elementType => {
   if (window[elementType as keyof Window]) {
-    globalThis[elementType as keyof typeof globalThis] = window[elementType as keyof Window] as any
+    Object.defineProperty(globalThis, elementType, {
+      value: window[elementType as keyof Window],
+      writable: true,
+      configurable: true
+    })
   }
 })
 
@@ -82,7 +90,11 @@ const eventTypes = [
 
 eventTypes.forEach(eventType => {
   if (window[eventType as keyof Window]) {
-    globalThis[eventType as keyof typeof globalThis] = window[eventType as keyof Window] as any
+    Object.defineProperty(globalThis, eventType, {
+      value: window[eventType as keyof Window],
+      writable: true,
+      configurable: true
+    })
   }
 })
 
@@ -93,7 +105,11 @@ const browserAPIs = [
 
 browserAPIs.forEach(api => {
   if (window[api as keyof Window]) {
-    globalThis[api as keyof typeof globalThis] = window[api as keyof Window] as any
+    Object.defineProperty(globalThis, api, {
+      value: window[api as keyof Window],
+      writable: true,
+      configurable: true
+    })
   }
 })
 

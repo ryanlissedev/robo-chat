@@ -150,10 +150,12 @@ describe('Chat API Route', () => {
 
     it('should handle internal errors gracefully', async () => {
       // Mock getAllModels to throw an error to simulate internal failure
-      const { getAllModels } = await import('@/lib/models')
-      getAllModels.mockImplementation(() => {
-        throw new Error('Database connection failed')
-      })
+      // Note: In Bun test, we need to re-mock the module with the error implementation
+      mock.module('@/lib/models', () => ({
+        getAllModels: mock(() => {
+          throw new Error('Database connection failed')
+        })
+      }))
 
       const request = new NextRequest('http://localhost:3000/api/chat', {
         method: 'POST',

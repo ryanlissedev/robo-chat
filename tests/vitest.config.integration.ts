@@ -1,7 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
+import { resolve } from 'node:path'
 
 /**
  * Vitest Configuration for Integration Tests
@@ -9,7 +8,7 @@ import { resolve } from 'path'
  */
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [],
   test: {
     name: 'integration',
     environment: 'node', // Node environment for database operations
@@ -79,7 +78,7 @@ export default defineConfig({
         }
       }
     },
-    reporter: [
+    reporters: [
       'verbose',
       'json',
       'html'
@@ -112,7 +111,7 @@ export default defineConfig({
     }
   },
   esbuild: {
-    target: 'node18'
+    target: 'es2020'
   },
   define: {
     'process.env.NODE_ENV': '"test"'

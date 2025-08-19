@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
-import { Client } from 'pg'
+import { Client, Pool } from 'pg'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import * as schema from '../../lib/db/schema'
 import { randomUUID } from 'crypto'
 
@@ -20,7 +21,7 @@ export interface TestDatabaseConfig {
 
 export class TestDatabase {
   private client: Client | null = null
-  private db: ReturnType<typeof drizzle> | null = null
+  private db: NodePgDatabase<typeof schema> | null = null
   private testSchemaName: string
   private isSetup = false
 
@@ -49,7 +50,7 @@ export class TestDatabase {
     await this.client.query(`CREATE SCHEMA IF NOT EXISTS "${this.testSchemaName}"`)
     await this.client.query(`SET search_path TO "${this.testSchemaName}"`)
 
-    this.db = drizzle(this.client, { schema })
+    this.db = drizzle(this.client, { schema, logger: false })
 
     // Run migrations in test schema
     await this.runMigrations()

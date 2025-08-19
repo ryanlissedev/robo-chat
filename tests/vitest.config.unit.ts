@@ -1,7 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
+import { resolve } from 'node:path'
 
 /**
  * Vitest Configuration for Unit Tests
@@ -9,7 +8,7 @@ import { resolve } from 'path'
  */
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [],
   test: {
     name: 'unit',
     environment: 'jsdom', // Browser-like environment for React components
@@ -79,7 +78,7 @@ export default defineConfig({
         }
       }
     },
-    reporter: [
+    reporters: [
       'verbose',
       'json',
       'html'

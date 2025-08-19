@@ -18,7 +18,7 @@ import type {
 
 export interface DatabaseFactoryOptions {
   overrides?: Partial<any>
-  relations?: Record<string, string>
+  relations?: Record<string, string | null | undefined>
 }
 
 export class DatabaseFactories {
@@ -232,12 +232,12 @@ export class DatabaseFactories {
     
     const entities: {
       user: NewUser
-      project?: ReturnType<typeof this.createProject>
-      chat?: ReturnType<typeof this.createChat>
-      messages?: ReturnType<typeof this.createMessage>[]
-      apiKeys?: ReturnType<typeof this.createUserKey>[]
-      preferences?: ReturnType<typeof this.createUserPreferences>
-      retrievalSettings?: ReturnType<typeof this.createUserRetrievalSettings>
+      project?: ReturnType<typeof DatabaseFactories.createProject>
+      chat?: ReturnType<typeof DatabaseFactories.createChat>
+      messages?: ReturnType<typeof DatabaseFactories.createMessage>[]
+      apiKeys?: ReturnType<typeof DatabaseFactories.createUserKey>[]
+      preferences?: ReturnType<typeof DatabaseFactories.createUserPreferences>
+      retrievalSettings?: ReturnType<typeof DatabaseFactories.createUserRetrievalSettings>
     } = { user }
 
     if (options.includeProject) {
@@ -246,7 +246,7 @@ export class DatabaseFactories {
 
     if (options.includeChat) {
       entities.chat = this.createChat(user.id!, {
-        relations: { projectId: entities.project?.id }
+        relations: { projectId: entities.project?.id || undefined }
       })
     }
 

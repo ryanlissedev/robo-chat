@@ -4,7 +4,8 @@ import DatabaseFactories from '../factories/database-factories'
 import * as dbOperations from '../../lib/db/operations'
 import { encryptApiKey, decryptApiKey } from '../../lib/security/encryption'
 import { eq } from 'drizzle-orm'
-import { users, chats, messages, userKeys } from '../../lib/db/schema'
+import { users, chats, messages, messageFeedback, userKeys } from '../../lib/db/schema'
+import type { User, UserKey, Chat } from '../../lib/db/schema'
 
 /**
  * Database Operations Acceptance Tests
@@ -174,7 +175,7 @@ describe('Database Operations - Acceptance Tests', () => {
       const userChats = await dbOperations.getUserChats(createdUser.id)
       expect(userChats).toHaveLength(4)
 
-      const retrievedTitles = userChats.map(chat => chat.title).sort()
+      const retrievedTitles = userChats.map((chat: Chat) => chat.title).sort()
       expect(retrievedTitles).toEqual(chatTitles.sort())
     })
   })
@@ -363,7 +364,7 @@ describe('Database Operations - Acceptance Tests', () => {
       const userKeys = await dbOperations.getUserApiKeys(createdUser.id)
       expect(userKeys).toHaveLength(3)
 
-      const providers = userKeys.map(k => k.provider).sort()
+      const providers = userKeys.map((k: UserKey) => k.provider).sort()
       expect(providers).toEqual(['anthropic', 'google', 'openai'])
     })
 
@@ -394,7 +395,7 @@ describe('Database Operations - Acceptance Tests', () => {
   describe('Rate Limiting Operations', () => {
     test('should handle daily limit reset functionality', async () => {
       // Given: Users with various message counts
-      const users = [
+      const usersData = [
         DatabaseFactories.createUser({ overrides: { dailyMessageCount: 50 } }),
         DatabaseFactories.createUser({ overrides: { dailyMessageCount: 25, dailyProMessageCount: 10 } }),
         DatabaseFactories.createUser({ overrides: { dailyProMessageCount: 5 } })
@@ -402,7 +403,7 @@ describe('Database Operations - Acceptance Tests', () => {
 
       const db = testDb.getDb()
       const createdUsers = await Promise.all(
-        users.map(user => db.insert(users).values(user).returning().then(result => result[0]))
+        usersData.map(user => db.insert(users).values(user).returning().then(result => result[0]))
       )
 
       // When: Daily limits are reset
@@ -410,7 +411,7 @@ describe('Database Operations - Acceptance Tests', () => {
 
       // Then: All users should have reset counts
       for (const user of createdUsers) {
-        const counts = await dbOperations.getUserMessageCounts(user.id)
+        const counts = await dbOperations.getUserMessageCounts((user as User).id)
         expect(counts.dailyMessageCount).toBe(0)
         expect(counts.dailyProMessageCount).toBe(0)
       }
@@ -472,9 +473,11 @@ describe('Database Operations - Acceptance Tests', () => {
       )
 
       // Then: Feedback should be stored correctly
-      const storedFeedback = await db.query.messageFeedback.findFirst({
-        where: eq(db.query.messageFeedback.messageId, message.id)
-      })
+      const [storedFeedback] = await db
+        .select()
+        .from(messageFeedback)
+        .where(eq(messageFeedback.messageId, message.id))
+        .limit(1)
 
       expect(storedFeedback).toBeDefined()
       expect(storedFeedback?.feedbackType).toBe('positive')
@@ -506,9 +509,11 @@ describe('Database Operations - Acceptance Tests', () => {
       )
 
       // Then: Feedback should be stored correctly
-      const storedFeedback = await db.query.messageFeedback.findFirst({
-        where: eq(db.query.messageFeedback.messageId, message.id)
-      })
+      const [storedFeedback] = await db
+        .select()
+        .from(messageFeedback)
+        .where(eq(messageFeedback.messageId, message.id))
+        .limit(1)
 
       expect(storedFeedback?.feedbackType).toBe('negative')
       expect(storedFeedback?.comment).toBe('Information seems outdated')

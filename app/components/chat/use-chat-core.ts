@@ -1,4 +1,5 @@
 import type { UIMessage, FileUIPart } from 'ai';
+import { DefaultChatTransport } from 'ai';
 import type { Attachment } from '@/app/types/api.types';
 import { useChat } from '@ai-sdk/react';
 import { useSearchParams } from 'next/navigation';
@@ -87,7 +88,9 @@ export function useChatCore({
   // Initialize useChat with AI SDK v5 pattern
   const chatHookResult = useChat({
     id: chatId || undefined,
-    api: API_ROUTE_CHAT,
+    transport: new DefaultChatTransport({
+      api: API_ROUTE_CHAT,
+    }),
     messages: initialMessagesProp,
     onError: handleError,
     onFinish: (options: { message: UIMessage }) => {

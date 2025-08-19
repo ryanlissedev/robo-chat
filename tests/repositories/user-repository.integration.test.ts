@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { TestDatabase, TestDatabaseManager } from '../utils/test-database'
 import DatabaseFactories from '../factories/database-factories'
-import { eq, and, gte, lt, desc, asc } from 'drizzle-orm'
+import { eq, and, gte, lt, desc, asc, sql } from 'drizzle-orm'
 import { users, userPreferences, userRetrievalSettings } from '../../lib/db/schema'
 import type { NewUser, User } from '../../lib/db/schema'
 
@@ -423,7 +423,7 @@ describe('User Repository Integration Tests', () => {
         .from(users)
         .where(
           // Using JSONB contains operator
-          db.raw(`favorite_models @> '["gpt-4o"]'::jsonb`)
+          sql`favorite_models @> '["gpt-4o"]'::jsonb`
         )
 
       // Then: Only users with gpt-4o should be returned
@@ -447,11 +447,11 @@ describe('User Repository Integration Tests', () => {
       // When: Aggregating user statistics
       const stats = await db
         .select({
-          totalUsers: db.raw('COUNT(*)').mapWith(Number),
-          registeredUsers: db.raw('COUNT(*) FILTER (WHERE anonymous = false)').mapWith(Number),
-          guestUsers: db.raw('COUNT(*) FILTER (WHERE anonymous = true)').mapWith(Number),
-          avgDailyMessages: db.raw('AVG(daily_message_count)').mapWith(Number),
-          totalDailyMessages: db.raw('SUM(daily_message_count)').mapWith(Number)
+          totalUsers: sql<number>`COUNT(*)::int`,
+          registeredUsers: sql<number>`COUNT(*) FILTER (WHERE anonymous = false)::int`,
+          guestUsers: sql<number>`COUNT(*) FILTER (WHERE anonymous = true)::int`,
+          avgDailyMessages: sql<number>`AVG(daily_message_count)::float`,
+          totalDailyMessages: sql<number>`SUM(daily_message_count)::int`
         })
         .from(users)
 

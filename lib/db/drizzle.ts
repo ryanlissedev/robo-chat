@@ -64,8 +64,8 @@ if (isDatabaseConfigured()) {
       onnotice: () => {}, // Suppress notices
     })
 
-    // Drizzle instance with schema
-    db = drizzle(client, { schema })
+    // Drizzle instance with schema and query support
+    db = drizzle(client, { schema, logger: false })
   } catch (error) {
     console.warn('Failed to initialize database connection:', error)
     // Create a mock db that returns safe defaults

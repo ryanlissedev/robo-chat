@@ -1,7 +1,7 @@
 // FileUIPart import removed as it's not used
 import type { UIMessage as MessageAISDK, ToolSet } from 'ai';
-import type { Attachment } from '@/app/types/api.types';
 import { streamText } from 'ai';
+import type { Attachment } from '@/app/types/api.types';
 import { FILE_SEARCH_SYSTEM_PROMPT } from '@/lib/config';
 import {
   createRun,
@@ -13,6 +13,7 @@ import {
 import { getAllModels } from '@/lib/models';
 import { getProviderForModel } from '@/lib/openproviders/provider-map';
 import type { ProviderWithoutOllama } from '@/lib/user-keys';
+import { getOrCreateDefaultVectorStore } from '@/lib/vector-store/manager';
 import {
   incrementMessageCount,
   logUserMessage,
@@ -34,7 +35,10 @@ function getMessageAttachments(message: MessageAISDK): Attachment[] {
   if (!message.parts) return [];
   const fileParts = message.parts.filter(
     (part) => part.type === 'file'
-  ) as unknown as Array<{ type: 'file'; file: { name?: string; type?: string; size?: number; url?: string } }>;
+  ) as unknown as Array<{
+    type: 'file';
+    file: { name?: string; type?: string; size?: number; url?: string };
+  }>;
   return fileParts.map((part) => ({
     name: part.file?.name || 'unknown',
     contentType: part.file?.type || 'application/octet-stream',
@@ -83,7 +87,7 @@ export async function POST(req: Request) {
     } = requestData;
 
     console.log('Chat API received:', { messages, chatId, userId, model });
-    
+
     if (!(messages && chatId && userId)) {
       return new Response(
         JSON.stringify({ error: 'Error, missing information' }),
@@ -101,24 +105,26 @@ export async function POST(req: Request) {
     // Only check database for authenticated users
     if (supabase && isAuthenticated) {
       const { data: existingChat, error: chatError } = await supabase
-        .from("chats")
-        .select("id")
-        .eq("id", chatId)
-        .eq("user_id", userId)
+        .from('chats')
+        .select('id')
+        .eq('id', chatId)
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (chatError) {
-        console.error("Error checking chat existence:", chatError);
+        console.error('Error checking chat existence:', chatError);
         return new Response(
-          JSON.stringify({ error: "Database error while checking chat" }),
+          JSON.stringify({ error: 'Database error while checking chat' }),
           { status: 500 }
         );
       }
 
       if (!existingChat) {
-        console.error("Chat not found:", { chatId, userId });
+        console.error('Chat not found:', { chatId, userId });
         return new Response(
-          JSON.stringify({ error: "Chat not found. Please refresh and try again." }),
+          JSON.stringify({
+            error: 'Chat not found. Please refresh and try again.',
+          }),
           { status: 404 }
         );
       }
@@ -195,8 +201,8 @@ export async function POST(req: Request) {
       langsmithRunId = (run as { id?: string })?.id || null;
     }
 
-    // Temporarily disable file search tool to fix schema issue
-    // const tools: ToolSet = { fileSearch: fileSearchTool };
+    // File search is now handled via AI SDK's experimental_toolResources
+    // No custom tools needed - AI SDK handles file search automatically
     const tools: ToolSet = {};
 
     // Configure model settings with reasoning effort
@@ -211,26 +217,63 @@ export async function POST(req: Request) {
     };
 
     console.log('Before streamText - messages:', messages);
-    console.log('Messages type:', typeof messages, 'Array?', Array.isArray(messages));
-    
+    console.log(
+      'Messages type:',
+      typeof messages,
+      'Array?',
+      Array.isArray(messages)
+    );
+
     // Convert simple messages to AI SDK v5 format with parts array
-    const uiMessages = messages.map(msg => ({
+    const uiMessages = messages.map((msg) => ({
       id: `msg-${Date.now()}-${Math.random()}`,
       role: msg.role,
       content: getMessageContent(msg),
       parts: [
         {
           type: 'text' as const,
-          text: getMessageContent(msg)
-        }
+          text: getMessageContent(msg),
+        },
       ],
-      createdAt: new Date()
+      createdAt: new Date(),
     }));
-    
+
     console.log('UI Messages:', uiMessages);
-    
+
+    // Get or create vector store for file search (only for OpenAI models)
+    let vectorStoreId: string | null = null;
+    if (provider === 'openai' && apiKey) {
+      try {
+        vectorStoreId = await getOrCreateDefaultVectorStore(apiKey);
+        console.log('Using vector store:', vectorStoreId);
+      } catch (error) {
+        console.warn(
+          'Failed to get vector store, continuing without file search:',
+          error
+        );
+      }
+    }
+
+    // Configure model with file search if vector store is available
+    const modelWithFileSearch =
+      vectorStoreId && provider === 'openai'
+        ? modelConfig.apiSdk(apiKey, {
+            ...modelSettings,
+            experimental_toolResources: {
+              fileSearch: {
+                vectorStoreIds: [vectorStoreId],
+                maxNumResults: 10,
+                rankingOptions: {
+                  ranker: 'default_2024_08_21',
+                  scoreThreshold: 0.5,
+                },
+              },
+            },
+          })
+        : modelConfig.apiSdk(apiKey, modelSettings);
+
     const result = streamText({
-      model: modelConfig.apiSdk(apiKey, modelSettings) as Parameters<typeof streamText>[0]['model'],
+      model: modelWithFileSearch as Parameters<typeof streamText>[0]['model'],
       system: effectiveSystemPrompt,
       messages: uiMessages,
       tools,

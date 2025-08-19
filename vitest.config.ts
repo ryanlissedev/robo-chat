@@ -1,10 +1,9 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
+import { resolve } from 'node:path'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [],
   test: {
     environment: 'jsdom',
     globals: true,
@@ -13,7 +12,8 @@ export default defineConfig({
     exclude: ['**/playwright.config.ts', '**/*.spec.ts', '**/node_modules/**', '**/dist/**', '**/cypress/**', '**/.next/**'],
     testTimeout: 10000,
     coverage: {
-      enabled: false
+      enabled: false,
+      provider: 'v8'
     }
   },
   resolve: {

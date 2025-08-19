@@ -1,15 +1,17 @@
-"use client";
+'use client';
 
-  const SINGLE_MESSAGE_LAYOUT_DURATION = 0.3;
+const SINGLE_MESSAGE_LAYOUT_DURATION = 0.3;
 
 import { AnimatePresence, motion } from 'motion/react';
 import dynamic from 'next/dynamic';
-import { redirect } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { Conversation } from '@/app/components/chat/conversation';
 import { useModel } from '@/app/components/chat/use-model';
 import { ChatInput } from '@/app/components/chat-input/chat-input';
 import { useChatDraft } from '@/app/hooks/use-chat-draft';
+import { toast } from '@/components/ui/toast';
 import { useChats } from '@/lib/chat-store/chats/provider';
 import { useMessages } from '@/lib/chat-store/messages/provider';
 import { useChatSession } from '@/lib/chat-store/session/provider';
@@ -17,7 +19,6 @@ import { SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
 import { useUserPreferences } from '@/lib/user-preference-store/provider';
 import { useUser } from '@/lib/user-store/provider';
 import { cn } from '@/lib/utils';
-import { toast } from '@/components/ui/toast';
 import { useVoiceConnection } from '../voice/use-voice-connection';
 import { useChatCore } from './use-chat-core';
 import { useChatOperations } from './use-chat-operations';
@@ -34,6 +35,7 @@ const DialogAuth = dynamic(
 );
 
 export function Chat() {
+  const router = useRouter();
   const { chatId } = useChatSession();
   const {
     createNewChat,
@@ -55,7 +57,8 @@ export function Chat() {
 
   // Filter out 'data' role messages for AI SDK v2 compatibility
   const initialMessages = useMemo(
-    () => allMessages.filter(msg => (msg as { role?: string }).role !== 'data'),
+    () =>
+      allMessages.filter((msg) => (msg as { role?: string }).role !== 'data'),
     [allMessages]
   );
 
@@ -259,26 +262,33 @@ export function Chat() {
 
   // Handle redirect for invalid chatId - only redirect if we're certain the chat doesn't exist
   // and we're not in a transient state during chat creation
-  if (
-    chatId &&
+  const shouldRedirectHome =
+    !!chatId &&
     !isChatsLoading &&
     !currentChat &&
     !isSubmitting &&
     status === 'ready' &&
     messages.length === 0 &&
-    !hasSentFirstMessageRef.current // Don't redirect if we've already sent a message in this session
-  ) {
-    return redirect('/');
+    !hasSentFirstMessageRef.current; // Don't redirect if we've already sent a message in this session
+
+  useEffect(() => {
+    if (shouldRedirectHome) {
+      router.replace('/');
+    }
+  }, [shouldRedirectHome, router]);
+
+  if (shouldRedirectHome) {
+    return null;
   }
 
   const showOnboarding = !chatId && messages.length === 0;
 
   return (
     <div
-      data-testid="chat-container"
       className={cn(
         '@container/main relative flex h-full flex-col items-center justify-end md:justify-center'
       )}
+      data-testid="chat-container"
     >
       <DialogAuth open={hasDialogAuth} setOpen={setHasDialogAuth} />
 

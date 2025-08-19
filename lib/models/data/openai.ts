@@ -119,7 +119,7 @@ const openaiModels: ModelConfig[] = [
     tools: true,
     audio: false,
     openSource: false,
-    speed: "Very Fast",
+    speed: "Fast",
     website: "https://openai.com",
     apiDocs: "https://platform.openai.com/docs/models/gpt-5",
     modelPage: "https://platform.openai.com/docs/models/gpt-5-nano",

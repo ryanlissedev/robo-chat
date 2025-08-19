@@ -34,8 +34,12 @@ beforeAll(async () => {
     throw error
   }
   
-  // Configure global test settings
-  process.env.NODE_ENV = 'test'
+  // Configure global test settings - use defineProperty for read-only properties
+  Object.defineProperty(process.env, 'NODE_ENV', {
+    value: 'test',
+    writable: true,
+    configurable: true
+  })
   process.env.DISABLE_RATE_LIMITING = 'true'
   process.env.LANGSMITH_TRACING = 'false'
   
@@ -81,9 +85,16 @@ process.on('uncaughtException', (error) => {
 // Test utilities available globally
 declare global {
   var testUtils: {
+    // Common utilities shared between unit and integration tests
     delay: (ms: number) => Promise<void>
     randomId: () => string
     mockTimestamp: (offset?: number) => Date
+    // Unit test specific utilities (optional for integration tests)
+    createMockUser?: () => any
+    createMockChat?: () => any
+    createMockMessage?: () => any
+    waitFor?: (fn: () => boolean, timeout?: number) => Promise<void>
+    mockApiResponse?: (data: any, options?: { status?: number; delay?: number }) => void
   }
 }
 

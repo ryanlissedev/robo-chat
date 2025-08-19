@@ -10,8 +10,12 @@ import '@testing-library/jest-dom'
 beforeAll(() => {
   console.log('🔧 Setting up unit test environment...')
   
-  // Mock environment variables
-  process.env.NODE_ENV = 'test'
+  // Mock environment variables - use defineProperty for read-only properties
+  Object.defineProperty(process.env, 'NODE_ENV', {
+    value: 'test',
+    writable: true,
+    configurable: true
+  })
   process.env.ENCRYPTION_KEY = 'unit-test-encryption-key-32-chars'
   process.env.ENCRYPTION_SALT = 'unit-test-salt'
   process.env.LANGSMITH_TRACING = 'false'
@@ -149,24 +153,12 @@ beforeAll(() => {
 
   // Mock fetch for API calls
   global.fetch = vi.fn(() =>
-    Promise.resolve({
-      ok: true,
+    Promise.resolve(new Response('{}', {
       status: 200,
-      json: () => Promise.resolve({}),
-      text: () => Promise.resolve(''),
-      headers: new Headers(),
-      redirected: false,
       statusText: 'OK',
-      type: 'default' as ResponseType,
-      url: '',
-      clone: vi.fn(),
-      body: null,
-      bodyUsed: false,
-      arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-      blob: () => Promise.resolve(new Blob()),
-      formData: () => Promise.resolve(new FormData())
-    } as Response)
-  )
+      headers: new Headers()
+    }))
+  ) as any
 
   console.log('✅ Unit test environment ready')
 })
@@ -190,9 +182,13 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+// Import vitest expect types
+import { expect } from 'vitest'
+import type { expect as vitestExpect } from 'vitest'
+
 // Extend expect with custom matchers
-expect.extend({
-  toBeValidUUID(received) {
+;(expect as typeof vitestExpect).extend({
+  toBeValidUUID(received: any) {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     const pass = typeof received === 'string' && uuidRegex.test(received)
     
@@ -202,7 +198,7 @@ expect.extend({
     }
   },
 
-  toBeValidEmail(received) {
+  toBeValidEmail(received: any) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     const pass = typeof received === 'string' && emailRegex.test(received)
     
@@ -212,7 +208,7 @@ expect.extend({
     }
   },
 
-  toBeWithinTimeRange(received, expected, toleranceMs = 1000) {
+  toBeWithinTimeRange(received: any, expected: any, toleranceMs = 1000) {
     const receivedTime = new Date(received).getTime()
     const expectedTime = new Date(expected).getTime()
     const diff = Math.abs(receivedTime - expectedTime)
@@ -222,17 +218,31 @@ expect.extend({
       message: () => `expected ${received} to be within ${toleranceMs}ms of ${expected}, but was ${diff}ms away`,
       pass
     }
+  },
+
+  toStartWith(received: any, expected: any) {
+    const pass = typeof received === 'string' && typeof expected === 'string' && received.startsWith(expected)
+    
+    return {
+      message: () => `expected ${received} to start with ${expected}`,
+      pass
+    }
   }
 })
 
 // Global test utilities
 declare global {
   var testUtils: {
-    createMockUser: () => any
-    createMockChat: () => any
-    createMockMessage: () => any
-    waitFor: (fn: () => boolean, timeout?: number) => Promise<void>
-    mockApiResponse: (data: any, options?: { status?: number; delay?: number }) => void
+    // Common utilities shared between unit and integration tests
+    delay: (ms: number) => Promise<void>
+    randomId: () => string
+    mockTimestamp: (offset?: number) => Date
+    // Unit test specific utilities
+    createMockUser?: () => any
+    createMockChat?: () => any
+    createMockMessage?: () => any
+    waitFor?: (fn: () => boolean, timeout?: number) => Promise<void>
+    mockApiResponse?: (data: any, options?: { status?: number; delay?: number }) => void
   }
 
   namespace Vi {
@@ -240,11 +250,36 @@ declare global {
       toBeValidUUID(): T
       toBeValidEmail(): T
       toBeWithinTimeRange(expected: string | Date, toleranceMs?: number): T
+      toStartWith(expected: string): T
     }
   }
 }
 
+// Add Vitest type augmentation for custom matchers
+declare module 'vitest' {
+  interface Assertion<T = any> {
+    toBeValidUUID(): T
+    toBeValidEmail(): T
+    toBeWithinTimeRange(expected: string | Date, toleranceMs?: number): T
+    toStartWith(expected: string): T
+  }
+  interface AsymmetricMatchersContaining {
+    toBeValidUUID(): any
+    toBeValidEmail(): any
+    toBeWithinTimeRange(expected: string | Date, toleranceMs?: number): any
+    toStartWith(expected: string): any
+  }
+}
+
 globalThis.testUtils = {
+  // Common utilities shared between unit and integration tests
+  delay: (ms: number) => new Promise(resolve => setTimeout(resolve, ms)),
+  
+  randomId: () => Math.random().toString(36).substr(2, 9),
+  
+  mockTimestamp: (offset: number = 0) => new Date(Date.now() + offset),
+
+  // Unit test specific utilities
   createMockUser: () => ({
     id: 'user-123',
     email: 'test@example.com',
@@ -280,32 +315,20 @@ globalThis.testUtils = {
     throw new Error(`waitFor timeout after ${timeout}ms`)
   },
 
-  mockApiResponse: (data: any, options = {}) => {
+  mockApiResponse: (data: any, options: { status?: number; delay?: number } = {}) => {
     const { status = 200, delay = 0 } = options
     
     global.fetch = vi.fn(() =>
       new Promise(resolve => {
         setTimeout(() => {
-          resolve({
-            ok: status >= 200 && status < 300,
+          resolve(new Response(JSON.stringify(data), {
             status,
-            json: () => Promise.resolve(data),
-            text: () => Promise.resolve(JSON.stringify(data)),
-            headers: new Headers(),
-            redirected: false,
             statusText: status === 200 ? 'OK' : 'Error',
-            type: 'default' as ResponseType,
-            url: '',
-            clone: vi.fn(),
-            body: null,
-            bodyUsed: false,
-            arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-            blob: () => Promise.resolve(new Blob()),
-            formData: () => Promise.resolve(new FormData())
-          } as Response)
+            headers: new Headers({ 'Content-Type': 'application/json' })
+          }))
         }, delay)
       })
-    )
+    ) as any
   }
 }
 
