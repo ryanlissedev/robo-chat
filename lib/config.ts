@@ -6,116 +6,166 @@ import {
   Notepad,
   PaintBrush,
   Sparkle,
-} from "@phosphor-icons/react/dist/ssr"
+} from '@phosphor-icons/react/dist/ssr';
 
-export const NON_AUTH_DAILY_MESSAGE_LIMIT = 5
-export const AUTH_DAILY_MESSAGE_LIMIT = 1000
-export const REMAINING_QUERY_ALERT_THRESHOLD = 2
-export const DAILY_FILE_UPLOAD_LIMIT = 5
-export const DAILY_LIMIT_PRO_MODELS = 500
+export const NON_AUTH_DAILY_MESSAGE_LIMIT = 5;
+export const AUTH_DAILY_MESSAGE_LIMIT = 1000;
+export const REMAINING_QUERY_ALERT_THRESHOLD = 2;
+export const DAILY_FILE_UPLOAD_LIMIT = 5;
+export const DAILY_LIMIT_PRO_MODELS = 500;
 
-export const NON_AUTH_ALLOWED_MODELS = ["gpt-5-mini", "gpt-4o-mini"]
+export const NON_AUTH_ALLOWED_MODELS = ['gpt-5-mini', 'gpt-4o-mini'];
 
 export const FREE_MODELS_IDS = [
+  'openrouter:deepseek/deepseek-r1:free',
+  'openrouter:meta-llama/llama-3.3-8b-instruct:free',
+  'pixtral-large-latest',
+  'mistral-large-latest',
+  'gpt-5-mini',
+  'gpt-4o-mini',
+];
+
+// Comprehensive list of models accessible to guest users
+// Includes a wide range of models from various providers
+export const GUEST_ALLOWED_MODELS = [
+  // OpenAI models
+  "gpt-4o-mini",
+  "gpt-4o",
+  "gpt-4-turbo",
+  "gpt-o1-mini",
+  "gpt-o1",
+  "gpt-5-mini", // Keep for compatibility
+  
+  // Claude models  
+  "claude-3-5-sonnet-latest",
+  "claude-3-5-haiku-latest",
+  "claude-3-opus-latest",
+  
+  // Gemini models
+  "gemini-2.0-flash-exp",
+  "gemini-1.5-flash",
+  "gemini-1.5-pro",
+  
+  // DeepSeek models
+  "deepseek-chat",
+  "deepseek-reasoner",
   "openrouter:deepseek/deepseek-r1:free",
-  "openrouter:meta-llama/llama-3.3-8b-instruct:free",
+  
+  // Grok models
+  "grok-2-latest",
+  "grok-2-vision-1212",
+  
+  // Groq models
+  "llama-3.3-70b-versatile",
+  "llama-3.2-90b-vision-preview",
+  "mixtral-8x7b-32768",
+  
+  // Perplexity models
+  "llama-3.1-sonar-large-128k-online",
+  "llama-3.1-sonar-huge-128k-online",
+  
+  // Mistral models
   "pixtral-large-latest",
   "mistral-large-latest",
-  "gpt-5-mini",
-  "gpt-4o-mini",
+  
+  // OpenRouter models
+  "openrouter/auto",
+  "openrouter:meta-llama/llama-3.3-8b-instruct:free",
+  
+  // All Ollama models are dynamically allowed
 ]
 
-export const MODEL_DEFAULT = "gpt-5-mini"
+export const MODEL_DEFAULT = 'gpt-5-mini';
 
-export const APP_NAME = "RoboRail"
-export const APP_DOMAIN = "https://roborail.chat"
+export const APP_NAME = 'RoboRail';
+export const APP_DOMAIN = 'https://roborail.chat';
 
 export const SUGGESTIONS = [
   {
-    label: "RoboRail Equipment",
-    highlight: "Optimize",
-    prompt: `Optimize`,
+    label: 'RoboRail Equipment',
+    highlight: 'Optimize',
+    prompt: 'Optimize',
     items: [
-      "Optimize rail grinding patterns for maximum efficiency on curved tracks",
-      "Optimize cutting parameters for different steel grades in rail maintenance",
-      "Optimize RoboRail positioning system for complex track geometries",
-      "Optimize maintenance scheduling for RoboRail fleet operations",
+      'Optimize rail grinding patterns for maximum efficiency on curved tracks',
+      'Optimize cutting parameters for different steel grades in rail maintenance',
+      'Optimize RoboRail positioning system for complex track geometries',
+      'Optimize maintenance scheduling for RoboRail fleet operations',
     ],
     icon: Code,
   },
   {
-    label: "Track Analysis",
-    highlight: "Analyze",
-    prompt: `Analyze`,
+    label: 'Track Analysis',
+    highlight: 'Analyze',
+    prompt: 'Analyze',
     items: [
-      "Analyze track wear patterns and predict maintenance intervals",
-      "Analyze rail surface defects and recommend grinding strategies",
-      "Analyze track geometry data for safety compliance",
-      "Analyze vibration data from RoboRail operations for equipment health",
+      'Analyze track wear patterns and predict maintenance intervals',
+      'Analyze rail surface defects and recommend grinding strategies',
+      'Analyze track geometry data for safety compliance',
+      'Analyze vibration data from RoboRail operations for equipment health',
     ],
     icon: Brain,
   },
   {
-    label: "Safety Protocols",
-    highlight: "Design",
-    prompt: `Design`,
+    label: 'Safety Protocols',
+    highlight: 'Design',
+    prompt: 'Design',
     items: [
-      "Design safety protocols for RoboRail operations in active rail corridors",
-      "Design emergency stop procedures for automated rail maintenance",
-      "Design worker safety zones around RoboRail equipment",
-      "Design communication protocols between RoboRail and train dispatchers",
+      'Design safety protocols for RoboRail operations in active rail corridors',
+      'Design emergency stop procedures for automated rail maintenance',
+      'Design worker safety zones around RoboRail equipment',
+      'Design communication protocols between RoboRail and train dispatchers',
     ],
     icon: PaintBrush,
   },
   {
-    label: "Automation",
-    highlight: "Implement",
-    prompt: `Implement`,
+    label: 'Automation',
+    highlight: 'Implement',
+    prompt: 'Implement',
     items: [
-      "Implement autonomous navigation for RoboRail on complex track layouts",
-      "Implement predictive maintenance algorithms for grinding equipment",
-      "Implement real-time quality monitoring for rail surface finishing",
-      "Implement automated reporting systems for track maintenance operations",
+      'Implement autonomous navigation for RoboRail on complex track layouts',
+      'Implement predictive maintenance algorithms for grinding equipment',
+      'Implement real-time quality monitoring for rail surface finishing',
+      'Implement automated reporting systems for track maintenance operations',
     ],
     icon: Sparkle,
   },
   {
-    label: "Technical Support",
-    highlight: "Troubleshoot",
-    prompt: `Troubleshoot`,
+    label: 'Technical Support',
+    highlight: 'Troubleshoot',
+    prompt: 'Troubleshoot',
     items: [
-      "Troubleshoot hydraulic system pressure irregularities in RoboRail",
-      "Troubleshoot grinding wheel wear patterns and replacement timing",
-      "Troubleshoot positioning accuracy issues in curved track sections",
-      "Troubleshoot communication errors between RoboRail control systems",
+      'Troubleshoot hydraulic system pressure irregularities in RoboRail',
+      'Troubleshoot grinding wheel wear patterns and replacement timing',
+      'Troubleshoot positioning accuracy issues in curved track sections',
+      'Troubleshoot communication errors between RoboRail control systems',
     ],
     icon: Notepad,
   },
   {
-    label: "Process Planning",
-    highlight: "Plan",
-    prompt: `Plan`,
+    label: 'Process Planning',
+    highlight: 'Plan',
+    prompt: 'Plan',
     items: [
-      "Plan efficient work sequences for multi-kilometer rail grinding projects",
-      "Plan RoboRail deployment strategy for high-traffic corridors",
-      "Plan preventive maintenance schedules for optimal equipment uptime",
-      "Plan operator training programs for new RoboRail technology",
+      'Plan efficient work sequences for multi-kilometer rail grinding projects',
+      'Plan RoboRail deployment strategy for high-traffic corridors',
+      'Plan preventive maintenance schedules for optimal equipment uptime',
+      'Plan operator training programs for new RoboRail technology',
     ],
     icon: BookOpenText,
   },
   {
-    label: "Best Practices",
-    highlight: "Explain",
-    prompt: `Explain`,
+    label: 'Best Practices',
+    highlight: 'Explain',
+    prompt: 'Explain',
     items: [
-      "Explain proper grinding techniques for different rail profiles and conditions",
-      "Explain environmental considerations for rail maintenance operations",
-      "Explain quality standards and acceptance criteria for rail surface finishing",
-      "Explain integration of RoboRail systems with existing railway infrastructure",
+      'Explain proper grinding techniques for different rail profiles and conditions',
+      'Explain environmental considerations for rail maintenance operations',
+      'Explain quality standards and acceptance criteria for rail surface finishing',
+      'Explain integration of RoboRail systems with existing railway infrastructure',
     ],
     icon: Lightbulb,
   },
-]
+];
 
 export const ROBORAIL_SYSTEM_PROMPT = `You are the RoboRail Assistant, an AI expert on the RoboRail machine manufactured by HGG Profiling Equipment b.v. Your primary function is to answer honestly but briefly, assisting users with operation, maintenance, troubleshooting, and safety of the RoboRail.
 
@@ -163,10 +213,10 @@ export const ROBORAIL_SYSTEM_PROMPT = `You are the RoboRail Assistant, an AI exp
 - Ensure all interactions prioritize user safety and proper machine operation.
 - Maintain clarity and brevity in all communications.
 
-Your goal is to be a knowledgeable, efficient, and safety-conscious assistant in all aspects of the RoboRail machine.`
+Your goal is to be a knowledgeable, efficient, and safety-conscious assistant in all aspects of the RoboRail machine.`;
 
-export const SYSTEM_PROMPT_DEFAULT = ROBORAIL_SYSTEM_PROMPT
+export const SYSTEM_PROMPT_DEFAULT = ROBORAIL_SYSTEM_PROMPT;
 
-export const FILE_SEARCH_SYSTEM_PROMPT = ROBORAIL_SYSTEM_PROMPT
+export const FILE_SEARCH_SYSTEM_PROMPT = ROBORAIL_SYSTEM_PROMPT;
 
-export const MESSAGE_MAX_LENGTH = 10000
+export const MESSAGE_MAX_LENGTH = 10_000;

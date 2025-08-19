@@ -6,8 +6,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useChatDraft } from '@/app/hooks/use-chat-draft';
 import { toast } from '@/components/ui/toast';
 import { SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
-// Removed unused import: API_ROUTE_CHAT
+import { API_ROUTE_CHAT } from '@/lib/routes';
 import type { UserProfile } from '@/lib/user/types';
+import { writeToIndexedDB } from '@/lib/chat-store/persist';
 import {
   type ChatOperationDependencies,
   handleChatError,
@@ -86,6 +87,7 @@ export function useChatCore({
   // Initialize useChat with AI SDK v5 pattern
   const chatHookResult = useChat({
     id: chatId || undefined,
+    api: API_ROUTE_CHAT,
     messages: initialMessagesProp,
     onError: handleError,
     onFinish: (options: { message: UIMessage }) => {
@@ -224,6 +226,20 @@ export function useChatCore({
       }
       const { chatId: currentChatId, requestOptions } = data;
 
+      // Cache the message immediately with the new chat ID
+      const messageToCache = {
+        ...optimisticMessage,
+        id: `user-${Date.now()}`,
+      };
+      
+      // For guest users, cache the message before navigation
+      if (!isAuthenticated && currentChatId) {
+        await writeToIndexedDB("messages", { 
+          id: currentChatId, 
+          messages: [messageToCache] 
+        });
+      }
+      
       // Use sendMessage to send the message with proper options
       await sendMessage({
         role: 'user',
@@ -235,21 +251,12 @@ export function useChatCore({
         ],
         experimental_attachments: requestOptions.experimental_attachments,
       }, {
-        body: {
-          chatId: chatId,
-          userId: user?.id || '',
-          model: selectedModel,
-          isAuthenticated,
-          systemPrompt,
-          enableSearch,
-          reasoningEffort,
-        },
+        body: requestOptions.body,
       });
 
-      // Clean up optimistic message and cache the real one
+      // Clean up optimistic message
       setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
       cleanupOptimisticAttachments(optimisticMessage.experimental_attachments);
-      cacheAndAddMessage(optimisticMessage);
       clearDraft();
 
       // Bump chat if there were previous messages
@@ -357,15 +364,7 @@ export function useChatCore({
             },
           ],
         }, {
-          body: {
-            chatId: chatId,
-            userId: user?.id || '',
-            model: selectedModel,
-            isAuthenticated,
-            systemPrompt,
-            enableSearch,
-            reasoningEffort,
-          },
+          body: data.requestOptions.body,
         });
 
         // Clean up optimistic message

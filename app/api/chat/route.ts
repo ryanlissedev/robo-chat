@@ -97,6 +97,35 @@ export async function POST(req: Request) {
       isAuthenticated,
     });
 
+    // Ensure chat exists before processing messages
+    // Only check database for authenticated users
+    if (supabase && isAuthenticated) {
+      const { data: existingChat, error: chatError } = await supabase
+        .from("chats")
+        .select("id")
+        .eq("id", chatId)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (chatError) {
+        console.error("Error checking chat existence:", chatError);
+        return new Response(
+          JSON.stringify({ error: "Database error while checking chat" }),
+          { status: 500 }
+        );
+      }
+
+      if (!existingChat) {
+        console.error("Chat not found:", { chatId, userId });
+        return new Response(
+          JSON.stringify({ error: "Chat not found. Please refresh and try again." }),
+          { status: 404 }
+        );
+      }
+    }
+    // For guest users, we don't validate against database
+    // The chat ID is just a client-side identifier
+
     // Increment message count for successful validation
     if (supabase) {
       await incrementMessageCount({ supabase, userId });
@@ -128,13 +157,16 @@ export async function POST(req: Request) {
     const isGPT5Model = model.startsWith('gpt-5');
     const effectiveSystemPrompt = systemPrompt || FILE_SEARCH_SYSTEM_PROMPT;
 
+    // Resolve API key for provider. For guests, fall back to environment keys.
     let apiKey: string | undefined;
-    if (isAuthenticated && userId) {
+    const provider = getProviderForModel(model);
+    if (provider !== 'ollama') {
       const { getEffectiveApiKey } = await import('@/lib/user-keys');
-      const provider = getProviderForModel(model);
-      apiKey =
-        (await getEffectiveApiKey(userId, provider as ProviderWithoutOllama)) ||
-        undefined;
+      const effectiveKey = await getEffectiveApiKey(
+        isAuthenticated && userId ? userId : null,
+        provider as ProviderWithoutOllama
+      );
+      apiKey = effectiveKey || undefined;
     }
 
     // Create LangSmith run if enabled

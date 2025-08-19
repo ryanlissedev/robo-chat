@@ -233,13 +233,17 @@ export async function checkUsageByModel(
   modelId: string,
   isAuthenticated: boolean
 ) {
+  // For guest users, only check basic usage limits
+  // Don't restrict model access based on authentication
+  if (!isAuthenticated) {
+    return await checkUsage(supabase, userId)
+  }
+  
+  // For authenticated users, apply pro model limits if applicable
   if (isProModel(modelId)) {
-    if (!isAuthenticated) {
-      throw new UsageLimitError("You must log in to use this model.")
-    }
     return await checkProUsage(supabase, userId)
   }
-
+  
   return await checkUsage(supabase, userId)
 }
 

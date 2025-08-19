@@ -4,6 +4,7 @@ import type { Chats } from "@/lib/chat-store/types"
 import { REMAINING_QUERY_ALERT_THRESHOLD } from "@/lib/config"
 import { UIMessage } from "@ai-sdk/react"
 import { useCallback } from "react"
+import { useRouter } from "next/navigation"
 
 type UseChatOperationsProps = {
   isAuthenticated: boolean
@@ -35,6 +36,8 @@ export function useChatOperations({
   setHasDialogAuth,
   setMessages,
 }: UseChatOperationsProps) {
+  const router = useRouter();
+  
   // Chat utilities
   const checkLimitsAndNotify = async (uid: string): Promise<boolean> => {
     try {
@@ -87,11 +90,14 @@ export function useChatOperations({
         )
 
         if (!newChat) return null
-        if (isAuthenticated) {
-          window.history.pushState(null, "", `/c/${newChat.id}`)
-        } else {
+        
+        // Store chat ID for guest users
+        if (!isAuthenticated) {
           localStorage.setItem("guestChatId", newChat.id)
         }
+        
+        // Navigate to the chat page for both authenticated and guest users
+        router.push(`/c/${newChat.id}`)
 
         return newChat.id
       } catch (err: unknown) {

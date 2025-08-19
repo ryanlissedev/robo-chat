@@ -74,6 +74,7 @@ const DayNightSwitch = React.forwardRef<HTMLDivElement, DayNightSwitchProps>(
     },
     ref
   ) => {
+    // Use a stable ID to avoid hydration mismatches
     const id = React.useId();
     const [internalChecked, setInternalChecked] =
       React.useState<boolean>(defaultChecked);
@@ -94,12 +95,12 @@ const DayNightSwitch = React.forwardRef<HTMLDivElement, DayNightSwitchProps>(
 
     return (
       <motion.div
-        data-testid="day-night-switch"
         animate={currentMode}
         className={cn(
           'relative h-10 w-20 overflow-hidden rounded-md border shadow',
           className
         )}
+        data-testid="day-night-switch"
         initial={currentMode}
         ref={ref}
         variants={backgroundVariants}

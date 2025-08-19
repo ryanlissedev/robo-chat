@@ -53,17 +53,30 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
 
     const load = async () => {
       setIsLoading(true)
-      const cached: UIMessage[] = await getCachedMessages(chatId)
-      setMessages(cached)
+      
+      // Check if this is a guest user
+      const isGuestUser = typeof window !== 'undefined' && 
+        localStorage.getItem('guestChatId') === chatId
 
-      try {
-        const fresh: UIMessage[] = await getMessagesFromDb(chatId)
-        setMessages(fresh)
-        cacheMessages(chatId, fresh)
-      } catch {
-        toast({ title: "Failed to fetch messages", status: "error" })
-      } finally {
+      if (isGuestUser) {
+        // For guest users, only use cached messages
+        const cached: UIMessage[] = await getCachedMessages(chatId)
+        setMessages(cached)
         setIsLoading(false)
+      } else {
+        // For authenticated users, load cached first, then fresh
+        const cached: UIMessage[] = await getCachedMessages(chatId)
+        setMessages(cached)
+
+        try {
+          const fresh: UIMessage[] = await getMessagesFromDb(chatId)
+          setMessages(fresh)
+          cacheMessages(chatId, fresh)
+        } catch {
+          toast({ title: "Failed to fetch messages", status: "error" })
+        } finally {
+          setIsLoading(false)
+        }
       }
     }
 

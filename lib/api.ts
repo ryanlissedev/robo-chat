@@ -1,9 +1,8 @@
 import { APP_DOMAIN } from "@/lib/config"
 import type { UserProfile } from "@/lib/user/types"
-import { SupabaseClient } from "@supabase/supabase-js"
+import type { SupabaseClient } from "@supabase/supabase-js"
 import { fetchClient } from "./fetch"
 import { API_ROUTE_CREATE_GUEST, API_ROUTE_UPDATE_CHAT_MODEL } from "./routes"
-import { createClient } from "./supabase/client"
 import { generateUUID } from "@/lib/utils/uuid"
 
 /**
@@ -142,88 +141,25 @@ export async function signInWithGoogle(supabase: SupabaseClient) {
 export const getOrCreateGuestUserId = async (
   user: UserProfile | null
 ): Promise<string | null> => {
-  if (user?.id) return user.id
+  if (user?.id) {
+    return user.id
+  }
 
-  // Check for existing local guest ID first
+  // Prefer a persisted local guest ID
   const existingGuestId = localStorage.getItem("guestUserId")
   if (existingGuestId) {
     return existingGuestId
   }
 
-  const supabase = createClient()
-
-  if (!supabase) {
-    console.warn("Supabase is not available in this deployment.")
-    // Create fallback guest ID when Supabase is not available
-    const fallbackGuestId = generateUUID()
-    localStorage.setItem("guestUserId", fallbackGuestId)
-    return fallbackGuestId
-  }
-
-  const existingGuestSessionUser = await supabase.auth.getUser()
-  if (
-    existingGuestSessionUser.data?.user &&
-    existingGuestSessionUser.data.user.is_anonymous
-  ) {
-    const anonUserId = existingGuestSessionUser.data.user.id
-
-    const profileCreationAttempted = localStorage.getItem(
-      `guestProfileAttempted_${anonUserId}`
-    )
-
-    if (!profileCreationAttempted) {
-      try {
-        await createGuestUser(anonUserId)
-        localStorage.setItem(`guestProfileAttempted_${anonUserId}`, "true")
-      } catch (error) {
-        console.error(
-          "Failed to ensure guest user profile exists for existing anonymous auth user:",
-          error
-        )
-        return null
-      }
-    }
-    return anonUserId
-  }
-
+  // Generate a new UUID and ensure the server has a matching guest profile
+  const guestId = generateUUID()
   try {
-    const { data: anonAuthData, error: anonAuthError } =
-      await supabase.auth.signInAnonymously()
-
-    if (anonAuthError) {
-      console.error("Error during anonymous sign-in:", anonAuthError)
-      
-      // Fallback: Create a local guest ID if anonymous sign-ins are disabled
-      if (anonAuthError.message.includes("Anonymous sign-ins are disabled")) {
-        // Generate a proper UUID for guest ID
-        const fallbackGuestId = generateUUID()
-        localStorage.setItem("guestUserId", fallbackGuestId)
-        console.log("Created fallback guest ID:", fallbackGuestId)
-        return fallbackGuestId
-      }
-      
-      return null
-    }
-
-    if (!anonAuthData || !anonAuthData.user) {
-      console.error("Anonymous sign-in did not return a user.")
-      return null
-    }
-
-    const guestIdFromAuth = anonAuthData.user.id
-    await createGuestUser(guestIdFromAuth)
-    localStorage.setItem(`guestProfileAttempted_${guestIdFromAuth}`, "true")
-    return guestIdFromAuth
+    await createGuestUser(guestId)
   } catch (error) {
-    console.error(
-      "Error in getOrCreateGuestUserId during anonymous sign-in or profile creation:",
-      error
-    )
-    
-    // Final fallback: Create a local guest ID with UUID
-    const fallbackGuestId = generateUUID()
-    localStorage.setItem("guestUserId", fallbackGuestId)
-    console.log("Created fallback guest ID due to error:", fallbackGuestId)
-    return fallbackGuestId
+    // Non-fatal: UI should still proceed as guest
+    /* biome-ignore lint/suspicious/noConsole: intentional client-side log to aid guest profile diagnostics */
+    console.error("Failed to create server guest profile:", error)
   }
+  localStorage.setItem("guestUserId", guestId)
+  return guestId
 }

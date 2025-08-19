@@ -19,7 +19,8 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      // Guest: no stored favorites, return an empty list
+      return NextResponse.json({ favorite_models: [] }, { status: 200 })
     }
 
     // Parse the request body
@@ -91,7 +92,8 @@ export async function GET() {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      // Guest: no stored favorites, return an empty list
+      return NextResponse.json({ favorite_models: [] }, { status: 200 })
     }
 
     // Get the user's favorite models

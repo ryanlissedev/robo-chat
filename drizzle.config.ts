@@ -3,20 +3,25 @@ import { defineConfig } from 'drizzle-kit'
 
 // Construct database URL from Supabase credentials
 const getDatabaseUrl = () => {
+  // Use DATABASE_URL if available (priority)
   if (process.env.DATABASE_URL) {
     return process.env.DATABASE_URL
   }
   
-  // Extract project ref from Supabase URL
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabasePassword = process.env.SUPABASE_SERVICE_ROLE
+  // Use POSTGRES_URL if available
+  if (process.env.POSTGRES_URL) {
+    return process.env.POSTGRES_URL
+  }
   
-  if (supabaseUrl && supabasePassword) {
-    const projectRef = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
-    if (projectRef) {
-      // Use Supabase pooler connection string
-      return `postgresql://postgres.${projectRef}:${supabasePassword}@aws-0-us-east-1.pooler.supabase.com:5432/postgres`
-    }
+  // Construct from individual components
+  const postgresHost = process.env.POSTGRES_HOST
+  const postgresUser = process.env.POSTGRES_USER
+  const postgresPassword = process.env.POSTGRES_PASSWORD
+  const postgresDatabase = process.env.POSTGRES_DATABASE
+  
+  if (postgresHost && postgresUser && postgresPassword && postgresDatabase) {
+    // Use pooler connection for better performance
+    return `postgresql://${postgresUser}.dsvcopetgolgetouoqxk:${postgresPassword}@aws-1-eu-central-1.pooler.supabase.com:6543/${postgresDatabase}?sslmode=require`
   }
   
   // Fallback for local development

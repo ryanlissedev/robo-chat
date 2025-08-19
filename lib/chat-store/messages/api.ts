@@ -37,6 +37,16 @@ export async function getMessagesFromDb(
     return cached
   }
 
+  // For guest users, always use cached messages
+  // Check if this is a guest chat by looking for the chat ID in localStorage
+  if (typeof window !== 'undefined') {
+    const guestChatId = localStorage.getItem("guestChatId")
+    if (guestChatId === chatId) {
+      const cached = await getCachedMessages(chatId)
+      return cached
+    }
+  }
+
   const supabase = createClient()
   if (!supabase) {
     toast({ title: "Supabase not initialized", status: "error" })
@@ -52,6 +62,14 @@ export async function getMessagesFromDb(
     .order("created_at", { ascending: true })
 
   if (!data || error) {
+    // For guest users, fallback to cached messages if database fails
+    if (error?.code === 'PGRST116' || error?.message?.includes('Row level security')) {
+      const cached = await getCachedMessages(chatId)
+      if (cached.length > 0) {
+        return cached
+      }
+    }
+    
     toast({
       title: "Failed to fetch messages",
       status: "error",
@@ -90,6 +108,14 @@ export async function getMessagesFromDb(
 }
 
 async function insertMessageToDb(chatId: string, message: UIMessage) {
+  // For guest users, skip database insertion
+  if (typeof window !== 'undefined') {
+    const guestChatId = localStorage.getItem("guestChatId")
+    if (guestChatId === chatId) {
+      return // Guest messages are only stored in IndexedDB
+    }
+  }
+  
   const supabase = createClient()
   if (!supabase) {
     return
@@ -129,6 +155,14 @@ async function insertMessageToDb(chatId: string, message: UIMessage) {
 }
 
 async function insertMessagesToDb(chatId: string, messages: UIMessage[]) {
+  // For guest users, skip database insertion
+  if (typeof window !== 'undefined') {
+    const guestChatId = localStorage.getItem("guestChatId")
+    if (guestChatId === chatId) {
+      return // Guest messages are only stored in IndexedDB
+    }
+  }
+  
   const supabase = createClient()
   if (!supabase) {
     return

@@ -28,7 +28,9 @@ export async function GET() {
     const { data: authData } = await supabase.auth.getUser()
 
     if (!authData?.user?.id) {
-      const models = await getModelsWithAccessFlags()
+      // Guest: expose all models as accessible
+      const allModels = await getAllModels()
+      const models = allModels.map((m) => ({ ...m, accessible: true }))
       return new Response(JSON.stringify({ models }), {
         status: 200,
         headers: {
