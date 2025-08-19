@@ -668,7 +668,7 @@ describe('Rate Limiting Unit Tests', () => {
       // Then: Request should be allowed
       expect(result.isAllowed).toBe(true);
       expect(result.tokensToAdd).toBe(5); // 5 seconds * 1 token/second
-      expect(result.remainingTokens).toBe(12); // 10 + 5 - 3, but capped at maxTokens
+      expect(result.remainingTokens).toBe(7); // min(10, 10 + 5) - 3 = 10 - 3 = 7
     });
 
     test('should deny requests when insufficient tokens', () => {
