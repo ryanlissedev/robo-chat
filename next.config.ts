@@ -1,23 +1,28 @@
-import type { NextConfig } from "next"
+import type { NextConfig } from 'next';
 
-const withBundleAnalyzer = require("@next/bundle-analyzer")({
-  enabled: process.env.ANALYZE === "true",
-})
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
 
-const nextConfig: NextConfig = withBundleAnalyzer({
-  output: "standalone",
+const nextConfig: NextConfig = {
+  output: 'standalone',
   experimental: {
-    optimizePackageImports: ["@phosphor-icons/react"],
-    nodeMiddleware: true,
+    optimizePackageImports: ['@phosphor-icons/react'],
   },
-  serverExternalPackages: ["shiki", "vscode-oniguruma"],
+  // Turbopack configuration for improved compatibility
+  turbopack: {
+    resolveExtensions: ['.mdx', '.tsx', '.ts', '.jsx', '.js', '.mjs', '.json'],
+    // Disable conflicting webpack-style configurations
+    // All webpack-specific rules should be removed to prevent conflicts
+  },
+  serverExternalPackages: ['shiki', 'vscode-oniguruma'],
   images: {
     remotePatterns: [
       {
-        protocol: "https",
-        hostname: "*.supabase.co",
-        port: "",
-        pathname: "/storage/v1/object/public/**",
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
       },
     ],
   },
@@ -25,6 +30,11 @@ const nextConfig: NextConfig = withBundleAnalyzer({
     // @todo: remove before going live
     ignoreDuringBuilds: true,
   },
-})
+};
 
-export default nextConfig
+// Apply bundle analyzer only when explicitly enabled
+// Turbopack handles development properly, so we can simplify this logic
+const finalConfig =
+  process.env.ANALYZE === 'true' ? withBundleAnalyzer(nextConfig) : nextConfig;
+
+export default finalConfig;

@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/tooltip"
 import { useModel } from "@/lib/model-store/provider"
 import { filterAndSortModels } from "@/lib/model-store/utils"
+import { useProviderStatus } from "@/lib/hooks/use-provider-status"
 import { ModelConfig } from "@/lib/models/types"
 import { PROVIDERS } from "@/lib/providers"
 import { useUserPreferences } from "@/lib/user-preference-store/provider"
@@ -54,6 +55,7 @@ export function ModelSelector({
 }: ModelSelectorProps) {
   const { models, isLoading: isLoadingModels, favoriteModels } = useModel()
   const { isModelHidden } = useUserPreferences()
+  const { isProviderAvailable } = useProviderStatus()
 
   const currentModel = models.find((model) => model.id === selectedModelId)
   const currentProvider = PROVIDERS.find(
@@ -131,7 +133,8 @@ export function ModelSelector({
     models,
     favoriteModels || [],
     searchQuery,
-    isModelHidden
+    isModelHidden,
+    isUserAuthenticated ? isProviderAvailable : undefined
   )
 
   const trigger = (

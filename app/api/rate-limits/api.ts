@@ -3,7 +3,8 @@ import {
   DAILY_LIMIT_PRO_MODELS,
   NON_AUTH_DAILY_MESSAGE_LIMIT,
 } from "@/lib/config"
-import { validateUserIdentity } from "@/lib/server/api"
+import { validateUserIdentity } from "@/lib/server/api-drizzle"
+import { getUserMessageCounts } from "@/lib/db/operations"
 
 export async function getMessageUsage(
   userId: string,
@@ -12,28 +13,37 @@ export async function getMessageUsage(
   const supabase = await validateUserIdentity(userId, isAuthenticated)
   if (!supabase) return null
 
-  const { data, error } = await supabase
-    .from("users")
-    .select("daily_message_count, daily_pro_message_count")
-    .eq("id", userId)
-    .maybeSingle()
+  try {
+    // Use Drizzle ORM for type-safe database operations
+    const counts = await getUserMessageCounts(userId)
+    
+    const dailyLimit = isAuthenticated
+      ? AUTH_DAILY_MESSAGE_LIMIT
+      : NON_AUTH_DAILY_MESSAGE_LIMIT
 
-  if (error || !data) {
-    throw new Error(error?.message || "Failed to fetch message usage")
-  }
+    const dailyCount = counts.dailyMessageCount || 0
+    const dailyProCount = counts.dailyProMessageCount || 0
 
-  const dailyLimit = isAuthenticated
-    ? AUTH_DAILY_MESSAGE_LIMIT
-    : NON_AUTH_DAILY_MESSAGE_LIMIT
+    return {
+      dailyCount,
+      dailyProCount,
+      dailyLimit,
+      remaining: dailyLimit - dailyCount,
+      remainingPro: DAILY_LIMIT_PRO_MODELS - dailyProCount,
+    }
+  } catch (error) {
+    console.error("Rate limit check error:", error)
+    // Return default limits on any error
+    const dailyLimit = isAuthenticated
+      ? AUTH_DAILY_MESSAGE_LIMIT
+      : NON_AUTH_DAILY_MESSAGE_LIMIT
 
-  const dailyCount = data.daily_message_count || 0
-  const dailyProCount = data.daily_pro_message_count || 0
-
-  return {
-    dailyCount,
-    dailyProCount,
-    dailyLimit,
-    remaining: dailyLimit - dailyCount,
-    remainingPro: DAILY_LIMIT_PRO_MODELS - dailyProCount,
+    return {
+      dailyCount: 0,
+      dailyProCount: 0,
+      dailyLimit,
+      remaining: dailyLimit,
+      remainingPro: DAILY_LIMIT_PRO_MODELS,
+    }
   }
 }

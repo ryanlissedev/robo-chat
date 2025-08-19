@@ -1,6 +1,7 @@
 import { toast } from "@/components/ui/toast"
 import { SupabaseClient } from "@supabase/supabase-js"
 import * as fileType from "file-type"
+import type { FileUIPart } from 'ai'
 import { DAILY_FILE_UPLOAD_LIMIT } from "./config"
 import { createClient } from "./supabase/client"
 import { isSupabaseEnabled } from "./supabase/config"
@@ -80,6 +81,37 @@ export function createAttachment(file: File, url: string): Attachment {
     contentType: file.type,
     url,
   }
+}
+
+/**
+ * Converts an Attachment to FileUIPart for AI SDK compatibility
+ */
+export function attachmentToFileUIPart(attachment: Attachment): FileUIPart {
+  return {
+    type: 'file',
+    mediaType: attachment.contentType,
+    filename: attachment.name,
+    url: attachment.url,
+  }
+}
+
+/**
+ * Converts an array of Attachments to FileUIPart array
+ */
+export function attachmentsToFileUIParts(attachments: Attachment[]): FileUIPart[] {
+  return attachments.map(attachmentToFileUIPart)
+}
+
+/**
+ * Creates optimistic FileUIPart attachments from files for immediate UI updates
+ */
+export function createOptimisticFileUIParts(files: File[]): FileUIPart[] {
+  return files.map(file => ({
+    type: 'file' as const,
+    mediaType: file.type,
+    filename: file.name,
+    url: URL.createObjectURL(file), // Temporary URL for optimistic UI
+  }))
 }
 
 export async function processFiles(

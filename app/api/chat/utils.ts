@@ -1,4 +1,37 @@
-import { Message as MessageAISDK } from "ai"
+import type { UIMessage as MessageAISDK } from "ai"
+
+// Type definitions for message structures
+type MessageWithTools = MessageAISDK & { 
+  toolInvocations?: Array<{
+    type?: string;
+    [key: string]: unknown;
+  }>;
+};
+
+type MessageWithContent = MessageAISDK & { 
+  content?: unknown;
+};
+
+type MessageWithRole = { role: string };
+
+type ContentPart = {
+  type?: string;
+  text?: string;
+  [key: string]: unknown;
+};
+
+type AIError = {
+  error?: {
+    statusCode?: number;
+    message?: string;
+    responseBody?: string;
+    [key: string]: unknown;
+  };
+  statusCode?: number;
+  message?: string;
+  responseBody?: string;
+  [key: string]: unknown;
+};
 
 /**
  * Clean messages when switching between agents with different tool capabilities.
@@ -18,21 +51,25 @@ export function cleanMessagesForTools(
     .map((message) => {
       // Skip tool messages entirely when no tools are available
       // Note: Using type assertion since AI SDK types might not include 'tool' role
-      if ((message as { role: string }).role === "tool") {
+      if ((message as MessageWithRole).role === "tool") {
         return null
       }
 
       if (message.role === "assistant") {
         const cleanedMessage: MessageAISDK = { ...message }
 
-        if (message.toolInvocations && message.toolInvocations.length > 0) {
-          delete cleanedMessage.toolInvocations
+        // Check for toolInvocations using type assertion since it may exist in some versions
+        const messageWithTools = message as MessageWithTools
+        if (messageWithTools.toolInvocations && messageWithTools.toolInvocations.length > 0) {
+          delete (cleanedMessage as MessageWithTools).toolInvocations
         }
 
-        if (Array.isArray(message.content)) {
+        // Check for content using type assertion since message structure may vary
+        const messageWithContent = message as MessageWithContent
+        if (Array.isArray(messageWithContent.content)) {
           const filteredContent = (
-            message.content as Array<{ type?: string; text?: string }>
-          ).filter((part: { type?: string }) => {
+            messageWithContent.content as Array<ContentPart>
+          ).filter((part: ContentPart) => {
             if (part && typeof part === "object" && part.type) {
               // Remove tool-call, tool-result, and tool-invocation parts
               const isToolPart =
@@ -46,43 +83,45 @@ export function cleanMessagesForTools(
 
           // Extract text content
           const textParts = filteredContent.filter(
-            (part: { type?: string }) =>
+            (part: ContentPart) =>
               part && typeof part === "object" && part.type === "text"
           )
 
           if (textParts.length > 0) {
             // Combine text parts into a single string
             const textContent = textParts
-              .map((part: { text?: string }) => part.text || "")
+              .map((part: ContentPart) => part.text || "")
               .join("\n")
               .trim()
-            cleanedMessage.content = textContent || "[Assistant response]"
+            ;(cleanedMessage as MessageWithContent).content = textContent || "[Assistant response]"
           } else if (filteredContent.length === 0) {
             // If no content remains after filtering, provide fallback
-            cleanedMessage.content = "[Assistant response]"
+            ;(cleanedMessage as MessageWithContent).content = "[Assistant response]"
           } else {
             // Keep the filtered content as string if possible
-            cleanedMessage.content = "[Assistant response]"
+            ;(cleanedMessage as MessageWithContent).content = "[Assistant response]"
           }
         }
 
         // If the message has no meaningful content after cleaning, provide fallback
+        const cleanedWithContent = cleanedMessage as MessageWithContent
         if (
-          !cleanedMessage.content ||
-          (typeof cleanedMessage.content === "string" &&
-            cleanedMessage.content.trim() === "")
+          !cleanedWithContent.content ||
+          (typeof cleanedWithContent.content === "string" &&
+            cleanedWithContent.content.trim() === "")
         ) {
-          cleanedMessage.content = "[Assistant response]"
+          cleanedWithContent.content = "[Assistant response]"
         }
 
         return cleanedMessage
       }
 
       // For user messages, clean any tool-related content from array content
-      if (message.role === "user" && Array.isArray(message.content)) {
+      const userMessageWithContent = message as MessageWithContent
+      if (message.role === "user" && Array.isArray(userMessageWithContent.content)) {
         const filteredContent = (
-          message.content as Array<{ type?: string }>
-        ).filter((part: { type?: string }) => {
+          userMessageWithContent.content as Array<ContentPart>
+        ).filter((part: ContentPart) => {
           if (part && typeof part === "object" && part.type) {
             const isToolPart =
               part.type === "tool-call" ||
@@ -94,7 +133,7 @@ export function cleanMessagesForTools(
         })
 
         if (
-          filteredContent.length !== (message.content as Array<unknown>).length
+          filteredContent.length !== (userMessageWithContent.content as Array<unknown>).length
         ) {
           return {
             ...message,
@@ -115,12 +154,16 @@ export function cleanMessagesForTools(
  * Check if a message contains tool-related content
  */
 export function messageHasToolContent(message: MessageAISDK): boolean {
+  const messageWithTools = message as MessageWithTools
+  const messageWithContent = message as MessageWithContent
+  const messageWithRole = message as MessageWithRole
+  
   return !!(
-    message.toolInvocations?.length ||
-    (message as { role: string }).role === "tool" ||
-    (Array.isArray(message.content) &&
-      (message.content as Array<{ type?: string }>).some(
-        (part: { type?: string }) =>
+    messageWithTools.toolInvocations?.length ||
+    messageWithRole.role === "tool" ||
+    (Array.isArray(messageWithContent.content) &&
+      (messageWithContent.content as Array<ContentPart>).some(
+        (part: ContentPart) =>
           part &&
           typeof part === "object" &&
           part.type &&
@@ -150,8 +193,7 @@ export function handleStreamError(err: unknown): ApiError {
   console.error("🛑 streamText error:", err)
 
   // Extract error details from the AI SDK error
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const aiError = (err as { error?: any })?.error
+  const aiError = (err as AIError)?.error
 
   if (aiError) {
     // Try to extract detailed error message from response body
@@ -198,11 +240,11 @@ export function handleStreamError(err: unknown): ApiError {
         statusCode: 429,
         code: "RATE_LIMIT_EXCEEDED",
       })
-    } else if (aiError.statusCode >= 400 && aiError.statusCode < 500) {
+    } else if (aiError.statusCode && aiError.statusCode >= 400 && aiError.statusCode < 500) {
       // Other client errors
       const message = detailedMessage || aiError.message || "Request failed"
       return Object.assign(new Error(message), {
-        statusCode: aiError.statusCode,
+        statusCode: aiError.statusCode!, // We've already verified it exists above
         code: "CLIENT_ERROR",
       })
     } else {
@@ -267,8 +309,7 @@ export function extractErrorMessage(error: unknown): string {
   }
 
   // Handle AI SDK error objects
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const aiError = (error as any)?.error
+  const aiError = (error as AIError)?.error
   if (aiError) {
     if (aiError.statusCode === 401) {
       return "Invalid API key or authentication failed. Please check your API key in settings."

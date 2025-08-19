@@ -2,9 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { 
   encryptApiKey, 
-  decryptApiKey, 
-  validateApiKeyFormat,
-  maskApiKey 
+  validateApiKeyFormat
 } from '@/lib/security/encryption'
 
 // GET: Retrieve user's API keys (masked)
@@ -264,7 +262,7 @@ export async function PATCH(req: Request) {
       .insert({
         user_id: user.id,
         provider,
-        action: isActive ? 'activated' : 'deactivated',
+        action: 'updated',
         metadata: { is_active: isActive }
       })
 

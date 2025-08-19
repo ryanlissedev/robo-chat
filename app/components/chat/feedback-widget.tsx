@@ -13,9 +13,10 @@ import { motion } from "motion/react"
 import { useState } from "react"
 
 const TRANSITION_POPOVER = {
-  type: "spring",
+  type: "spring" as const,
   bounce: 0.1,
-  duration: 0.3,
+  damping: 20,
+  stiffness: 300,
 }
 
 type FeedbackWidgetProps = {
@@ -63,7 +64,7 @@ export function FeedbackWidget({ authUserId }: FeedbackWidgetProps) {
             }}
             transition={{
               duration: 0,
-              delay: isOpen ? 0 : TRANSITION_POPOVER.duration / 2,
+              delay: isOpen ? 0 : 0.15,
             }}
           >
             <QuestionMark className="text-foreground size-4" />

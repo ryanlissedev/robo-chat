@@ -18,6 +18,7 @@ import { ByokSection } from "./apikeys/byok-section"
 import { InteractionPreferences } from "./appearance/interaction-preferences"
 import { LayoutSettings } from "./appearance/layout-settings"
 import { ThemeSelection } from "./appearance/theme-selection"
+import { VoiceSettings } from "./appearance/voice-settings"
 import { ConnectionsPlaceholder } from "./connections/connections-placeholder"
 import { DeveloperTools } from "./connections/developer-tools"
 import { OllamaSection } from "./connections/ollama-section"
@@ -119,6 +120,7 @@ export function SettingsContent({
               <ThemeSelection />
               <LayoutSettings />
               <InteractionPreferences />
+              <VoiceSettings />
             </TabsContent>
 
             <TabsContent value="apikeys" className="px-6">
@@ -206,6 +208,7 @@ export function SettingsContent({
                 <ThemeSelection />
                 <LayoutSettings />
                 <InteractionPreferences />
+                <VoiceSettings />
               </TabsContent>
 
               <TabsContent value="apikeys" className="mt-0 space-y-6">

@@ -1,117 +1,155 @@
-import { FILE_SEARCH_SYSTEM_PROMPT } from "@/lib/config"
-import { getAllModels } from "@/lib/models"
-import { getProviderForModel } from "@/lib/openproviders/provider-map"
-import type { ProviderWithoutOllama } from "@/lib/user-keys"
-import type { Attachment } from "@ai-sdk/ui-utils"
-import { streamText } from "ai"
-import type { Message as MessageAISDK, ToolSet } from "ai"
-import { fileSearchTool } from "@/lib/tools/file-search"
+// FileUIPart import removed as it's not used
+import type { UIMessage as MessageAISDK, ToolSet } from 'ai';
+import type { Attachment } from '@/app/types/api.types';
+import { streamText } from 'ai';
+import { FILE_SEARCH_SYSTEM_PROMPT } from '@/lib/config';
 import {
-  isLangSmithEnabled,
   createRun,
-  updateRun,
   extractRunId,
+  isLangSmithEnabled,
   logMetrics,
-} from "@/lib/langsmith/client"
+  updateRun,
+} from '@/lib/langsmith/client';
+import { getAllModels } from '@/lib/models';
+import { getProviderForModel } from '@/lib/openproviders/provider-map';
+import type { ProviderWithoutOllama } from '@/lib/user-keys';
 import {
   incrementMessageCount,
   logUserMessage,
   storeAssistantMessage,
   validateAndTrackUsage,
-} from "./api"
-import { createErrorResponse, extractErrorMessage } from "./utils"
+} from './api';
+import { createErrorResponse } from './utils';
 
-export const maxDuration = 60
+// Helper functions for AI SDK v5 UIMessage structure
+function getMessageContent(message: MessageAISDK): string {
+  if (!message.parts) return '';
+  const textParts = message.parts.filter(
+    (part) => part.type === 'text'
+  ) as Array<{ type: 'text'; text: string }>;
+  return textParts.map((part) => part.text).join('');
+}
+
+function getMessageAttachments(message: MessageAISDK): Attachment[] {
+  if (!message.parts) return [];
+  const fileParts = message.parts.filter(
+    (part) => part.type === 'file'
+  ) as unknown as Array<{ type: 'file'; file: { name?: string; type?: string; size?: number; url?: string } }>;
+  return fileParts.map((part) => ({
+    name: part.file?.name || 'unknown',
+    contentType: part.file?.type || 'application/octet-stream',
+    url: part.file?.url || '',
+    size: part.file?.size,
+  }));
+}
+
+export const maxDuration = 60;
 
 type ChatRequest = {
-  messages: MessageAISDK[]
-  chatId: string
-  userId: string
-  model: string
-  isAuthenticated: boolean
-  systemPrompt: string
-  enableSearch: boolean
-  message_group_id?: string
-  reasoningEffort?: 'low' | 'medium' | 'high'
-}
+  messages: MessageAISDK[];
+  chatId: string;
+  userId: string;
+  model: string;
+  isAuthenticated: boolean;
+  systemPrompt: string;
+  enableSearch: boolean;
+  message_group_id?: string;
+  reasoningEffort?: 'low' | 'medium' | 'high';
+};
 
 export async function POST(req: Request) {
   try {
+    // Parse JSON with error handling
+    let requestData: ChatRequest;
+    try {
+      requestData = await req.json();
+    } catch (jsonError) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { status: 400 }
+      );
+    }
+
     const {
       messages,
       chatId,
       userId,
       model,
       isAuthenticated,
-      systemPrompt: _systemPrompt,
-      enableSearch: _enableSearch,
+      systemPrompt,
+      enableSearch,
       message_group_id,
-      reasoningEffort = 'medium',
-    } = (await req.json()) as ChatRequest
+      reasoningEffort = 'low',
+    } = requestData;
 
-    if (!messages || !chatId || !userId) {
+    console.log('Chat API received:', { messages, chatId, userId, model });
+    
+    if (!(messages && chatId && userId)) {
       return new Response(
-        JSON.stringify({ error: "Error, missing information" }),
+        JSON.stringify({ error: 'Error, missing information' }),
         { status: 400 }
-      )
+      );
     }
 
     const supabase = await validateAndTrackUsage({
       userId,
       model,
       isAuthenticated,
-    })
+    });
 
     // Increment message count for successful validation
     if (supabase) {
-      await incrementMessageCount({ supabase, userId })
+      await incrementMessageCount({ supabase, userId });
     }
 
-    const userMessage = messages[messages.length - 1]
+    const userMessage = messages[messages.length - 1];
 
-    if (supabase && userMessage?.role === "user") {
+    if (supabase && userMessage?.role === 'user') {
       await logUserMessage({
         supabase,
         userId,
         chatId,
-        content: userMessage.content,
-        attachments: userMessage.experimental_attachments as Attachment[],
+        content: getMessageContent(userMessage),
+        attachments: getMessageAttachments(userMessage),
         model,
         isAuthenticated,
         message_group_id,
-      })
+      });
     }
 
-    const allModels = await getAllModels()
-    const modelConfig = allModels.find((m) => m.id === model)
+    const allModels = await getAllModels();
+    const modelConfig = allModels.find((m) => m.id === model);
 
-    if (!modelConfig || !modelConfig.apiSdk) {
-      throw new Error(`Model ${model} not found`)
+    if (!(modelConfig && modelConfig.apiSdk)) {
+      throw new Error(`Model ${model} not found`);
     }
 
     // Always enable file search for this app
-    const isGPT5Model = model.startsWith('gpt-5')
-    const effectiveSystemPrompt = FILE_SEARCH_SYSTEM_PROMPT
+    const isGPT5Model = model.startsWith('gpt-5');
+    const effectiveSystemPrompt = systemPrompt || FILE_SEARCH_SYSTEM_PROMPT;
 
-    let apiKey: string | undefined
+    let apiKey: string | undefined;
     if (isAuthenticated && userId) {
-      const { getEffectiveApiKey } = await import("@/lib/user-keys")
-      const provider = getProviderForModel(model)
+      const { getEffectiveApiKey } = await import('@/lib/user-keys');
+      const provider = getProviderForModel(model);
       apiKey =
         (await getEffectiveApiKey(userId, provider as ProviderWithoutOllama)) ||
-        undefined
+        undefined;
     }
 
     // Create LangSmith run if enabled
-    let langsmithRunId: string | null = null
+    let langsmithRunId: string | null = null;
     if (isLangSmithEnabled()) {
       const run = await createRun({
         name: 'chat-completion',
         inputs: {
           model,
-          messages: messages.map(m => ({ role: m.role, content: m.content })),
+          messages: messages.map((m) => ({
+            role: m.role,
+            content: getMessageContent(m),
+          })),
           reasoningEffort,
-          enableSearch: true,
+          enableSearch,
         },
         runType: 'chain',
         metadata: {
@@ -119,38 +157,59 @@ export async function POST(req: Request) {
           chatId,
           model,
           reasoningEffort,
-          enableSearch: true,
+          enableSearch,
         },
-      })
-      langsmithRunId = run?.id || null
+      });
+      langsmithRunId = (run as { id?: string })?.id || null;
     }
 
-    // Always register file search tool
-    const tools: ToolSet = { fileSearch: fileSearchTool }
+    // Temporarily disable file search tool to fix schema issue
+    // const tools: ToolSet = { fileSearch: fileSearchTool };
+    const tools: ToolSet = {};
 
-    // Configure model settings with reasoning effort (search always enabled)
+    // Configure model settings with reasoning effort
     const modelSettings = {
-      enableSearch: true,
+      enableSearch,
       reasoningEffort,
-      headers: isGPT5Model ? {
-        'X-Reasoning-Effort': reasoningEffort,
-      } : undefined,
-    }
+      headers: isGPT5Model
+        ? {
+            'X-Reasoning-Effort': reasoningEffort,
+          }
+        : undefined,
+    };
 
+    console.log('Before streamText - messages:', messages);
+    console.log('Messages type:', typeof messages, 'Array?', Array.isArray(messages));
+    
+    // Convert simple messages to AI SDK v5 format with parts array
+    const uiMessages = messages.map(msg => ({
+      id: `msg-${Date.now()}-${Math.random()}`,
+      role: msg.role,
+      content: getMessageContent(msg),
+      parts: [
+        {
+          type: 'text' as const,
+          text: getMessageContent(msg)
+        }
+      ],
+      createdAt: new Date()
+    }));
+    
+    console.log('UI Messages:', uiMessages);
+    
     const result = streamText({
-      model: modelConfig.apiSdk(apiKey, modelSettings),
+      model: modelConfig.apiSdk(apiKey, modelSettings) as Parameters<typeof streamText>[0]['model'],
       system: effectiveSystemPrompt,
-      messages: messages,
+      messages: uiMessages,
       tools,
-      maxSteps: 10,
       onError: (err: unknown) => {
-        console.error("Streaming error occurred:", err)
+        console.error('Streaming error occurred:', err);
         // Don't set streamError anymore - let the AI SDK handle it through the stream
       },
 
       onFinish: async ({ response }) => {
         // Resolve final run ID from response (if available)
-        const actualRunId = extractRunId(response) || langsmithRunId
+        const actualRunId = extractRunId(response) || langsmithRunId;
 
         // Store assistant message with LangSmith run ID
         if (supabase) {
@@ -158,29 +217,31 @@ export async function POST(req: Request) {
             supabase,
             chatId,
             messages:
-              response.messages as unknown as import("@/app/types/api.types").Message[],
+              response.messages as unknown as import('@/app/types/api.types').Message[],
             message_group_id,
             model,
             langsmithRunId: actualRunId,
             reasoningEffort,
-          })
+          });
         }
 
         // Update LangSmith run if enabled
         if (actualRunId && isLangSmithEnabled()) {
-          type Usage = {
-            totalTokens?: number
-            promptTokens?: number
-            completionTokens?: number
-          } | undefined
-          const usage = (response as unknown as { usage?: Usage }).usage
+          type Usage =
+            | {
+                totalTokens?: number;
+                promptTokens?: number;
+                completionTokens?: number;
+              }
+            | undefined;
+          const usage = (response as unknown as { usage?: Usage }).usage;
           await updateRun({
             runId: actualRunId,
             outputs: {
               messages: response.messages,
               usage,
             },
-          })
+          });
 
           // Log metrics
           if (usage) {
@@ -188,33 +249,26 @@ export async function POST(req: Request) {
               runId: actualRunId,
               metrics: {
                 totalTokens: usage.totalTokens,
-                promptTokens: usage.promptTokens,
-                completionTokens: usage.completionTokens,
+                inputTokens: usage.promptTokens,
+                outputTokens: usage.completionTokens,
                 reasoningEffort,
-                enableSearch: true,
+                enableSearch,
               },
-            })
+            });
           }
         }
       },
-    })
+    });
 
-    return result.toDataStreamResponse({
-      sendReasoning: true,
-      sendSources: true,
-      getErrorMessage: (error: unknown) => {
-        console.error("Error forwarded to client:", error)
-        return extractErrorMessage(error)
-      },
-    })
+    return result.toTextStreamResponse();
   } catch (err: unknown) {
-    console.error("Error in /api/chat:", err)
+    console.error('Error in /api/chat:', err);
     const error = err as {
-      code?: string
-      message?: string
-      statusCode?: number
-    }
+      code?: string;
+      message?: string;
+      statusCode?: number;
+    };
 
-    return createErrorResponse(error)
+    return createErrorResponse(error);
   }
 }

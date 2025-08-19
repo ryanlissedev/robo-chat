@@ -1,0 +1,544 @@
+compdef:153: _comps: assignment to invalid subscript range
+$ bun run next dev --turbopack
+ ⚠ Port 3000 is in use by process 84986, using available port 3002 instead.
+   ▲ Next.js 15.4.2-canary.52 (Turbopack)
+   - Local:        http://localhost:3002
+   - Network:      http://192.168.1.20:3002
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+ ✓ Starting...
+Creating turbopack project {
+  dir: '/Users/neo/Developer/experiments/HGG/robo-chat',
+  testMode: true
+}
+ ✓ Compiled middleware in 329ms
+ ✓ Ready in 1392ms
+ ○ Compiling /api/chat ...
+ ✓ Compiled /api/chat in 1763ms
+Chat API received: {
+  messages: [ { role: 'user', content: 'Hello, how are you?' } ],
+  chatId: 'test-chat-123',
+  userId: 'guest_1234567890_abc123def',
+  model: 'gpt-5-mini'
+}
+Error saving user message: {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "test-chat-123"'
+}
+Detected 4 Ollama models
+Before streamText - messages: [ { role: 'user', content: 'Hello, how are you?' } ]
+Messages type: object Array? true
+UI Messages for conversion: [
+  {
+    id: 'msg-1755549343384-0.3896340503236355',
+    role: 'user',
+    content: 'Hello, how are you?',
+    parts: [ [Object] ],
+    createdAt: 2025-08-18T20:35:43.384Z
+  }
+]
+Converted messages: [ { role: 'user', content: [ [Object] ] } ]
+Error in /api/chat: Error [AI_UnsupportedModelVersionError]: Unsupported model version v1 for provider "undefined" and model "gpt-5-mini". AI SDK 5 only supports models that implement specification version "v2".
+    at POST (app/api/chat/route.ts:197:30)
+  195 |     }
+  196 |     
+> 197 |     const result = streamText({
+      |                              ^
+  198 |       model: modelConfig.apiSdk(apiKey, modelSettings) as Parameters<typeof streamText>[0]['model'],
+  199 |       system: effectiveSystemPrompt,
+  200 |       messages: coreMessages, {
+  cause: undefined,
+  version: 'v1',
+  provider: undefined,
+  modelId: 'gpt-5-mini'
+}
+ POST /api/chat 500 in 2970ms
+Chat API received: {
+  messages: [ { role: 'user', content: 'Hello, how are you?' } ],
+  chatId: 'test-chat-123',
+  userId: 'guest_1234567890_abc123def',
+  model: 'gpt-4o-mini'
+}
+Error saving user message: {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "test-chat-123"'
+}
+Detected 4 Ollama models
+Error in /api/chat: Error: Model gpt-4o-mini not found
+    at POST (app/api/chat/route.ts:113:13)
+  111 |
+  112 |     if (!(modelConfig && modelConfig.apiSdk)) {
+> 113 |       throw new Error(`Model ${model} not found`);
+      |             ^
+  114 |     }
+  115 |
+  116 |     // Always enable file search for this app
+ POST /api/chat 500 in 734ms
+Chat API received: {
+  messages: [ { role: 'user', content: 'Hello, how are you?' } ],
+  chatId: 'test-chat-123',
+  userId: 'guest_1234567890_abc123def',
+  model: 'gpt-4o-mini'
+}
+Error saving user message: {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "test-chat-123"'
+}
+Detected 4 Ollama models
+Before streamText - messages: [ { role: 'user', content: 'Hello, how are you?' } ]
+Messages type: object Array? true
+UI Messages for conversion: [
+  {
+    id: 'msg-1755549403495-0.11606771720285358',
+    role: 'user',
+    content: 'Hello, how are you?',
+    parts: [ [Object] ],
+    createdAt: 2025-08-18T20:36:43.495Z
+  }
+]
+Converted messages: [ { role: 'user', content: [ [Object] ] } ]
+Error in /api/chat: Error [AI_UnsupportedModelVersionError]: Unsupported model version v1 for provider "openai.chat" and model "gpt-4o-mini". AI SDK 5 only supports models that implement specification version "v2".
+    at POST (app/api/chat/route.ts:197:30)
+  195 |     }
+  196 |     
+> 197 |     const result = streamText({
+      |                              ^
+  198 |       model: modelConfig.apiSdk(apiKey, modelSettings) as Parameters<typeof streamText>[0]['model'],
+  199 |       system: effectiveSystemPrompt,
+  200 |       messages: coreMessages, {
+  cause: undefined,
+  version: 'v1',
+  provider: 'openai.chat',
+  modelId: 'gpt-4o-mini'
+}
+ POST /api/chat 500 in 791ms
+Chat API received: {
+  messages: [ { role: 'user', content: 'Hello, how are you?' } ],
+  chatId: 'test-chat-123',
+  userId: 'guest_1234567890_abc123def',
+  model: 'gpt-4o-mini'
+}
+Error saving user message: {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "test-chat-123"'
+}
+Detected 4 Ollama models
+Before streamText - messages: [ { role: 'user', content: 'Hello, how are you?' } ]
+Messages type: object Array? true
+UI Messages for conversion: [
+  {
+    id: 'msg-1755549466868-0.15206403419882208',
+    role: 'user',
+    content: 'Hello, how are you?',
+    parts: [ [Object] ],
+    createdAt: 2025-08-18T20:37:46.868Z
+  }
+]
+Converted messages: [ { role: 'user', content: [ [Object] ] } ]
+Error in /api/chat: Error [AI_UnsupportedModelVersionError]: Unsupported model version v1 for provider "openai.chat" and model "gpt-4o-mini". AI SDK 5 only supports models that implement specification version "v2".
+    at POST (app/api/chat/route.ts:197:30)
+  195 |     }
+  196 |     
+> 197 |     const result = streamText({
+      |                              ^
+  198 |       model: modelConfig.apiSdk(apiKey, modelSettings) as Parameters<typeof streamText>[0]['model'],
+  199 |       system: effectiveSystemPrompt,
+  200 |       messages: coreMessages, {
+  cause: undefined,
+  version: 'v1',
+  provider: 'openai.chat',
+  modelId: 'gpt-4o-mini'
+}
+ POST /api/chat 500 in 875ms
+Chat API received: {
+  messages: [ { role: 'user', content: 'Hello, how are you?' } ],
+  chatId: 'test-chat-123',
+  userId: 'guest_1234567890_abc123def',
+  model: 'gpt-4o-mini'
+}
+Error saving user message: {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "test-chat-123"'
+}
+Detected 4 Ollama models
+Before streamText - messages: [ { role: 'user', content: 'Hello, how are you?' } ]
+Messages type: object Array? true
+UI Messages for conversion: [
+  {
+    id: 'msg-1755549490513-0.09221492128167164',
+    role: 'user',
+    content: 'Hello, how are you?',
+    parts: [ [Object] ],
+    createdAt: 2025-08-18T20:38:10.513Z
+  }
+]
+Converted messages: [ { role: 'user', content: [ [Object] ] } ]
+Error in /api/chat: Error [AI_UnsupportedModelVersionError]: Unsupported model version v1 for provider "openai.chat" and model "gpt-4o-mini". AI SDK 5 only supports models that implement specification version "v2".
+    at POST (app/api/chat/route.ts:197:30)
+  195 |     }
+  196 |     
+> 197 |     const result = streamText({
+      |                              ^
+  198 |       model: modelConfig.apiSdk(apiKey, modelSettings) as Parameters<typeof streamText>[0]['model'],
+  199 |       system: effectiveSystemPrompt,
+  200 |       messages: coreMessages, {
+  cause: undefined,
+  version: 'v1',
+  provider: 'openai.chat',
+  modelId: 'gpt-4o-mini'
+}
+ POST /api/chat 500 in 834ms
+ ✓ Compiled middleware in 1ms
+ ✓ Compiled /api/test-ai in 330ms
+Testing AI SDK directly...
+Direct AI SDK test error: Error [AI_UnsupportedModelVersionError]: Unsupported model version v1 for provider "openai.chat" and model "gpt-4o-mini". AI SDK 5 only supports models that implement specification version "v2".
+    at POST (app/api/test-ai/route.ts:8:30)
+   6 |     console.log('Testing AI SDK directly...');
+   7 |     
+>  8 |     const result = streamText({
+     |                              ^
+   9 |       model: openai('gpt-4o-mini'),
+  10 |       prompt: 'Say hello world',
+  11 |     }); {
+  cause: undefined,
+  version: 'v1',
+  provider: 'openai.chat',
+  modelId: 'gpt-4o-mini'
+}
+ POST /api/test-ai 500 in 815ms
+Testing AI SDK directly...
+ POST /api/test-ai 200 in 1414ms
+ ⨯ ./node_modules/@ai-sdk/mistral/dist/index.mjs:11:1
+Export injectJsonInstructionIntoMessages doesn't exist in target module
+[0m [90m  9 |[39m
+ [90m 10 |[39m [90m// src/mistral-chat-language-model.ts[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m {
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 12 |[39m   combineHeaders[33m,[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 13 |[39m   createEventSourceResponseHandler[33m,[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 14 |[39m   createJsonResponseHandler[33m,[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 15 |[39m   generateId[33m,[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 16 |[39m   injectJsonInstructionIntoMessages[33m,[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 17 |[39m   parseProviderOptions[33m,[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 18 |[39m   postJsonToApi
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 19 |[39m } [36mfrom[39m [32m"@ai-sdk/provider-utils"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 20 |[39m [36mimport[39m { z [36mas[39m z3 } [36mfrom[39m [32m"zod/v4"[39m[33m;[39m
+ [90m 21 |[39m
+ [90m 22 |[39m [90m// src/convert-to-mistral-chat-messages.ts[39m[0m
+
+The export injectJsonInstructionIntoMessages was not found in module [project]/node_modules/@ai-sdk/provider-utils/dist/index.mjs [app-route] (ecmascript).
+Did you mean to import createJsonResponseHandler?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  App Route:
+    ./node_modules/@ai-sdk/mistral/dist/index.mjs
+    ./lib/openproviders/index.ts
+    ./lib/models/data/perplexity.ts
+    ./lib/models/index.ts
+    ./app/api/chat/route.ts
+
+
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 1699ms
+ POST /api/chat 500 in 2441ms
+ ⨯ ./node_modules/@ai-sdk/mistral/dist/index.mjs:11:1
+Export injectJsonInstructionIntoMessages doesn't exist in target module
+[0m [90m  9 |[39m
+ [90m 10 |[39m [90m// src/mistral-chat-language-model.ts[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m {
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 12 |[39m   combineHeaders[33m,[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 13 |[39m   createEventSourceResponseHandler[33m,[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 14 |[39m   createJsonResponseHandler[33m,[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 15 |[39m   generateId[33m,[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 16 |[39m   injectJsonInstructionIntoMessages[33m,[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 17 |[39m   parseProviderOptions[33m,[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 18 |[39m   postJsonToApi
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 19 |[39m } [36mfrom[39m [32m"@ai-sdk/provider-utils"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 20 |[39m [36mimport[39m { z [36mas[39m z3 } [36mfrom[39m [32m"zod/v4"[39m[33m;[39m
+ [90m 21 |[39m
+ [90m 22 |[39m [90m// src/convert-to-mistral-chat-messages.ts[39m[0m
+
+The export injectJsonInstructionIntoMessages was not found in module [project]/node_modules/@ai-sdk/provider-utils/dist/index.mjs [app-route] (ecmascript).
+Did you mean to import createJsonResponseHandler?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  App Route:
+    ./node_modules/@ai-sdk/mistral/dist/index.mjs
+    ./lib/openproviders/index.ts
+    ./lib/models/data/perplexity.ts
+    ./lib/models/index.ts
+    ./app/api/chat/route.ts
+
+
+ POST /api/chat 500 in 157ms
+Chat API received: {
+  messages: [ { role: 'user', content: 'Hello, how are you?' } ],
+  chatId: 'test-chat-123',
+  userId: 'guest_1234567890_abc123def',
+  model: 'gpt-4o-mini'
+}
+Error saving user message: {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "test-chat-123"'
+}
+Detected 4 Ollama models
+Before streamText - messages: [ { role: 'user', content: 'Hello, how are you?' } ]
+Messages type: object Array? true
+UI Messages for conversion: [
+  {
+    id: 'msg-1755549698398-0.41929571682599176',
+    role: 'user',
+    content: 'Hello, how are you?',
+    parts: [ [Object] ],
+    createdAt: 2025-08-18T20:41:38.398Z
+  }
+]
+Converted messages: [ { role: 'user', content: [ [Object] ] } ]
+Streaming error occurred: {
+  error: [Error [AI_APICallError]: Invalid schema for function 'fileSearch': schema must be a JSON Schema of 'type: "object"', got 'type: "None"'.] {
+    cause: undefined,
+    url: 'https://api.openai.com/v1/chat/completions',
+    requestBodyValues: {
+      model: 'gpt-4o-mini',
+      logit_bias: undefined,
+      logprobs: undefined,
+      top_logprobs: undefined,
+      user: undefined,
+      parallel_tool_calls: undefined,
+      max_tokens: undefined,
+      temperature: undefined,
+      top_p: undefined,
+      frequency_penalty: undefined,
+      presence_penalty: undefined,
+      response_format: undefined,
+      stop: undefined,
+      seed: undefined,
+      verbosity: undefined,
+      max_completion_tokens: undefined,
+      store: undefined,
+      metadata: undefined,
+      prediction: undefined,
+      reasoning_effort: undefined,
+      service_tier: undefined,
+      prompt_cache_key: undefined,
+      safety_identifier: undefined,
+      messages: [Array],
+      tools: [Array],
+      tool_choice: 'auto',
+      stream: true,
+      stream_options: [Object]
+    },
+    statusCode: 400,
+    responseHeaders: {
+      'access-control-expose-headers': 'X-Request-ID',
+      'alt-svc': 'h3=":443"; ma=86400',
+      'cf-cache-status': 'DYNAMIC',
+      'cf-ray': '97143baf8e205811-AMS',
+      connection: 'keep-alive',
+      'content-length': '278',
+      'content-type': 'application/json',
+      date: 'Mon, 18 Aug 2025 20:41:39 GMT',
+      'openai-organization': 'user-fipn4mdoz0vapuu0td8lboqz',
+      'openai-processing-ms': '22',
+      'openai-project': 'proj_4PE0OohGUYEebRCnMZy2X5TG',
+      'openai-version': '2020-10-01',
+      server: 'cloudflare',
+      'set-cookie': '_cfuvid=w9_2n3P.7vgJd01Uni6j3rd9jRp3Ry77iIPqbLTVNM0-1755549699016-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
+      'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+      'x-content-type-options': 'nosniff',
+      'x-envoy-upstream-service-time': '186',
+      'x-ratelimit-limit-requests': '10000',
+      'x-ratelimit-limit-tokens': '10000000',
+      'x-ratelimit-remaining-requests': '9999',
+      'x-ratelimit-remaining-tokens': '9999469',
+      'x-ratelimit-reset-requests': '6ms',
+      'x-ratelimit-reset-tokens': '3ms',
+      'x-request-id': 'req_9aa4add1b82f44d8ac75b8c333bd5e3f'
+    },
+    responseBody: '{\n' +
+      '  "error": {\n' +
+      `    "message": "Invalid schema for function 'fileSearch': schema must be a JSON Schema of 'type: \\"object\\"', got 'type: \\"None\\"'.",\n` +
+      '    "type": "invalid_request_error",\n' +
+      '    "param": "tools[0].function.parameters",\n' +
+      '    "code": "invalid_function_parameters"\n' +
+      '  }\n' +
+      '}',
+    isRetryable: false,
+    data: { error: [Object] }
+  }
+}
+ POST /api/chat 200 in 1487ms
+Chat API received: {
+  messages: [ { role: 'user', content: 'Hello, how are you?' } ],
+  chatId: 'test-chat-123',
+  userId: 'guest_1234567890_abc123def',
+  model: 'gpt-4o-mini'
+}
+Error saving user message: {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "test-chat-123"'
+}
+Before streamText - messages: [ { role: 'user', content: 'Hello, how are you?' } ]
+Messages type: object Array? true
+UI Messages for conversion: [
+  {
+    id: 'msg-1755549732841-0.7972232575461733',
+    role: 'user',
+    content: 'Hello, how are you?',
+    parts: [ [Object] ],
+    createdAt: 2025-08-18T20:42:12.841Z
+  }
+]
+Converted messages: [ { role: 'user', content: [ [Object] ] } ]
+Streaming error occurred: {
+  error: [Error [AI_APICallError]: Invalid schema for function 'fileSearch': schema must be a JSON Schema of 'type: "object"', got 'type: "None"'.] {
+    cause: undefined,
+    url: 'https://api.openai.com/v1/chat/completions',
+    requestBodyValues: {
+      model: 'gpt-4o-mini',
+      logit_bias: undefined,
+      logprobs: undefined,
+      top_logprobs: undefined,
+      user: undefined,
+      parallel_tool_calls: undefined,
+      max_tokens: undefined,
+      temperature: undefined,
+      top_p: undefined,
+      frequency_penalty: undefined,
+      presence_penalty: undefined,
+      response_format: undefined,
+      stop: undefined,
+      seed: undefined,
+      verbosity: undefined,
+      max_completion_tokens: undefined,
+      store: undefined,
+      metadata: undefined,
+      prediction: undefined,
+      reasoning_effort: undefined,
+      service_tier: undefined,
+      prompt_cache_key: undefined,
+      safety_identifier: undefined,
+      messages: [Array],
+      tools: [Array],
+      tool_choice: 'auto',
+      stream: true,
+      stream_options: [Object]
+    },
+    statusCode: 400,
+    responseHeaders: {
+      'access-control-expose-headers': 'X-Request-ID',
+      'alt-svc': 'h3=":443"; ma=86400',
+      'cf-cache-status': 'DYNAMIC',
+      'cf-ray': '97143c86ab420a73-AMS',
+      connection: 'keep-alive',
+      'content-length': '278',
+      'content-type': 'application/json',
+      date: 'Mon, 18 Aug 2025 20:42:13 GMT',
+      'openai-organization': 'user-fipn4mdoz0vapuu0td8lboqz',
+      'openai-processing-ms': '22',
+      'openai-project': 'proj_4PE0OohGUYEebRCnMZy2X5TG',
+      'openai-version': '2020-10-01',
+      server: 'cloudflare',
+      'set-cookie': '_cfuvid=_BTCyjUt2XVBi6Bwyy3SgH8NKetP0wnXFUg5fAHrUEs-1755549733511-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
+      'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+      'x-content-type-options': 'nosniff',
+      'x-envoy-upstream-service-time': '226',
+      'x-ratelimit-limit-requests': '10000',
+      'x-ratelimit-limit-tokens': '10000000',
+      'x-ratelimit-remaining-requests': '9999',
+      'x-ratelimit-remaining-tokens': '9999469',
+      'x-ratelimit-reset-requests': '6ms',
+      'x-ratelimit-reset-tokens': '3ms',
+      'x-request-id': 'req_64c8402f0a364c16b4ad496868a2c216'
+    },
+    responseBody: '{\n' +
+      '  "error": {\n' +
+      `    "message": "Invalid schema for function 'fileSearch': schema must be a JSON Schema of 'type: \\"object\\"', got 'type: \\"None\\"'.",\n` +
+      '    "type": "invalid_request_error",\n' +
+      '    "param": "tools[0].function.parameters",\n' +
+      '    "code": "invalid_function_parameters"\n' +
+      '  }\n' +
+      '}',
+    isRetryable: false,
+    data: { error: [Object] }
+  }
+}
+ POST /api/chat 200 in 1243ms
+Chat API received: {
+  messages: [ { role: 'user', content: 'Hello, how are you?' } ],
+  chatId: 'test-chat-123',
+  userId: 'guest_1234567890_abc123def',
+  model: 'gpt-4o-mini'
+}
+Error saving user message: {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "test-chat-123"'
+}
+Detected 4 Ollama models
+Before streamText - messages: [ { role: 'user', content: 'Hello, how are you?' } ]
+Messages type: object Array? true
+UI Messages for conversion: [
+  {
+    id: 'msg-1755549758549-0.3658361969992304',
+    role: 'user',
+    content: 'Hello, how are you?',
+    parts: [ [Object] ],
+    createdAt: 2025-08-18T20:42:38.549Z
+  }
+]
+Converted messages: [ { role: 'user', content: [ [Object] ] } ]
+Error saving final assistant message: {
+  code: '22P02',
+  details: null,
+  hint: null,
+  message: 'invalid input syntax for type uuid: "test-chat-123"'
+}
+Failed to save assistant messages: Error: Failed to save assistant message: invalid input syntax for type uuid: "test-chat-123"
+    at saveFinalAssistantMessage (app/api/chat/db.ts:88:11)
+    at async storeAssistantMessage (app/api/chat/api.ts:106:5)
+    at async onFinish (app/api/chat/route.ts:214:11)
+  86 |   if (error) {
+  87 |     console.error("Error saving final assistant message:", error)
+> 88 |     throw new Error(`Failed to save assistant message: ${error.message}`)
+     |           ^
+  89 |   } else {
+  90 |     console.log("Assistant message saved successfully (merged).")
+  91 |   }
+ POST /api/chat 200 in 2053ms

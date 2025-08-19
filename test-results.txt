@@ -1,0 +1,25 @@
+[1;34mRunning comprehensive test suite...[0m
+[0;34m🚀 RoboRail Assistant - Comprehensive Test Suite[0m
+==================================================
+
+[1;33m🧹 Cleaning up ports...[0m
+[0;32m✅ Ports cleaned[0m
+
+[1;33mRunning TypeScript Type Check...[0m
+$ bun run tsc --noEmit
+[0;32m✅ TypeScript Type Check PASSED[0m
+
+[1;33mRunning ESLint Check...[0m
+$ bun run next lint
+
+./app/api/create-chat/api.ts
+34:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/fix-db/route.ts
+19:9  Error: 'tablesExist' is never reassigned. Use 'const' instead.  prefer-const
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+error: "next" exited with code 1
+error: script "lint" exited with code 1
+[0;31m❌ ESLint Check FAILED[0m
+make: *** [test-all] Error 1

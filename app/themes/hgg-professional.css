@@ -44,7 +44,7 @@
   --border-radius-professional: 8px;
 }
 
-.theme-hgg-professional.dark {
+.dark .theme-hgg-professional {
   /* Dark theme for HGG Professional */
   --background: oklch(0.08 0.005 258);
   --foreground: oklch(0.98 0.002 258);

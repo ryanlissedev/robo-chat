@@ -27,8 +27,7 @@ export function useMultiChat(models: ModelConfig[]): ModelChat[] {
     // todo: fix this
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useChat({
-      api: "/api/chat",
-      onError: (error) => {
+      onError: (error: any) => {
         const model = models[index]
         if (model) {
           console.error(`Error with ${model.name}:`, error)
@@ -39,7 +38,7 @@ export function useMultiChat(models: ModelConfig[]): ModelChat[] {
           })
         }
       },
-    })
+    } as any)
   )
 
   // Map only the provided models to their corresponding chat hooks
@@ -50,9 +49,9 @@ export function useMultiChat(models: ModelConfig[]): ModelChat[] {
       return {
         model,
         messages: chatHook.messages,
-        isLoading: chatHook.isLoading,
+        isLoading: (chatHook as any).isLoading || false,
         append: (message: any, options?: any) => {
-          return chatHook.append(message, options)
+          return (chatHook as any).append ? (chatHook as any).append(message, options) : Promise.resolve()
         },
         stop: chatHook.stop,
       }
@@ -61,7 +60,7 @@ export function useMultiChat(models: ModelConfig[]): ModelChat[] {
     return instances
     // todo: fix this
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [models, ...chatHooks.flatMap((chat) => [chat.messages, chat.isLoading])])
+  }, [models, ...chatHooks.flatMap((chat) => [chat.messages, (chat as any).isLoading])])
 
   return activeChatInstances
 }

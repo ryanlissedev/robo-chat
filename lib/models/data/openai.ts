@@ -3,6 +3,31 @@ import { ModelConfig } from "../types"
 
 const openaiModels: ModelConfig[] = [
   {
+    id: "gpt-4o-mini",
+    name: "GPT-4o Mini",
+    provider: "OpenAI",
+    providerId: "openai",
+    modelFamily: "GPT-4o",
+    baseProviderId: "openai",
+    description: "Fast, efficient GPT-4o model with file search capabilities",
+    tags: ["fast", "efficient", "file-search", "default"],
+    contextWindow: 128000,
+    inputCost: 0.15,
+    outputCost: 0.6,
+    priceUnit: "per 1M tokens",
+    vision: true,
+    tools: true,
+    audio: false,
+    openSource: false,
+    speed: "Fast",
+    website: "https://openai.com",
+    apiDocs: "https://platform.openai.com/docs/models/gpt-4o-mini",
+    modelPage: "https://platform.openai.com/docs/models/gpt-4o-mini",
+    icon: "openai",
+    apiSdk: (apiKey?: string, opts?: { enableSearch?: boolean }) =>
+      openproviders("gpt-4o-mini", opts, apiKey),
+  },
+  {
     id: "gpt-5-mini",
     name: "GPT-5 Mini",
     provider: "OpenAI",
@@ -24,8 +49,8 @@ const openaiModels: ModelConfig[] = [
     apiDocs: "https://platform.openai.com/docs/models/gpt-5",
     modelPage: "https://platform.openai.com/docs/models/gpt-5-mini",
     icon: "openai",
-    apiSdk: (apiKey?: string, settings?: any) =>
-      openproviders("gpt-5-mini", settings, apiKey),
+    apiSdk: (apiKey?: string, opts?: { enableSearch?: boolean }) =>
+      openproviders("gpt-5-mini", opts, apiKey),
   },
   {
     id: "gpt-5",
@@ -49,8 +74,8 @@ const openaiModels: ModelConfig[] = [
     apiDocs: "https://platform.openai.com/docs/models/gpt-5",
     modelPage: "https://platform.openai.com/docs/models/gpt-5",
     icon: "openai",
-    apiSdk: (apiKey?: string, settings?: any) =>
-      openproviders("gpt-5", settings, apiKey),
+    apiSdk: (apiKey?: string, opts?: { enableSearch?: boolean }) =>
+      openproviders("gpt-5", opts, apiKey),
   },
   {
     id: "gpt-5-pro",
@@ -74,8 +99,58 @@ const openaiModels: ModelConfig[] = [
     apiDocs: "https://platform.openai.com/docs/models/gpt-5",
     modelPage: "https://platform.openai.com/docs/models/gpt-5-pro",
     icon: "openai",
-    apiSdk: (apiKey?: string, settings?: any) =>
-      openproviders("gpt-5-pro", settings, apiKey),
+    apiSdk: (apiKey?: string, opts?: { enableSearch?: boolean }) =>
+      openproviders("gpt-5-pro", opts, apiKey),
+  },
+  {
+    id: "gpt-5-nano",
+    name: "GPT-5 Nano",
+    provider: "OpenAI",
+    providerId: "openai",
+    modelFamily: "GPT-5",
+    baseProviderId: "openai",
+    description: "Low-cost, low-latency GPT-5 reasoning model for simple tasks",
+    tags: ["low-cost", "low-latency", "reasoning", "simple-tasks"],
+    contextWindow: 256000,
+    inputCost: 0.25,
+    outputCost: 1.0,
+    priceUnit: "per 1M tokens",
+    vision: true,
+    tools: true,
+    audio: false,
+    openSource: false,
+    speed: "Very Fast",
+    website: "https://openai.com",
+    apiDocs: "https://platform.openai.com/docs/models/gpt-5",
+    modelPage: "https://platform.openai.com/docs/models/gpt-5-nano",
+    icon: "openai",
+    apiSdk: (apiKey?: string, opts?: { enableSearch?: boolean }) =>
+      openproviders("gpt-5-nano", opts, apiKey),
+  },
+  {
+    id: "gpt-5-chat-latest",
+    name: "GPT-5 Chat Latest",
+    provider: "OpenAI",
+    providerId: "openai",
+    modelFamily: "GPT-5",
+    baseProviderId: "openai",
+    description: "General conversational GPT-5 model with temperature support for creative writing",
+    tags: ["conversational", "creative-writing", "temperature-support"],
+    contextWindow: 1048576,
+    inputCost: 1.0,
+    outputCost: 4.0,
+    priceUnit: "per 1M tokens",
+    vision: true,
+    tools: true,
+    audio: false,
+    openSource: false,
+    speed: "Medium",
+    website: "https://openai.com",
+    apiDocs: "https://platform.openai.com/docs/models/gpt-5",
+    modelPage: "https://platform.openai.com/docs/models/gpt-5-chat-latest",
+    icon: "openai",
+    apiSdk: (apiKey?: string, opts?: { enableSearch?: boolean }) =>
+      openproviders("gpt-5-chat-latest", opts, apiKey),
   },
 ]
 

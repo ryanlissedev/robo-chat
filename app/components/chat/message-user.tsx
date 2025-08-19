@@ -1,5 +1,8 @@
-"use client"
+'use client';
 
+import { Check, Copy, Trash } from '@phosphor-icons/react';
+import Image from 'next/image';
+import { useRef, useState } from 'react';
 import {
   MorphingDialog,
   MorphingDialogClose,
@@ -7,37 +10,33 @@ import {
   MorphingDialogContent,
   MorphingDialogImage,
   MorphingDialogTrigger,
-} from "@/components/motion-primitives/morphing-dialog"
+} from '@/components/motion-primitives/morphing-dialog';
 import {
   MessageAction,
   MessageActions,
   Message as MessageContainer,
   MessageContent,
-} from "@/components/prompt-kit/message"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { Message as MessageType } from "@ai-sdk/react"
-import { Check, Copy, Trash } from "@phosphor-icons/react"
-import Image from "next/image"
-import { useRef, useState } from "react"
+} from '@/components/prompt-kit/message';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const getTextFromDataUrl = (dataUrl: string) => {
-  const base64 = dataUrl.split(",")[1]
-  return base64
-}
+  const base64 = dataUrl.split(',')[1];
+  return base64;
+};
 
 export type MessageUserProps = {
-  hasScrollAnchor?: boolean
-  attachments?: MessageType["experimental_attachments"]
-  children: string
-  copied: boolean
-  copyToClipboard: () => void
-  onEdit: (id: string, newText: string) => void
-  onReload: () => void
-  onDelete: (id: string) => void
-  id: string
-  className?: string
-}
+  hasScrollAnchor?: boolean;
+  attachments?: Array<{ url?: string; contentType?: string; name?: string; [key: string]: unknown }>;
+  children: string;
+  copied: boolean;
+  copyToClipboard: () => void;
+  onEdit: (id: string, newText: string) => void;
+  onReload: () => void;
+  onDelete: (id: string) => void;
+  id: string;
+  className?: string;
+};
 
 export function MessageUser({
   hasScrollAnchor,
@@ -51,32 +50,33 @@ export function MessageUser({
   id,
   className,
 }: MessageUserProps) {
-  const [editInput, setEditInput] = useState(children)
-  const [isEditing, setIsEditing] = useState(false)
-  const contentRef = useRef<HTMLDivElement>(null)
+  const [editInput, setEditInput] = useState(children);
+  const [isEditing, setIsEditing] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const handleEditCancel = () => {
-    setIsEditing(false)
-    setEditInput(children)
-  }
+    setIsEditing(false);
+    setEditInput(children);
+  };
 
   const handleSave = () => {
     if (onEdit) {
-      onEdit(id, editInput)
+      onEdit(id, editInput);
     }
-    onReload()
-    setIsEditing(false)
-  }
+    onReload();
+    setIsEditing(false);
+  };
 
   const handleDelete = () => {
-    onDelete(id)
-  }
+    onDelete(id);
+  };
 
   return (
     <MessageContainer
+      data-testid="user-message"
       className={cn(
-        "group flex w-full max-w-3xl flex-col items-end gap-0.5 px-6 pb-2",
-        hasScrollAnchor && "min-h-scroll-anchor",
+        'group flex w-full max-w-3xl flex-col items-end gap-0.5 px-6 pb-2',
+        hasScrollAnchor && 'min-h-scroll-anchor',
         className
       )}
     >
@@ -85,10 +85,10 @@ export function MessageUser({
           className="flex flex-row gap-2"
           key={`${attachment.name}-${index}`}
         >
-          {attachment.contentType?.startsWith("image") ? (
+          {attachment.contentType?.startsWith('image') ? (
             <MorphingDialog
               transition={{
-                type: "spring",
+                type: 'spring',
                 stiffness: 280,
                 damping: 18,
                 mass: 0.3,
@@ -96,68 +96,66 @@ export function MessageUser({
             >
               <MorphingDialogTrigger className="z-10">
                 <Image
+                  alt={attachment.name || 'Attachment'}
                   className="mb-1 w-40 rounded-md"
-                  key={attachment.name}
-                  src={attachment.url}
-                  alt={attachment.name || "Attachment"}
-                  width={160}
                   height={120}
+                  key={attachment.name}
+                  src={attachment.url || ''}
+                  width={160}
                 />
               </MorphingDialogTrigger>
               <MorphingDialogContainer>
                 <MorphingDialogContent className="relative rounded-lg">
                   <MorphingDialogImage
-                    src={attachment.url}
-                    alt={attachment.name || ""}
+                    alt={attachment.name || ''}
                     className="max-h-[90vh] max-w-[90vw] object-contain"
+                    src={attachment.url || ''}
                   />
                 </MorphingDialogContent>
                 <MorphingDialogClose className="text-primary" />
               </MorphingDialogContainer>
             </MorphingDialog>
-          ) : attachment.contentType?.startsWith("text") ? (
-            <div className="text-primary mb-3 h-24 w-40 overflow-hidden rounded-md border p-2 text-xs">
-              {getTextFromDataUrl(attachment.url)}
+          ) : attachment.contentType?.startsWith('text') ? (
+            <div className="mb-3 h-24 w-40 overflow-hidden rounded-md border p-2 text-primary text-xs">
+              {getTextFromDataUrl(attachment.url || '')}
             </div>
           ) : null}
         </div>
       ))}
       {isEditing ? (
         <div
-          className="bg-accent relative flex min-w-[180px] flex-col gap-2 rounded-3xl px-5 py-2.5"
+          className="relative flex min-w-[180px] flex-col gap-2 rounded-3xl bg-accent px-5 py-2.5"
           style={{
             width: contentRef.current?.offsetWidth,
           }}
         >
           <textarea
+            autoFocus
             className="w-full resize-none bg-transparent outline-none"
-            value={editInput}
             onChange={(e) => setEditInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault()
-                handleSave()
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSave();
               }
-              if (e.key === "Escape") {
-                handleEditCancel()
+              if (e.key === 'Escape') {
+                handleEditCancel();
               }
             }}
-            autoFocus
+            value={editInput}
           />
           <div className="flex justify-end gap-2">
-            <Button size="sm" variant="ghost" onClick={handleEditCancel}>
+            <Button onClick={handleEditCancel} size="sm" variant="ghost">
               Cancel
             </Button>
-            <Button size="sm" onClick={handleSave}>
+            <Button onClick={handleSave} size="sm">
               Save
             </Button>
           </div>
         </div>
       ) : (
         <MessageContent
-          className="bg-accent prose dark:prose-invert relative max-w-[70%] rounded-3xl px-5 py-2.5"
-          markdown={true}
-          ref={contentRef}
+          className="prose dark:prose-invert relative max-w-[70%] rounded-3xl bg-accent px-5 py-2.5"
           components={{
             code: ({ children }) => <>{children}</>,
             pre: ({ children }) => <>{children}</>,
@@ -172,15 +170,17 @@ export function MessageUser({
             ul: ({ children }) => <>{children}</>,
             ol: ({ children }) => <>{children}</>,
           }}
+          markdown={true}
+          ref={contentRef}
         >
           {children}
         </MessageContent>
       )}
       <MessageActions className="flex gap-0 opacity-0 transition-opacity duration-0 group-hover:opacity-100">
-        <MessageAction tooltip={copied ? "Copied!" : "Copy text"} side="bottom">
+        <MessageAction side="bottom" tooltip={copied ? 'Copied!' : 'Copy text'}>
           <button
-            className="hover:bg-accent/60 text-muted-foreground hover:text-foreground flex size-7.5 items-center justify-center rounded-full bg-transparent transition"
             aria-label="Copy text"
+            className="flex size-7.5 items-center justify-center rounded-full bg-transparent text-muted-foreground transition hover:bg-accent/60 hover:text-foreground"
             onClick={copyToClipboard}
             type="button"
           >
@@ -206,10 +206,10 @@ export function MessageUser({
             <PencilSimple className="size-4" />
           </button>
         </MessageAction> */}
-        <MessageAction tooltip="Delete" side="bottom">
+        <MessageAction side="bottom" tooltip="Delete">
           <button
-            className="hover:bg-accent/60 text-muted-foreground hover:text-foreground flex size-7.5 items-center justify-center rounded-full bg-transparent transition"
             aria-label="Delete"
+            className="flex size-7.5 items-center justify-center rounded-full bg-transparent text-muted-foreground transition hover:bg-accent/60 hover:text-foreground"
             onClick={handleDelete}
             type="button"
           >
@@ -218,5 +218,5 @@ export function MessageUser({
         </MessageAction>
       </MessageActions>
     </MessageContainer>
-  )
+  );
 }

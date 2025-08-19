@@ -92,11 +92,11 @@ export function ThemeSelector({ className }: ThemeSelectorProps) {
     setIsDarkMode(theme === "dark");
   }, [theme]);
 
-  const applyTheme = (variant: ThemeVariant, dark: boolean) => {
-    const newTheme = dark ? "dark" : "light";
+  const applyTheme = (variant: ThemeVariant, isDayMode: boolean) => {
+    const newTheme = isDayMode ? "light" : "dark";
     setTheme(newTheme);
     setSelectedVariant(variant);
-    setIsDarkMode(dark);
+    setIsDarkMode(!isDayMode);
     
     // Apply theme variant class to document
     document.documentElement.classList.remove(
@@ -112,11 +112,12 @@ export function ThemeSelector({ className }: ThemeSelectorProps) {
   };
 
   const handleDarkModeToggle = (checked: boolean) => {
-    applyTheme(selectedVariant, !checked); // checked=true means day mode, so !checked for dark mode
+    applyTheme(selectedVariant, checked); // checked=true means day mode, so checked=false for dark mode
   };
 
-  const handleVariantSelect = (variant: ThemeVariant) => {
-    applyTheme(variant, isDarkMode);
+  const handleVariantSelect = (value: string) => {
+    const variant = value as ThemeVariant;
+    applyTheme(variant, !isDarkMode);
   };
 
   if (!mounted) {

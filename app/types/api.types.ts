@@ -1,7 +1,15 @@
 import type { Database, Json } from "@/app/types/database.types"
-import type { Attachment } from "@ai-sdk/ui-utils"
+// Removed unused import: FileUIPart
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { ReasoningEffort } from "@/lib/openproviders/types"
+
+// Define Attachment interface for file upload compatibility
+export interface Attachment {
+  name: string
+  contentType: string
+  url: string
+  size?: number
+}
 
 export type SupabaseClientType = SupabaseClient<Database>
 
@@ -20,14 +28,14 @@ export interface ContentPart {
     args?: Json
     result?: Json
   }
-  reasoning?: string
+  reasoningText?: string
   details?: Json[]
 }
 
 export interface Message {
   role: "user" | "assistant" | "system" | "data" | "tool" | "tool-call"
   content: string | null | ContentPart[]
-  reasoning?: string
+  reasoningText?: string
   model?: string
 }
 

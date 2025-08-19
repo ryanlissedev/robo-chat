@@ -1,14 +1,29 @@
 import { toast } from "@/components/ui/toast"
 import { getOrCreateGuestUserId } from "@/lib/api"
 import { MESSAGE_MAX_LENGTH, SYSTEM_PROMPT_DEFAULT } from "@/lib/config"
-import { Attachment } from "@/lib/file-handling"
+import { Attachment, attachmentsToFileUIParts } from "@/lib/file-handling"
 import type { UserProfile } from "@/lib/user/types"
-import type { Message } from "@ai-sdk/react"
+import type { FileUIPart } from 'ai'
+// UIMessage type not needed in this file
 
 /**
  * BDD-style chat operations extracted from use-chat-core.ts
  * Following behavior-driven development patterns for testability
  */
+
+// Types for request options
+export type RequestOptions = {
+  body: {
+    chatId: string
+    userId: string
+    model: string
+    isAuthenticated: boolean
+    systemPrompt: string
+    enableSearch?: boolean
+    reasoningEffort: 'low' | 'medium' | 'high'
+  }
+  experimental_attachments?: FileUIPart[]
+}
 
 // Types for operation results
 export type OperationResult<T = void> = {
@@ -34,15 +49,15 @@ export type OptimisticMessageData = {
   content: string
   role: "user"
   createdAt: Date
-  experimental_attachments?: Array<{ name: string; contentType: string; url: string }>
+  experimental_attachments?: FileUIPart[]
 }
 
 export type ChatOperationDependencies = {
   checkLimitsAndNotify: (uid: string) => Promise<boolean>
   ensureChatExists: (uid: string, input: string) => Promise<string | null>
   handleFileUploads: (uid: string, chatId: string) => Promise<Attachment[] | null>
-  createOptimisticAttachments: (files: File[]) => Array<{ name: string; contentType: string; url: string }>
-  cleanupOptimisticAttachments: (attachments?: Array<{ url?: string }>) => void
+  createOptimisticAttachments: (files: File[]) => FileUIPart[]
+  cleanupOptimisticAttachments: (attachments?: FileUIPart[]) => void
 }
 
 /**
@@ -60,11 +75,11 @@ export async function submitMessageScenario(
   dependencies: ChatOperationDependencies
 ): Promise<OperationResult<{
   chatId: string
-  requestOptions: any
+  requestOptions: RequestOptions
   optimisticMessage: OptimisticMessageData
 }>> {
-  const { input, files, user, selectedModel, isAuthenticated, systemPrompt, enableSearch, reasoningEffort, chatId } = context
-  const { checkLimitsAndNotify, ensureChatExists, handleFileUploads, createOptimisticAttachments, cleanupOptimisticAttachments } = dependencies
+  const { input, files, user, selectedModel, isAuthenticated, systemPrompt, enableSearch, reasoningEffort } = context
+  const { checkLimitsAndNotify, ensureChatExists, handleFileUploads, createOptimisticAttachments } = dependencies
 
   try {
     // Given: User wants to submit a message
@@ -76,13 +91,13 @@ export async function submitMessageScenario(
     // When: Checking user limits
     const limitResult = await validateUserLimitsScenario(uid, checkLimitsAndNotify)
     if (!limitResult.success) {
-      return limitResult
+      return { success: false, error: limitResult.error }
     }
 
     // When: Validating input
     const inputValidation = validateMessageInput(input)
     if (!inputValidation.success) {
-      return inputValidation
+      return { success: false, error: inputValidation.error }
     }
 
     // When: Ensuring chat exists
@@ -94,7 +109,7 @@ export async function submitMessageScenario(
     // When: Processing file uploads
     const fileResult = await handleFileUploadScenario(files, uid, currentChatId, handleFileUploads)
     if (!fileResult.success) {
-      return fileResult
+      return { success: false, error: fileResult.error }
     }
 
     // When: Creating optimistic message
@@ -118,7 +133,7 @@ export async function submitMessageScenario(
         enableSearch,
         reasoningEffort,
       },
-      experimental_attachments: fileResult.data || undefined,
+      experimental_attachments: fileResult.data ? attachmentsToFileUIParts(fileResult.data) : undefined,
     }
 
     return {
@@ -245,7 +260,7 @@ export async function submitSuggestionScenario(
   dependencies: Pick<ChatOperationDependencies, 'checkLimitsAndNotify' | 'ensureChatExists'>
 ): Promise<OperationResult<{
   chatId: string
-  requestOptions: any
+  requestOptions: RequestOptions
   optimisticMessage: OptimisticMessageData
 }>> {
   const { user, selectedModel, isAuthenticated, reasoningEffort } = context
@@ -261,7 +276,7 @@ export async function submitSuggestionScenario(
     // When: Checking user limits
     const limitResult = await validateUserLimitsScenario(uid, checkLimitsAndNotify)
     if (!limitResult.success) {
-      return limitResult
+      return { success: false, error: limitResult.error }
     }
 
     // When: Ensuring chat exists
@@ -322,7 +337,7 @@ export async function prepareReloadScenario(
     systemPrompt?: string
     reasoningEffort: 'low' | 'medium' | 'high'
   }
-): Promise<OperationResult<{ requestOptions: any }>> {
+): Promise<OperationResult<{ requestOptions: RequestOptions }>> {
   const { user, chatId, selectedModel, isAuthenticated, systemPrompt, reasoningEffort } = context
 
   try {
@@ -333,9 +348,9 @@ export async function prepareReloadScenario(
     }
 
     // When: Preparing reload options
-    const requestOptions = {
+    const requestOptions: RequestOptions = {
       body: {
-        chatId,
+        chatId: chatId || '', // Handle null chatId case
         userId: uid,
         model: selectedModel,
         isAuthenticated,
@@ -360,18 +375,150 @@ export async function prepareReloadScenario(
 }
 
 /**
- * Centralized error handling for chat operations
+ * Enhanced error handling for chat operations with provider-specific detection
+ * Part of the swarm architecture - detects API key issues and guides users to settings
  */
 export function handleChatError(error: Error, context: string = "Chat operation") {
   console.error(`${context} error:`, error)
   console.error("Error message:", error.message)
   
   let errorMsg = error.message || "Something went wrong."
+  let actionable = false
   
+  // Detect provider-specific API key errors
+  const providerErrorPatterns = [
+    // OpenRouter errors (for DeepSeek R1 and other models)
+    {
+      patterns: [
+        /openrouter.*api.*key/i,
+        /openrouter.*unauthorized/i,
+        /openrouter.*authentication/i,
+        /invalid.*openrouter/i,
+      ],
+      provider: 'OpenRouter',
+      message: 'OpenRouter API key is missing or invalid. Add your OpenRouter API key in settings to access DeepSeek R1 and other models.',
+      actionable: true
+    },
+    // OpenAI errors
+    {
+      patterns: [
+        /openai.*api.*key/i,
+        /openai.*unauthorized/i,
+        /openai.*authentication/i,
+        /invalid.*openai/i,
+        /incorrect.*api.*key.*provided/i,
+      ],
+      provider: 'OpenAI',
+      message: 'OpenAI API key is missing or invalid. Add your OpenAI API key in settings to access GPT models.',
+      actionable: true
+    },
+    // Anthropic errors
+    {
+      patterns: [
+        /anthropic.*api.*key/i,
+        /anthropic.*unauthorized/i,
+        /anthropic.*authentication/i,
+        /invalid.*anthropic/i,
+      ],
+      provider: 'Anthropic',
+      message: 'Anthropic API key is missing or invalid. Add your Anthropic API key in settings to access Claude models.',
+      actionable: true
+    },
+    // Google errors
+    {
+      patterns: [
+        /google.*api.*key/i,
+        /google.*unauthorized/i,
+        /google.*authentication/i,
+        /invalid.*google/i,
+        /gemini.*api.*key/i,
+      ],
+      provider: 'Google',
+      message: 'Google API key is missing or invalid. Add your Google API key in settings to access Gemini models.',
+      actionable: true
+    },
+    // xAI errors
+    {
+      patterns: [
+        /xai.*api.*key/i,
+        /xai.*unauthorized/i,
+        /xai.*authentication/i,
+        /invalid.*xai/i,
+      ],
+      provider: 'xAI',
+      message: 'xAI API key is missing or invalid. Add your xAI API key in settings to access Grok models.',
+      actionable: true
+    },
+    // Mistral errors
+    {
+      patterns: [
+        /mistral.*api.*key/i,
+        /mistral.*unauthorized/i,
+        /mistral.*authentication/i,
+        /invalid.*mistral/i,
+      ],
+      provider: 'Mistral',
+      message: 'Mistral API key is missing or invalid. Add your Mistral API key in settings.',
+      actionable: true
+    },
+    // Perplexity errors
+    {
+      patterns: [
+        /perplexity.*api.*key/i,
+        /perplexity.*unauthorized/i,
+        /perplexity.*authentication/i,
+        /invalid.*perplexity/i,
+      ],
+      provider: 'Perplexity',
+      message: 'Perplexity API key is missing or invalid. Add your Perplexity API key in settings.',
+      actionable: true
+    },
+    // Groq errors
+    {
+      patterns: [
+        /groq.*api.*key/i,
+        /groq.*unauthorized/i,
+        /groq.*authentication/i,
+        /invalid.*groq/i,
+      ],
+      provider: 'Groq',
+      message: 'Groq API key is missing or invalid. Add your Groq API key in settings to access ultra-fast Llama and Mixtral models.',
+      actionable: true
+    }
+  ]
+  
+  // Check for provider-specific errors
+  for (const providerError of providerErrorPatterns) {
+    if (providerError.patterns.some(pattern => pattern.test(errorMsg))) {
+      errorMsg = providerError.message
+      actionable = providerError.actionable
+      break
+    }
+  }
+  
+  // Generic API key error patterns
+  if (!actionable) {
+    const genericApiKeyPatterns = [
+      /api.*key.*missing/i,
+      /api.*key.*invalid/i,
+      /unauthorized.*api.*key/i,
+      /authentication.*failed/i,
+      /invalid.*credentials/i,
+      /missing.*api.*key/i,
+    ]
+    
+    if (genericApiKeyPatterns.some(pattern => pattern.test(errorMsg))) {
+      errorMsg = "API key is missing or invalid. Please check your API keys in settings."
+      actionable = true
+    }
+  }
+  
+  // Generic error message fallbacks
   if (errorMsg === "An error occurred" || errorMsg === "fetch failed") {
     errorMsg = "Something went wrong. Please try again."
   }
   
+  // Show toast with appropriate styling for actionable errors
   toast({
     title: errorMsg,
     status: "error",

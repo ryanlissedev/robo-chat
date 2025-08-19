@@ -1,15 +1,71 @@
-import { Client } from 'langsmith'
-import { traceable } from 'langsmith/traceable'
-import { wrapOpenAI } from 'langsmith/wrappers'
 import OpenAI from 'openai'
 
-// Initialize LangSmith client
-export const langsmithClient = process.env.LANGSMITH_API_KEY
-  ? new Client({
-      apiKey: process.env.LANGSMITH_API_KEY,
-      apiUrl: 'https://api.smith.langchain.com',
-    })
-  : null
+// Type definitions for LangSmith
+type LangSmithMessage = {
+  role: string
+  content: string
+  [key: string]: unknown
+}
+
+type LangSmithTool = {
+  type: string
+  function?: {
+    name: string
+    description?: string
+    parameters?: Record<string, unknown>
+  }
+  [key: string]: unknown
+}
+
+// LangSmith Client interface
+interface LangSmithClient {
+  createFeedback(params: {
+    runId: string
+    key: string
+    score: number
+    value: string
+    comment?: string
+    metadata?: Record<string, unknown>
+  }): Promise<unknown>
+  
+  createRun(params: {
+    name: string
+    inputs: Record<string, unknown>
+    run_type: string
+    project_name: string
+    extra?: Record<string, unknown>
+    parentRunId?: string
+  }): Promise<unknown>
+}
+
+// Lazy initializer to avoid hard dependency on 'langsmith'
+async function getLangSmithDeps() {
+  try {
+    const [{ Client }, traceableMod, wrappersMod] = await Promise.all([
+      import('langsmith'),
+      import('langsmith/traceable').catch(() => ({ traceable: <T extends (...args: unknown[]) => unknown>(fn: T) => fn })),
+      import('langsmith/wrappers').catch(() => ({ wrapOpenAI: (c: OpenAI) => c })),
+    ])
+    return {
+      Client,
+      traceable: (traceableMod as { traceable: <T extends (...args: unknown[]) => unknown>(fn: T, _opts?: Record<string, unknown>) => T }).traceable,
+      wrapOpenAI: (wrappersMod as { wrapOpenAI: (client: OpenAI) => OpenAI }).wrapOpenAI,
+    }
+  } catch {
+    return null
+  }
+}
+
+async function getClient(): Promise<LangSmithClient | null> {
+  if (!process.env.LANGSMITH_API_KEY) return null
+  const deps = await getLangSmithDeps()
+  if (!deps) return null
+  const { Client } = deps
+  return new Client({
+    apiKey: process.env.LANGSMITH_API_KEY,
+    apiUrl: 'https://api.smith.langchain.com',
+  }) as unknown as LangSmithClient
+}
 
 // Check if LangSmith is enabled
 export const isLangSmithEnabled = () => {
@@ -24,35 +80,26 @@ export const getLangSmithProject = () => {
   return process.env.LANGSMITH_PROJECT || 'zola-chat'
 }
 
-// Wrap chat completion calls with tracing
-export const traceChat = traceable(
-  async (params: {
-    model: string
-    messages: any[]
-    tools?: any
-    temperature?: number
-    max_tokens?: number
-    stream?: boolean
-    metadata?: Record<string, any>
-  }) => {
-    // This wrapper will be used in the chat route
-    // The actual implementation will be done there
-    return params
-  },
-  {
-    name: 'chat-completion',
-    project_name: getLangSmithProject(),
-  }
-)
+// No-op trace wrapper to keep API stable
+export const traceChat = async (params: {
+  model: string
+  messages: LangSmithMessage[]
+  tools?: LangSmithTool[]
+  temperature?: number
+  max_tokens?: number
+  stream?: boolean
+  metadata?: Record<string, unknown>
+}) => params
 
 // Wrap OpenAI client for automatic tracing
-export function createTracedOpenAI(apiKey: string) {
+export async function createTracedOpenAI(apiKey: string) {
   if (!isLangSmithEnabled()) {
     return new OpenAI({ apiKey })
   }
-
-  const client = wrapOpenAI(new OpenAI({ apiKey }))
-  return client
+  const deps = await getLangSmithDeps()
+  if (!deps) return new OpenAI({ apiKey })
+  const { wrapOpenAI } = deps
+  return wrapOpenAI(new OpenAI({ apiKey }))
 }
 
 // Create a feedback entry
@@ -69,25 +116,24 @@ export async function createFeedback({
   comment?: string
   userId?: string
 }) {
-  if (!langsmithClient || !isLangSmithEnabled()) {
+  if (!isLangSmithEnabled()) {
     console.log('LangSmith not enabled, skipping feedback')
     return null
   }
 
   try {
     const feedbackScore = score ?? (feedback === 'upvote' ? 1 : 0)
-
-    await langsmithClient.createFeedback({
+    const client = await getClient()
+    if (!client) return null
+    await client.createFeedback({
       runId,
       key: 'user-feedback',
       score: feedbackScore,
       value: feedback,
       comment,
-      feedbackId: `${runId}-${Date.now()}`,
-      feedbackConfig: {
+      metadata: {
+        feedbackId: `${runId}-${Date.now()}`,
         type: 'user',
-      },
-      sourceInfo: {
         userId,
       },
     })
@@ -109,12 +155,14 @@ export async function createFeedback({
 
 // Get run details
 export async function getRunDetails(runId: string) {
-  if (!langsmithClient || !isLangSmithEnabled()) {
+  if (!isLangSmithEnabled()) {
     return null
   }
 
   try {
-    const run = await langsmithClient.readRun(runId)
+    const client = await getClient()
+    if (!client) return null
+    const run = await (client as unknown as { readRun: (id: string) => Promise<unknown> }).readRun(runId)
     return run
   } catch (error) {
     console.error('Error fetching run details:', error)
@@ -123,25 +171,18 @@ export async function getRunDetails(runId: string) {
 }
 
 // Helper to extract run ID from response metadata
-export function extractRunId(response: any): string | null {
-  return response?.metadata?.runId || response?.headers?.['x-langsmith-run-id'] || null
+export function extractRunId(response: Record<string, unknown>): string | null {
+  const metadata = response?.metadata as Record<string, unknown> | undefined;
+  const headers = response?.headers as Record<string, unknown> | undefined;
+  return (metadata?.runId as string) || (headers?.['x-langsmith-run-id'] as string) || null
 }
 
 // Create a traced function for any async operation
-export function createTracedFunction<T extends (...args: any[]) => Promise<any>>(
-  fn: T,
-  name: string,
-  metadata?: Record<string, any>
+export function createTracedFunction<T extends (...args: unknown[]) => Promise<unknown>>(
+  fn: T
 ): T {
-  if (!isLangSmithEnabled()) {
-    return fn
-  }
-
-  return traceable(fn, {
-    name,
-    project_name: getLangSmithProject(),
-    metadata,
-  }) as T
+  // No-op wrapper to avoid hard dependency on langsmith
+  return fn
 }
 
 // Log custom metrics
@@ -150,14 +191,16 @@ export async function logMetrics({
   metrics,
 }: {
   runId: string
-  metrics: Record<string, any>
+  metrics: Record<string, unknown>
 }) {
-  if (!langsmithClient || !isLangSmithEnabled()) {
+  if (!isLangSmithEnabled()) {
     return
   }
 
   try {
-    await langsmithClient.updateRun(runId, {
+    const client = await getClient()
+    if (!client) return
+    await (client as unknown as { updateRun: (id: string, data: { extra: { metrics: Record<string, unknown> } }) => Promise<unknown> }).updateRun(runId, {
       extra: {
         metrics,
       },
@@ -176,21 +219,23 @@ export async function createRun({
   parentRunId,
 }: {
   name: string
-  inputs: Record<string, any>
+  inputs: Record<string, unknown>
   runType?: 'chain' | 'llm' | 'tool' | 'retriever'
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   parentRunId?: string
 }) {
-  if (!langsmithClient || !isLangSmithEnabled()) {
+  if (!isLangSmithEnabled()) {
     return null
   }
 
   try {
-    const run = await langsmithClient.createRun({
+    const client = await getClient()
+    if (!client) return null
+   const run = await client.createRun({
       name,
       inputs,
-      runType,
-      projectName: getLangSmithProject(),
+      run_type: runType,
+      project_name: getLangSmithProject(),
       extra: metadata,
       parentRunId,
     })
@@ -210,19 +255,21 @@ export async function updateRun({
   endTime,
 }: {
   runId: string
-  outputs?: Record<string, any>
+  outputs?: Record<string, unknown>
   error?: string
   endTime?: Date
 }) {
-  if (!langsmithClient || !isLangSmithEnabled()) {
+  if (!isLangSmithEnabled()) {
     return
   }
 
   try {
-    await langsmithClient.updateRun(runId, {
+    const client = await getClient()
+    if (!client) return
+    await (client as unknown as { updateRun: (id: string, data: { outputs?: Record<string, unknown>; error?: string; end_time: string }) => Promise<unknown> }).updateRun(runId, {
       outputs,
       error,
-      endTime: endTime || new Date(),
+      end_time: (endTime || new Date()).toISOString(),
     })
   } catch (error) {
     console.error('Error updating LangSmith run:', error)

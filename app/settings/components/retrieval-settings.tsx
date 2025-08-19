@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { Brain, MagnifyingGlass, ArrowsClockwise, Funnel } from '@phosphor-icons/react'
 import { createClient } from '@/lib/supabase/client'
+import { Json } from '@/app/types/database.types'
 
 interface RetrievalConfig {
   // Query Rewriting
@@ -55,34 +56,45 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
   const [saved, setSaved] = useState(true)
   const supabase = createClient()
 
-  useEffect(() => {
-    loadSettings()
-  }, [])
+  const loadSettings = useCallback(async () => {
+    if (!supabase) {
+      console.error('Supabase client not available')
+      toast.error('Database connection unavailable')
+      return
+    }
 
-  const loadSettings = async () => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('user_retrieval_settings')
         .select('*')
         .eq('user_id', userId)
         .single()
 
-      if (data) {
-        setConfig(data.config)
+      if (data && data.config) {
+        setConfig(data.config as unknown as RetrievalConfig)
       }
     } catch (error) {
       console.error('Error loading retrieval settings:', error)
     }
-  }
+  }, [supabase, userId])
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
 
   const saveSettings = async () => {
+    if (!supabase) {
+      toast.error('Database connection unavailable')
+      return
+    }
+
     setLoading(true)
     try {
       const { error } = await supabase
         .from('user_retrieval_settings')
         .upsert({
           user_id: userId,
-          config,
+          config: config as unknown as Json,
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'user_id'
@@ -100,7 +112,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
     }
   }
 
-  const updateConfig = (key: keyof RetrievalConfig, value: any) => {
+  const updateConfig = (key: keyof RetrievalConfig, value: RetrievalConfig[keyof RetrievalConfig]) => {
     setConfig({ ...config, [key]: value })
     setSaved(false)
   }
@@ -149,7 +161,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
               <Label>Rewrite Strategy</Label>
               <Select
                 value={config.rewriteStrategy}
-                onValueChange={(value) => updateConfig('rewriteStrategy', value)}
+                onValueChange={(value) => updateConfig('rewriteStrategy', value as RetrievalConfig['rewriteStrategy'])}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -221,7 +233,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
                 <Label>Reranking Method</Label>
                 <Select
                   value={config.rerankingMethod}
-                  onValueChange={(value) => updateConfig('rerankingMethod', value)}
+                  onValueChange={(value) => updateConfig('rerankingMethod', value as RetrievalConfig['rerankingMethod'])}
                 >
                   <SelectTrigger>
                     <SelectValue />

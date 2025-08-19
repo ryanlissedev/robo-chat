@@ -5,6 +5,25 @@ import {
 } from "@/lib/chat-store/messages/api"
 import { useCallback, useEffect, useRef, useState } from "react"
 
+// Helper function to safely convert date to ISO string
+function toISOStringSafe(date: string | Date | undefined): string {
+  if (!date) return new Date().toISOString()
+  if (typeof date === 'string') return new Date(date).toISOString()
+  return date.toISOString()
+}
+
+// Helper function to extract content from UIMessage
+function extractContent(msg: { content?: string | unknown; parts?: unknown[] }): string {
+  if (typeof msg.content === 'string') return msg.content
+  if (msg.parts && Array.isArray(msg.parts)) {
+    const textParts = msg.parts.filter((p: unknown): p is { type: string; text: string } => 
+      typeof p === 'object' && p !== null && 'type' in p && 'text' in p && (p as { type: string }).type === 'text'
+    )
+    return textParts.map((p) => p.text).join('\n')
+  }
+  return ''
+}
+
 interface ChatMessage {
   id: string
   content: string
@@ -68,10 +87,9 @@ export function useChatPreview(): UseChatPreviewReturn {
               .slice(-5) // Get last 5 messages
               .map((msg) => ({
                 id: msg.id,
-                content: msg.content,
+                content: extractContent(msg),
                 role: msg.role as "user" | "assistant",
-                created_at:
-                  msg.createdAt?.toISOString() || new Date().toISOString(),
+                created_at: toISOStringSafe(msg.createdAt),
               }))
             setMessages(cachedMessages)
           }
@@ -92,10 +110,9 @@ export function useChatPreview(): UseChatPreviewReturn {
               .slice(-5) // Get last 5 messages
               .map((msg) => ({
                 id: msg.id,
-                content: msg.content,
+                content: extractContent(msg),
                 role: msg.role as "user" | "assistant",
-                created_at:
-                  msg.createdAt?.toISOString() || new Date().toISOString(),
+                created_at: toISOStringSafe(msg.createdAt),
               }))
             setMessages(freshMessages)
           }

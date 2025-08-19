@@ -2,7 +2,7 @@
 
 import { toast } from "@/components/ui/toast"
 import { useChatSession } from "@/lib/chat-store/session/provider"
-import type { Message as MessageAISDK } from "ai"
+import type { UIMessage } from "ai"
 import { createContext, useContext, useEffect, useState } from "react"
 import { writeToIndexedDB } from "../persist"
 import {
@@ -13,14 +13,14 @@ import {
   setMessages as saveMessages,
 } from "./api"
 
-interface MessagesContextType {
-  messages: MessageAISDK[]
+type MessagesContextType = {
+  messages: UIMessage[]
   isLoading: boolean
-  setMessages: React.Dispatch<React.SetStateAction<MessageAISDK[]>>
+  setMessages: React.Dispatch<React.SetStateAction<UIMessage[]>>
   refresh: () => Promise<void>
-  saveAllMessages: (messages: MessageAISDK[]) => Promise<void>
-  cacheAndAddMessage: (message: MessageAISDK) => Promise<void>
-  resetMessages: () => Promise<void>
+  saveAllMessages: (messages: UIMessage[]) => Promise<void>
+  cacheAndAddMessage: (message: UIMessage) => void
+  resetMessages: () => void
   deleteMessages: () => Promise<void>
 }
 
@@ -28,13 +28,14 @@ const MessagesContext = createContext<MessagesContextType | null>(null)
 
 export function useMessages() {
   const context = useContext(MessagesContext)
-  if (!context)
+  if (!context) {
     throw new Error("useMessages must be used within MessagesProvider")
+  }
   return context
 }
 
 export function MessagesProvider({ children }: { children: React.ReactNode }) {
-  const [messages, setMessages] = useState<MessageAISDK[]>([])
+  const [messages, setMessages] = useState<UIMessage[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const { chatId } = useChatSession()
 
@@ -46,19 +47,21 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
   }, [chatId])
 
   useEffect(() => {
-    if (!chatId) return
+    if (!chatId) {
+      return
+    }
 
     const load = async () => {
       setIsLoading(true)
-      const cached = await getCachedMessages(chatId)
+      const cached: UIMessage[] = await getCachedMessages(chatId)
       setMessages(cached)
 
       try {
-        const fresh = await getMessagesFromDb(chatId)
+        const fresh: UIMessage[] = await getMessagesFromDb(chatId)
         setMessages(fresh)
         cacheMessages(chatId, fresh)
-      } catch (error) {
-        console.error("Failed to fetch messages:", error)
+      } catch {
+        toast({ title: "Failed to fetch messages", status: "error" })
       } finally {
         setIsLoading(false)
       }
@@ -68,18 +71,22 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
   }, [chatId])
 
   const refresh = async () => {
-    if (!chatId) return
+    if (!chatId) {
+      return
+    }
 
     try {
-      const fresh = await getMessagesFromDb(chatId)
+      const fresh: UIMessage[] = await getMessagesFromDb(chatId)
       setMessages(fresh)
     } catch {
       toast({ title: "Failed to refresh messages", status: "error" })
     }
   }
 
-  const cacheAndAddMessage = async (message: MessageAISDK) => {
-    if (!chatId) return
+  const cacheAndAddMessage = (message: UIMessage) => {
+    if (!chatId) {
+      return
+    }
 
     try {
       setMessages((prev) => {
@@ -92,9 +99,11 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const saveAllMessages = async (newMessages: MessageAISDK[]) => {
+  const saveAllMessages = async (newMessages: UIMessage[]) => {
     // @todo: manage the case where the chatId is null (first time the user opens the chat)
-    if (!chatId) return
+    if (!chatId) {
+      return
+    }
 
     try {
       await saveMessages(chatId, newMessages)
@@ -105,13 +114,15 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
   }
 
   const deleteMessages = async () => {
-    if (!chatId) return
+    if (!chatId) {
+      return
+    }
 
     setMessages([])
     await clearMessagesForChat(chatId)
   }
 
-  const resetMessages = async () => {
+  const resetMessages = () => {
     setMessages([])
   }
 

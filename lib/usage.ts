@@ -21,6 +21,20 @@ const isProModel = (modelId: string) => !isFreeModel(modelId)
  * @returns User data including message counts and reset date
  */
 export async function checkUsage(supabase: SupabaseClient, userId: string) {
+  // In development/test mode, skip database validation for guest users
+  const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+  
+  if (isDevelopment && userId.length === 36 && userId.includes('-')) {
+    // Return mock user data for development guest users (identified by UUID format)
+    return {
+      message_count: 0,
+      daily_message_count: 0,
+      daily_reset: new Date().toISOString(),
+      anonymous: true,
+      premium: false
+    }
+  }
+
   const { data: userData, error: userDataError } = await supabase
     .from("users")
     .select(
@@ -91,6 +105,14 @@ export async function incrementUsage(
   supabase: SupabaseClient,
   userId: string
 ): Promise<void> {
+  // In development/test mode, skip database operations for guest users
+  const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+  
+  if (isDevelopment && userId.length === 36 && userId.includes('-')) {
+    // Skip database operations in development for guest users (identified by UUID format)
+    return
+  }
+
   const { data: userData, error: userDataError } = await supabase
     .from("users")
     .select("message_count, daily_message_count")

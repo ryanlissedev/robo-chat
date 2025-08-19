@@ -1,10 +1,8 @@
-import { createCipheriv, createDecipheriv, randomBytes, pbkdf2Sync, createHash } from "crypto"
+import { createCipheriv, createDecipheriv, randomBytes, pbkdf2Sync } from "crypto"
 
 // Enhanced encryption with multiple layers of security
 const ALGORITHM = "aes-256-gcm"
-const SALT_LENGTH = 32
 const IV_LENGTH = 16
-const TAG_LENGTH = 16
 const ITERATIONS = 100000
 
 // Get encryption key from environment

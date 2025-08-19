@@ -5,6 +5,7 @@ import { isSupabaseEnabled } from "@/lib/supabase/config"
 import { MODEL_DEFAULT } from "../../config"
 import { fetchClient } from "../../fetch"
 import { API_ROUTE_UPDATE_CHAT_MODEL } from "../../routes"
+import { generateUUID } from "@/lib/utils/uuid"
 
 export async function getChatsForUserInDb(userId: string): Promise<Chats[]> {
   const supabase = createClient()
@@ -137,7 +138,7 @@ export async function createChat(
   systemPrompt: string
 ): Promise<string> {
   const id = await createChatInDb(userId, title, model, systemPrompt)
-  const finalId = id ?? crypto.randomUUID()
+  const finalId = id ?? generateUUID()
 
   await writeToIndexedDB("chats", {
     id: finalId,

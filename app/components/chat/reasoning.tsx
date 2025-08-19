@@ -5,17 +5,17 @@ import { AnimatePresence, motion } from "framer-motion"
 import { useState } from "react"
 
 type ReasoningProps = {
-  reasoning: string
+  reasoningText: string
   isStreaming?: boolean
 }
 
 const TRANSITION = {
-  type: "spring",
+  type: "spring" as const,
   duration: 0.2,
   bounce: 0,
 }
 
-export function Reasoning({ reasoning, isStreaming }: ReasoningProps) {
+export function Reasoning({ reasoningText, isStreaming }: ReasoningProps) {
   const [wasStreaming, setWasStreaming] = useState(isStreaming ?? false)
   const [isExpanded, setIsExpanded] = useState(() => isStreaming ?? true)
 
@@ -50,7 +50,7 @@ export function Reasoning({ reasoning, isStreaming }: ReasoningProps) {
             transition={TRANSITION}
           >
             <div className="text-muted-foreground border-muted-foreground/20 flex flex-col border-l pl-4 text-sm">
-              <Markdown>{reasoning}</Markdown>
+              <Markdown>{reasoningText}</Markdown>
             </div>
           </motion.div>
         )}

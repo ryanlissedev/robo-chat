@@ -1,5 +1,4 @@
 import { chromium, type FullConfig } from '@playwright/test';
-import { mockModel } from '../lib/ai/models.test';
 
 async function globalSetup(config: FullConfig) {
   console.log('🔧 Setting up RoboRail Assistant test environment...');
@@ -21,20 +20,8 @@ async function globalSetup(config: FullConfig) {
     }
   });
 
-  // Initialize mock AI model for testing
-  console.log('🤖 Initializing mock AI models...');
-  
-  // Add test-specific responses
-  mockModel.addResponse('test connection', {
-    content: 'Test connection successful! RoboRail Assistant is ready.',
-    delay: 50
-  });
-  
-  mockModel.addResponse('performance test', {
-    content: 'Performance test response with controlled timing.',
-    delay: 200,
-    chunks: Array(20).fill('Performance test chunk. ')
-  });
+  // E2E tests use real AI models, not mocked responses
+  console.log('🤖 Setting up for real AI model testing...');
 
   // Setup browser for authentication if needed
   const browser = await chromium.launch();
@@ -51,9 +38,20 @@ async function globalSetup(config: FullConfig) {
   
   await browser.close();
 
-  // Set environment variables for testing
-  process.env.NODE_ENV = 'test';
-  process.env.PLAYWRIGHT_TEST_RUNNING = 'true';
+  // Set environment variables for testing using Object.defineProperty to avoid read-only issues
+  if (!process.env.NODE_ENV) {
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: 'test',
+      writable: true,
+      configurable: true
+    });
+  }
+  
+  Object.defineProperty(process.env, 'PLAYWRIGHT_TEST_RUNNING', {
+    value: 'true',
+    writable: true,
+    configurable: true
+  });
   
   console.log('✅ Global setup completed');
 }

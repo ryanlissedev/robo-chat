@@ -1,178 +1,165 @@
-import { anthropic, createAnthropic } from "@ai-sdk/anthropic"
-import { createGoogleGenerativeAI, google } from "@ai-sdk/google"
-import { createMistral, mistral } from "@ai-sdk/mistral"
-import { createOpenAI, openai } from "@ai-sdk/openai"
-import { createPerplexity, perplexity } from "@ai-sdk/perplexity"
-import type { LanguageModelV1 } from "@ai-sdk/provider"
-import { createXai, xai } from "@ai-sdk/xai"
-import { getProviderForModel } from "./provider-map"
+import { anthropic, createAnthropic } from '@ai-sdk/anthropic';
+import { createGoogleGenerativeAI, google } from '@ai-sdk/google';
+import { createGroq, groq } from '@ai-sdk/groq';
+// import { createMistral, mistral } from '@ai-sdk/mistral';
+import { createOpenAI, openai } from '@ai-sdk/openai';
+import { createPerplexity, perplexity } from '@ai-sdk/perplexity';
+// AI SDK v5 provider types
+import { createXai, xai } from '@ai-sdk/xai';
+import type { LanguageModelV2 } from '@ai-sdk/provider';
+import type { LanguageModel } from 'ai';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { getProviderForModel } from './provider-map';
 import type {
   AnthropicModel,
   GeminiModel,
-  MistralModel,
+  GroqModel,
   OllamaModel,
   OpenAIModel,
   PerplexityModel,
   SupportedModel,
   XaiModel,
-} from "./types"
+} from './types';
 
-type OpenAIChatSettings = Parameters<typeof openai>[1]
-type MistralProviderSettings = Parameters<typeof mistral>[1]
-type GoogleGenerativeAIProviderSettings = Parameters<typeof google>[1]
-type PerplexityProviderSettings = Parameters<typeof perplexity>[0]
-type AnthropicProviderSettings = Parameters<typeof anthropic>[1]
-type XaiProviderSettings = Parameters<typeof xai>[1]
-type OllamaProviderSettings = OpenAIChatSettings // Ollama uses OpenAI-compatible API
+// AI SDK v5 provider settings - simplified to avoid parameter extraction issues
+type OpenAIChatSettings = {
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
+  reasoningEffort?: 'low' | 'medium' | 'high';
+  headers?: Record<string, string>;
+  enableSearch?: boolean;
+};
+
+type ProviderSettings = {
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
+  headers?: Record<string, string>;
+  enableSearch?: boolean;
+};
 
 type ModelSettings<T extends SupportedModel> = T extends OpenAIModel
   ? OpenAIChatSettings
-  : T extends MistralModel
-    ? MistralProviderSettings
-    : T extends PerplexityModel
-      ? PerplexityProviderSettings
-      : T extends GeminiModel
-        ? GoogleGenerativeAIProviderSettings
-        : T extends AnthropicModel
-          ? AnthropicProviderSettings
-          : T extends XaiModel
-            ? XaiProviderSettings
-            : T extends OllamaModel
-              ? OllamaProviderSettings
-              : never
+  : ProviderSettings;
 
-export type OpenProvidersOptions<T extends SupportedModel> = ModelSettings<T>
+export type OpenProvidersOptions<T extends SupportedModel> = ModelSettings<T>;
 
 // Get Ollama base URL from environment or use default
 const getOllamaBaseURL = () => {
-  if (typeof window !== "undefined") {
+  if (typeof window !== 'undefined') {
     // Client-side: use localhost
-    return "http://localhost:11434/v1"
+    return 'http://localhost:11434/v1';
   }
 
   // Server-side: check environment variables
-  const base = process.env.OLLAMA_BASE_URL?.replace(/\/+$/, "")
-  return base ? `${base}/v1` : "http://localhost:11434/v1"
-}
+  const base = process.env.OLLAMA_BASE_URL?.replace(/\/+$/, '');
+  return base ? `${base}/v1` : 'http://localhost:11434/v1';
+};
 
 // Create Ollama provider instance with configurable baseURL
 const createOllamaProvider = () => {
   return createOpenAI({
     baseURL: getOllamaBaseURL(),
-    apiKey: "ollama", // Ollama doesn't require a real API key
-    name: "ollama",
-  })
-}
+    apiKey: 'ollama', // Ollama doesn't require a real API key
+    name: 'ollama',
+  });
+};
 
 export function openproviders<T extends SupportedModel>(
   modelId: T,
   settings?: OpenProvidersOptions<T>,
   apiKey?: string
-): LanguageModelV1 {
-  const provider = getProviderForModel(modelId)
+): LanguageModel | LanguageModelV2 {
+  const provider = getProviderForModel(modelId);
 
-  if (provider === "openai") {
-    // Extract custom settings for GPT-5 models (typed, without any)
-    type OpenAIExtraSettings = OpenAIChatSettings & {
-      reasoningEffort?: "low" | "medium" | "high"
-      headers?: Record<string, string>
-    }
-    const { reasoningEffort, headers, ...openaiSettings } =
-      ((settings as unknown as OpenAIExtraSettings) || {})
-    
-    // Configure headers for reasoning effort if it's a GPT-5 model
-    const customHeaders = modelId.startsWith('gpt-5') && reasoningEffort
-      ? { ...headers, 'X-Reasoning-Effort': reasoningEffort }
-      : headers
-    
+  if (provider === 'openai') {
+    // AI SDK v5 compatible approach using .chat() method for chat models
     if (apiKey) {
-      const openaiProvider = createOpenAI({
-        apiKey,
-        compatibility: "strict",
-        headers: customHeaders,
-      })
-      return openaiProvider(
-        modelId as OpenAIModel,
-        openaiSettings as OpenAIChatSettings
-      )
+      const openaiProvider = createOpenAI({ apiKey });
+      return openaiProvider.chat(modelId as OpenAIModel);
     }
     
-    // For default OpenAI provider, we need to pass headers through settings
-    const enhancedSettings = customHeaders 
-      ? { ...openaiSettings, headers: customHeaders }
-      : openaiSettings
-      
-    return openai(modelId as OpenAIModel, enhancedSettings as OpenAIChatSettings)
+    // Use default OpenAI provider with .chat() method for environment API key  
+    return openai.chat(modelId as OpenAIModel);
   }
 
-  if (provider === "mistral") {
+  // if (provider === 'mistral') {
+  //   if (apiKey) {
+  //     const mistralProvider = createMistral({ apiKey });
+  //     return mistralProvider(modelId as MistralModel);
+  //   }
+  //   return mistral(modelId as MistralModel);
+  // }
+
+  if (provider === 'groq') {
     if (apiKey) {
-      const mistralProvider = createMistral({ apiKey })
-      return mistralProvider(
-        modelId as MistralModel,
-        settings as MistralProviderSettings
-      )
+      const groqProvider = createGroq({ apiKey });
+      return groqProvider(modelId as GroqModel);
     }
-    return mistral(modelId as MistralModel, settings as MistralProviderSettings)
+    return groq(modelId as GroqModel);
   }
 
-  if (provider === "google") {
+  if (provider === 'google') {
     if (apiKey) {
-      const googleProvider = createGoogleGenerativeAI({ apiKey })
-      return googleProvider(
-        modelId as GeminiModel,
-        settings as GoogleGenerativeAIProviderSettings
-      )
+      const googleProvider = createGoogleGenerativeAI({ apiKey });
+      return googleProvider(modelId as GeminiModel);
     }
-    return google(
-      modelId as GeminiModel,
-      settings as GoogleGenerativeAIProviderSettings
-    )
+    return google(modelId as GeminiModel);
   }
 
-  if (provider === "perplexity") {
+  if (provider === 'perplexity') {
     if (apiKey) {
-      const perplexityProvider = createPerplexity({ apiKey })
+      const perplexityProvider = createPerplexity({ apiKey });
       return perplexityProvider(
         modelId as PerplexityModel
         // settings as PerplexityProviderSettings
-      )
+      );
     }
     return perplexity(
       modelId as PerplexityModel
       // settings as PerplexityProviderSettings
-    )
+    );
   }
 
-  if (provider === "anthropic") {
+  if (provider === 'anthropic') {
     if (apiKey) {
-      const anthropicProvider = createAnthropic({ apiKey })
-      return anthropicProvider(
-        modelId as AnthropicModel,
-        settings as AnthropicProviderSettings
-      )
+      const anthropicProvider = createAnthropic({ apiKey });
+      return anthropicProvider(modelId as AnthropicModel);
     }
-    return anthropic(
-      modelId as AnthropicModel,
-      settings as AnthropicProviderSettings
-    )
+    return anthropic(modelId as AnthropicModel);
   }
 
-  if (provider === "xai") {
+  if (provider === 'xai') {
     if (apiKey) {
-      const xaiProvider = createXai({ apiKey })
-      return xaiProvider(modelId as XaiModel, settings as XaiProviderSettings)
+      const xaiProvider = createXai({ apiKey });
+      return xaiProvider(modelId as XaiModel);
     }
-    return xai(modelId as XaiModel, settings as XaiProviderSettings)
+    return xai(modelId as XaiModel);
   }
 
-  if (provider === "ollama") {
-    const ollamaProvider = createOllamaProvider()
-    return ollamaProvider(
-      modelId as OllamaModel,
-      settings as OllamaProviderSettings
-    )
+  if (provider === 'openrouter') {
+    const openRouterProvider = createOpenRouter({
+      apiKey: apiKey || process.env.OPENROUTER_API_KEY || '',
+    });
+    // Map DeepSeek model IDs to OpenRouter format
+    let openRouterModelId = modelId as string;
+    if (modelId === 'deepseek-r1') {
+      openRouterModelId = 'deepseek/deepseek-r1:free';
+    } else if (modelId === 'deepseek-v3') {
+      openRouterModelId = 'deepseek/deepseek-v3';
+    }
+    return openRouterProvider.chat(openRouterModelId);
   }
 
-  throw new Error(`Unsupported model: ${modelId}`)
+  if (provider === 'ollama') {
+    const ollamaProvider = createOllamaProvider();
+    return ollamaProvider(modelId as OllamaModel);
+  }
+
+  throw new Error(`Unsupported model: ${modelId}`);
 }

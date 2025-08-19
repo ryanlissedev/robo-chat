@@ -1,35 +1,36 @@
-"use client";
+'use client';
 
-import * as React from "react";
 import {
-  motion,
   AnimatePresence,
-  type Variants,
   type MotionProps,
-} from "framer-motion";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+  motion,
+  type Variants,
+} from 'framer-motion';
+import * as React from 'react';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 
 type DayNightSwitchProps = {
+  checked?: boolean;
   defaultChecked?: boolean;
   onToggle?: (checked: boolean) => void;
-} & React.HTMLAttributes<HTMLDivElement> &
-  MotionProps;
+} & Omit<React.HTMLAttributes<HTMLDivElement>, 'onToggle'> &
+  Omit<MotionProps, 'onToggle'>;
 
 type AnimationMode = keyof typeof backgroundVariants;
 
 const backgroundVariants: Variants = {
   day: {
-    background: "linear-gradient(to bottom, #87CEEB, #E0F7FA)",
+    background: 'linear-gradient(to bottom, #87CEEB, #E0F7FA)',
     transition: { duration: 0.7 },
   },
   sunset: {
-    background: "linear-gradient(to bottom, #FF7E5F, #FEB47B, #D76D77)",
+    background: 'linear-gradient(to bottom, #FF7E5F, #FEB47B, #D76D77)',
     transition: { duration: 0.7 },
   },
   night: {
-    background: "linear-gradient(to bottom, #0F2027, #203A43, #2C5364)",
+    background: 'linear-gradient(to bottom, #0F2027, #203A43, #2C5364)',
     transition: { duration: 0.7 },
   },
 };
@@ -63,44 +64,62 @@ const createStarVariants = (index: number): Variants => ({
 });
 
 const DayNightSwitch = React.forwardRef<HTMLDivElement, DayNightSwitchProps>(
-  ({ className, defaultChecked = true, onToggle, ...restProps }, ref) => {
+  (
+    {
+      className,
+      checked: controlledChecked,
+      defaultChecked = true,
+      onToggle,
+      ...restProps
+    },
+    ref
+  ) => {
     const id = React.useId();
-    const [checked, setChecked] = React.useState<boolean>(defaultChecked);
+    const [internalChecked, setInternalChecked] =
+      React.useState<boolean>(defaultChecked);
+
+    // Use controlled value if provided, otherwise use internal state
+    const checked =
+      controlledChecked !== undefined ? controlledChecked : internalChecked;
 
     const handleToggle = (newValue: boolean) => {
-      setChecked(newValue);
+      // Only update internal state if not controlled
+      if (controlledChecked === undefined) {
+        setInternalChecked(newValue);
+      }
       onToggle?.(newValue);
     };
 
-    const currentMode: AnimationMode = checked ? "day" : "night";
+    const currentMode: AnimationMode = checked ? 'day' : 'night';
 
     return (
       <motion.div
-        ref={ref}
+        data-testid="day-night-switch"
+        animate={currentMode}
         className={cn(
-          "relative w-20 h-10 rounded-md overflow-hidden border shadow",
+          'relative h-10 w-20 overflow-hidden rounded-md border shadow',
           className
         )}
-        variants={backgroundVariants}
-        animate={currentMode}
         initial={currentMode}
+        ref={ref}
+        variants={backgroundVariants}
         {...restProps}
       >
         <div className="relative h-full w-full">
           <AnimatePresence>
             {checked && (
               <motion.div
-                className="absolute w-6 h-6 bg-yellow-400 rounded-full"
+                animate={checked ? 'visible' : 'sunset'}
+                className="absolute h-6 w-6 rounded-full bg-yellow-400"
+                exit="hidden"
+                initial="visible"
                 style={{
-                  left: "25%",
-                  top: "50%",
+                  left: '25%',
+                  top: '50%',
                   marginTop: -12,
                   marginLeft: -12,
                 }}
                 variants={sunVariants}
-                initial="visible"
-                animate={checked ? "visible" : "sunset"}
-                exit="hidden"
               >
                 <SunRays />
               </motion.div>
@@ -110,16 +129,16 @@ const DayNightSwitch = React.forwardRef<HTMLDivElement, DayNightSwitchProps>(
           <AnimatePresence>
             {!checked && (
               <motion.div
-                className="absolute w-5 h-5"
+                animate={checked ? 'hidden' : 'rising'}
+                className="absolute h-5 w-5"
+                initial="hidden"
                 style={{
-                  left: "75%",
-                  top: "50%",
+                  left: '75%',
+                  top: '50%',
                   marginTop: -10,
                   marginLeft: -10,
                 }}
                 variants={moonVariants}
-                initial="hidden"
-                animate={!checked ? "rising" : "hidden"}
               >
                 <Moon />
               </motion.div>
@@ -132,17 +151,17 @@ const DayNightSwitch = React.forwardRef<HTMLDivElement, DayNightSwitchProps>(
 
           <div className="absolute inset-0 flex items-center justify-center">
             <Switch
-              id={id}
               checked={checked}
-              onCheckedChange={handleToggle}
               className={cn(
-                "peer data-[state=unchecked]:bg-transparent data-[state=checked]:bg-transparent absolute inset-0 h-[inherit] w-auto [&_span]:z-10 [&_span]:size-6 [&_span]:border [&_span]:shadow [&_span]:rounded-sm [&_span]:transition-transform [&_span]:duration-500 [&_span]:[transition-timing-function:cubic-bezier(0.16,1,0.3,1)] [&_span]:data-[state=checked]:translate-x-10 [&_span]:data-[state=unchecked]:translate-x-2 [&_span]:bg-white [&_span]:border-gray-300"
+                'peer absolute inset-0 h-[inherit] w-auto data-[state=checked]:bg-transparent data-[state=unchecked]:bg-transparent [&_span]:z-10 [&_span]:size-6 [&_span]:rounded-sm [&_span]:border [&_span]:border-gray-300 [&_span]:bg-white [&_span]:shadow [&_span]:transition-transform [&_span]:duration-500 [&_span]:[transition-timing-function:cubic-bezier(0.16,1,0.3,1)] [&_span]:data-[state=checked]:translate-x-10 [&_span]:data-[state=unchecked]:translate-x-2'
               )}
+              id={id}
+              onCheckedChange={handleToggle}
             />
           </div>
         </div>
 
-        <Label htmlFor={id} className="sr-only">
+        <Label className="sr-only" htmlFor={id}>
           Day/Night Theme Switch
         </Label>
       </motion.div>
@@ -154,12 +173,12 @@ const SunRays = () => (
   <>
     {[...Array(8)].map((_, i) => (
       <div
+        className="absolute h-2 w-1 bg-yellow-300"
         key={`ray-${i}`}
-        className="absolute bg-yellow-300 w-1 h-2"
         style={{
-          left: "50%",
-          top: "50%",
-          transformOrigin: "0 0",
+          left: '50%',
+          top: '50%',
+          transformOrigin: '0 0',
           transform: `rotate(${
             i * 45
           }deg) translate(-50%, -50%) translate(10px, 0)`,
@@ -170,15 +189,15 @@ const SunRays = () => (
 );
 
 const Moon = () => (
-  <div className="relative w-full h-full">
-    <div className="absolute inset-0 bg-gray-100 rounded-full" />
+  <div className="relative h-full w-full">
+    <div className="absolute inset-0 rounded-full bg-gray-100" />
     <div
-      className="absolute bg-[#0F2027] rounded-full"
+      className="absolute rounded-full bg-[#0F2027]"
       style={{
-        width: "90%",
-        height: "90%",
-        top: "-10%",
-        left: "-25%",
+        width: '90%',
+        height: '90%',
+        top: '-10%',
+        left: '-25%',
       }}
     />
   </div>
@@ -187,18 +206,18 @@ const Moon = () => (
 const Clouds = () => (
   <>
     <motion.div
-      className="absolute left-[60%] top-[30%] w-8 h-3 bg-white rounded-full opacity-90"
-      variants={cloudVariants}
-      initial="visible"
       animate="visible"
+      className="absolute top-[30%] left-[60%] h-3 w-8 rounded-full bg-white opacity-90"
       exit="hidden"
+      initial="visible"
+      variants={cloudVariants}
     />
     <motion.div
-      className="absolute left-[70%] top-[60%] w-6 h-2.5 bg-white rounded-full opacity-80"
-      variants={cloudVariants}
-      initial="visible"
       animate="visible"
+      className="absolute top-[60%] left-[70%] h-2.5 w-6 rounded-full bg-white opacity-80"
       exit="hidden"
+      initial="visible"
+      variants={cloudVariants}
     />
   </>
 );
@@ -211,22 +230,22 @@ const Stars = ({ count }: StarsProps) => (
   <>
     {[...Array(count)].map((_, i) => (
       <motion.div
+        animate="visible"
+        className="absolute h-0.5 w-0.5 rounded-full bg-white"
+        exit="hidden"
+        initial="hidden"
         key={`star-${i}`}
-        className="absolute w-0.5 h-0.5 bg-white rounded-full"
         style={{
           left: `${10 + i * 8}%`,
           top: `${20 + (i % 5) * 12}%`,
-          boxShadow: "0 0 2px 1px rgba(255, 255, 255, 0.4)",
+          boxShadow: '0 0 2px 1px rgba(255, 255, 255, 0.4)',
         }}
         variants={createStarVariants(i)}
-        initial="hidden"
-        animate="visible"
-        exit="hidden"
       />
     ))}
   </>
 );
 
-DayNightSwitch.displayName = "DayNightSwitch";
+DayNightSwitch.displayName = 'DayNightSwitch';
 
 export { DayNightSwitch };

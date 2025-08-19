@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import type { UIMessage } from "ai";
 import { useResumableChat } from "@/app/hooks/use-resumable-chat";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,13 +38,12 @@ export function ResumableChat({ chatId, className }: ResumableChatProps) {
   const {
     messages,
     handleSubmit,
-    isLoading,
+    status,
     error,
     isResuming,
     resumeError,
     resumeStream,
     hasActiveStream,
-    reload,
     stop
   } = useResumableChat({
     id: chatId,
@@ -54,6 +54,9 @@ export function ResumableChat({ chatId, className }: ResumableChatProps) {
       console.error("Chat error:", error);
     }
   });
+
+  // Derive isLoading from status
+  const isLoading = status === 'streaming' || status === 'submitted';
 
   // Monitor network connectivity
   useEffect(() => {
@@ -76,17 +79,40 @@ export function ResumableChat({ chatId, className }: ResumableChatProps) {
     };
   }, []);
 
-  // Handle form submission
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Handle message submission
+  const submitMessage = () => {
     if (!input.trim() || isLoading) return;
 
-    handleSubmit(e, {
+    const syntheticEvent = {
+      preventDefault: () => {},
+      currentTarget: null,
+      target: null,
+      nativeEvent: {} as Event,
+      bubbles: false,
+      cancelable: false,
+      defaultPrevented: false,
+      eventPhase: 0,
+      isTrusted: false,
+      timeStamp: Date.now(),
+      type: 'submit',
+      stopPropagation: () => {},
+      isPropagationStopped: () => false,
+      persist: () => {},
+      isDefaultPrevented: () => false,
+    } as unknown as React.FormEvent<HTMLFormElement>;
+
+    handleSubmit(syntheticEvent, {
       options: {
         body: { content: input }
       }
     });
     setInput("");
+  };
+
+  // Handle form submission
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    submitMessage();
   };
 
   // Manual resume handler
@@ -95,7 +121,7 @@ export function ResumableChat({ chatId, className }: ResumableChatProps) {
     try {
       await resumeStream();
       setConnectionStatus("connected");
-    } catch (error) {
+    } catch {
       setConnectionStatus("offline");
     }
   };
@@ -112,6 +138,7 @@ export function ResumableChat({ chatId, className }: ResumableChatProps) {
               <Badge 
                 variant={isOnline ? "default" : "destructive"}
                 className="flex items-center gap-2"
+                data-testid="connection-status"
               >
                 {isOnline ? (
                   <Wifi className="w-3 h-3" />
@@ -138,6 +165,7 @@ export function ResumableChat({ chatId, className }: ResumableChatProps) {
                   onClick={handleManualResume}
                   disabled={isResuming}
                   className="flex items-center gap-2"
+                  data-testid="resume-button"
                 >
                   <RefreshCw className={cn("w-3 h-3", isResuming && "animate-spin")} />
                   Resume
@@ -157,7 +185,7 @@ export function ResumableChat({ chatId, className }: ResumableChatProps) {
             exit={{ opacity: 0, y: -10 }}
             className="mb-4"
           >
-            <Alert variant="destructive">
+            <Alert variant="destructive" data-testid="error-message">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 {error?.message || resumeError?.message || "An error occurred"}
@@ -189,7 +217,7 @@ export function ResumableChat({ chatId, className }: ResumableChatProps) {
               )}
               
               <AnimatePresence initial={false}>
-                {messages.map((message, index) => (
+                {messages.map((message: UIMessage, index: number) => (
                   <motion.div
                     key={message.id || index}
                     initial={{ opacity: 0, y: 10 }}
@@ -217,13 +245,13 @@ export function ResumableChat({ chatId, className }: ResumableChatProps) {
                     
                     <div className="flex-1 min-w-0">
                       <div className="prose prose-sm dark:prose-invert max-w-none">
-                        {message.content}
+                        {message.parts?.filter(p => p.type === 'text').map(p => (p as { type: string; text: string }).text).join('') || ''}
                       </div>
                       
                       {/* Message metadata */}
                       <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                         <Clock className="w-3 h-3" />
-                        {message.createdAt && new Date(message.createdAt).toLocaleTimeString()}
+{(message as { createdAt?: string }).createdAt && new Date((message as { createdAt?: string }).createdAt!).toLocaleTimeString()}
                         {message.role === "assistant" && (
                           <>
                             <Separator orientation="vertical" className="h-3" />
@@ -274,7 +302,7 @@ export function ResumableChat({ chatId, className }: ResumableChatProps) {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    onSubmit(e);
+                    submitMessage();
                   }
                 }}
               />

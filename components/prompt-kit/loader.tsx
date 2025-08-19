@@ -21,14 +21,17 @@ const ANIMATION = {
 
 const TRANSITION = {
   duration: ANIMATION_DURATION,
-  ease: "easeInOut",
+  ease: [0.4, 0, 0.6, 1] as [number, number, number, number],
   repeat: Number.POSITIVE_INFINITY,
   repeatType: "loop" as const,
 }
 
 export function Loader() {
   return (
-    <div className={`flex items-center justify-center ${DOT_SPACING}`}>
+    <div 
+      data-testid="loading-indicator"
+      className={`flex items-center justify-center ${DOT_SPACING}`}
+    >
       <Dot delay={DELAY_DOT_1} />
       <Dot delay={DELAY_DOT_2} />
       <Dot delay={DELAY_DOT_3} />

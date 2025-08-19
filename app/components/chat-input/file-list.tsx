@@ -7,9 +7,10 @@ type FileListProps = {
 }
 
 const TRANSITION = {
-  type: "spring",
-  duration: 0.2,
+  type: "spring" as const,
   bounce: 0,
+  damping: 20,
+  stiffness: 300,
 }
 
 export function FileList({ files, onFileRemove }: FileListProps) {

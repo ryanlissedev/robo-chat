@@ -1,8 +1,11 @@
 import { createGuestServerClient } from "@/lib/supabase/server-guest"
+import { generateUUID } from "@/lib/utils/uuid"
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await request.json()
+    // Generate a UUID for the guest user if not provided
+    const requestBody = await request.json().catch(() => ({}))
+    const userId = requestBody.userId || generateUUID()
 
     if (!userId) {
       return new Response(JSON.stringify({ error: "Missing userId" }), {

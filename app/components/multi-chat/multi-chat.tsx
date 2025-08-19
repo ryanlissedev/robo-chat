@@ -10,10 +10,12 @@ import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config"
 import { useModel } from "@/lib/model-store/provider"
 import { useUser } from "@/lib/user-store/provider"
 import { cn } from "@/lib/utils"
-import { Message as MessageType } from "@ai-sdk/react"
+import { generateUUID } from "@/lib/utils/uuid"
+import { UIMessage as MessageType } from "ai"
 
 interface MessageWithModel extends MessageType {
   model?: string
+  content?: string
 }
 import { AnimatePresence, motion } from "motion/react"
 import { useCallback, useMemo, useState } from "react"
@@ -57,8 +59,8 @@ export function MultiChat() {
 
   const modelsFromPersisted = useMemo(() => {
     return persistedMessages
-      .filter((msg): msg is MessageWithModel & { model: string } => Boolean((msg as MessageWithModel).model))
-      .map((msg) => msg.model)
+      .filter((msg) => Boolean((msg as MessageWithModel).model))
+      .map((msg) => (msg as MessageWithModel).model)
   }, [persistedMessages])
 
   const modelsFromLastGroup = useMemo(() => {
@@ -111,10 +113,10 @@ export function MultiChat() {
       const message = persistedMessages[i]
 
       if (message.role === "user") {
-        const groupKey = message.content
+        const groupKey = (message as MessageWithModel).content || String(message.id)
         if (!groups[groupKey]) {
           groups[groupKey] = {
-            userMessage: message,
+            userMessage: message as MessageWithModel,
             assistantMessages: [],
           }
         }
@@ -128,14 +130,14 @@ export function MultiChat() {
         }
 
         if (associatedUserMessage) {
-          const groupKey = associatedUserMessage.content
+          const groupKey = (associatedUserMessage as MessageWithModel).content || String(associatedUserMessage.id)
           if (!groups[groupKey]) {
             groups[groupKey] = {
-              userMessage: associatedUserMessage,
+              userMessage: associatedUserMessage as MessageWithModel,
               assistantMessages: [],
             }
           }
-          groups[groupKey].assistantMessages.push(message)
+          groups[groupKey].assistantMessages.push(message as MessageWithModel)
         }
       }
     }
@@ -177,11 +179,11 @@ export function MultiChat() {
         const assistantMsg = chat.messages[i + 1]
 
         if (userMsg?.role === "user") {
-          const groupKey = userMsg.content
+          const groupKey = (userMsg as MessageWithModel).content || String(userMsg.id)
 
           if (!liveGroups[groupKey]) {
             liveGroups[groupKey] = {
-              userMessage: userMsg,
+              userMessage: userMsg as MessageWithModel,
               responses: [],
               onDelete: () => {},
               onEdit: () => {},
@@ -197,20 +199,20 @@ export function MultiChat() {
             if (!existingResponse) {
               liveGroups[groupKey].responses.push({
                 model: chat.model.id,
-                message: assistantMsg,
+                message: assistantMsg as MessageWithModel,
                 isLoading: false,
                 provider: chat.model.provider,
               })
             }
           } else if (
             chat.isLoading &&
-            userMsg.content === prompt &&
+            (userMsg as MessageWithModel).content === prompt &&
             selectedModelIds.includes(chat.model.id)
           ) {
             const placeholderMessage: MessageType = {
               id: `loading-${chat.model.id}`,
               role: "assistant",
-              content: "",
+              parts: [{ type: "text", text: "" }],
             }
             liveGroups[groupKey].responses.push({
               model: chat.model.id,
@@ -244,7 +246,7 @@ export function MultiChat() {
       const uid = await getOrCreateGuestUserId(user)
       if (!uid) return
 
-      const message_group_id = crypto.randomUUID()
+      const message_group_id = generateUUID()
 
       let chatIdToUse = multiChatId || chatId
       if (!chatIdToUse) {

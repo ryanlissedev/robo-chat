@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
+import "./types/ai-sdk-extensions"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -13,6 +14,7 @@ import { UserProvider } from "@/lib/user-store/provider"
 import { getUserProfile } from "@/lib/user/api"
 import { ThemeProvider } from "next-themes"
 import Script from "next/script"
+import BrowserEchoScript from "@browser-echo/next/BrowserEchoScript"
 import { LayoutClient } from "./layout-client"
 
 const geistSans = Geist({
@@ -49,6 +51,18 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {isDev && (
+          <BrowserEchoScript 
+            route="/api/client-logs"
+            include={['log', 'info', 'warn', 'error', 'debug']}
+            preserveConsole={true}
+            tag="[RoboRail]"
+            stackMode="condensed"
+            showSource={true}
+          />
+        )}
+      </head>
       {isOfficialDeployment ? (
         <Script
           defer

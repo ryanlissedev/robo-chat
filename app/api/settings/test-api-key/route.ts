@@ -3,7 +3,6 @@ import { validateUserIdentity } from '@/lib/server/api'
 import { decryptApiKey, validateApiKeyFormat } from '@/lib/security/encryption'
 import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
-import { createMistral } from '@ai-sdk/mistral'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 
 export async function POST(req: Request) {
@@ -56,9 +55,9 @@ export async function POST(req: Request) {
     let apiKey: string
     try {
       apiKey = decryptApiKey(
-        keyData.encrypted_key,
-        keyData.iv,
-        keyData.auth_tag,
+        keyData.encrypted_key || '',
+        keyData.iv || '',
+        keyData.auth_tag || '',
         user.id
       )
     } catch (decryptError) {
@@ -87,12 +86,12 @@ export async function POST(req: Request) {
           // Try to list models as a simple test
           const models = await openai.models.list()
           if (models.data.length > 0) {
-            testResult = { success: true, error: null }
+            testResult = { success: true, error: '' }
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           testResult = { 
             success: false, 
-            error: error.message || 'Invalid OpenAI API key' 
+            error: (error as Error).message || 'Invalid OpenAI API key' 
           }
         }
         break
@@ -107,38 +106,50 @@ export async function POST(req: Request) {
             messages: [{ role: 'user', content: 'Hi' }]
           })
           if (response) {
-            testResult = { success: true, error: null }
+            testResult = { success: true, error: '' }
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           testResult = { 
             success: false, 
-            error: error.message || 'Invalid Anthropic API key' 
+            error: (error as Error).message || 'Invalid Anthropic API key' 
           }
         }
         break
 
       case 'mistral':
         try {
-          const mistral = createMistral({ apiKey })
-          // Test by creating a minimal completion
-          testResult = { success: true, error: null }
-        } catch (error: any) {
+          // Test Mistral API key by making a simple API call
+          const response = await fetch('https://api.mistral.ai/v1/models', {
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
+            }
+          })
+          if (response.ok) {
+            testResult = { success: true, error: '' }
+          } else {
+            testResult = { 
+              success: false, 
+              error: 'Invalid Mistral API key' 
+            }
+          }
+        } catch (error: unknown) {
           testResult = { 
             success: false, 
-            error: error.message || 'Invalid Mistral API key' 
+            error: (error as Error).message || 'Invalid Mistral API key' 
           }
         }
         break
 
       case 'google':
         try {
-          const google = createGoogleGenerativeAI({ apiKey })
+          createGoogleGenerativeAI({ apiKey })
           // Test by creating a provider instance
-          testResult = { success: true, error: null }
-        } catch (error: any) {
+          testResult = { success: true, error: '' }
+        } catch (error: unknown) {
           testResult = { 
             success: false, 
-            error: error.message || 'Invalid Google API key' 
+            error: (error as Error).message || 'Invalid Google API key' 
           }
         }
         break
@@ -152,17 +163,17 @@ export async function POST(req: Request) {
             }
           })
           if (response.ok) {
-            testResult = { success: true, error: null }
+            testResult = { success: true, error: '' }
           } else {
             testResult = { 
               success: false, 
               error: 'Invalid LangSmith API key' 
             }
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           testResult = { 
             success: false, 
-            error: error.message || 'Invalid LangSmith API key' 
+            error: (error as Error).message || 'Invalid LangSmith API key' 
           }
         }
         break

@@ -52,7 +52,7 @@
   --border-radius-industrial: 4px;
 }
 
-.theme-technical-industrial.dark {
+.dark .theme-technical-industrial {
   /* Dark theme for industrial environments */
   --background: oklch(0.12 0.008 220);
   --foreground: oklch(0.95 0.003 220);

@@ -1,5 +1,6 @@
 export const TRANSITION_SUGGESTIONS = {
-  duration: 0.25,
-  type: "spring",
+  type: "spring" as const,
   bounce: 0,
+  damping: 25,
+  stiffness: 400,
 }

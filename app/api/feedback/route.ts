@@ -41,14 +41,14 @@ export async function POST(req: Request) {
     }
 
     // Store feedback in Supabase
+    const feedbackType = feedback === 'upvote' ? 'positive' : 'negative'
     const { error: dbError } = await supabase
       .from('message_feedback')
       .upsert({
         message_id: messageId,
         user_id: user.id,
-        feedback,
-        comment,
-        langsmith_run_id: runId,
+        feedback_type: feedbackType,
+        feedback_text: comment,
       }, {
         onConflict: 'message_id,user_id',
       })
@@ -125,8 +125,8 @@ export async function GET(req: Request) {
     // Get feedback from database
     const { data, error } = await supabase
       .from('message_feedback')
-      .select('feedback, comment, created_at')
-      .eq('message_id', messageId)
+      .select('feedback_type, feedback_text, created_at')
+      .eq('message_id', parseInt(messageId))
       .eq('user_id', user.id)
       .single()
 
@@ -138,10 +138,13 @@ export async function GET(req: Request) {
       )
     }
 
+    // Convert back to the expected format
+    const feedbackValue = data?.feedback_type === 'positive' ? 'upvote' : (data?.feedback_type === 'negative' ? 'downvote' : null)
+
     return NextResponse.json({
       success: true,
-      feedback: data?.feedback || null,
-      comment: data?.comment || null,
+      feedback: feedbackValue,
+      comment: data?.feedback_text || null,
       createdAt: data?.created_at || null,
     })
   } catch (error) {

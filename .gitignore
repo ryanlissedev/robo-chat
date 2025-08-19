@@ -52,3 +52,21 @@ bun.lockb
 bun.lock
 
 /.cursor
+
+# Agent workspace and temporary files
+.agent-workspace/
+.agent-logs/
+agent-session-*
+*.agent.log
+*.agent.tmp
+
+# AI agent cache and state
+.agent-cache/
+.ai-session/
+.llm-cache/
+
+# Development tools
+.vscode/settings.json
+.idea/
+*.swp
+*.swo

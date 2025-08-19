@@ -1,46 +1,47 @@
-import { useChatDraft } from "@/app/hooks/use-chat-draft"
-import { toast } from "@/components/ui/toast"
-import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config"
-import { API_ROUTE_CHAT } from "@/lib/routes"
-import type { UserProfile } from "@/lib/user/types"
-import type { Message } from "@ai-sdk/react"
-import { useChat } from "@ai-sdk/react"
-import { useSearchParams } from "next/navigation"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import type { UIMessage, FileUIPart } from 'ai';
+import type { Attachment } from '@/app/types/api.types';
+import { useChat } from '@ai-sdk/react';
+import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useChatDraft } from '@/app/hooks/use-chat-draft';
+import { toast } from '@/components/ui/toast';
+import { SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
+// Removed unused import: API_ROUTE_CHAT
+import type { UserProfile } from '@/lib/user/types';
 import {
+  type ChatOperationDependencies,
+  handleChatError,
+  type MessageSubmissionContext,
+  prepareReloadScenario,
   submitMessageScenario,
   submitSuggestionScenario,
-  prepareReloadScenario,
-  handleChatError,
-  type ChatOperationDependencies,
-  type MessageSubmissionContext,
-} from "./chat-business-logic"
+} from './chat-business-logic';
 
 type UseChatCoreProps = {
-  initialMessages: Message[]
-  draftValue: string
-  cacheAndAddMessage: (message: Message) => void
-  chatId: string | null
-  user: UserProfile | null
-  files: File[]
+  messages: UIMessage[];
+  draftValue: string;
+  cacheAndAddMessage: (message: UIMessage) => void;
+  chatId: string | null;
+  user: UserProfile | null;
+  files: File[];
   createOptimisticAttachments: (
     files: File[]
-  ) => Array<{ name: string; contentType: string; url: string }>
-  setFiles: (files: File[]) => void
-  checkLimitsAndNotify: (uid: string) => Promise<boolean>
-  cleanupOptimisticAttachments: (attachments?: Array<{ url?: string }>) => void
-  ensureChatExists: (uid: string, input: string) => Promise<string | null>
+  ) => FileUIPart[];
+  setFiles: (files: File[]) => void;
+  checkLimitsAndNotify: (uid: string) => Promise<boolean>;
+  cleanupOptimisticAttachments: (attachments?: FileUIPart[]) => void;
+  ensureChatExists: (uid: string, input: string) => Promise<string | null>;
   handleFileUploads: (
     uid: string,
     chatId: string
-  ) => Promise<Attachment[] | null>
-  selectedModel: string
-  clearDraft: () => void
-  bumpChat: (chatId: string) => void
-}
+  ) => Promise<Attachment[] | null>;
+  selectedModel: string;
+  clearDraft: () => void;
+  bumpChat: (chatId: string) => void;
+};
 
 export function useChatCore({
-  initialMessages,
+  messages: initialMessagesProp,
   draftValue,
   cacheAndAddMessage,
   chatId,
@@ -57,96 +58,132 @@ export function useChatCore({
   bumpChat,
 }: UseChatCoreProps) {
   // State management
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [hasDialogAuth, setHasDialogAuth] = useState(false)
-  const [enableSearch, setEnableSearch] = useState(false)
-  const [reasoningEffort, setReasoningEffort] = useState<'low' | 'medium' | 'high'>('medium')
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasDialogAuth, setHasDialogAuth] = useState(false);
+  const [enableSearch, setEnableSearch] = useState(false);
+  const [reasoningEffort, setReasoningEffort] = useState<
+    'low' | 'medium' | 'high'
+  >('medium');
 
   // Refs and derived state
-  const hasSentFirstMessageRef = useRef(false)
-  const prevChatIdRef = useRef<string | null>(chatId)
-  const isAuthenticated = useMemo(() => !!user?.id, [user?.id])
+  const hasSentFirstMessageRef = useRef(false);
+  const prevChatIdRef = useRef<string | null>(chatId);
+  const isAuthenticated = useMemo(() => !!user?.id, [user?.id]);
   const systemPrompt = useMemo(
     () => user?.system_prompt || SYSTEM_PROMPT_DEFAULT,
     [user?.system_prompt]
-  )
+  );
 
   // Search params handling
-  const searchParams = useSearchParams()
-  const prompt = searchParams.get("prompt")
+  const searchParams = useSearchParams();
+  const prompt = searchParams.get('prompt');
 
   // Handle errors using extracted error handler
-  const handleError = useCallback((error: Error) => {
-    handleChatError(error, "Chat")
-  }, [])
+  const handleError = useCallback((err: Error) => {
+    handleChatError(err, 'Chat');
+  }, []);
 
-  // Initialize useChat
+  // Initialize useChat with AI SDK v5 pattern
+  const chatHookResult = useChat({
+    id: chatId || undefined,
+    messages: initialMessagesProp,
+    onError: handleError,
+    onFinish: (options: { message: UIMessage }) => {
+      if (options.message) {
+        cacheAndAddMessage(options.message);
+      }
+    },
+  });
+
+  // Extract available properties and create missing ones
   const {
-    messages,
-    input,
-    handleSubmit,
+    messages: chatMessages,
     status,
     error,
-    reload,
     stop,
     setMessages,
-    setInput,
-    append,
-  } = useChat({
-    api: API_ROUTE_CHAT,
-    initialMessages,
-    initialInput: draftValue,
-    onFinish: cacheAndAddMessage,
-    onError: handleError,
-  })
+    sendMessage,
+    regenerate,
+  } = chatHookResult;
+
+  // Create missing properties that don't exist in AI SDK v2
+  const [input, setInput] = useState(draftValue);
+  
+  const handleSubmit = useCallback((e?: React.FormEvent) => {
+    e?.preventDefault();
+    // Will be handled by our custom submit function
+  }, []);
+
+  const reload = useCallback(() => {
+    regenerate();
+  }, [regenerate]);
+
+  // Use sendMessage from useChat hook directly
 
   // Handle search params on mount
   useEffect(() => {
-    if (prompt && typeof window !== "undefined") {
-      requestAnimationFrame(() => setInput(prompt))
+    if (prompt && typeof window !== 'undefined') {
+      requestAnimationFrame(() => setInput(prompt));
     }
-  }, [prompt, setInput])
+  }, [prompt, setInput]);
 
   // Reset messages when navigating from a chat to home
   if (
     prevChatIdRef.current !== null &&
     chatId === null &&
-    messages.length > 0
+    chatMessages.length > 0
   ) {
-    setMessages([])
+    setMessages([]);
   }
-  prevChatIdRef.current = chatId
+  prevChatIdRef.current = chatId;
 
   // Prepare operation dependencies for BDD scenarios
-  const operationDependencies: ChatOperationDependencies = useMemo(() => ({
-    checkLimitsAndNotify,
-    ensureChatExists,
-    handleFileUploads,
-    createOptimisticAttachments,
-    cleanupOptimisticAttachments,
-  }), [checkLimitsAndNotify, ensureChatExists, handleFileUploads, createOptimisticAttachments, cleanupOptimisticAttachments])
+  const operationDependencies: ChatOperationDependencies = useMemo(
+    () => ({
+      checkLimitsAndNotify,
+      ensureChatExists,
+      handleFileUploads,
+      createOptimisticAttachments,
+      cleanupOptimisticAttachments,
+    }),
+    [
+      checkLimitsAndNotify,
+      ensureChatExists,
+      handleFileUploads,
+      createOptimisticAttachments,
+      cleanupOptimisticAttachments,
+    ]
+  );
 
   // Submit action using BDD-style operations
   const submit = useCallback(async () => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     // Create optimistic message immediately
-    const optimisticId = `optimistic-${Date.now().toString()}`
-    const optimisticAttachments = files.length > 0 ? createOptimisticAttachments(files) : []
+    const optimisticId = `optimistic-${Date.now().toString()}`;
+    const optimisticAttachments =
+      files.length > 0 ? createOptimisticAttachments(files) : [];
     const optimisticMessage = {
       id: optimisticId,
+      parts: [
+        {
+          type: 'text' as const,
+          text: input,
+        },
+      ],
       content: input,
-      role: "user" as const,
+      role: 'user' as const,
       createdAt: new Date(),
-      experimental_attachments: optimisticAttachments.length > 0 ? optimisticAttachments : undefined,
-    }
+      experimental_attachments:
+        optimisticAttachments.length > 0 ? optimisticAttachments : undefined,
+    };
 
     // Add optimistic message to UI
-    setMessages((prev) => [...prev, optimisticMessage])
-    setInput("")
+    setMessages((prev) => [...prev, optimisticMessage]);
+    setInput('');
 
-    const submittedFiles = [...files]
-    setFiles([])
+    const submittedFiles = [...files];
+    setFiles([]);
 
     try {
       // Use BDD scenario for message submission
@@ -160,44 +197,72 @@ export function useChatCore({
         enableSearch,
         reasoningEffort,
         chatId,
-      }
+      };
 
-      const result = await submitMessageScenario(context, operationDependencies)
+      const result = await submitMessageScenario(
+        context,
+        operationDependencies
+      );
 
       if (!result.success) {
         // Handle operation failure
-        setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
-        cleanupOptimisticAttachments(optimisticMessage.experimental_attachments)
-        
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        cleanupOptimisticAttachments(
+          optimisticMessage.experimental_attachments
+        );
+
         if (result.error) {
-          toast({ title: result.error, status: "error" })
+          toast({ title: result.error, status: 'error' });
         }
-        return
+        return;
       }
 
       // Operation succeeded - proceed with submission
-      const { chatId: currentChatId, requestOptions } = result.data!
+      const data = result.data;
+      if (!data) {
+        throw new Error('Missing response data for message submission');
+      }
+      const { chatId: currentChatId, requestOptions } = data;
 
-      handleSubmit(undefined, requestOptions)
-      
+      // Use sendMessage to send the message with proper options
+      await sendMessage({
+        role: 'user',
+        parts: [
+          {
+            type: 'text',
+            text: input,
+          },
+        ],
+        experimental_attachments: requestOptions.experimental_attachments,
+      }, {
+        body: {
+          chatId: chatId,
+          userId: user?.id || '',
+          model: selectedModel,
+          isAuthenticated,
+          systemPrompt,
+          enableSearch,
+          reasoningEffort,
+        },
+      });
+
       // Clean up optimistic message and cache the real one
-      setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
-      cleanupOptimisticAttachments(optimisticMessage.experimental_attachments)
-      cacheAndAddMessage(optimisticMessage)
-      clearDraft()
+      setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
+      cleanupOptimisticAttachments(optimisticMessage.experimental_attachments);
+      cacheAndAddMessage(optimisticMessage);
+      clearDraft();
 
       // Bump chat if there were previous messages
-      if (messages.length > 0) {
-        bumpChat(currentChatId)
+      if (chatMessages.length > 0) {
+        bumpChat(currentChatId);
       }
-
-    } catch (error) {
+    } catch (err) {
       // Handle unexpected errors
-      setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
-      cleanupOptimisticAttachments(optimisticMessage.experimental_attachments)
-      handleChatError(error as Error, "Message submission")
+      setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
+      cleanupOptimisticAttachments(optimisticMessage.experimental_attachments);
+      handleChatError(err as Error, 'Message submission');
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }, [
     input,
@@ -215,28 +280,34 @@ export function useChatCore({
     setInput,
     setFiles,
     cleanupOptimisticAttachments,
-    handleSubmit,
     cacheAndAddMessage,
     clearDraft,
-    messages.length,
+    chatMessages.length,
     bumpChat,
-  ])
+    sendMessage,
+  ]);
 
   // Handle suggestion using BDD-style operations
   const handleSuggestion = useCallback(
     async (suggestion: string) => {
-      setIsSubmitting(true)
+      setIsSubmitting(true);
 
       // Create optimistic message for suggestion
-      const optimisticId = `optimistic-${Date.now().toString()}`
+      const optimisticId = `optimistic-${Date.now().toString()}`;
       const optimisticMessage = {
         id: optimisticId,
+        parts: [
+          {
+            type: 'text' as const,
+            text: suggestion,
+          },
+        ],
         content: suggestion,
-        role: "user" as const,
+        role: 'user' as const,
         createdAt: new Date(),
-      }
+      };
 
-      setMessages((prev) => [...prev, optimisticMessage])
+      setMessages((prev) => [...prev, optimisticMessage]);
 
       try {
         // Use BDD scenario for suggestion submission
@@ -248,45 +319,63 @@ export function useChatCore({
           chatId,
           enableSearch,
           systemPrompt,
-        }
+        };
 
         const dependencies = {
           checkLimitsAndNotify,
           ensureChatExists,
-        }
+        };
 
-        const result = await submitSuggestionScenario(suggestion, context, dependencies)
+        const result = await submitSuggestionScenario(
+          suggestion,
+          context,
+          dependencies
+        );
 
         if (!result.success) {
           // Handle operation failure
-          setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
-          
+          setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
+
           if (result.error) {
-            toast({ title: result.error, status: "error" })
+            toast({ title: result.error, status: 'error' });
           }
-          return
+          return;
         }
 
-        // Operation succeeded - proceed with append
-        const { requestOptions } = result.data!
+        // Operation succeeded - proceed with sendMessage
+        const data = result.data;
+        if (!data) {
+          return;
+        }
 
-        append(
-          {
-            role: "user",
-            content: suggestion,
+        await sendMessage({
+          role: 'user',
+          parts: [
+            {
+              type: 'text',
+              text: suggestion,
+            },
+          ],
+        }, {
+          body: {
+            chatId: chatId,
+            userId: user?.id || '',
+            model: selectedModel,
+            isAuthenticated,
+            systemPrompt,
+            enableSearch,
+            reasoningEffort,
           },
-          requestOptions
-        )
-        
-        // Clean up optimistic message
-        setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
+        });
 
-      } catch (error) {
+        // Clean up optimistic message
+        setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
+      } catch (err) {
         // Handle unexpected errors
-        setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
-        handleChatError(error as Error, "Suggestion submission")
+        setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
+        handleChatError(err as Error, 'Suggestion submission');
       } finally {
-        setIsSubmitting(false)
+        setIsSubmitting(false);
       }
     },
     [
@@ -299,10 +388,10 @@ export function useChatCore({
       systemPrompt,
       checkLimitsAndNotify,
       ensureChatExists,
-      append,
+      sendMessage,
       setMessages,
     ]
-  )
+  );
 
   // Handle reload using BDD-style operations
   const handleReload = useCallback(async () => {
@@ -315,38 +404,49 @@ export function useChatCore({
         isAuthenticated,
         systemPrompt,
         reasoningEffort,
-      }
+      };
 
-      const result = await prepareReloadScenario(context)
+      const result = await prepareReloadScenario(context);
 
       if (!result.success) {
         if (result.error) {
-          toast({ title: result.error, status: "error" })
+          toast({ title: result.error, status: 'error' });
         }
-        return
+        return;
       }
 
       // Proceed with reload using prepared options
-      reload(result.data!.requestOptions)
-
-    } catch (error) {
-      handleChatError(error as Error, "Chat reload")
+      const data = result.data;
+      if (!data) {
+        return;
+      }
+      reload();
+    } catch (err) {
+      handleChatError(err as Error, 'Chat reload');
     }
-  }, [user, chatId, selectedModel, isAuthenticated, systemPrompt, reasoningEffort, reload])
+  }, [
+    user,
+    chatId,
+    selectedModel,
+    isAuthenticated,
+    systemPrompt,
+    reasoningEffort,
+    reload,
+  ]);
 
   // Handle input change - now with access to the real setInput function!
-  const { setDraftValue } = useChatDraft(chatId)
+  const { setDraftValue } = useChatDraft(chatId);
   const handleInputChange = useCallback(
     (value: string) => {
-      setInput(value)
-      setDraftValue(value)
+      setInput(value);
+      setDraftValue(value);
     },
     [setInput, setDraftValue]
-  )
+  );
 
   return {
     // Chat state
-    messages,
+    messages: chatMessages,
     input,
     handleSubmit,
     status,
@@ -355,7 +455,7 @@ export function useChatCore({
     stop,
     setMessages,
     setInput,
-    append,
+    sendMessage,
     isAuthenticated,
     systemPrompt,
     hasSentFirstMessageRef,
@@ -375,5 +475,5 @@ export function useChatCore({
     handleSuggestion,
     handleReload,
     handleInputChange,
-  }
+  };
 }

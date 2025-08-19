@@ -1,4 +1,5 @@
 import { toast } from "@/components/ui/toast"
+import type { FileUIPart } from 'ai'
 import {
   Attachment,
   checkFileUploadLimit,
@@ -37,13 +38,14 @@ export const useFileUpload = () => {
 
   const createOptimisticAttachments = (files: File[]) => {
     return files.map((file) => ({
-      name: file.name,
-      contentType: file.type,
+      type: 'file' as const,
+      mediaType: file.type,
+      filename: file.name,
       url: file.type.startsWith("image/") ? URL.createObjectURL(file) : "",
     }))
   }
 
-  const cleanupOptimisticAttachments = (attachments?: Array<{ url?: string }>) => {
+  const cleanupOptimisticAttachments = (attachments?: FileUIPart[]) => {
     if (!attachments) return
     attachments.forEach((attachment) => {
       if (attachment.url?.startsWith("blob:")) {

@@ -1,7 +1,7 @@
 -- Create message feedback table for storing user feedback on assistant messages
 CREATE TABLE IF NOT EXISTS message_feedback (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  message_id UUID NOT NULL,
+  message_id INTEGER NOT NULL,
   user_id UUID NOT NULL,
   feedback VARCHAR(20) CHECK (feedback IN ('upvote', 'downvote')),
   comment TEXT,

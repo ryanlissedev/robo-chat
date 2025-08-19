@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server"
 
 export async function updateSession(request: NextRequest) {
   if (!isSupabaseEnabled) {
+    console.log("[RoboRail] Supabase not configured, skipping session update")
     return NextResponse.next({
       request,
     })

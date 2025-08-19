@@ -16,6 +16,10 @@ const MODEL_PROVIDER_MAP: Record<string, Provider> = {
   "gpt-4.1-mini-2025-04-14": "openai",
   "gpt-4.1-nano": "openai",
   "gpt-4.1-nano-2025-04-14": "openai",
+  // GPT-5 family
+  "gpt-5-mini": "openai",
+  "gpt-5": "openai",
+  "gpt-5-pro": "openai",
   "gpt-4o": "openai",
   "gpt-4o-2024-05-13": "openai",
   "gpt-4o-2024-08-06": "openai",
@@ -119,6 +123,18 @@ const MODEL_PROVIDER_MAP: Record<string, Provider> = {
   "grok-vision-beta": "xai",
   "grok-beta": "xai",
 
+  // DeepSeek
+  "deepseek-r1": "openrouter",
+  "deepseek-v3": "openrouter",
+
+  // Groq models
+  "gpt-oss-120b": "groq",
+  "gpt-oss-20b": "groq",
+  "deepseek-r1-distill-llama": "groq",
+  "qwen-3-32b": "groq",
+  "llama-4-scout": "groq",
+  "kimi-k2": "groq",
+
   // Static Ollama models
   "llama3.2:latest": "ollama",
   "qwen2.5-coder:latest": "ollama",
@@ -130,7 +146,6 @@ function isOllamaModel(modelId: string): boolean {
   const ollamaPatterns = [
     /^llama/i,
     /^qwen/i,
-    /^deepseek/i,
     /^mistral:/i,
     /^codellama/i,
     /^phi/i,

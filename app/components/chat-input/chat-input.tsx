@@ -9,13 +9,13 @@ import {
 } from "@/components/prompt-kit/prompt-input"
 import { Button } from "@/components/ui/button"
 import { getModelInfo } from "@/lib/models"
-import { ArrowUpIcon, StopIcon } from "@phosphor-icons/react"
+import { ArrowUpIcon, StopIcon, Plus } from "@phosphor-icons/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ReasoningEffortCompact, type ReasoningEffort } from "../chat/reasoning-effort-selector"
 import { PromptSystem } from "../suggestions/prompt-system"
 import { ButtonFileUpload } from "./button-file-upload"
-import { ButtonSearch } from "./button-search"
 import { FileList } from "./file-list"
+import { VoiceRecordingButton } from "../voice/voice-recording-button"
 
 type ChatInputProps = {
   value: string
@@ -38,6 +38,11 @@ type ChatInputProps = {
   quotedText?: { text: string; messageId: string } | null
   reasoningEffort?: ReasoningEffort
   onReasoningEffortChange?: (effort: ReasoningEffort) => void
+  // Voice recording props
+  isVoiceRecording?: boolean
+  onStartVoiceRecording?: () => void
+  onStopVoiceRecording?: () => void
+  isVoiceSupported?: boolean
 }
 
 export function ChatInput({
@@ -60,6 +65,11 @@ export function ChatInput({
   quotedText,
   reasoningEffort,
   onReasoningEffortChange,
+  // Voice recording props
+  isVoiceRecording = false,
+  onStartVoiceRecording,
+  onStopVoiceRecording,
+  isVoiceSupported = true,
 }: ChatInputProps) {
   const selectModelConfig = getModelInfo(selectedModel)
   const hasSearchSupport = Boolean(selectModelConfig?.webSearch)
@@ -191,13 +201,17 @@ export function ChatInput({
           onValueChange={onValueChange}
         >
           <FileList files={files} onFileRemove={onFileRemove} />
-          <PromptInputTextarea
-            ref={textareaRef}
-            placeholder="Ask about RoboRail machine operation, maintenance, or troubleshooting"
-            onKeyDown={handleKeyDown}
-            onPaste={handlePaste}
-            className="min-h-[44px] pt-3 pl-4 text-base leading-[1.3] sm:text-base md:text-base"
-          />
+          <div className="flex items-center gap-3 px-4">
+            <Plus className="size-4 text-muted-foreground flex-shrink-0" />
+            <PromptInputTextarea
+              ref={textareaRef}
+              data-testid="message-input"
+              placeholder="Ask anything"
+              onKeyDown={handleKeyDown}
+              onPaste={handlePaste}
+              className="min-h-[44px] pt-3 text-base leading-[1.3] sm:text-base md:text-base border-0 bg-transparent resize-none outline-none focus:ring-0 p-0"
+            />
+          </div>
           <PromptInputActions className="mt-3 w-full justify-between p-2">
             <div className="flex gap-2">
               <ButtonFileUpload
@@ -211,13 +225,6 @@ export function ChatInput({
                 isUserAuthenticated={isUserAuthenticated}
                 className="rounded-full"
               />
-              {hasSearchSupport ? (
-                <ButtonSearch
-                  isSelected={enableSearch}
-                  onToggle={setEnableSearch}
-                  isAuthenticated={isUserAuthenticated}
-                />
-              ) : null}
               {isGPT5Model && (
                 <ReasoningEffortCompact
                   value={currentReasoningEffort}
@@ -226,24 +233,35 @@ export function ChatInput({
                 />
               )}
             </div>
-            <PromptInputAction
-              tooltip={status === "streaming" ? "Stop" : "Send"}
-            >
-              <Button
-                size="sm"
-                className="size-9 rounded-full transition-all duration-300 ease-out"
-                disabled={!value || isSubmitting || isOnlyWhitespace(value)}
-                type="button"
-                onClick={handleSend}
-                aria-label={status === "streaming" ? "Stop" : "Send message"}
+            <div className="flex gap-2 items-center">
+              <VoiceRecordingButton
+                isAuthenticated={isUserAuthenticated}
+                onStartRecording={onStartVoiceRecording}
+                onStopRecording={onStopVoiceRecording}
+                isRecording={isVoiceRecording}
+                isSupported={isVoiceSupported}
+                disabled={isSubmitting || status === "streaming"}
+              />
+              <PromptInputAction
+                tooltip={status === "streaming" ? "Stop" : "Send"}
               >
-                {status === "streaming" ? (
-                  <StopIcon className="size-4" />
-                ) : (
-                  <ArrowUpIcon className="size-4" />
-                )}
-              </Button>
-            </PromptInputAction>
+                <Button
+                  size="sm"
+                  className="size-9 rounded-full transition-all duration-300 ease-out"
+                  disabled={!value || isSubmitting || isOnlyWhitespace(value)}
+                  type="button"
+                  onClick={handleSend}
+                  aria-label={status === "streaming" ? "Stop" : "Send message"}
+                  data-testid={status === "streaming" ? "stop-button" : "send-button"}
+                >
+                  {status === "streaming" ? (
+                    <StopIcon className="size-4" />
+                  ) : (
+                    <ArrowUpIcon className="size-4" />
+                  )}
+                </Button>
+              </PromptInputAction>
+            </div>
           </PromptInputActions>
         </PromptInput>
       </div>

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { 
-  decryptApiKey,
   encryptApiKey,
   generateApiKey,
   validateApiKeyFormat 
@@ -62,6 +61,7 @@ export async function POST(req: NextRequest) {
         { status: 404 }
       )
     }
+
 
     // Prepare the new key
     let finalNewKey = newApiKey
@@ -131,7 +131,13 @@ export async function POST(req: NextRequest) {
     })
 
     // Return the new key only if auto-generated
-    const response: any = {
+    const response: {
+      success: boolean;
+      message: string;
+      masked_key: string;
+      new_key?: string;
+      warning?: string;
+    } = {
       success: true,
       message: 'API key rotated successfully',
       masked_key: masked
@@ -202,12 +208,16 @@ export async function GET(req: NextRequest) {
       .eq('user_id', user.id)
       .single()
 
-    const rotationConfig = securitySettings?.config || {}
+    const rotationConfig = (securitySettings?.config as { 
+      requireApiKeyRotation?: boolean; 
+      rotationDays?: number; 
+      [key: string]: unknown;
+    }) || {}
     const requireRotation = rotationConfig.requireApiKeyRotation ?? false
     const rotationDays = rotationConfig.rotationDays ?? 90
 
     // Calculate if rotation is needed
-    const lastRotated = new Date(keyData.last_rotated || keyData.created_at)
+    const lastRotated = new Date(keyData.last_rotated || keyData.created_at || Date.now())
     const daysSinceRotation = Math.floor(
       (Date.now() - lastRotated.getTime()) / (1000 * 60 * 60 * 24)
     )

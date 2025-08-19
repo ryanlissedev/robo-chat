@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Textarea } from '@/components/ui/textarea'
+// Badge and Textarea imports removed as they're not used
 import { toast } from 'sonner'
 import { Shield, Lock, Warning, CheckCircle, Key, Eye } from '@phosphor-icons/react'
 import { createClient } from '@/lib/supabase/client'
+import { Json } from '@/app/types/database.types'
 
 interface SecurityConfig {
   // Content Filtering
@@ -59,34 +59,45 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
   const [newDomain, setNewDomain] = useState('')
   const supabase = createClient()
 
-  useEffect(() => {
-    loadSettings()
-  }, [])
+  const loadSettings = useCallback(async () => {
+    if (!supabase) {
+      console.error('Supabase client not available')
+      toast.error('Database connection unavailable')
+      return
+    }
 
-  const loadSettings = async () => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('user_security_settings')
         .select('*')
         .eq('user_id', userId)
         .single()
 
-      if (data) {
-        setConfig(data.config)
+      if (data && data.config) {
+        setConfig(data.config as unknown as SecurityConfig)
       }
     } catch (error) {
       console.error('Error loading security settings:', error)
     }
-  }
+  }, [supabase, userId])
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
 
   const saveSettings = async () => {
+    if (!supabase) {
+      toast.error('Database connection unavailable')
+      return
+    }
+
     setLoading(true)
     try {
       const { error } = await supabase
         .from('user_security_settings')
         .upsert({
           user_id: userId,
-          config,
+          config: config as unknown as Json,
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'user_id'
@@ -103,7 +114,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
     }
   }
 
-  const updateConfig = (key: keyof SecurityConfig, value: any) => {
+  const updateConfig = (key: keyof SecurityConfig, value: SecurityConfig[keyof SecurityConfig]) => {
     setConfig({ ...config, [key]: value })
   }
 
@@ -146,7 +157,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
       } else {
         toast.error('Security test failed: ' + result.error)
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to test security settings')
     } finally {
       setLoading(false)

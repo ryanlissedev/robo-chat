@@ -55,6 +55,14 @@ export type PerplexityModel =
   | "sonar-reasoning-pro"
   | "sonar-reasoning"
 
+export type GroqModel =
+  | "gpt-oss-120b"
+  | "gpt-oss-20b"
+  | "deepseek-r1-distill-llama"
+  | "qwen-3-32b"
+  | "llama-4-scout"
+  | "kimi-k2"
+
 export type GeminiModel =
   | "gemini-2.0-flash-001"
   | "gemini-1.5-flash"
@@ -110,6 +118,10 @@ export type XaiModel =
   | "grok-vision-beta"
   | "grok-beta"
 
+export type DeepSeekModel = 
+  | "deepseek-r1"
+  | "deepseek-v3"
+
 export type OpenRouterModel =
   | "openrouter:deepseek/deepseek-r1:free"
   | "openrouter:anthropic/claude-3.7-sonnet:thinking"
@@ -128,20 +140,24 @@ export type OllamaModel = StaticOllamaModel | (string & {})
 export type Provider =
   | "openai"
   | "mistral"
+  | "groq"
   | "perplexity"
   | "google"
   | "anthropic"
   | "xai"
+  | "deepseek"
   | "ollama"
   | "openrouter"
 
 export type SupportedModel =
   | OpenAIModel
   | MistralModel
+  | GroqModel
   | GeminiModel
   | PerplexityModel
   | AnthropicModel
   | XaiModel
+  | DeepSeekModel
   | OllamaModel
   | OpenRouterModel
 

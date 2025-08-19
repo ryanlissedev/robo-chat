@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createHash, timingSafeEqual } from 'crypto'
+import { timingSafeEqual } from 'crypto'
 
 // Rate limiting configuration
 const RATE_LIMITS = {
@@ -27,6 +27,13 @@ export async function rateLimit(
   limitKey: keyof typeof RATE_LIMITS
 ): Promise<NextResponse | null> {
   const supabase = await createClient()
+  if (!supabase) {
+    return NextResponse.json(
+      { error: 'Database connection failed' },
+      { status: 500 }
+    )
+  }
+  
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) {
@@ -93,20 +100,20 @@ export function validateCSRFToken(req: NextRequest): boolean {
 }
 
 // Input sanitization
-export function sanitizeInput(input: any): any {
+export function sanitizeInput(input: unknown): unknown {
   if (typeof input === 'string') {
     // Remove null bytes
-    input = input.replace(/\0/g, '')
+    let sanitized = input.replace(/\0/g, '')
     
     // Limit string length
-    if (input.length > 10000) {
-      input = input.substring(0, 10000)
+    if (sanitized.length > 10000) {
+      sanitized = sanitized.substring(0, 10000)
     }
     
     // Remove control characters except newlines and tabs
-    input = input.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
     
-    return input
+    return sanitized
   }
   
   if (Array.isArray(input)) {
@@ -114,12 +121,13 @@ export function sanitizeInput(input: any): any {
   }
   
   if (input && typeof input === 'object') {
-    const sanitized: any = {}
-    for (const key in input) {
-      if (input.hasOwnProperty(key)) {
+    const sanitized: Record<string, unknown> = {}
+    const inputObj = input as Record<string, unknown>
+    for (const key in inputObj) {
+      if (inputObj.hasOwnProperty(key)) {
         // Limit object depth to prevent deeply nested attacks
-        if (getObjectDepth(input[key]) < 5) {
-          sanitized[sanitizeInput(key)] = sanitizeInput(input[key])
+        if (getObjectDepth(inputObj[key]) < 5) {
+          sanitized[sanitizeInput(key) as string] = sanitizeInput(inputObj[key])
         }
       }
     }
@@ -130,15 +138,16 @@ export function sanitizeInput(input: any): any {
 }
 
 // Get object depth
-function getObjectDepth(obj: any, currentDepth = 0): number {
+function getObjectDepth(obj: unknown, currentDepth = 0): number {
   if (!obj || typeof obj !== 'object') {
     return currentDepth
   }
   
   let maxDepth = currentDepth
-  for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      const depth = getObjectDepth(obj[key], currentDepth + 1)
+  const objRecord = obj as Record<string, unknown>
+  for (const key in objRecord) {
+    if (objRecord.hasOwnProperty(key)) {
+      const depth = getObjectDepth(objRecord[key], currentDepth + 1)
       maxDepth = Math.max(maxDepth, depth)
     }
   }
@@ -150,18 +159,18 @@ function getObjectDepth(obj: any, currentDepth = 0): number {
 export async function trackApiKeyUsage(
   userId: string,
   provider: string,
-  supabase: any
+  supabase: unknown
 ): Promise<void> {
   try {
     // Update last_used timestamp
-    await supabase
+    await (supabase as { from: (table: string) => { update: (data: Record<string, unknown>) => { eq: (col: string, val: string) => { eq: (col: string, val: string) => Promise<unknown> } } } })
       .from('user_keys')
       .update({ last_used: new Date().toISOString() })
       .eq('user_id', userId)
       .eq('provider', provider)
 
     // Log audit event
-    await supabase
+    await (supabase as { from: (table: string) => { insert: (data: Record<string, unknown>) => Promise<unknown> } })
       .from('api_key_audit_log')
       .insert({
         user_id: userId,
@@ -271,13 +280,13 @@ export function detectSuspiciousApiKey(apiKey: string): {
 
 // Audit log helper
 export async function logSecurityEvent(
-  supabase: any,
+  supabase: unknown,
   userId: string,
   action: string,
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
 ): Promise<void> {
   try {
-    await supabase
+    await (supabase as { from: (table: string) => { insert: (data: Record<string, unknown>) => Promise<unknown> } })
       .from('api_key_audit_log')
       .insert({
         user_id: userId,

@@ -1,0 +1,15 @@
+[test]
+# Exclude Playwright test files from Bun test runner
+exclude = [
+  "**/*.spec.ts",
+  "**/playwright.config.ts",
+  "tests/chat.spec.ts",
+  "tests/api-integration.spec.ts", 
+  "tests/real-response.spec.ts",
+  "tests/global-setup.ts",
+  "tests/global-teardown.ts",
+  "tests/pages/**"
+]
+
+# Set up test environment
+setup = ["./tests/setup.minimal.ts"]
