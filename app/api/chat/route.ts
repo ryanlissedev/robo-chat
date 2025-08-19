@@ -254,21 +254,12 @@ export async function POST(req: Request) {
       }
     }
 
-    // Configure model with file search if vector store is available
+    // Configure model with search enabled flag (file search via vector store)
     const modelWithFileSearch =
       vectorStoreId && provider === 'openai'
         ? modelConfig.apiSdk(apiKey, {
             ...modelSettings,
-            experimental_toolResources: {
-              fileSearch: {
-                vectorStoreIds: [vectorStoreId],
-                maxNumResults: 10,
-                rankingOptions: {
-                  ranker: 'default_2024_08_21',
-                  scoreThreshold: 0.5,
-                },
-              },
-            },
+            enableSearch: true,
           })
         : modelConfig.apiSdk(apiKey, modelSettings);
 

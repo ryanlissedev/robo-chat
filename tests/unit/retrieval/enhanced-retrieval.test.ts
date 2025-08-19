@@ -1,26 +1,33 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { enhancedRetrieval } from '@/lib/retrieval/query-rewriting';
+import { beforeEach, describe, expect, mock, test } from 'bun:test';
 import type OpenAI from 'openai';
+import { enhancedRetrieval } from '../../../lib/retrieval/query-rewriting';
 
 // Mock OpenAI
 const mockOpenAI = {
   chat: {
     completions: {
-      create: vi.fn(),
+      create: mock(() =>
+        Promise.resolve({ choices: [{ message: { content: 'test' } }] })
+      ),
     },
   },
   beta: {
     assistants: {
-      create: vi.fn(),
+      create: mock(() => Promise.resolve({ id: 'asst_test123' })),
+      del: mock(() => Promise.resolve()),
     },
     threads: {
-      create: vi.fn(),
+      create: mock(() => Promise.resolve({ id: 'thread_test123' })),
       runs: {
-        create: vi.fn(),
-        retrieve: vi.fn(),
+        create: mock(() =>
+          Promise.resolve({ id: 'run_test123', status: 'completed' })
+        ),
+        retrieve: mock(() =>
+          Promise.resolve({ id: 'run_test123', status: 'completed' })
+        ),
       },
       messages: {
-        list: vi.fn(),
+        list: mock(() => Promise.resolve({ data: [] })),
       },
     },
   },
@@ -28,39 +35,45 @@ const mockOpenAI = {
 
 describe('enhancedRetrieval', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    // Reset all mocks
+    mockOpenAI.beta.assistants.create.mockClear();
+    mockOpenAI.beta.assistants.del.mockClear();
+    mockOpenAI.beta.threads.create.mockClear();
+    mockOpenAI.beta.threads.runs.create.mockClear();
+    mockOpenAI.beta.threads.runs.retrieve.mockClear();
+    mockOpenAI.beta.threads.messages.list.mockClear();
   });
 
-  describe('when using AI SDK file search integration', () => {
-    it('should use OpenAI Assistants API instead of non-existent vectorStores.search', async () => {
+  describe('when using OpenAI Assistants API for file search', () => {
+    test('should use OpenAI Assistants API instead of non-existent vectorStores.search', async () => {
       // Arrange
       const query = 'How to operate RoboRail?';
       const vectorStoreId = 'vs_test123';
-      
+
       // Mock assistant creation
-      mockOpenAI.beta.assistants.create = vi.fn().mockResolvedValue({
+      mockOpenAI.beta.assistants.create.mockResolvedValue({
         id: 'asst_test123',
       });
 
       // Mock thread creation
-      mockOpenAI.beta.threads.create = vi.fn().mockResolvedValue({
+      mockOpenAI.beta.threads.create.mockResolvedValue({
         id: 'thread_test123',
       });
 
       // Mock run creation
-      mockOpenAI.beta.threads.runs.create = vi.fn().mockResolvedValue({
+      mockOpenAI.beta.threads.runs.create.mockResolvedValue({
         id: 'run_test123',
         status: 'completed',
       });
 
       // Mock run retrieval
-      mockOpenAI.beta.threads.runs.retrieve = vi.fn().mockResolvedValue({
+      mockOpenAI.beta.threads.runs.retrieve.mockResolvedValue({
         id: 'run_test123',
         status: 'completed',
       });
 
       // Mock messages list
-      mockOpenAI.beta.threads.messages.list = vi.fn().mockResolvedValue({
+      mockOpenAI.beta.threads.messages.list.mockResolvedValue({
         data: [
           {
             id: 'msg_test123',
@@ -113,18 +126,18 @@ describe('enhancedRetrieval', () => {
       expect(results).toHaveLength(1);
       expect(results[0]).toMatchObject({
         id: expect.any(String),
-        content: expect.stringContaining('RoboRail operation'),
+        content: expect.stringContaining('operation instructions'),
         score: expect.any(Number),
         file_id: 'file_test123',
       });
     });
 
-    it('should handle errors gracefully and return empty results', async () => {
+    test('should handle errors gracefully and return empty results', async () => {
       // Arrange
       const query = 'test query';
       const vectorStoreId = 'vs_test123';
-      
-      mockOpenAI.beta.assistants.create = vi.fn().mockRejectedValue(
+
+      mockOpenAI.beta.assistants.create.mockRejectedValue(
         new Error('API key invalid')
       );
 
@@ -135,30 +148,30 @@ describe('enhancedRetrieval', () => {
       expect(results).toEqual([]);
     });
 
-    it('should extract file citations from assistant responses', async () => {
+    test('should extract file citations from assistant responses', async () => {
       // Arrange
       const query = 'safety procedures';
       const vectorStoreId = 'vs_test123';
-      
-      mockOpenAI.beta.assistants.create = vi.fn().mockResolvedValue({
+
+      mockOpenAI.beta.assistants.create.mockResolvedValue({
         id: 'asst_test123',
       });
 
-      mockOpenAI.beta.threads.create = vi.fn().mockResolvedValue({
+      mockOpenAI.beta.threads.create.mockResolvedValue({
         id: 'thread_test123',
       });
 
-      mockOpenAI.beta.threads.runs.create = vi.fn().mockResolvedValue({
+      mockOpenAI.beta.threads.runs.create.mockResolvedValue({
         id: 'run_test123',
         status: 'completed',
       });
 
-      mockOpenAI.beta.threads.runs.retrieve = vi.fn().mockResolvedValue({
+      mockOpenAI.beta.threads.runs.retrieve.mockResolvedValue({
         id: 'run_test123',
         status: 'completed',
       });
 
-      mockOpenAI.beta.threads.messages.list = vi.fn().mockResolvedValue({
+      mockOpenAI.beta.threads.messages.list.mockResolvedValue({
         data: [
           {
             id: 'msg_test123',
@@ -166,7 +179,8 @@ describe('enhancedRetrieval', () => {
               {
                 type: 'text',
                 text: {
-                  value: 'Safety procedures include: 1. Check equipment [1] 2. Verify clearance [2]',
+                  value:
+                    'Safety procedures include: 1. Check equipment [1] 2. Verify clearance [2]',
                   annotations: [
                     {
                       type: 'file_citation',

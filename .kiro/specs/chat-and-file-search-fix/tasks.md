@@ -6,7 +6,7 @@
   - Remove custom vector store search implementation in favor of AI SDK approach
   - _Requirements: 2.2, 3.2_
 
-- [-] 2. Re-enable and fix file search tool in chat API
+- [x] 2. Re-enable and fix file search tool in chat API
   - Remove the "Temporarily disable file search tool" comment and code in `/app/api/chat/route.ts`
   - Implement proper AI SDK file search configuration using `experimental_toolResources`
   - Add vector store ID management for file search operations

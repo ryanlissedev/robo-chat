@@ -47,8 +47,8 @@ describe('VectorStoreManager', () => {
 
   test('should create default vector store when none exists', async () => {
     // Given: No existing vector stores
-    mockOpenAI.vectorStores.list.mockResolvedValue({ data: [] });
-    mockOpenAI.vectorStores.create.mockResolvedValue({
+    (mockOpenAI.vectorStores.list as any).mockResolvedValue({ data: [] });
+    (mockOpenAI.vectorStores.create as any).mockResolvedValue({
       id: 'vs_roborail123',
       name: 'RoboRail Documentation',
     });
@@ -77,7 +77,7 @@ describe('VectorStoreManager', () => {
 
   test('should return existing vector store when found', async () => {
     // Given: Existing RoboRail vector store
-    mockOpenAI.vectorStores.list.mockResolvedValue({
+    (mockOpenAI.vectorStores.list as any).mockResolvedValue({
       data: [
         {
           id: 'vs_existing123',
@@ -136,7 +136,7 @@ describe('VectorStoreManager', () => {
     const vectorStoreId = 'vs_test123';
     const fileIds = ['file_1', 'file_2'];
 
-    mockOpenAI.vectorStores.files.create.mockResolvedValue({ id: 'file_1' });
+    (mockOpenAI.vectorStores.files.create as any).mockResolvedValue({ id: 'file_1' });
 
     // When: Adding files to vector store
     await manager.addFilesToVectorStore(vectorStoreId, fileIds);
@@ -173,8 +173,8 @@ describe('getOrCreateDefaultVectorStore utility', () => {
     // Given: API key
     const apiKey = 'sk-test123';
 
-    mockOpenAI.vectorStores.list.mockResolvedValue({ data: [] });
-    mockOpenAI.vectorStores.create.mockResolvedValue({
+    (mockOpenAI.vectorStores.list as any).mockResolvedValue({ data: [] });
+    (mockOpenAI.vectorStores.create as any).mockResolvedValue({
       id: 'vs_default123',
       name: 'RoboRail Documentation',
     });
