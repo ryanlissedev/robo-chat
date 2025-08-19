@@ -67,22 +67,53 @@ check_dependencies() {
 
 setup_test_database() {
     print_info "Setting up test database..."
-    
-    # Check if PostgreSQL is available
-    if command -v psql &> /dev/null; then
-        # Create test database if it doesn't exist
-        createdb roborail_test 2>/dev/null || true
-        print_success "Test database ready"
+
+    local host="${POSTGRES_HOST:-localhost}"
+    local port="${POSTGRES_PORT:-5432}"
+
+    # Function: wait until Postgres is ready
+    wait_for_pg() {
+        local retries=30
+        while [ $retries -gt 0 ]; do
+            if command -v pg_isready >/dev/null 2>&1; then
+                pg_isready -h "$host" -p "$port" >/dev/null 2>&1 && return 0
+            else
+                # Fallback: try a simple psql connection
+                PGPASSWORD="${POSTGRES_PASSWORD:-test_password}" psql -h "$host" -p "$port" -U "${POSTGRES_USER:-roborail_test}" -d "${POSTGRES_DB:-roborail_test}" -c '\q' >/dev/null 2>&1 && return 0
+            fi
+            sleep 1
+            retries=$((retries - 1))
+        done
+        return 1
+    }
+
+    # If a local server is reachable, use it; otherwise start Docker
+    if wait_for_pg; then
+        print_success "PostgreSQL is ready at ${host}:${port}"
     else
-        print_warning "PostgreSQL not found. Using Docker for database tests..."
-        # Start test database container if needed
+        print_warning "PostgreSQL not reachable at ${host}:${port}. Using Docker for database tests..."
         if ! docker ps | grep -q postgres-test; then
             docker run -d --name postgres-test \
                 -e POSTGRES_USER=roborail_test \
                 -e POSTGRES_PASSWORD=test_password \
                 -e POSTGRES_DB=roborail_test \
-                -p 5433:5432 \
+                -p 5432:5432 \
                 postgres:15 || print_warning "Could not start test database container"
+        fi
+        host=localhost
+        port=5432
+        export POSTGRES_HOST="$host"
+        export POSTGRES_PORT="$port"
+        export POSTGRES_USER="roborail_test"
+        export POSTGRES_PASSWORD="test_password"
+        export POSTGRES_DB="roborail_test"
+
+        # Wait for container to be ready
+        if wait_for_pg; then
+            print_success "Docker PostgreSQL is ready at ${host}:${port}"
+        else
+            print_error "PostgreSQL did not become ready in time"
+            return 1
         fi
     fi
 }

@@ -1,4 +1,9 @@
 #!/bin/bash
+# Fast-path delegation to canonical TDD London runner
+set -euo pipefail
+chmod +x tests/scripts/run-tests.sh
+exec tests/scripts/run-tests.sh all
+
 
 # RoboRail Assistant - Comprehensive Test Runner
 # Runs all tests with 100% coverage requirements
@@ -47,9 +52,9 @@ run_test() {
     local test_name="$1"
     local command="$2"
     local variable_name="$3"
-    
+
     echo -e "\n${YELLOW}Running $test_name...${NC}"
-    
+
     if eval "$command"; then
         print_status 0 "$test_name"
         eval "$variable_name=true"
@@ -86,7 +91,7 @@ run_test "Production Build" "bun run build" "BUILD_PASSED"
 if [ "$BUILD_PASSED" = true ]; then
     echo -e "\n${YELLOW}Installing Playwright browsers...${NC}"
     bun run playwright:install --with-deps
-    
+
     run_test "End-to-End Tests" "bun run test:e2e" "E2E_TESTS_PASSED"
 else
     echo -e "\n${RED}⏭️  Skipping E2E tests due to build failure${NC}"
@@ -112,7 +117,7 @@ if [ "$TYPE_CHECK_PASSED" = true ] && [ "$LINT_PASSED" = true ] && [ "$UNIT_TEST
 else
     echo -e "\n${RED}💥 SOME TESTS FAILED${NC}"
     echo -e "${RED}❌ Fix issues before deployment${NC}"
-    
+
     # Provide specific guidance
     echo -e "\n${YELLOW}🔧 Next Steps:${NC}"
     [ "$TYPE_CHECK_PASSED" = false ] && echo -e "  • Fix TypeScript errors: ${BLUE}bun run type-check${NC}"
@@ -121,6 +126,6 @@ else
     [ "$COVERAGE_PASSED" = false ] && echo -e "  • Improve test coverage: ${BLUE}bun run test:coverage${NC}"
     [ "$BUILD_PASSED" = false ] && echo -e "  • Fix build errors: ${BLUE}bun run build${NC}"
     [ "$E2E_TESTS_PASSED" = false ] && echo -e "  • Fix E2E tests: ${BLUE}bun run test:e2e${NC}"
-    
+
     exit 1
 fi

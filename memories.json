@@ -2855,7 +2855,44 @@
       "lastAccessed": "2025-08-19T14:40:16.441Z",
       "lastVerified": "2025-08-19T14:40:16.441Z",
       "status": "fresh"
+    },
+    {
+      "id": "mem_1755614828727_xmqcgcewo",
+      "content": "Found test failure: rate-limiting test uses Vitest timer functions (vi.useFakeTimers) but runs in Bun test environment. Need to fix this test to use Bun test timer mocking or conditional imports.",
+      "type": "config",
+      "tags": [
+        "config",
+        "testing",
+        "bun",
+        "vitest",
+        "timer-mocking"
+      ],
+      "timestamp": "2025-08-19T14:47:08.726Z",
+      "context": "TypeScript compilation and test fixing",
+      "accessCount": 0,
+      "lastAccessed": "2025-08-19T14:47:08.726Z",
+      "lastVerified": "2025-08-19T14:47:08.726Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1755614900830_vfkp6nxo1",
+      "content": "Fixed rate limiting test framework compatibility issue in tests/unit/rate-limiting.unit.test.ts:\n- Changed imports from vitest to bun:test \n- Replaced vi.useFakeTimers() with jest.useFakeTimers('modern')\n- Updated timer mocking to use Jest-style API compatible with Bun test environment\n- This fixed the \"vi.useFakeTimers is not a function\" error when running in Bun test environment",
+      "type": "config",
+      "tags": [
+        "config",
+        "api",
+        "debugging",
+        "test-framework",
+        "rate-limiting",
+        "bun-test",
+        "vitest-compatibility"
+      ],
+      "timestamp": "2025-08-19T14:48:20.830Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-08-19T14:48:20.830Z",
+      "lastVerified": "2025-08-19T14:48:20.830Z",
+      "status": "fresh"
     }
   ],
-  "lastUpdated": "2025-08-19T14:40:16.441Z"
+  "lastUpdated": "2025-08-19T14:48:20.830Z"
 }

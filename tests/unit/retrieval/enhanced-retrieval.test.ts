@@ -14,7 +14,7 @@ const mockOpenAI = {
   beta: {
     assistants: {
       create: mock(() => Promise.resolve({ id: 'asst_test123' })),
-      del: mock(() => Promise.resolve()),
+      delete: mock(() => Promise.resolve()),
     },
     threads: {
       create: mock(() => Promise.resolve({ id: 'thread_test123' })),
@@ -36,12 +36,12 @@ const mockOpenAI = {
 describe('enhancedRetrieval', () => {
   beforeEach(() => {
     // Reset all mocks
-    mockOpenAI.beta.assistants.create.mockClear();
-    mockOpenAI.beta.assistants.del.mockClear();
-    mockOpenAI.beta.threads.create.mockClear();
-    mockOpenAI.beta.threads.runs.create.mockClear();
-    mockOpenAI.beta.threads.runs.retrieve.mockClear();
-    mockOpenAI.beta.threads.messages.list.mockClear();
+    (mockOpenAI.beta.assistants.create as any).mockClear();
+    (mockOpenAI.beta.assistants.delete as any).mockClear();
+    (mockOpenAI.beta.threads.create as any).mockClear();
+    (mockOpenAI.beta.threads.runs.create as any).mockClear();
+    (mockOpenAI.beta.threads.runs.retrieve as any).mockClear();
+    (mockOpenAI.beta.threads.messages.list as any).mockClear();
   });
 
   describe('when using OpenAI Assistants API for file search', () => {
@@ -51,29 +51,29 @@ describe('enhancedRetrieval', () => {
       const vectorStoreId = 'vs_test123';
 
       // Mock assistant creation
-      mockOpenAI.beta.assistants.create.mockResolvedValue({
+      (mockOpenAI.beta.assistants.create as any).mockResolvedValue({
         id: 'asst_test123',
       });
 
       // Mock thread creation
-      mockOpenAI.beta.threads.create.mockResolvedValue({
+      (mockOpenAI.beta.threads.create as any).mockResolvedValue({
         id: 'thread_test123',
       });
 
       // Mock run creation
-      mockOpenAI.beta.threads.runs.create.mockResolvedValue({
+      (mockOpenAI.beta.threads.runs.create as any).mockResolvedValue({
         id: 'run_test123',
         status: 'completed',
       });
 
       // Mock run retrieval
-      mockOpenAI.beta.threads.runs.retrieve.mockResolvedValue({
+      (mockOpenAI.beta.threads.runs.retrieve as any).mockResolvedValue({
         id: 'run_test123',
         status: 'completed',
       });
 
       // Mock messages list
-      mockOpenAI.beta.threads.messages.list.mockResolvedValue({
+      (mockOpenAI.beta.threads.messages.list as any).mockResolvedValue({
         data: [
           {
             id: 'msg_test123',
@@ -137,7 +137,7 @@ describe('enhancedRetrieval', () => {
       const query = 'test query';
       const vectorStoreId = 'vs_test123';
 
-      mockOpenAI.beta.assistants.create.mockRejectedValue(
+      (mockOpenAI.beta.assistants.create as any).mockRejectedValue(
         new Error('API key invalid')
       );
 
@@ -153,25 +153,25 @@ describe('enhancedRetrieval', () => {
       const query = 'safety procedures';
       const vectorStoreId = 'vs_test123';
 
-      mockOpenAI.beta.assistants.create.mockResolvedValue({
+      (mockOpenAI.beta.assistants.create as any).mockResolvedValue({
         id: 'asst_test123',
       });
 
-      mockOpenAI.beta.threads.create.mockResolvedValue({
+      (mockOpenAI.beta.threads.create as any).mockResolvedValue({
         id: 'thread_test123',
       });
 
-      mockOpenAI.beta.threads.runs.create.mockResolvedValue({
+      (mockOpenAI.beta.threads.runs.create as any).mockResolvedValue({
         id: 'run_test123',
         status: 'completed',
       });
 
-      mockOpenAI.beta.threads.runs.retrieve.mockResolvedValue({
+      (mockOpenAI.beta.threads.runs.retrieve as any).mockResolvedValue({
         id: 'run_test123',
         status: 'completed',
       });
 
-      mockOpenAI.beta.threads.messages.list.mockResolvedValue({
+      (mockOpenAI.beta.threads.messages.list as any).mockResolvedValue({
         data: [
           {
             id: 'msg_test123',
