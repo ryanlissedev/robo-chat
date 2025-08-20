@@ -1,9 +1,11 @@
 import { SYSTEM_PROMPT_DEFAULT, FILE_SEARCH_SYSTEM_PROMPT } from "@/lib/config"
+import { logger } from "@/lib/logger"
 import { getAllModels } from "@/lib/models"
 import { getProviderForModel } from "@/lib/openproviders/provider-map"
 import type { ProviderWithoutOllama } from "@/lib/user-keys"
-import { Attachment } from "@ai-sdk/ui-utils"
-import { Message as MessageAISDK, streamText, ToolSet } from "ai"
+import type { Attachment } from "@ai-sdk/ui-utils"
+import { streamText } from "ai"
+import type { Message as MessageAISDK, ToolSet } from "ai"
 import { fileSearchTool } from "@/lib/tools/file-search"
 import {
   isLangSmithEnabled,
@@ -22,6 +24,18 @@ import { createErrorResponse, extractErrorMessage } from "./utils"
 
 export const maxDuration = 60
 
+// Narrow AI SDK response metadata to include optional usage for logging
+type TokenUsage = {
+  totalTokens: number
+  promptTokens: number
+  completionTokens: number
+}
+
+type ResponseWithUsage = {
+  usage?: TokenUsage
+  messages: unknown[]
+}
+
 type ChatRequest = {
   messages: MessageAISDK[]
   chatId: string
@@ -32,6 +46,7 @@ type ChatRequest = {
   enableSearch: boolean
   message_group_id?: string
   reasoningEffort?: 'low' | 'medium' | 'high'
+  verbosity?: 'low' | 'medium' | 'high'
 }
 
 export async function POST(req: Request) {
@@ -46,7 +61,11 @@ export async function POST(req: Request) {
       enableSearch,
       message_group_id,
       reasoningEffort = 'medium',
+      verbosity,
     } = (await req.json()) as ChatRequest
+
+    // Normalize legacy/alias model IDs
+    const resolvedModel = model === 'gpt-4o-mini' ? 'gpt-5-mini' : model
 
     if (!messages || !chatId || !userId) {
       return new Response(
@@ -57,7 +76,7 @@ export async function POST(req: Request) {
 
     const supabase = await validateAndTrackUsage({
       userId,
-      model,
+      model: resolvedModel,
       isAuthenticated,
     })
 
@@ -75,21 +94,35 @@ export async function POST(req: Request) {
         chatId,
         content: userMessage.content,
         attachments: userMessage.experimental_attachments as Attachment[],
-        model,
+        model: resolvedModel,
         isAuthenticated,
         message_group_id,
       })
     }
 
     const allModels = await getAllModels()
-    const modelConfig = allModels.find((m) => m.id === model)
+    const modelConfig = allModels.find((m) => m.id === resolvedModel)
 
     if (!modelConfig || !modelConfig.apiSdk) {
       throw new Error(`Model ${model} not found`)
     }
 
     // Use file search system prompt for GPT-5 models with file search enabled
-    const isGPT5Model = model.startsWith('gpt-5')
+    const isGPT5Model = resolvedModel.startsWith('gpt-5')
+
+    // Log request context
+    try {
+      const provider = getProviderForModel(resolvedModel)
+      logger.info({
+        at: "api.chat.POST",
+        model: resolvedModel,
+        provider,
+        enableSearch,
+        reasoningEffort,
+        verbosity,
+        temperature: isGPT5Model ? 1 : undefined,
+      }, "chat request")
+    } catch {}
     const effectiveSystemPrompt = enableSearch && isGPT5Model 
       ? FILE_SEARCH_SYSTEM_PROMPT 
       : (systemPrompt || SYSTEM_PROMPT_DEFAULT)
@@ -97,7 +130,7 @@ export async function POST(req: Request) {
     let apiKey: string | undefined
     if (isAuthenticated && userId) {
       const { getEffectiveApiKey } = await import("@/lib/user-keys")
-      const provider = getProviderForModel(model)
+      const provider = getProviderForModel(resolvedModel)
       apiKey =
         (await getEffectiveApiKey(userId, provider as ProviderWithoutOllama)) ||
         undefined
@@ -106,11 +139,11 @@ export async function POST(req: Request) {
     // Create LangSmith run if enabled
     let langsmithRunId: string | null = null
     if (isLangSmithEnabled()) {
-      const run = await createRun({
+      const run = (await createRun({
         name: 'chat-completion',
         inputs: {
-          model,
-          messages: messages.map(m => ({ role: m.role, content: m.content })),
+          model: resolvedModel,
+          messages: messages.map((m: MessageAISDK) => ({ role: m.role, content: m.content })),
           reasoningEffort,
           enableSearch,
         },
@@ -118,11 +151,11 @@ export async function POST(req: Request) {
         metadata: {
           userId,
           chatId,
-          model,
+          model: resolvedModel,
           reasoningEffort,
           enableSearch,
         },
-      })
+      })) as { id?: string } | null
       langsmithRunId = run?.id || null
     }
 
@@ -135,8 +168,10 @@ export async function POST(req: Request) {
     const modelSettings = {
       enableSearch,
       reasoningEffort,
+      verbosity,
       headers: isGPT5Model ? {
         'X-Reasoning-Effort': reasoningEffort,
+        ...(verbosity ? { 'X-Text-Verbosity': verbosity } : {}),
       } : undefined,
     }
 
@@ -145,6 +180,8 @@ export async function POST(req: Request) {
       system: effectiveSystemPrompt,
       messages: messages,
       tools,
+      // GPT-5 models only support default temperature = 1
+      temperature: isGPT5Model ? 1 : undefined,
       maxSteps: enableSearch && isGPT5Model ? 10 : 1,
       onError: (err: unknown) => {
         console.error("Streaming error occurred:", err)
@@ -175,18 +212,19 @@ export async function POST(req: Request) {
             runId: actualRunId,
             outputs: {
               messages: response.messages,
-              usage: response.usage,
+              usage: (response as ResponseWithUsage).usage,
             },
           })
 
           // Log metrics
-          if (response.usage) {
+          const usage = (response as ResponseWithUsage).usage
+          if (usage) {
             await logMetrics({
               runId: actualRunId,
               metrics: {
-                totalTokens: response.usage.totalTokens,
-                promptTokens: response.usage.promptTokens,
-                completionTokens: response.usage.completionTokens,
+                totalTokens: usage.totalTokens,
+                promptTokens: usage.promptTokens,
+                completionTokens: usage.completionTokens,
                 reasoningEffort,
                 enableSearch,
               },

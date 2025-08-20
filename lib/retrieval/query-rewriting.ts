@@ -44,7 +44,6 @@ Query: "${query}"
 Provide variations as a JSON array of strings.`
       }
     ],
-    temperature: 0.3,
     response_format: { type: 'json_object' }
   })
 
@@ -81,7 +80,6 @@ Context: ${context}
 Provide a single refined query that will retrieve the most relevant information.`
       }
     ],
-    temperature: 0.2
   })
 
   return response.choices[0].message.content || query
@@ -110,7 +108,6 @@ Complex Query: "${query}"
 Return as a JSON array of sub-queries.`
       }
     ],
-    temperature: 0.2,
     response_format: { type: 'json_object' }
   })
 
@@ -145,7 +142,6 @@ Query: "${query}"
 Provide 3-4 different angles or perspectives as a JSON array.`
       }
     ],
-    temperature: 0.5,
     response_format: { type: 'json_object' }
   })
 
@@ -181,7 +177,6 @@ Query: "${query}"
 Write as if you were the ideal document containing this information.`
       }
     ],
-    temperature: 0.3
   })
 
   return response.choices[0].message.content || query
@@ -244,7 +239,6 @@ ${results.map((r, i) => `[${i}] ${r.content.substring(0, 500)}...`).join('\n\n')
 Return as JSON: { "rankings": [indices in order of relevance] }`
       }
     ],
-    temperature: 0.1,
     response_format: { type: 'json_object' }
   })
 
@@ -300,7 +294,6 @@ Document: "${result.content.substring(0, 1000)}"
 Provide a relevance score from 0-100 as a JSON object: { "score": number }`
         }
       ],
-      temperature: 0,
       response_format: { type: 'json_object' }
     })
 

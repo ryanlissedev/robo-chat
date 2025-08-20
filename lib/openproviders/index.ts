@@ -74,12 +74,23 @@ export function openproviders<T extends SupportedModel>(
   const provider = getProviderForModel(modelId)
 
   if (provider === "openai") {
-    // Extract custom settings for GPT-5 models
-    const { enableSearch, reasoningEffort, headers, ...openaiSettings } = (settings || {}) as any
-    
-    // Configure headers for reasoning effort if it's a GPT-5 model
-    const customHeaders = modelId.startsWith('gpt-5') && reasoningEffort
-      ? { ...headers, 'X-Reasoning-Effort': reasoningEffort }
+    type GPT5Extras = {
+      enableSearch?: boolean
+      reasoningEffort?: "low" | "medium" | "high"
+      verbosity?: "low" | "medium" | "high"
+      headers?: Record<string, string>
+    }
+    const merged = (settings ?? {}) as OpenAIChatSettings & GPT5Extras
+    const { enableSearch: _enableSearch, reasoningEffort, verbosity, headers, ...rest } = merged
+    const openaiSettings = rest as OpenAIChatSettings
+
+    // Configure headers for GPT-5 extras (reasoning + verbosity)
+    const customHeaders = modelId.startsWith('gpt-5')
+      ? {
+          ...headers,
+          ...(reasoningEffort ? { 'X-Reasoning-Effort': reasoningEffort } : {}),
+          ...(verbosity ? { 'X-Text-Verbosity': verbosity } : {}),
+        }
       : headers
     
     if (apiKey) {
