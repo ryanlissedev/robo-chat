@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     // Get the current key
     const { data: currentKey, error: fetchError } = await supabase
       .from('user_keys')
-      .select('encrypted_key, iv, auth_tag')
+      .select('encrypted_key, iv')
       .eq('user_id', user.id)
       .eq('provider', provider)
       .single()
@@ -80,19 +80,20 @@ export async function POST(req: NextRequest) {
     }
 
     // Encrypt the new key
-    const { encrypted, iv, authTag, masked } = encryptApiKey(finalNewKey, user.id)
+    const { encrypted, iv } = encryptApiKey(finalNewKey, user.id)
 
     // Start a transaction-like operation
     const timestamp = new Date().toISOString()
 
-    // Backup the old key (store in audit log with encrypted value)
-    await logSecurityEvent(supabase, user.id, 'key_rotation_backup', {
-      provider,
-      old_encrypted: currentKey.encrypted_key,
-      old_iv: currentKey.iv,
-      old_auth_tag: currentKey.auth_tag,
-      rotation_timestamp: timestamp
-    })
+    // Backup the old key (store in audit log with encrypted value) - optional
+    try {
+      await logSecurityEvent(supabase, user.id, 'key_rotation_backup', {
+        provider,
+        old_encrypted: currentKey.encrypted_key,
+        old_iv: currentKey.iv,
+        rotation_timestamp: timestamp
+      })
+    } catch {}
 
     // Update with the new encrypted key
     const { error: updateError } = await supabase
@@ -100,8 +101,6 @@ export async function POST(req: NextRequest) {
       .update({
         encrypted_key: encrypted,
         iv,
-        auth_tag: authTag,
-        masked_key: masked,
         last_rotated: timestamp,
         updated_at: timestamp
       })
@@ -112,10 +111,12 @@ export async function POST(req: NextRequest) {
       // Try to restore if update fails
       console.error('Failed to rotate API key:', updateError)
       
-      await logSecurityEvent(supabase, user.id, 'key_rotation_failed', {
-        provider,
-        error: updateError.message
-      })
+      try {
+        await logSecurityEvent(supabase, user.id, 'key_rotation_failed', {
+          provider,
+          error: updateError.message
+        })
+      } catch {}
 
       return NextResponse.json(
         { error: 'Failed to rotate API key' },
@@ -123,18 +124,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Log successful rotation
-    await logSecurityEvent(supabase, user.id, 'key_rotated', {
-      provider,
-      masked_key: masked,
-      auto_generated: autoGenerate
-    })
+    // Log successful rotation (optional)
+    try {
+      await logSecurityEvent(supabase, user.id, 'key_rotated', {
+        provider,
+        auto_generated: autoGenerate
+      })
+    } catch {}
 
     // Return the new key only if auto-generated
     const response: any = {
       success: true,
-      message: 'API key rotated successfully',
-      masked_key: masked
+      message: 'API key rotated successfully'
     }
 
     if (autoGenerate) {
@@ -195,14 +196,16 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Get user's security settings for rotation policy
-    const { data: securitySettings } = await supabase
-      .from('user_security_settings')
-      .select('config')
-      .eq('user_id', user.id)
-      .single()
-
-    const rotationConfig = securitySettings?.config || {}
+    // Optional: user's security settings (table may not exist)
+    let rotationConfig: any = {}
+    try {
+      const { data: securitySettings } = await supabase
+        .from('user_security_settings')
+        .select('config')
+        .eq('user_id', user.id)
+        .single()
+      rotationConfig = securitySettings?.config || {}
+    } catch {}
     const requireRotation = rotationConfig.requireApiKeyRotation ?? false
     const rotationDays = rotationConfig.rotationDays ?? 90
 

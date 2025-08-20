@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useChatCore } from '@/app/components/chat/use-chat-core'
 import { mockUserProfile, createMockFile } from '../test-utils'
-import type { Message } from '@ai-sdk/react'
+import type { UIMessage as Message } from 'ai'
 
 // Mock the useChat hook from AI SDK
 const mockUseChat = {

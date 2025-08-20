@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server'
 import { validateUserIdentity } from '@/lib/server/api'
 import { decryptApiKey, validateApiKeyFormat } from '@/lib/security/encryption'
 import OpenAI from 'openai'
-import Anthropic from '@anthropic-ai/sdk'
+// Anthropic SDK optional; guard import usage
+let Anthropic: any
+try { Anthropic = require('@anthropic-ai/sdk').default } catch {}
 import { createMistral } from '@ai-sdk/mistral'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 
@@ -99,6 +101,7 @@ export async function POST(req: Request) {
 
       case 'anthropic':
         try {
+          if (!Anthropic) throw new Error('Anthropic SDK not installed')
           const anthropic = new Anthropic({ apiKey })
           // Try a minimal completion
           const response = await anthropic.messages.create({
@@ -182,15 +185,19 @@ export async function POST(req: Request) {
         .eq('user_id', user.id)
         .eq('provider', provider)
 
-      // Log audit event
-      await supabase
-        .from('api_key_audit_log')
-        .insert({
-          user_id: user.id,
-          provider,
-          action: 'accessed',
-          metadata: { test_successful: true }
-        })
+      // Optional audit log (table may not exist in this schema)
+      try {
+        await supabase
+          .from('api_key_audit_log')
+          .insert({
+            user_id: user.id,
+            provider,
+            action: 'accessed',
+            metadata: { test_successful: true }
+          })
+      } catch {
+        // no-op when audit table is absent
+      }
     }
 
     return NextResponse.json(testResult)

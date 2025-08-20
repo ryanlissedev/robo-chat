@@ -46,8 +46,15 @@ export function decryptKey(encryptedData: string, ivHex: string): string {
 }
 
 export function maskKey(key: string): string {
-  if (key.length <= 8) {
+  if (!key) return ""
+  if (key.length < 8) {
     return "*".repeat(key.length)
   }
-  return key.slice(0, 4) + "*".repeat(key.length - 8) + key.slice(-4)
+  if (key.length === 8) {
+    return "*".repeat(8)
+  }
+  const prefix = key.slice(0, 4)
+  const suffix = key.slice(-4)
+  const maskedMiddle = "*".repeat(Math.max(0, key.length - 8))
+  return `${prefix}${maskedMiddle}${suffix}`
 }

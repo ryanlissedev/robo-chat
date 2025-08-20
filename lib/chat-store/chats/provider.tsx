@@ -22,6 +22,7 @@ interface ChatsContextType {
   chats: Chats[]
   refresh: () => Promise<void>
   isLoading: boolean
+  hasFetched: boolean
   updateTitle: (id: string, title: string) => Promise<void>
   deleteChat: (
     id: string,
@@ -62,6 +63,7 @@ export function ChatsProvider({
   const {
     data: chats = [],
     isLoading,
+    isFetched,
   } = useQuery<Chats[]>({
     queryKey: ["chats", userId],
     enabled: Boolean(userId),
@@ -227,6 +229,7 @@ export function ChatsProvider({
       value={{
         chats,
         refresh,
+        hasFetched: Boolean(userId) ? isFetched : false,
         updateTitle,
         deleteChat,
         setChats: (updater) => {

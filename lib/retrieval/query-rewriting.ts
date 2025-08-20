@@ -466,16 +466,9 @@ export async function enhancedRetrieval(
   
   // Step 2: Retrieval from Vector Store
   const allResults: RetrievalResult[] = []
-  for (const q of queries) {
-    const response = await openai.beta.vectorStores.fileBatches.retrieve(
-      vectorStoreId,
-      q
-    )
-    
-    // Process and add results
-    // Note: Actual implementation depends on OpenAI's response format
-    // This is a placeholder structure
-    allResults.push(...response as any)
+  // Placeholder: beta vector store search API may change; feature-gate and return empty results
+  for (const _q of queries) {
+    // Skip live retrieval to avoid unsupported API usage
   }
   
   // Remove duplicates

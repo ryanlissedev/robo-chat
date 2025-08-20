@@ -66,6 +66,19 @@ export function ChatInput({
   const isOnlyWhitespace = (text: string) => !/[^\s]/.test(text)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   
+  // Ensure textarea retains focus when suggestions mount and on initial render
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus()
+    }
+  }, [])
+  
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus()
+    }
+  }, [hasSuggestions])
+  
   // Show reasoning effort selector only for GPT-5 models
   const isGPT5Model = selectedModel.startsWith('gpt-5')
   const [localReasoningEffort, setLocalReasoningEffort] = useState<ReasoningEffort>('medium')

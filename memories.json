@@ -398,7 +398,45 @@
       "lastAccessed": "2025-08-20T12:01:56.004Z",
       "lastVerified": "2025-08-20T12:01:56.004Z",
       "status": "fresh"
+    },
+    {
+      "id": "mem_1755694007912_8rdozkcyv",
+      "content": "Starting test coverage analysis for Next.js/TypeScript project in /Users/neo/Developer/experiments/HGG/robo-chat. Need to check test config, run coverage report, and identify uncovered critical files.",
+      "type": "config",
+      "tags": [
+        "config",
+        "typescript",
+        "test-coverage",
+        "analysis",
+        "nextjs"
+      ],
+      "timestamp": "2025-08-20T12:46:47.912Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-08-20T12:46:47.912Z",
+      "lastVerified": "2025-08-20T12:46:47.912Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1755694370398_zqg4s8veq",
+      "content": "Coverage analysis findings:\n\n**Current Status:**\n- Overall coverage: 0% statements, 5.51% branches, 5.51% functions, 0% lines\n- Only 1 working test: simple.test.ts (3 passing tests)\n- 3 failing test files due to React version mismatch and missing dependencies\n\n**Critical Uncovered Business Logic:**\n1. **Core Chat Logic**: app/components/chat/use-chat-core.ts (374 lines) - main chat hook\n2. **API Routes**: app/api/chat/route.ts (253 lines) - primary chat API\n3. **Message Operations**: lib/chat-store/messages/api.ts (138 lines) - message management\n4. **File Handling**: lib/file-handling.ts (172 lines) - file upload/processing\n5. **Model Selection**: app/components/chat/use-model.ts (86 lines) - model logic\n6. **Security**: lib/security/middleware.ts (294 lines) - security layer\n7. **Database Operations**: app/api/chat/db.ts (92 lines) - DB interactions\n8. **User Management**: lib/user-keys.ts (53 lines) - API key management\n\n**Test Infrastructure Issues:**\n- React version mismatch (19.1.1 vs 19.1.0)\n- PostCSS configuration blocking tests\n- Missing @testing-library/dom dependency\n- Coverage thresholds set at 80% but at 0%",
+      "type": "config",
+      "tags": [
+        "config",
+        "react",
+        "api",
+        "database",
+        "testing",
+        "test-coverage",
+        "findings",
+        "business-logic",
+        "infrastructure-issues"
+      ],
+      "timestamp": "2025-08-20T12:52:50.397Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-08-20T12:52:50.397Z",
+      "lastVerified": "2025-08-20T12:52:50.397Z",
+      "status": "fresh"
     }
   ],
-  "lastUpdated": "2025-08-20T12:01:56.004Z"
+  "lastUpdated": "2025-08-20T12:52:50.397Z"
 }

@@ -37,6 +37,7 @@ export function Chat() {
     updateChatModel,
     bumpChat,
     isLoading: isChatsLoading,
+    hasFetched: hasFetchedChats,
   } = useChats()
 
   const currentChat = useMemo(
@@ -210,6 +211,7 @@ export function Chat() {
   if (
     chatId &&
     !isChatsLoading &&
+    hasFetchedChats &&
     !currentChat &&
     !isSubmitting &&
     status === "ready" &&

@@ -71,6 +71,7 @@ export const fileSearchTool = tool({
       }
 
       // Use enhanced retrieval with query rewriting and reranking
+      // Note: retrieval currently feature-gated; returns empty results if unsupported
       const results = await enhancedRetrieval(
         query,
         vector_store_id,

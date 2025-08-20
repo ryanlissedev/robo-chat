@@ -72,6 +72,7 @@ export default defineConfig({
     // Define environment variables for tests
     'process.env.NODE_ENV': '"test"',
     'process.env.NEXT_PUBLIC_SUPABASE_URL': '"http://localhost:54321"',
-    'process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY': '"test-anon-key"'
+    'process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY': '"test-anon-key"',
+    'process.env.ENCRYPTION_KEY': `"${Buffer.from('a'.repeat(32)).toString('base64')}"`
   }
 })

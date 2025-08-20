@@ -29,7 +29,7 @@ export async function GET() {
     // Get all API keys for the user (without decrypting)
     const { data: keys, error: keysError } = await supabase
       .from('user_keys')
-      .select('id, provider, masked_key, is_active, last_used, created_at, updated_at')
+      .select('provider, created_at, updated_at')
       .eq('user_id', user.id)
       .order('provider')
 
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
     }
 
     // Encrypt the API key
-    const { encrypted, iv, authTag, masked } = encryptApiKey(apiKey, user.id)
+    const { encrypted, iv } = encryptApiKey(apiKey, user.id)
 
     // Check if key exists
     const { data: existingKey } = await supabase
@@ -109,9 +109,6 @@ export async function POST(req: Request) {
         provider,
         encrypted_key: encrypted,
         iv,
-        auth_tag: authTag,
-        masked_key: masked,
-        is_active: true,
         updated_at: new Date().toISOString()
       })
 
@@ -124,19 +121,11 @@ export async function POST(req: Request) {
     }
 
     // Log audit event
-    await supabase
-      .from('api_key_audit_log')
-      .insert({
-        user_id: user.id,
-        provider,
-        action: isUpdate ? 'updated' : 'created',
-        metadata: { masked_key: masked }
-      })
+    // audit log disabled in this schema
 
     return NextResponse.json({ 
       success: true,
-      message: isUpdate ? 'API key updated' : 'API key added',
-      masked_key: masked
+      message: isUpdate ? 'API key updated' : 'API key added'
     })
   } catch (error) {
     console.error('Error in POST /api/settings/api-keys:', error)
@@ -192,14 +181,7 @@ export async function DELETE(req: Request) {
     }
 
     // Log audit event
-    await supabase
-      .from('api_key_audit_log')
-      .insert({
-        user_id: user.id,
-        provider,
-        action: 'deleted',
-        metadata: {}
-      })
+    // audit log disabled in this schema
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -215,11 +197,11 @@ export async function DELETE(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json()
-    const { provider, isActive } = body
+    const { provider } = body
 
-    if (!provider || typeof isActive !== 'boolean') {
+    if (!provider) {
       return NextResponse.json(
-        { error: 'Provider and isActive are required' },
+        { error: 'Provider is required' },
         { status: 400 }
       )
     }
@@ -244,7 +226,6 @@ export async function PATCH(req: Request) {
     const { error: updateError } = await supabase
       .from('user_keys')
       .update({ 
-        is_active: isActive,
         updated_at: new Date().toISOString()
       })
       .eq('user_id', user.id)
@@ -259,14 +240,7 @@ export async function PATCH(req: Request) {
     }
 
     // Log audit event
-    await supabase
-      .from('api_key_audit_log')
-      .insert({
-        user_id: user.id,
-        provider,
-        action: isActive ? 'activated' : 'deactivated',
-        metadata: { is_active: isActive }
-      })
+    // audit log disabled in this schema
 
     return NextResponse.json({ success: true })
   } catch (error) {

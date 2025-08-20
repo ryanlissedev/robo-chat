@@ -41,16 +41,12 @@ export async function POST(req: Request) {
     }
 
     // Store feedback in Supabase
+    // Using simplified feedback schema: store as a single message string
     const { error: dbError } = await supabase
       .from('feedback')
-      .upsert({
-        message_id: messageId,
+      .insert({
         user_id: user.id,
-        feedback,
-        comment,
-        langsmith_run_id: runId,
-      }, {
-        onConflict: 'message_id,user_id',
+        message: `${feedback}${comment ? `: ${comment}` : ''}`,
       })
 
     if (dbError) {
@@ -125,9 +121,10 @@ export async function GET(req: Request) {
     // Get feedback from database
     const { data, error } = await supabase
       .from('feedback')
-      .select('feedback, comment, created_at')
-      .eq('message_id', messageId)
+      .select('message, created_at')
       .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single()
 
     if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows found"
@@ -140,8 +137,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       success: true,
-      feedback: data?.feedback || null,
-      comment: data?.comment || null,
+      feedback: data?.message || null,
       createdAt: data?.created_at || null,
     })
   } catch (error) {

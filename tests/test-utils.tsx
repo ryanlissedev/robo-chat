@@ -7,10 +7,21 @@ import { vi } from 'vitest'
 export const mockUserProfile = {
   id: 'test-user-id',
   email: 'test@example.com',
+  display_name: 'Test User',
+  profile_image: null as unknown as string, // matches optional field in schema
   system_prompt: 'You are a helpful assistant.',
+  anonymous: false,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
-}
+  favorite_models: [],
+  last_active_at: '2024-01-01T00:00:00Z',
+  message_count: 0,
+  premium: false,
+  daily_message_count: 0,
+  daily_reset: '2024-01-02T00:00:00Z',
+  daily_pro_message_count: 0,
+  daily_pro_reset: '2024-01-02T00:00:00Z',
+} as const
 
 export const mockModelConfig = {
   id: 'test-model',
