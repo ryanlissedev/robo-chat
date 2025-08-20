@@ -211,7 +211,7 @@ export function createOptimizedPrompt(config: PromptConfig): string {
 }
 
 /**
- * Security-focused prompt enhancement for RoboRail
+ * Optional security-focused prompt enhancement
  */
 export function addSecurityContext(prompt: string): string {
   return `${prompt}
@@ -262,10 +262,10 @@ export function getOptimalTemperature(
 }
 
 /**
- * Create a system prompt optimized for RoboRail's security focus
+ * Create a system prompt optimized for a security-focused assistant
  */
 export function createSecuritySystemPrompt(): string {
-  return `You are RoboRail, an AI security expert specializing in:
+  return `You are a security-focused AI assistant specializing in:
 - Secure code development and review
 - Threat modeling and risk assessment
 - Security architecture and design patterns

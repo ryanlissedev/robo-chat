@@ -26,14 +26,14 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "RoboRail - AI Safety & Security Platform",
+  title: "Base Chat - AI Chat Scaffold",
   description:
-    "RoboRail is the advanced AI safety and security chat platform. Built on GPT-5 with file search, adjustable reasoning, and LangSmith observability. Your expert assistant for AI security, red teaming, production deployment, and RAG optimization.",
-  keywords: "AI safety, AI security, GPT-5, red teaming, LLM security, prompt injection, RAG pipeline, vector search, AI monitoring, LangSmith",
-  authors: [{ name: "RoboRail Team" }],
+    "Base Chat is a general-purpose AI chat starter. Built with GPT-5 support, optional file search, and observability hooks. Use it to scaffold your own AI chat apps.",
+  keywords: "AI chat, GPT-5, chatbot starter, scaffold, Next.js, Vercel AI SDK",
+  authors: [{ name: "Base Chat" }],
   openGraph: {
-    title: "RoboRail - AI Safety & Security Platform",
-    description: "Advanced AI assistant for security, safety, and production deployment",
+    title: "Base Chat - AI Chat Scaffold",
+    description: "A clean starting point for building AI chat apps",
     type: "website",
   },
 }

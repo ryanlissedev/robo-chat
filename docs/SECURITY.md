@@ -1,10 +1,10 @@
-# RoboRail Security Documentation
+# Base Chat Security Documentation
 
 ## API Key Security
 
 ### Encryption at Rest
 
-RoboRail implements military-grade encryption for all API keys stored in the system:
+Base Chat implements encryption for all API keys stored in the system:
 
 - **Algorithm**: AES-256-GCM (Galois/Counter Mode)
 - **Key Derivation**: PBKDF2 with 100,000 iterations
@@ -147,7 +147,7 @@ CREATE TABLE user_keys (
 
 ## Compliance & Standards
 
-RoboRail follows industry standards:
+Base Chat follows industry standards:
 
 - **OWASP Top 10** protection
 - **GDPR** compliant data handling
@@ -200,7 +200,7 @@ RoboRail follows industry standards:
 
 ## Vulnerability Disclosure
 
-Report security vulnerabilities to: security@roborail.ai
+Report security vulnerabilities to: security@example.com
 
 Please include:
 - Description of the vulnerability

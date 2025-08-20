@@ -1,35 +1,25 @@
-# RoboRail 🛡️
+# Base Chat
 
-**Advanced AI Safety & Security Chat Platform**
+General-purpose AI chat scaffold for building your own apps.
 
-[roborail.chat](https://roborail.chat)
-
-RoboRail is the open-source AI assistant specialized in AI safety, security, and production deployment. Built on GPT-5 with advanced reasoning capabilities, file search, and comprehensive observability through LangSmith.
-
-![RoboRail Cover](./public/cover_roborail.jpg)
+Base Chat is an open-source starter that supports GPT-5 models, optional file search, and observability hooks. It’s designed to be a clean foundation you can customize for any domain.
 
 ## 🚀 Core Features
 
-### GPT-5 Integration
-- **GPT-5 Mini**: Fast, efficient responses with file search (default)
-- **GPT-5 Standard**: Balanced performance for complex tasks
-- **GPT-5 Pro**: Maximum capabilities for deep analysis
+### Models (incl. GPT-5)
+- **GPT-5 Mini**: Fast, efficient (default)
+- **GPT-5 Standard**: Balanced performance
+- **GPT-5 Pro**: Deep analysis
 
-### Advanced Capabilities
-- **🔍 File Search**: Native OpenAI document retrieval and vector search
-- **🧠 Adjustable Reasoning**: Control analysis depth (Low/Medium/High)
-- **📊 LangSmith Integration**: Complete observability and tracing
-- **👍 Feedback System**: Upvote/downvote with optional comments
-- **🔐 Security-First**: Built-in safety guardrails and content moderation
-- **📁 Multi-format Support**: PDF, code files, documentation analysis
+### Capabilities
+- 🔍 Optional file search (OpenAI vector stores)
+- 🧠 Reasoning effort (Low/Medium/High)
+- 📊 Observability hooks (LangSmith optional)
+- 👍 Feedback system (optional)
+- 🔐 Sensible defaults (rate limits, sanitization)
+- 📁 Multi-format support (PDF/code/docs)
 
-### Specialized Expertise
-- AI security frameworks and red teaming
-- Production AI system deployment
-- Advanced RAG pipelines and vector optimization
-- Security-first development practices
-- Multi-agent orchestration
-- Evaluation and testing frameworks
+This scaffold is intentionally neutral. Add your own domain expertise via prompts, tools, and UI.
 
 ## 🛠️ Quick Start
 
@@ -43,8 +33,8 @@ RoboRail is the open-source AI assistant specialized in AI safety, security, and
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/roborail.git
-cd roborail
+git clone https://github.com/your-org/base-chat.git
+cd base-chat
 
 # Install dependencies
 npm install
@@ -57,56 +47,29 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Visit `http://localhost:3000` to start using RoboRail!
+Visit `http://localhost:3000` to start using Base Chat!
 
 ### Docker Deployment
 
 ```bash
 # Build and run with Docker
-docker build -t roborail .
-docker run -p 3000:3000 --env-file .env.local roborail
+docker build -t base-chat .
+docker run -p 3000:3000 --env-file .env.local base-chat
 ```
 
 ### Production Deployment
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-org/roborail)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-org/base-chat)
 
 ## 💬 Example Prompts
 
-### AI Security & Safety
-- "Help me implement input validation and sanitization for my LLM application"
-- "Design a red teaming framework for testing AI model robustness"
-- "Create a content moderation pipeline with safety classifiers"
-- "Implement rate limiting and abuse prevention for an AI API"
-- "Build a prompt injection detection system"
-
-### Production Deployment
-- "Set up monitoring and alerting for AI model performance degradation"
-- "Design a blue-green deployment strategy for model updates"
-- "Implement A/B testing for different model versions"
-- "Create a rollback strategy for failed model deployments"
-- "Build an observability stack for AI system metrics"
-
-### RAG & Vector Search
-- "Optimize my RAG pipeline for better retrieval accuracy"
-- "Implement hybrid search with keyword and semantic matching"
-- "Design a chunking strategy for technical documentation"
-- "Create a multi-index architecture for different document types"
-- "Build a reranking system for search results"
-
-### Evaluation & Testing
-- "Create a comprehensive evaluation suite for my chatbot"
-- "Design regression tests for model updates"
-- "Implement automated quality checks for AI responses"
-- "Build a benchmark dataset for my specific use case"
-- "Create a human-in-the-loop evaluation workflow"
-
-### Multi-Agent Systems
-- "Design an agent orchestration system for complex workflows"
-- "Implement tool use validation and error handling"
-- "Create a supervisor agent for quality control"
-- "Build a consensus mechanism for multi-agent decisions"
-- "Design fault-tolerant agent communication"
+Try these generic starters:
+- "Brainstorm ideas for a weekend project"
+- "Summarize this article into bullet points"
+- "Explain this concept to a beginner"
+- "Improve this paragraph for clarity"
+- "Write a short email about a project update"
+- "Why am I getting this error? Suggest a fix"
 
 ## 🔧 Configuration
 
@@ -114,12 +77,12 @@ docker run -p 3000:3000 --env-file .env.local roborail
 
 ```bash
 # Core Configuration
-OPENAI_API_KEY=sk-...              # Required: OpenAI API key with GPT-5 access
-ROBORAIL_MODE=production           # App mode: development/staging/production
+OPENAI_API_KEY=sk-...              # Required: OpenAI API key (GPT-5 optional)
+APP_MODE=production                # App mode: development/staging/production
 
 # LangSmith Observability (Recommended)
-LANGSMITH_API_KEY=ls-...           # LangSmith API key
-LANGSMITH_PROJECT=roborail         # Project name for tracing
+LANGSMITH_API_KEY=ls-...           # LangSmith API key (optional)
+LANGSMITH_PROJECT=base-chat        # Project name for tracing
 LANGSMITH_TRACING=true             # Enable tracing
 
 # Supabase (Optional - for persistence)
@@ -140,20 +103,20 @@ Configure the default reasoning effort in your chat:
 - **Medium**: Balanced depth and speed (~ 3-5 seconds) [Default]
 - **High**: Deep analysis, comprehensive reasoning (~ 5-10 seconds)
 
-## 📊 Observability with LangSmith
+## 📊 Observability with LangSmith (Optional)
 
-RoboRail includes comprehensive LangSmith integration for:
+Base Chat includes hooks for LangSmith:
 - **Trace Analysis**: View complete execution traces
 - **Performance Metrics**: Token usage, latency, throughput
 - **User Feedback**: Correlate feedback with specific runs
 - **Error Tracking**: Identify and debug issues
 - **A/B Testing**: Compare different configurations
 
-Access your traces at: `https://smith.langchain.com/project/roborail`
+Access your traces at: `https://smith.langchain.com/project/base-chat`
 
 ## 🗄️ Database Schema
 
-When using Supabase, RoboRail automatically manages:
+When using Supabase, Base Chat can manage:
 - Chat history and message storage
 - User feedback and ratings
 - File attachments and vector stores
@@ -164,21 +127,21 @@ Run migrations:
 npx supabase migration up
 ```
 
-## 🔐 Security Features
+## 🔐 Security Defaults
 
-- **Input Validation**: Automatic sanitization of user inputs
-- **Rate Limiting**: Configurable per-user and per-IP limits
-- **Content Filtering**: Built-in safety classifiers
-- **Audit Logging**: Complete activity tracking
-- **RLS Policies**: Row-level security for multi-tenancy
-- **CSRF Protection**: Token-based request validation
+- Input sanitization helpers
+- Rate limiting hooks
+- Optional content filtering
+- Audit logging scaffolds
+- RLS policies via Supabase (optional)
+- CSRF protection
 
 ## 🛠️ Development
 
 ### Tech Stack
-- **Frontend**: Next.js 14, React 18, TypeScript
+- **Frontend**: Next.js 15, React 19, TypeScript
 - **UI**: Tailwind CSS, shadcn/ui, Radix UI
-- **AI**: OpenAI GPT-5, Vercel AI SDK
+- **AI**: OpenAI (incl. GPT-5), Vercel AI SDK
 - **Observability**: LangSmith, OpenTelemetry
 - **Database**: Supabase (PostgreSQL)
 - **Deployment**: Vercel, Docker
@@ -217,9 +180,8 @@ npm run type-check
 
 ## 🤝 Support
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/your-org/roborail/issues)
-- **Discord**: [Join our community](https://discord.gg/roborail)
-- **Documentation**: [docs.roborail.ai](https://docs.roborail.ai)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/your-org/base-chat/issues)
+- **Documentation**: add your own docs site link
 
 ## 📄 License
 
@@ -236,7 +198,7 @@ Built with:
 
 ## ⚠️ Disclaimer
 
-RoboRail is designed for defensive security and safety applications. It should not be used for:
+This scaffold should not be used for:
 - Creating malicious code or exploits
 - Bypassing security measures
 - Unauthorized access or attacks
@@ -244,4 +206,4 @@ RoboRail is designed for defensive security and safety applications. It should n
 
 ---
 
-**RoboRail** - Your AI Safety & Security Copilot 🛡️
+**Base Chat** - A clean starting point for AI chat

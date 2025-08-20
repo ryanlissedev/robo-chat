@@ -15,7 +15,7 @@ function getEncryptionKey(): Buffer {
   }
 
   // Derive key using PBKDF2 for additional security
-  const salt = process.env.ENCRYPTION_SALT || "RoboRail-Default-Salt-2025"
+  const salt = process.env.ENCRYPTION_SALT || "BaseChat-Default-Salt-2025"
   return pbkdf2Sync(masterKey, salt, ITERATIONS, 32, "sha256")
 }
 

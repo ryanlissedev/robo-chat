@@ -50,9 +50,9 @@ export const fileSearchTool = tool({
         } else {
           // Create a new vector store if none exists
           const newStore = await openai.beta.vectorStores.create({
-            name: 'RoboRail Default Store',
+            name: 'Base Chat Default Store',
             metadata: {
-              created_by: 'RoboRail',
+              created_by: 'Base Chat',
               purpose: 'file_search'
             }
           })

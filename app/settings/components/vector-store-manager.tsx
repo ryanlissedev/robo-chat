@@ -184,7 +184,7 @@ export function VectorStoreManager({ userId }: VectorStoreManagerProps) {
         name: newStoreName,
         metadata: {
           user_id: userId,
-          created_by: 'RoboRail',
+          created_by: 'Base Chat',
         }
       })
 
