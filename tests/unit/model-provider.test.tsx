@@ -18,13 +18,25 @@ describe('ModelProvider', () => {
   let fetchSpy: ReturnType<typeof mockApiEndpoints>
 
   beforeEach(() => {
+    // Mock document.cookie for CSRF token
+    Object.defineProperty(document, 'cookie', {
+      writable: true,
+      value: 'csrf_token=test-csrf-token',
+    })
+    
     queryClient = createTestQueryClient()
+    
     fetchSpy = mockApiEndpoints()
   })
 
   afterEach(() => {
     vi.clearAllMocks()
     queryClient.clear()
+    // Reset document.cookie
+    Object.defineProperty(document, 'cookie', {
+      writable: true,
+      value: '',
+    })
   })
 
   const createWrapper = () => ({ children }: { children: React.ReactNode }) => (
@@ -66,6 +78,9 @@ describe('ModelProvider', () => {
         wrapper: createWrapper(),
       })
 
+      // Force all queries to refetch by invalidating them
+      await queryClient.invalidateQueries()
+      
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
       })
@@ -81,19 +96,42 @@ describe('ModelProvider', () => {
         wrapper: createWrapper(),
       })
 
+      // Force all queries to refetch by invalidating them
+      await queryClient.invalidateQueries()
+
       await waitFor(() => {
-        expect(fetchSpy).toHaveBeenCalledWith('/api/models')
-        expect(fetchSpy).toHaveBeenCalledWith('/api/user-key-status')
-        expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences/favorite-models')
-        expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences')
+        expect(fetchSpy).toHaveBeenCalledWith('/api/models', expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-csrf-token': expect.any(String),
+            'Content-Type': 'application/json'
+          })
+        }))
+        expect(fetchSpy).toHaveBeenCalledWith('/api/user-key-status', expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-csrf-token': expect.any(String),
+            'Content-Type': 'application/json'
+          })
+        }))
+        expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences/favorite-models', expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-csrf-token': expect.any(String),
+            'Content-Type': 'application/json'
+          })
+        }))
+        expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences', expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-csrf-token': expect.any(String),
+            'Content-Type': 'application/json'
+          })
+        }))
       })
     })
   })
 
   describe('When API calls fail', () => {
     beforeEach(() => {
-      // Mock failed responses
-      fetchSpy.mockImplementation((url) => {
+      // Mock failed responses - fetchClient calls fetch with headers
+      fetchSpy.mockImplementation((url, init) => {
         if (typeof url === 'string') {
           if (url.includes('/api/models')) {
             return Promise.resolve({
@@ -166,7 +204,12 @@ describe('ModelProvider', () => {
 
       await result.current.refreshModels()
 
-      expect(fetchSpy).toHaveBeenCalledWith('/api/models')
+      expect(fetchSpy).toHaveBeenCalledWith('/api/models', expect.objectContaining({
+        headers: expect.objectContaining({
+          'x-csrf-token': expect.any(String),
+          'Content-Type': 'application/json'
+        })
+      }))
     })
 
     it('should refresh user key status', async () => {
@@ -182,7 +225,12 @@ describe('ModelProvider', () => {
 
       await result.current.refreshUserKeyStatus()
 
-      expect(fetchSpy).toHaveBeenCalledWith('/api/user-key-status')
+      expect(fetchSpy).toHaveBeenCalledWith('/api/user-key-status', expect.objectContaining({
+        headers: expect.objectContaining({
+          'x-csrf-token': expect.any(String),
+          'Content-Type': 'application/json'
+        })
+      }))
     })
 
     it('should refresh favorite models', async () => {
@@ -198,7 +246,12 @@ describe('ModelProvider', () => {
 
       await result.current.refreshFavoriteModels()
 
-      expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences/favorite-models')
+      expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences/favorite-models', expect.objectContaining({
+        headers: expect.objectContaining({
+          'x-csrf-token': expect.any(String),
+          'Content-Type': 'application/json'
+        })
+      }))
     })
 
     it('should refresh user config', async () => {
@@ -214,7 +267,12 @@ describe('ModelProvider', () => {
 
       await result.current.refreshUserConfig()
 
-      expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences')
+      expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences', expect.objectContaining({
+        headers: expect.objectContaining({
+          'x-csrf-token': expect.any(String),
+          'Content-Type': 'application/json'
+        })
+      }))
     })
 
     it('should refresh all data when refreshAll is called', async () => {
@@ -230,10 +288,30 @@ describe('ModelProvider', () => {
 
       await result.current.refreshAll()
 
-      expect(fetchSpy).toHaveBeenCalledWith('/api/models')
-      expect(fetchSpy).toHaveBeenCalledWith('/api/user-key-status')
-      expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences/favorite-models')
-      expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences')
+      expect(fetchSpy).toHaveBeenCalledWith('/api/models', expect.objectContaining({
+        headers: expect.objectContaining({
+          'x-csrf-token': expect.any(String),
+          'Content-Type': 'application/json'
+        })
+      }))
+      expect(fetchSpy).toHaveBeenCalledWith('/api/user-key-status', expect.objectContaining({
+        headers: expect.objectContaining({
+          'x-csrf-token': expect.any(String),
+          'Content-Type': 'application/json'
+        })
+      }))
+      expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences/favorite-models', expect.objectContaining({
+        headers: expect.objectContaining({
+          'x-csrf-token': expect.any(String),
+          'Content-Type': 'application/json'
+        })
+      }))
+      expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences', expect.objectContaining({
+        headers: expect.objectContaining({
+          'x-csrf-token': expect.any(String),
+          'Content-Type': 'application/json'
+        })
+      }))
     })
 
     it('should handle refreshFavoriteModelsSilent errors gracefully', async () => {

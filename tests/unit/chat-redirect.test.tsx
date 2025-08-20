@@ -1,14 +1,16 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render } from '@/tests/test-utils'
+import { renderWithProviders } from '@/tests/test-utils'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { ModelProvider } from '@/lib/model-store/provider'
+import { UserPreferencesProvider } from '@/lib/user-preference-store/provider'
+import { redirect } from 'next/navigation'
 
 // Under test
 import { Chat } from '@/app/components/chat/chat'
 
 // Mocks for dependent hooks
-vi.mock('next/navigation', () => ({
-  redirect: vi.fn(),
-}))
+// next/navigation.redirect is globally mocked in tests/setup.ts
 
 vi.mock('@/lib/chat-store/session/provider', () => ({
   useChatSession: () => ({ chatId: 'non-existent-id' }),
@@ -33,9 +35,18 @@ vi.mock('@/lib/user-store/provider', () => ({
   useUser: () => ({ user: null }),
 }))
 
-vi.mock('@/lib/user-preference-store/provider', () => ({
-  useUserPreferences: () => ({ preferences: { promptSuggestions: false } }),
+// Avoid rendering the real ChatInput (which pulls models/preferences)
+vi.mock('@/app/components/chat-input/chat-input', () => ({
+  ChatInput: () => <div data-testid="mock-chat-input" />,
 }))
+
+vi.mock('@/lib/user-preference-store/provider', async (importOriginal) => {
+  const actual = await importOriginal() as typeof import('@/lib/user-preference-store/provider')
+  return {
+    ...actual,
+    useUserPreferences: () => ({ preferences: { promptSuggestions: false } } as any),
+  }
+})
 
 vi.mock('@/app/hooks/use-chat-draft', () => ({
   useChatDraft: () => ({ draftValue: '', clearDraft: vi.fn() }),
@@ -86,20 +97,27 @@ vi.mock('@/app/components/chat/use-chat-core', () => ({
 }))
 
 describe('Chat redirect gating', () => {
-  const { redirect } = require('next/navigation')
-
   beforeEach(() => {
-    redirect.mockClear()
+    vi.mocked(redirect).mockClear()
   })
 
   it('does not redirect before chats have fetched', () => {
     // useChats is mocked with hasFetched: false above
-    render(<Chat />)
+    renderWithProviders(
+      <ModelProvider>
+        <UserPreferencesProvider>
+          <TooltipProvider>
+            <Chat />
+          </TooltipProvider>
+        </UserPreferencesProvider>
+      </ModelProvider>
+    )
     expect(redirect).not.toHaveBeenCalled()
   })
 
   it('redirects when chats have fetched and chat is missing', async () => {
-    // Override useChats mock to set hasFetched: true for this test
+    // Reset modules to apply fresh mock for this scenario
+    vi.resetModules()
     vi.doMock('@/lib/chat-store/chats/provider', () => ({
       useChats: () => ({
         createNewChat: vi.fn(),
@@ -111,10 +129,16 @@ describe('Chat redirect gating', () => {
       }),
     }))
 
-    // Re-require after doMock
     const { Chat: FreshChat } = await import('@/app/components/chat/chat')
-    render(<FreshChat />)
+    renderWithProviders(
+      <ModelProvider>
+        <UserPreferencesProvider>
+          <TooltipProvider>
+            <FreshChat />
+          </TooltipProvider>
+        </UserPreferencesProvider>
+      </ModelProvider>
+    )
     expect(redirect).toHaveBeenCalledWith('/')
   })
 })
-

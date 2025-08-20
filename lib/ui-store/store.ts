@@ -389,8 +389,9 @@ export const useUIStore = create<UIStore>()(
         set(
           (state) => ({
             dialogs: { ...state.dialogs, [dialog]: false },
-            errors: { ...state.errors, [dialog]: null },
-            loading: { ...state.loading, [dialog]: false },
+            // Clear all errors and loading to ensure clean dialog state
+            errors: initialErrorStates,
+            loading: initialLoadingStates,
           }),
           false,
           `resetDialog/${dialog}`

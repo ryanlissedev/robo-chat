@@ -74,6 +74,9 @@ export const Suggestions = memo(function Suggestions({
             animate="animate"
             transition={{
               ...TRANSITION_SUGGESTIONS,
+              // ValueAnimationTransition.type expects specific string literals; cast to satisfy types
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              type: TRANSITION_SUGGESTIONS.type as any,
               delay: index * 0.02,
             }}
             variants={{
@@ -106,7 +109,11 @@ export const Suggestions = memo(function Suggestions({
             filter: "blur(4px)",
           },
         }}
-        transition={TRANSITION_SUGGESTIONS}
+        transition={{
+          ...TRANSITION_SUGGESTIONS,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          type: TRANSITION_SUGGESTIONS.type as any,
+        }}
       >
         {activeCategoryData?.items.map((suggestion: string, index: number) => (
           <MotionPromptSuggestion
@@ -123,6 +130,8 @@ export const Suggestions = memo(function Suggestions({
             }}
             transition={{
               ...TRANSITION_SUGGESTIONS,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              type: TRANSITION_SUGGESTIONS.type as any,
               delay: index * 0.05,
             }}
           >

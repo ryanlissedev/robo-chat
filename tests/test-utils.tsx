@@ -13,7 +13,7 @@ export const mockUserProfile = {
   anonymous: false,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
-  favorite_models: [],
+  favorite_models: [] as string[],
   last_active_at: '2024-01-01T00:00:00Z',
   message_count: 0,
   premium: false,
@@ -65,6 +65,7 @@ export function createTestQueryClient() {
       queries: {
         retry: false,
         gcTime: 0,
+        staleTime: 0, // Always consider queries stale so they refetch
       },
       mutations: {
         retry: false,
@@ -118,8 +119,8 @@ export function mockFetchResponse<T>(data: T, options: { ok?: boolean; status?: 
 export function mockApiEndpoints() {
   const fetchSpy = vi.spyOn(global, 'fetch')
   
-  // Mock models endpoint
-  fetchSpy.mockImplementation((url) => {
+  // Mock models endpoint - fetchClient calls fetch with headers
+  fetchSpy.mockImplementation((url, init) => {
     if (typeof url === 'string') {
       if (url.includes('/api/models')) {
         return Promise.resolve({

@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     // Get the encrypted API key for the provider
     const { data: keyData, error: keyError } = await supabase
       .from('user_keys')
-      .select('encrypted_key, iv, auth_tag')
+      .select('encrypted_key, iv')
       .eq('user_id', user.id)
       .eq('provider', provider)
       .eq('is_active', true)
@@ -58,9 +58,9 @@ export async function POST(req: Request) {
     let apiKey: string
     try {
       apiKey = decryptApiKey(
-        keyData.encrypted_key,
-        keyData.iv,
-        keyData.auth_tag,
+        keyData.encrypted_key as unknown as string,
+        keyData.iv as unknown as string,
+        undefined,
         user.id
       )
     } catch (decryptError) {
@@ -181,7 +181,7 @@ export async function POST(req: Request) {
     if (testResult.success) {
       await supabase
         .from('user_keys')
-        .update({ last_used: new Date().toISOString() })
+        .update({ updated_at: new Date().toISOString() })
         .eq('user_id', user.id)
         .eq('provider', provider)
 

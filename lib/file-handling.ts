@@ -5,6 +5,17 @@ import { DAILY_FILE_UPLOAD_LIMIT } from "./config"
 import { createClient } from "./supabase/client"
 import { isSupabaseEnabled } from "./supabase/config"
 
+// AI SDK v5 compatible attachment type
+export interface AIAttachment {
+  name: string
+  contentType: string
+  url: string
+  // AI SDK v5 fields
+  size?: number
+  uploadedAt?: Date
+  metadata?: Record<string, any>
+}
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 const ALLOWED_FILE_TYPES = [
@@ -20,11 +31,7 @@ const ALLOWED_FILE_TYPES = [
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ]
 
-export type Attachment = {
-  name: string
-  contentType: string
-  url: string
-}
+export type Attachment = AIAttachment
 
 export async function validateFile(
   file: File
@@ -79,7 +86,39 @@ export function createAttachment(file: File, url: string): Attachment {
     name: file.name,
     contentType: file.type,
     url,
+    size: file.size,
+    uploadedAt: new Date(),
   }
+}
+
+/**
+ * Create optimistic attachments for immediate UI feedback
+ * AI SDK v5 pattern for better UX
+ */
+export function createOptimisticAttachments(files: File[]): Attachment[] {
+  return files.map(file => ({
+    name: file.name,
+    contentType: file.type,
+    url: URL.createObjectURL(file),
+    size: file.size,
+    uploadedAt: new Date(),
+    metadata: {
+      optimistic: true,
+    },
+  }))
+}
+
+/**
+ * Clean up optimistic attachments to prevent memory leaks
+ */
+export function cleanupOptimisticAttachments(attachments?: Attachment[]) {
+  if (!attachments) return
+  
+  attachments.forEach(attachment => {
+    if (attachment.metadata?.optimistic && attachment.url.startsWith('blob:')) {
+      URL.revokeObjectURL(attachment.url)
+    }
+  })
 }
 
 export async function processFiles(
@@ -88,21 +127,21 @@ export async function processFiles(
   userId: string
 ): Promise<Attachment[]> {
   const supabase = isSupabaseEnabled ? createClient() : null
-  const attachments: Attachment[] = []
-
-  for (const file of files) {
-    const validation = await validateFile(file)
-    if (!validation.isValid) {
-      console.warn(`File ${file.name} validation failed:`, validation.error)
-      toast({
-        title: "File validation failed",
-        description: validation.error,
-        status: "error",
-      })
-      continue
-    }
-
+  
+  // Process files in parallel for better performance
+  const filePromises = files.map(async (file) => {
     try {
+      const validation = await validateFile(file)
+      if (!validation.isValid) {
+        console.warn(`File ${file.name} validation failed:`, validation.error)
+        toast({
+          title: "File validation failed",
+          description: validation.error,
+          status: "error",
+        })
+        return null
+      }
+
       const url = supabase
         ? await uploadFile(supabase, file)
         : URL.createObjectURL(file)
@@ -122,13 +161,26 @@ export async function processFiles(
         }
       }
 
-      attachments.push(createAttachment(file, url))
+      // Return AI SDK v5 compatible attachment
+      return {
+        name: file.name,
+        contentType: file.type,
+        url,
+        size: file.size,
+        uploadedAt: new Date(),
+        metadata: {
+          chatId,
+          userId,
+        },
+      } as Attachment
     } catch (error) {
       console.error(`Error processing file ${file.name}:`, error)
+      return null
     }
-  }
+  })
 
-  return attachments
+  const results = await Promise.all(filePromises)
+  return results.filter((attachment): attachment is Attachment => attachment !== null)
 }
 
 export class FileUploadLimitError extends Error {

@@ -53,8 +53,8 @@ export function encryptApiKey(plaintext: string, userId?: string): {
 
 // Decrypt API key
 export function decryptApiKey(
-  encryptedData: string, 
-  ivHex: string, 
+  encryptedData: string,
+  ivHex: string,
   authTagHex?: string,
   userId?: string
 ): string {
@@ -62,18 +62,27 @@ export function decryptApiKey(
   const iv = Buffer.from(ivHex, "hex")
   const decipher = createDecipheriv(ALGORITHM, key, iv)
 
-  // Set auth tag if provided (for GCM mode)
-  if (authTagHex) {
-    const authTag = Buffer.from(authTagHex, "hex")
-    decipher.setAuthTag(authTag)
+  // Support either separate authTag or encryptedData containing "ciphertext:authtag"
+  let encryptedPart = encryptedData
+  let authTagPart: string | undefined = authTagHex
+  if (!authTagPart && encryptedData.includes(":")) {
+    const [cipher, tag] = encryptedData.split(":")
+    encryptedPart = cipher
+    authTagPart = tag
   }
+
+  if (!authTagPart) {
+    throw new Error("Missing authentication tag for decryption")
+  }
+  const authTag = Buffer.from(authTagPart, "hex")
+  decipher.setAuthTag(authTag)
 
   // Add AAD if userId provided
   if (userId) {
     decipher.setAAD(Buffer.from(userId))
   }
 
-  let decrypted = decipher.update(encryptedData, "hex", "utf8")
+  let decrypted = decipher.update(encryptedPart, "hex", "utf8")
   decrypted += decipher.final("utf8")
 
   return decrypted

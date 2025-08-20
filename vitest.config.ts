@@ -3,7 +3,7 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [],
-  css: false,
+  css: {},
   test: {
     globals: true,
     environment: 'happy-dom',
@@ -66,6 +66,9 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, '.'),
       '~': path.resolve(__dirname, '.'),
+      'ai/react': '@ai-sdk/react',
+      // Some environments mis-resolve ai/react; ensure explicit mapping.
+      // Do NOT alias bare 'ai' here to avoid breaking non-react imports.
     }
   },
   define: {

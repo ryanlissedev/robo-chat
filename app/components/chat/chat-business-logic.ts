@@ -10,11 +10,25 @@ import type { UIMessage as Message } from "ai"
  * Following behavior-driven development patterns for testability
  */
 
-// Types for operation results
+// Types for operation results with enhanced error tracking
 export type OperationResult<T = void> = {
   success: boolean
   data?: T
   error?: string
+  errorCode?: string
+  retryable?: boolean
+  metadata?: Record<string, any>
+}
+
+// Error codes for better error tracking
+export enum ErrorCode {
+  RATE_LIMIT = 'RATE_LIMIT',
+  AUTH_REQUIRED = 'AUTH_REQUIRED',
+  INVALID_INPUT = 'INVALID_INPUT',
+  FILE_UPLOAD_FAILED = 'FILE_UPLOAD_FAILED',
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  SERVER_ERROR = 'SERVER_ERROR',
+  UNKNOWN = 'UNKNOWN',
 }
 
 export type MessageSubmissionContext = {
@@ -76,13 +90,21 @@ export async function submitMessageScenario(
     // When: Checking user limits
     const limitResult = await validateUserLimitsScenario(uid, checkLimitsAndNotify)
     if (!limitResult.success) {
-      return limitResult
+      return {
+        ...limitResult,
+        errorCode: ErrorCode.RATE_LIMIT,
+        retryable: false,
+      }
     }
 
     // When: Validating input
     const inputValidation = validateMessageInput(input)
     if (!inputValidation.success) {
-      return inputValidation
+      return {
+        ...inputValidation,
+        errorCode: ErrorCode.INVALID_INPUT,
+        retryable: false,
+      }
     }
 
     // When: Ensuring chat exists
@@ -94,7 +116,11 @@ export async function submitMessageScenario(
     // When: Processing file uploads
     const fileResult = await handleFileUploadScenario(files, uid, currentChatId, handleFileUploads)
     if (!fileResult.success) {
-      return fileResult
+      return {
+        ...fileResult,
+        errorCode: ErrorCode.FILE_UPLOAD_FAILED,
+        retryable: true,
+      }
     }
 
     // When: Creating optimistic message
@@ -261,7 +287,11 @@ export async function submitSuggestionScenario(
     // When: Checking user limits
     const limitResult = await validateUserLimitsScenario(uid, checkLimitsAndNotify)
     if (!limitResult.success) {
-      return limitResult
+      return {
+        ...limitResult,
+        errorCode: ErrorCode.RATE_LIMIT,
+        retryable: false,
+      }
     }
 
     // When: Ensuring chat exists
@@ -360,20 +390,92 @@ export async function prepareReloadScenario(
 }
 
 /**
- * Centralized error handling for chat operations
+ * Centralized error handling for chat operations with enhanced tracking
  */
-export function handleChatError(error: Error, context: string = "Chat operation") {
-  console.error(`${context} error:`, error)
-  console.error("Error message:", error.message)
+export function handleChatError(
+  error: Error | OperationResult<any>, 
+  context: string = "Chat operation"
+) {
+  // Handle both Error objects and OperationResult objects
+  const isOperationResult = 'success' in error && !error.success
   
-  let errorMsg = error.message || "Something went wrong."
-  
-  if (errorMsg === "An error occurred" || errorMsg === "fetch failed") {
-    errorMsg = "Something went wrong. Please try again."
+  if (isOperationResult) {
+    const result = error as OperationResult<any>
+    console.error(`${context} failed:`, result)
+    
+    // Show user-friendly error message
+    const userMessage = getUserFriendlyErrorMessage(result.errorCode, result.error)
+    
+    toast({
+      title: userMessage,
+      status: "error",
+      metadata: {
+        errorCode: result.errorCode,
+        retryable: result.retryable,
+      },
+    })
+    
+    // Track error metrics if needed
+    trackErrorMetrics(context, result.errorCode, result.metadata)
+  } else {
+    const err = error as Error
+    console.error(`${context} error:`, err)
+    console.error("Error message:", err.message)
+    
+    let errorMsg = err.message || "Something went wrong."
+    
+    if (errorMsg === "An error occurred" || errorMsg === "fetch failed") {
+      errorMsg = "Something went wrong. Please try again."
+    }
+    
+    toast({
+      title: errorMsg,
+      status: "error",
+    })
   }
-  
-  toast({
-    title: errorMsg,
-    status: "error",
-  })
+}
+
+/**
+ * Get user-friendly error messages based on error codes
+ */
+function getUserFriendlyErrorMessage(
+  errorCode?: string,
+  defaultMessage?: string
+): string {
+  switch (errorCode) {
+    case ErrorCode.RATE_LIMIT:
+      return "You've reached the message limit. Please try again later."
+    case ErrorCode.AUTH_REQUIRED:
+      return "Please sign in to continue."
+    case ErrorCode.INVALID_INPUT:
+      return defaultMessage || "Invalid input. Please check and try again."
+    case ErrorCode.FILE_UPLOAD_FAILED:
+      return "File upload failed. Please try again."
+    case ErrorCode.NETWORK_ERROR:
+      return "Connection error. Please check your internet and try again."
+    case ErrorCode.SERVER_ERROR:
+      return "Server error. Please try again later."
+    default:
+      return defaultMessage || "Something went wrong. Please try again."
+  }
+}
+
+/**
+ * Track error metrics for monitoring and debugging
+ */
+function trackErrorMetrics(
+  context: string,
+  errorCode?: string,
+  metadata?: Record<string, any>
+) {
+  // This is where you'd send error metrics to your analytics service
+  // For now, just log to console in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Error metrics:', {
+      context,
+      errorCode,
+      timestamp: new Date().toISOString(),
+      metadata,
+    })
+  }
 }

@@ -4,9 +4,11 @@ import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config"
 import { API_ROUTE_CHAT } from "@/lib/routes"
 import type { UserProfile } from "@/lib/user/types"
 import type { UIMessage as Message } from "ai"
-import { useChat } from "ai/react"
+// AI SDK v5 - correct import
+import { useChat } from "@ai-sdk/react"
 import { useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useThrottle } from "@/lib/hooks/use-throttle"
 import {
   submitMessageScenario,
   submitSuggestionScenario,
@@ -80,7 +82,7 @@ export function useChatCore({
     handleChatError(error, "Chat")
   }, [])
 
-  // Initialize useChat
+  // Initialize useChat with AI SDK v5 optimizations
   const {
     messages,
     input,
@@ -92,13 +94,23 @@ export function useChatCore({
     setMessages,
     setInput,
     append,
+    isLoading,
+    data,
   } = useChat({
     api: API_ROUTE_CHAT,
     initialMessages,
     initialInput: draftValue,
     onFinish: cacheAndAddMessage,
     onError: handleError,
+    // AI SDK v5 optimizations
+    streamProtocol: 'data',
+    sendExtraMessageFields: true,
+    maxSteps: 10, // Support for multi-step tool calling
   })
+  
+  // Throttle UI updates for better performance
+  const throttledMessages = useThrottle(messages, 100)
+  const throttledStatus = useThrottle(status, 100)
 
   // Handle search params on mount
   useEffect(() => {
@@ -340,11 +352,13 @@ export function useChatCore({
   )
 
   return {
-    // Chat state
-    messages,
+    // Chat state (with throttled versions for UI performance)
+    messages: throttledMessages,
+    rawMessages: messages, // Unthrottled for critical operations
     input,
     handleSubmit,
-    status,
+    status: throttledStatus,
+    rawStatus: status, // Unthrottled for critical checks
     error,
     reload,
     stop,
@@ -354,6 +368,8 @@ export function useChatCore({
     isAuthenticated,
     systemPrompt,
     hasSentFirstMessageRef,
+    isLoading, // AI SDK v5 loading state
+    data, // AI SDK v5 additional data
 
     // Component state
     isSubmitting,

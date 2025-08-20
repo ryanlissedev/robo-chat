@@ -436,7 +436,66 @@
       "lastAccessed": "2025-08-20T12:52:50.397Z",
       "lastVerified": "2025-08-20T12:52:50.397Z",
       "status": "fresh"
+    },
+    {
+      "id": "mem_1755697244442_loe3laelr",
+      "content": "Test Issues to Fix:\n1. use-chat-core test: ai/react import issue - add vitest alias\n2. ModelProvider tests: fetch expectations mismatch\n3. Tooltip provider requirement for tests\n4. next/navigation redirect mock issue\n5. MultiChatInput test: needs ModelProvider wrapper\n6. ui-store tests: infinite loop (already fixed)\n\nOptimization Target: https://ai-sdk.dev/docs/ai-sdk-ui/chatbot#chatbot\nApproach: TDD London style with parallel agents",
+      "type": "config",
+      "tags": [
+        "config",
+        "react",
+        "optimization",
+        "test-fixes",
+        "ai-sdk-v5"
+      ],
+      "timestamp": "2025-08-20T13:40:44.441Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-08-20T13:40:44.441Z",
+      "lastVerified": "2025-08-20T13:40:44.441Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1755697322846_ifcyh6pp5",
+      "content": "ModelProvider Test Fix Issue:\n\n**Problem**: Test expectations don't match fetchClient behavior\n- ModelProvider uses `fetchClient()` which adds headers (CSRF token + Content-Type)\n- Tests mock global `fetch` but expect calls with only URL parameter\n- `fetchClient` calls `fetch(url, { headers: {...} })` - two arguments\n\n**fetchClient adds**:\n- \"x-csrf-token\": csrf from cookies or \"\"  \n- \"Content-Type\": \"application/json\"\n\n**Test Fix Needed**:\n- Update test expectations to check for second argument (headers object)\n- Mock should expect `fetch(url, { headers: {...} })`",
+      "type": "warning",
+      "tags": [
+        "warning"
+      ],
+      "timestamp": "2025-08-20T13:42:02.846Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-08-20T13:42:02.846Z",
+      "lastVerified": "2025-08-20T13:42:02.846Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1755697528266_sx6wpepq8",
+      "content": "Test Issues Found:\n\n**Problem 1**: userKeyStatus returns defaults instead of mock data\n- Expected: mockUserKeyStatus (openrouter: true, openai: true, anthropic: true)\n- Actual: defaultUserKeyStatus (all false)\n- This suggests the /api/user-key-status query is failing or not running\n\n**Problem 2**: Only 2/4 API calls being made\n- Expected: all 4 endpoints called\n- Actual: only /api/models and /api/user-preferences/favorite-models called\n- Missing: /api/user-key-status and /api/user-preferences\n\n**Root Cause**: Some queries may be failing silently or not running at all. The ModelProvider has try/catch blocks that return defaults on error.",
+      "type": "troubleshooting",
+      "tags": [
+        "troubleshooting",
+        "api"
+      ],
+      "timestamp": "2025-08-20T13:45:28.266Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-08-20T13:45:28.266Z",
+      "lastVerified": "2025-08-20T13:45:28.266Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1755697783477_vnd3ksshl",
+      "content": "✅ ModelProvider Test Fix - SUCCESSFUL SOLUTION:\n\n**Root Cause**: React Query queries with `initialData` + `staleTime > 0` don't make network requests because they consider initial data \"fresh\"\n\n**Working Solution**: \n1. Mock document.cookie for CSRF token: `csrf_token=test-csrf-token`\n2. Force all queries to refetch using `queryClient.invalidateQueries()` after hook render\n3. Update all test expectations to include headers object that fetchClient adds\n4. Update mock fetch implementation to accept both url and init parameters\n\n**Key Changes**:\n- Added cookie mock in beforeEach/afterEach\n- Used `queryClient.invalidateQueries()` to force fresh data fetching\n- Updated all `expect(fetchSpy).toHaveBeenCalledWith()` to include headers object\n- Headers expected: `{'x-csrf-token': 'test-csrf-token', 'Content-Type': 'application/json'}`\n\n**Result**: All 13 tests passing, all 4 API endpoints being called correctly",
+      "type": "warning",
+      "tags": [
+        "warning",
+        "react",
+        "api"
+      ],
+      "timestamp": "2025-08-20T13:49:43.477Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-08-20T13:49:43.477Z",
+      "lastVerified": "2025-08-20T13:49:43.477Z",
+      "status": "fresh"
     }
   ],
-  "lastUpdated": "2025-08-20T12:52:50.397Z"
+  "lastUpdated": "2025-08-20T13:49:43.477Z"
 }

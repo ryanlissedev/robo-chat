@@ -184,7 +184,7 @@ export async function GET(req: NextRequest) {
     // Get the key's last rotation date
     const { data: keyData, error: fetchError } = await supabase
       .from('user_keys')
-      .select('last_rotated, created_at')
+      .select('created_at')
       .eq('user_id', user.id)
       .eq('provider', provider)
       .single()
@@ -210,7 +210,7 @@ export async function GET(req: NextRequest) {
     const rotationDays = rotationConfig.rotationDays ?? 90
 
     // Calculate if rotation is needed
-    const lastRotated = new Date(keyData.last_rotated || keyData.created_at)
+    const lastRotated = new Date(keyData.created_at as unknown as string)
     const daysSinceRotation = Math.floor(
       (Date.now() - lastRotated.getTime()) / (1000 * 60 * 60 * 24)
     )

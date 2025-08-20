@@ -1,6 +1,9 @@
 import React, { useState } from 'react'
 import { describe, it, expect } from 'vitest'
-import { render, screen, rerender } from '@/tests/test-utils'
+import { renderWithProviders, screen } from '@/tests/test-utils'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { ModelProvider } from '@/lib/model-store/provider'
+import { UserPreferencesProvider } from '@/lib/user-preference-store/provider'
 import userEvent from '@testing-library/user-event'
 
 import { ChatInput } from '@/app/components/chat-input/chat-input'
@@ -33,18 +36,33 @@ function ChatInputHarness({ hasSuggestions }: { hasSuggestions: boolean }) {
 describe('ChatInput focus resilience with suggestions', () => {
   it('retains focus and allows typing after suggestions appear', async () => {
     const user = userEvent.setup()
-    const { rerender } = render(<ChatInputHarness hasSuggestions={false} />)
+    const { rerender } = renderWithProviders(
+      <ModelProvider>
+        <UserPreferencesProvider>
+          <TooltipProvider>
+            <ChatInputHarness hasSuggestions={false} />
+          </TooltipProvider>
+        </UserPreferencesProvider>
+      </ModelProvider>
+    )
 
     const textarea = screen.getByPlaceholderText('Ask anything…') as HTMLTextAreaElement
     await user.type(textarea, 'h')
     expect(textarea.value).toBe('h')
 
     // Simulate suggestions mounting
-    rerender(<ChatInputHarness hasSuggestions={true} />)
+    rerender(
+      <ModelProvider>
+        <UserPreferencesProvider>
+          <TooltipProvider>
+            <ChatInputHarness hasSuggestions={true} />
+          </TooltipProvider>
+        </UserPreferencesProvider>
+      </ModelProvider>
+    )
 
     // Should still be able to type
     await user.type(textarea, 'i')
     expect(textarea.value).toBe('hi')
   })
 })
-
