@@ -187,7 +187,7 @@ export async function POST(req: Request) {
     // Helper function to extract text content from v5 message format
     const extractMessageContent = (msg: MessageAISDK): string => {
       // Handle v4 compatibility
-      if (typeof msg.content === 'string') {
+      if ('content' in msg && typeof msg.content === 'string') {
         return msg.content;
       }
 
@@ -253,14 +253,14 @@ export async function POST(req: Request) {
     // Convert messages to AI SDK v5 format with robust handling
     const convertedMessages = messages.map((msg: MessageAISDK) => {
       // Handle different message formats
-      if (typeof msg.content === 'string') {
+      if ('content' in msg && typeof msg.content === 'string') {
         // Legacy string content format
         return {
           ...msg,
           parts: [{ type: 'text', text: msg.content }],
         };
       }
-      if (Array.isArray(msg.content)) {
+      if ('content' in msg && Array.isArray(msg.content)) {
         // Already in parts format (v5) - check if it needs conversion
         const hasTextParts = msg.content.some(
           (part: { type?: string }) => part.type === 'text'
@@ -286,7 +286,7 @@ export async function POST(req: Request) {
       // Fallback for unknown formats
       return {
         ...msg,
-        parts: [{ type: 'text', text: String(msg.content || '') }],
+        parts: [{ type: 'text', text: String(('content' in msg && msg.content) || '') }],
       };
     });
 
