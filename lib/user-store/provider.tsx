@@ -8,11 +8,13 @@ import {
   updateUserProfile,
 } from "@/lib/user-store/api"
 import type { UserProfile } from "@/lib/user/types"
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 type UserContextType = {
   user: UserProfile | null
   isLoading: boolean
+  error: Error | null
   updateUser: (updates: Partial<UserProfile>) => Promise<void>
   refreshUser: () => Promise<void>
   signOut: () => Promise<void>
@@ -27,62 +29,77 @@ export function UserProvider({
   children: React.ReactNode
   initialUser: UserProfile | null
 }) {
-  const [user, setUser] = useState<UserProfile | null>(initialUser)
-  const [isLoading, setIsLoading] = useState(false)
+  const queryClient = useQueryClient()
 
-  const refreshUser = async () => {
-    if (!user?.id) return
+  const userId = initialUser?.id || null
 
-    setIsLoading(true)
-    try {
-      const updatedUser = await fetchUserProfile(user.id)
-      if (updatedUser) setUser(updatedUser)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const {
+    data: user,
+    isLoading,
+    error,
+  } = useQuery<UserProfile | null>({
+    queryKey: ["user", userId],
+    enabled: Boolean(userId),
+    queryFn: async () => {
+      if (!userId) return null
+      return await fetchUserProfile(userId)
+    },
+    initialData: initialUser,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (replaces cacheTime in v5)
+    refetchOnWindowFocus: false,
+  })
+
+  const updateUserMutation = useMutation({
+    mutationFn: async (updates: Partial<UserProfile>) => {
+      if (!user?.id) return false
+      return await updateUserProfile(user.id, updates)
+    },
+    onSuccess: (_ok, updates) => {
+      if (!user?.id) return
+      queryClient.setQueryData<UserProfile | null>(["user", user.id], (prev) =>
+        prev ? { ...prev, ...updates } : prev
+      )
+    },
+  })
 
   const updateUser = async (updates: Partial<UserProfile>) => {
-    if (!user?.id) return
-
-    setIsLoading(true)
-    try {
-      const success = await updateUserProfile(user.id, updates)
-      if (success) {
-        setUser((prev) => (prev ? { ...prev, ...updates } : null))
-      }
-    } finally {
-      setIsLoading(false)
-    }
+    await updateUserMutation.mutateAsync(updates)
   }
 
+  const signOutMutation = useMutation({
+    mutationFn: async () => signOutUser(),
+    onSuccess: (ok) => {
+      if (!ok) return
+      // Clear user cache by setting null
+      if (user?.id) {
+        queryClient.setQueryData(["user", user.id], null)
+      }
+    },
+  })
+
   const signOut = async () => {
-    setIsLoading(true)
-    try {
-      const success = await signOutUser()
-      if (success) setUser(null)
-    } finally {
-      setIsLoading(false)
-    }
+    await signOutMutation.mutateAsync()
   }
 
   // Set up realtime subscription for user data changes
   useEffect(() => {
     if (!user?.id) return
-
     const unsubscribe = subscribeToUserUpdates(user.id, (newData) => {
-      setUser((prev) => (prev ? { ...prev, ...newData } : null))
+      queryClient.setQueryData<UserProfile | null>(["user", user.id], (prev) =>
+        prev ? { ...prev, ...newData } : prev
+      )
     })
+    return () => unsubscribe()
+  }, [user?.id, queryClient])
 
-    return () => {
-      unsubscribe()
-    }
-  }, [user?.id])
+  const refreshUser = async () => {
+    if (!user?.id) return
+    await queryClient.invalidateQueries({ queryKey: ["user", user.id] })
+  }
 
   return (
-    <UserContext.Provider
-      value={{ user, isLoading, updateUser, refreshUser, signOut }}
-    >
+    <UserContext.Provider value={{ user, isLoading, error, updateUser, refreshUser, signOut }}>
       {children}
     </UserContext.Provider>
   )

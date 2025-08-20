@@ -3,7 +3,7 @@
 import { toast } from "@/components/ui/toast"
 import { useChatSession } from "@/lib/chat-store/session/provider"
 import type { UIMessage as MessageAISDK } from "ai"
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext } from "react"
 import { writeToIndexedDB } from "../persist"
 import {
   cacheMessages,
@@ -12,6 +12,7 @@ import {
   getMessagesFromDb,
   setMessages as saveMessages,
 } from "./api"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 
 interface MessagesContextType {
   messages: undefined[]
@@ -34,56 +35,43 @@ export function useMessages() {
 }
 
 export function MessagesProvider({ children }: { children: React.ReactNode }) {
-  const [messages, setMessages] = useState<undefined[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const { chatId } = useChatSession()
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    if (chatId === null) {
-      setMessages([])
-      setIsLoading(false)
-    }
-  }, [chatId])
-
-  useEffect(() => {
-    if (!chatId) return
-
-    const load = async () => {
-      setIsLoading(true)
-      const cached = await getCachedMessages(chatId)
-      setMessages(cached)
-
+  const { data: messages = [], isLoading } = useQuery<any[]>({
+    queryKey: ["messages", chatId],
+    enabled: Boolean(chatId),
+    queryFn: async () => {
+      const cached = await getCachedMessages(chatId!)
       try {
-        const fresh = await getMessagesFromDb(chatId)
-        setMessages(fresh)
-        cacheMessages(chatId, fresh)
+        const fresh = await getMessagesFromDb(chatId!)
+        await cacheMessages(chatId!, fresh)
+        return fresh
       } catch (error) {
         console.error("Failed to fetch messages:", error)
-      } finally {
-        setIsLoading(false)
+        return cached
       }
-    }
-
-    load()
-  }, [chatId])
+    },
+    initialData: chatId ? undefined : [],
+  })
 
   const refresh = async () => {
     if (!chatId) return
-
     try {
-      const fresh = await getMessagesFromDb(chatId)
-      setMessages(fresh)
+      await queryClient.invalidateQueries({ queryKey: ["messages", chatId] })
     } catch {
       toast({ title: "Failed to refresh messages", status: "error" })
     }
   }
 
-  const cacheAndAddMessage = async (message: undefined) => {
+  const cacheAndAddMessage = async (message: any) => {
     if (!chatId) return
-
     try {
-      setMessages((prev) => {
-        const updated = [...prev, message]
+      queryClient.setQueryData<any[]>(["messages", chatId], (prev) => {
+        const updated = [
+          ...((prev as undefined[] | undefined) || []),
+          message,
+        ]
         writeToIndexedDB("messages", { id: chatId, messages: updated })
         return updated
       })
@@ -92,13 +80,11 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const saveAllMessages = async (newMessages: undefined[]) => {
-    // @todo: manage the case where the chatId is null (first time the user opens the chat)
+  const saveAllMessages = async (newMessages: any[]) => {
     if (!chatId) return
-
     try {
       await saveMessages(chatId, newMessages)
-      setMessages(newMessages)
+      queryClient.setQueryData(["messages", chatId], newMessages)
     } catch {
       toast({ title: "Failed to save messages", status: "error" })
     }
@@ -106,13 +92,13 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
 
   const deleteMessages = async () => {
     if (!chatId) return
-
-    setMessages([])
+    queryClient.setQueryData(["messages", chatId], [])
     await clearMessagesForChat(chatId)
   }
 
   const resetMessages = async () => {
-    setMessages([])
+    if (!chatId) return
+    queryClient.setQueryData(["messages", chatId], [])
   }
 
   return (
@@ -120,7 +106,16 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
       value={{
         messages,
         isLoading,
-        setMessages,
+        setMessages: (updater) => {
+          if (!chatId) return
+          const key = ["messages", chatId]
+          const current = queryClient.getQueryData<undefined[]>(key) || []
+          const next =
+            typeof updater === "function"
+              ? (updater as (prev: undefined[]) => undefined[])(current)
+              : updater
+          queryClient.setQueryData(key, next)
+        },
         refresh,
         saveAllMessages,
         cacheAndAddMessage,

@@ -59,7 +59,7 @@ export function useChatCore({
   // State management
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasDialogAuth, setHasDialogAuth] = useState(false)
-  const [enableSearch, setEnableSearch] = useState(false)
+  const [enableSearch, setEnableSearch] = useState(true) // Default to true per file-search-first-query spec
   const [reasoningEffort, setReasoningEffort] = useState<'low' | 'medium' | 'high'>('medium')
 
   // Refs and derived state
@@ -107,14 +107,7 @@ export function useChatCore({
     }
   }, [prompt, setInput])
 
-  // Reset messages when navigating from a chat to home
-  if (
-    prevChatIdRef.current !== null &&
-    chatId === null &&
-    messages.length > 0
-  ) {
-    setMessages([])
-  }
+  // Track chatId changes without mutating state during render
   prevChatIdRef.current = chatId
 
   // Prepare operation dependencies for BDD scenarios
@@ -338,7 +331,9 @@ export function useChatCore({
   const { setDraftValue } = useChatDraft(chatId)
   const handleInputChange = useCallback(
     (value: string) => {
-      setInput(value)
+      if (setInput) {
+        setInput(value)
+      }
       setDraftValue(value)
     },
     [setInput, setDraftValue]

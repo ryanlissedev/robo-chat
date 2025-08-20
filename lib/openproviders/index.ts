@@ -3,7 +3,8 @@ import { createGoogleGenerativeAI, google } from "@ai-sdk/google"
 import { createMistral, mistral } from "@ai-sdk/mistral"
 import { createOpenAI, openai } from "@ai-sdk/openai"
 import { createPerplexity, perplexity } from "@ai-sdk/perplexity"
-import type { LanguageModelV2 } from 'ai'
+// Align to AI SDK v5 naming used across the project
+import type { LanguageModel } from 'ai'
 import { createXai, xai } from "@ai-sdk/xai"
 import { getProviderForModel } from "./provider-map"
 import type {
@@ -17,31 +18,8 @@ import type {
   XaiModel,
 } from "./types"
 
-type OpenAIChatSettings = Parameters<typeof openai>[1]
-type MistralProviderSettings = Parameters<typeof mistral>[1]
-type GoogleGenerativeAIProviderSettings = Parameters<typeof google>[1]
-type PerplexityProviderSettings = Parameters<typeof perplexity>[0]
-type AnthropicProviderSettings = Parameters<typeof anthropic>[1]
-type XaiProviderSettings = Parameters<typeof xai>[1]
-type OllamaProviderSettings = OpenAIChatSettings // Ollama uses OpenAI-compatible API
-
-type ModelSettings<T extends SupportedModel> = T extends OpenAIModel
-  ? OpenAIChatSettings
-  : T extends MistralModel
-    ? MistralProviderSettings
-    : T extends PerplexityModel
-      ? PerplexityProviderSettings
-      : T extends GeminiModel
-        ? GoogleGenerativeAIProviderSettings
-        : T extends AnthropicModel
-          ? AnthropicProviderSettings
-          : T extends XaiModel
-            ? XaiProviderSettings
-            : T extends OllamaModel
-              ? OllamaProviderSettings
-              : never
-
-export type OpenProvidersOptions<T extends SupportedModel> = ModelSettings<T>
+// Keep options loosely typed to avoid coupling to provider signatures
+export type OpenProvidersOptions<T extends SupportedModel> = unknown
 
 // Get Ollama base URL from environment or use default
 const getOllamaBaseURL = () => {
@@ -67,7 +45,7 @@ export function openproviders<T extends SupportedModel>(
   modelId: T,
   settings?: OpenProvidersOptions<T>,
   apiKey?: string
-): LanguageModelV1 {
+): LanguageModel {
   const provider = getProviderForModel(modelId)
 
   if (provider === "openai") {
@@ -77,9 +55,9 @@ export function openproviders<T extends SupportedModel>(
       verbosity?: "low" | "medium" | "high"
       headers?: Record<string, string>
     }
-    const merged = (settings ?? {}) as OpenAIChatSettings & GPT5Extras
+    const merged = (settings ?? {}) as any as GPT5Extras & Record<string, unknown>
     const { enableSearch: _enableSearch, reasoningEffort, verbosity, headers, ...rest } = merged
-    const openaiSettings = rest as OpenAIChatSettings
+    const openaiSettings = rest as any
 
     // Configure headers for GPT-5 extras (reasoning + verbosity)
     const customHeaders = modelId.startsWith('gpt-5')
@@ -95,10 +73,7 @@ export function openproviders<T extends SupportedModel>(
         apiKey,
         headers: customHeaders
       })
-      return openaiProvider(
-        modelId as OpenAIModel,
-        openaiSettings as OpenAIChatSettings
-      )
+      return openaiProvider(modelId as OpenAIModel, openaiSettings)
     }
     
     // For default OpenAI provider, we need to pass headers through settings
@@ -106,76 +81,52 @@ export function openproviders<T extends SupportedModel>(
       ? { ...openaiSettings, headers: customHeaders }
       : openaiSettings
       
-    return openai(modelId as OpenAIModel, enhancedSettings as OpenAIChatSettings)
+    return openai(modelId as OpenAIModel, enhancedSettings as any)
   }
 
   if (provider === "mistral") {
     if (apiKey) {
       const mistralProvider = createMistral({ apiKey })
-      return mistralProvider(
-        modelId as MistralModel,
-        settings as MistralProviderSettings
-      )
+      return mistralProvider(modelId as MistralModel)
     }
-    return mistral(modelId as MistralModel, settings as MistralProviderSettings)
+    return mistral(modelId as MistralModel)
   }
 
   if (provider === "google") {
     if (apiKey) {
       const googleProvider = createGoogleGenerativeAI({ apiKey })
-      return googleProvider(
-        modelId as GeminiModel,
-        settings as GoogleGenerativeAIProviderSettings
-      )
+      return googleProvider(modelId as GeminiModel)
     }
-    return google(
-      modelId as GeminiModel,
-      settings as GoogleGenerativeAIProviderSettings
-    )
+    return google(modelId as GeminiModel)
   }
 
   if (provider === "perplexity") {
     if (apiKey) {
       const perplexityProvider = createPerplexity({ apiKey })
-      return perplexityProvider(
-        modelId as PerplexityModel
-        // settings as PerplexityProviderSettings
-      )
+      return perplexityProvider(modelId as PerplexityModel)
     }
-    return perplexity(
-      modelId as PerplexityModel
-      // settings as PerplexityProviderSettings
-    )
+    return perplexity(modelId as PerplexityModel)
   }
 
   if (provider === "anthropic") {
     if (apiKey) {
       const anthropicProvider = createAnthropic({ apiKey })
-      return anthropicProvider(
-        modelId as AnthropicModel,
-        settings as AnthropicProviderSettings
-      )
+      return anthropicProvider(modelId as AnthropicModel)
     }
-    return anthropic(
-      modelId as AnthropicModel,
-      settings as AnthropicProviderSettings
-    )
+    return anthropic(modelId as AnthropicModel)
   }
 
   if (provider === "xai") {
     if (apiKey) {
       const xaiProvider = createXai({ apiKey })
-      return xaiProvider(modelId as XaiModel, settings as XaiProviderSettings)
+      return xaiProvider(modelId as XaiModel)
     }
-    return xai(modelId as XaiModel, settings as XaiProviderSettings)
+    return xai(modelId as XaiModel)
   }
 
   if (provider === "ollama") {
     const ollamaProvider = createOllamaProvider()
-    return ollamaProvider(
-      modelId as OllamaModel,
-      settings as OllamaProviderSettings
-    )
+    return ollamaProvider(modelId as OllamaModel)
   }
 
   throw new Error(`Unsupported model: ${modelId}`)

@@ -168,11 +168,8 @@ export function ChatInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quotedText, onValueChange])
 
-  useMemo(() => {
-    if (!hasSearchSupport && enableSearch) {
-      setEnableSearch?.(false)
-    }
-  }, [hasSearchSupport, enableSearch, setEnableSearch])
+  // Compute effective search state - no effect needed
+  const effectiveEnableSearch = hasSearchSupport ? enableSearch : false
 
   return (
     <div className="relative flex w-full flex-col gap-4">

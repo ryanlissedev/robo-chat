@@ -18,20 +18,20 @@ export function cleanMessagesForTools(
     .map((message) => {
       // Skip tool messages entirely when no tools are available
       // Note: Using type assertion since AI SDK types might not include 'tool' role
-      if ((message as { role: string }).role === "tool") {
+      if (message && (message as any).role === "tool") {
         return null
       }
 
-      if (message.role === "assistant") {
-        const cleanedMessage: undefined = { ...message }
+      if (message && (message as any).role === "assistant") {
+        const cleanedMessage: any = { ...message }
 
-        if (message.toolInvocations && message.toolInvocations.length > 0) {
+        if ((message as any).toolInvocations && (message as any).toolInvocations.length > 0) {
           delete cleanedMessage.toolInvocations
         }
 
-        if (Array.isArray(message.content)) {
+        if (Array.isArray((message as any).content)) {
           const filteredContent = (
-            message.content as Array<{ type?: string; text?: string }>
+            (message as any).content as Array<{ type?: string; text?: string }>
           ).filter((part: { type?: string }) => {
             if (part && typeof part === "object" && part.type) {
               // Remove tool-call, tool-result, and tool-invocation parts
@@ -79,9 +79,9 @@ export function cleanMessagesForTools(
       }
 
       // For user messages, clean any tool-related content from array content
-      if (message.role === "user" && Array.isArray(message.content)) {
+      if (message && (message as any).role === "user" && Array.isArray((message as any).content)) {
         const filteredContent = (
-          message.content as Array<{ type?: string }>
+          (message as any).content as Array<{ type?: string }>
         ).filter((part: { type?: string }) => {
           if (part && typeof part === "object" && part.type) {
             const isToolPart =
@@ -94,7 +94,7 @@ export function cleanMessagesForTools(
         })
 
         if (
-          filteredContent.length !== (message.content as Array<unknown>).length
+          filteredContent.length !== ((message as any).content as Array<unknown>).length
         ) {
           return {
             ...message,
@@ -106,7 +106,7 @@ export function cleanMessagesForTools(
 
       return message
     })
-    .filter((message): message is undefined => message !== null)
+    .filter((message): message is any => message !== null)
 
   return cleanedMessages
 }
@@ -114,12 +114,12 @@ export function cleanMessagesForTools(
 /**
  * Check if a message contains tool-related content
  */
-export function messageHasToolContent(message: undefined): boolean {
+export function messageHasToolContent(message: any): boolean {
   return !!(
-    message.toolInvocations?.length ||
+    (message as any).toolInvocations?.length ||
     (message as { role: string }).role === "tool" ||
-    (Array.isArray(message.content) &&
-      (message.content as Array<{ type?: string }>).some(
+    (Array.isArray((message as any).content) &&
+      ((message as any).content as Array<{ type?: string }>).some(
         (part: { type?: string }) =>
           part &&
           typeof part === "object" &&

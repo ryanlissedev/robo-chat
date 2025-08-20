@@ -1,11 +1,11 @@
 import { createClient } from "@/lib/supabase/client"
 import { isSupabaseEnabled } from "@/lib/supabase/config"
-import type { UIMessage as MessageAISDK } from "ai"
+// Loosen message typing to reduce coupling
 import { readFromIndexedDB, writeToIndexedDB } from "../persist"
 
 export async function getMessagesFromDb(
   chatId: string
-): Promise<undefined[]> {
+): Promise<any[]> {
   // fallback to local cache only
   if (!isSupabaseEnabled) {
     const cached = await getCachedMessages(chatId)
@@ -28,18 +28,18 @@ export async function getMessagesFromDb(
     return []
   }
 
-  return data.map((message) => ({
+  return data.map((message: any) => ({
     ...message,
     id: String(message.id),
     content: message.content ?? "",
     createdAt: new Date(message.created_at || ""),
-    parts: (message?.parts as undefined["parts"]) || undefined,
+    parts: (message?.parts as any) || undefined,
     message_group_id: message.message_group_id,
     model: message.model,
   }));
 }
 
-async function insertMessageToDb(chatId: string, message: undefined) {
+async function insertMessageToDb(chatId: string, message: any) {
   const supabase = createClient()
   if (!supabase) return
 
@@ -54,7 +54,7 @@ async function insertMessageToDb(chatId: string, message: undefined) {
   })
 }
 
-async function insertMessagesToDb(chatId: string, messages: undefined[]) {
+async function insertMessagesToDb(chatId: string, messages: any[]) {
   const supabase = createClient()
   if (!supabase) return
 
@@ -87,12 +87,12 @@ async function deleteMessagesFromDb(chatId: string) {
 
 type ChatMessageEntry = {
   id: string
-  messages: undefined[]
+  messages: any[]
 }
 
 export async function getCachedMessages(
   chatId: string
-): Promise<undefined[]> {
+): Promise<any[]> {
   const entry = await readFromIndexedDB<ChatMessageEntry>("messages", chatId)
 
   if (!entry || Array.isArray(entry)) return []
@@ -104,14 +104,14 @@ export async function getCachedMessages(
 
 export async function cacheMessages(
   chatId: string,
-  messages: undefined[]
+  messages: any[]
 ): Promise<void> {
   await writeToIndexedDB("messages", { id: chatId, messages })
 }
 
 export async function addMessage(
   chatId: string,
-  message: undefined
+  message: any
 ): Promise<void> {
   await insertMessageToDb(chatId, message)
   const current = await getCachedMessages(chatId)
@@ -122,7 +122,7 @@ export async function addMessage(
 
 export async function setMessages(
   chatId: string,
-  messages: undefined[]
+  messages: any[]
 ): Promise<void> {
   await insertMessagesToDb(chatId, messages)
   await writeToIndexedDB("messages", { id: chatId, messages })

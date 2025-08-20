@@ -1,7 +1,7 @@
 "use client"
 
 import { toast } from "@/components/ui/toast"
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext } from "react"
 import { MODEL_DEFAULT, SYSTEM_PROMPT_DEFAULT } from "../../config"
 import type { Chats } from "../types"
 import {
@@ -12,6 +12,11 @@ import {
   updateChatModel as updateChatModelFromDb,
   updateChatTitle,
 } from "./api"
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
 
 interface ChatsContextType {
   chats: Chats[]
@@ -52,50 +57,64 @@ export function ChatsProvider({
   userId?: string
   children: React.ReactNode
 }) {
-  const [isLoading, setIsLoading] = useState(true)
-  const [chats, setChats] = useState<Chats[]>([])
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    if (!userId) return
-
-    const load = async () => {
-      setIsLoading(true)
+  const {
+    data: chats = [],
+    isLoading,
+  } = useQuery<Chats[]>({
+    queryKey: ["chats", userId],
+    enabled: Boolean(userId),
+    queryFn: async () => {
+      // seed from cache first to avoid UI jank
       const cached = await getCachedChats()
-      setChats(cached)
-
+      // Kick off remote fetch; if it fails, fall back to cache
       try {
-        const fresh = await fetchAndCacheChats(userId)
-        setChats(fresh)
-      } finally {
-        setIsLoading(false)
+        const fresh = await fetchAndCacheChats(userId!)
+        return fresh
+      } catch {
+        return cached
       }
-    }
-
-    load()
-  }, [userId])
+    },
+    // Show something immediately if client has cache
+    initialData: undefined,
+  })
 
   const refresh = async () => {
     if (!userId) return
-
-    const fresh = await fetchAndCacheChats(userId)
-    setChats(fresh)
+    await queryClient.invalidateQueries({ queryKey: ["chats", userId] })
   }
 
-  const updateTitle = async (id: string, title: string) => {
-    const prev = [...chats]
-    const updatedChatWithNewTitle = prev.map((c) =>
-      c.id === id ? { ...c, title, updated_at: new Date().toISOString() } : c
-    )
-    const sorted = updatedChatWithNewTitle.sort(
-      (a, b) => +new Date(b.updated_at || "") - +new Date(a.updated_at || "")
-    )
-    setChats(sorted)
-    try {
+  const updateTitleMutation = useMutation({
+    mutationFn: async ({ id, title }: { id: string; title: string }) => {
       await updateChatTitle(id, title)
-    } catch {
-      setChats(prev)
+      return { id, title }
+    },
+    onMutate: async ({ id, title }) => {
+      const queryKey = ["chats", userId]
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData<Chats[]>(queryKey)
+      const optimistic = (previous || []).map((c) =>
+        c.id === id
+          ? { ...c, title, updated_at: new Date().toISOString() }
+          : c
+      )
+      optimistic.sort(
+        (a, b) => +new Date(b.updated_at || "") - +new Date(a.updated_at || "")
+      )
+      queryClient.setQueryData(queryKey, optimistic)
+      return { previous }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(["chats", userId], ctx.previous)
+      }
       toast({ title: "Failed to update title", status: "error" })
-    }
+    },
+  })
+
+  const updateTitle = async (id: string, title: string) => {
+    await updateTitleMutation.mutateAsync({ id, title })
   }
 
   const deleteChat = async (
@@ -103,14 +122,17 @@ export function ChatsProvider({
     currentChatId?: string,
     redirect?: () => void
   ) => {
-    const prev = [...chats]
-    setChats((prev) => prev.filter((c) => c.id !== id))
-
+    const queryKey = ["chats", userId]
+    const previous = queryClient.getQueryData<Chats[]>(queryKey)
+    queryClient.setQueryData<Chats[]>(
+      queryKey,
+      (prev) => (prev || []).filter((c) => c.id !== id)
+    )
     try {
       await deleteChatFromDb(id)
       if (id === currentChatId && redirect) redirect()
     } catch {
-      setChats(prev)
+      if (previous) queryClient.setQueryData(queryKey, previous)
       toast({ title: "Failed to delete chat", status: "error" })
     }
   }
@@ -124,21 +146,24 @@ export function ChatsProvider({
     projectId?: string
   ) => {
     if (!userId) return
-    const prev = [...chats]
-
     const optimisticId = `optimistic-${Date.now().toString()}`
-    const optimisticChat = {
+    const optimisticChat: Chats = {
       id: optimisticId,
       title: title || "New Chat",
       created_at: new Date().toISOString(),
       model: model || MODEL_DEFAULT,
-      system_prompt: systemPrompt || SYSTEM_PROMPT_DEFAULT,
       user_id: userId,
       public: true,
       updated_at: new Date().toISOString(),
       project_id: null,
     }
-    setChats((prev) => [optimisticChat, ...prev])
+
+    const queryKey = ["chats", userId]
+    const previous = queryClient.getQueryData<Chats[]>(queryKey)
+    queryClient.setQueryData<Chats[]>(queryKey, (prev) => [
+      optimisticChat,
+      ...((prev as Chats[] | undefined) || []),
+    ])
 
     try {
       const newChat = await createNewChatFromDb(
@@ -149,47 +174,52 @@ export function ChatsProvider({
         projectId
       )
 
-      setChats((prev) => [
+      queryClient.setQueryData<Chats[]>(queryKey, (prev) => [
         newChat,
-        ...prev.filter((c) => c.id !== optimisticId),
+        ...((prev || []).filter((c) => c.id !== optimisticId)),
       ])
 
       return newChat
     } catch {
-      setChats(prev)
+      if (previous) queryClient.setQueryData(queryKey, previous)
       toast({ title: "Failed to create chat", status: "error" })
     }
   }
 
   const resetChats = async () => {
-    setChats([])
+    if (!userId) return
+    queryClient.setQueryData(["chats", userId], [])
   }
 
   const getChatById = (id: string) => {
-    const chat = chats.find((c) => c.id === id)
-    return chat
+    return chats.find((c) => c.id === id)
   }
 
   const updateChatModel = async (id: string, model: string) => {
-    const prev = [...chats]
-    setChats((prev) => prev.map((c) => (c.id === id ? { ...c, model } : c)))
+    const queryKey = ["chats", userId]
+    const previous = queryClient.getQueryData<Chats[]>(queryKey)
+    queryClient.setQueryData<Chats[]>(queryKey, (prev) =>
+      (prev || []).map((c) => (c.id === id ? { ...c, model } : c))
+    )
     try {
       await updateChatModelFromDb(id, model)
     } catch {
-      setChats(prev)
+      if (previous) queryClient.setQueryData(queryKey, previous)
       toast({ title: "Failed to update model", status: "error" })
     }
   }
 
   const bumpChat = async (id: string) => {
-    const prev = [...chats]
-    const updatedChatWithNewUpdatedAt = prev.map((c) =>
-      c.id === id ? { ...c, updated_at: new Date().toISOString() } : c
-    )
-    const sorted = updatedChatWithNewUpdatedAt.sort(
-      (a, b) => +new Date(b.updated_at || "") - +new Date(a.updated_at || "")
-    )
-    setChats(sorted)
+    const queryKey = ["chats", userId]
+    queryClient.setQueryData<Chats[]>(queryKey, (prev) => {
+      const updated = (prev || []).map((c) =>
+        c.id === id ? { ...c, updated_at: new Date().toISOString() } : c
+      )
+      updated.sort(
+        (a, b) => +new Date(b.updated_at || "") - +new Date(a.updated_at || "")
+      )
+      return updated
+    })
   }
 
   return (
@@ -199,7 +229,16 @@ export function ChatsProvider({
         refresh,
         updateTitle,
         deleteChat,
-        setChats,
+        setChats: (updater) => {
+          if (!userId) return
+          const queryKey = ["chats", userId]
+          const current = queryClient.getQueryData<Chats[]>(queryKey) || []
+          const next =
+            typeof updater === "function"
+              ? (updater as (prev: Chats[]) => Chats[])(current)
+              : updater
+          queryClient.setQueryData(queryKey, next)
+        },
         createNewChat,
         resetChats,
         getChatById,

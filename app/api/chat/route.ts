@@ -3,9 +3,8 @@ import { logger } from "@/lib/logger"
 import { getAllModels } from "@/lib/models"
 import { getProviderForModel } from "@/lib/openproviders/provider-map"
 import type { ProviderWithoutOllama } from "@/lib/user-keys"
-import type { Attachment } from 'ai'
 import { streamText } from "ai"
-import type { UIMessage as MessageAISDK, ToolSet } from "ai"
+import type { UIMessage as MessageAISDK, ToolSet, LanguageModelUsage } from "ai"
 import { fileSearchTool } from "@/lib/tools/file-search"
 import {
   isLangSmithEnabled,
@@ -37,7 +36,7 @@ type ResponseWithUsage = {
 }
 
 type ChatRequest = {
-  messages: undefined[]
+  messages: MessageAISDK[]
   chatId: string
   userId: string
   model: string
@@ -92,8 +91,8 @@ export async function POST(req: Request) {
         supabase,
         userId,
         chatId,
-        content: userMessage.content,
-        attachments: userMessage.experimental_attachments as Attachment[],
+        content: (userMessage as any).content as string,
+        attachments: (userMessage as any).experimental_attachments || [],
         model: resolvedModel,
         isAuthenticated,
         message_group_id,
@@ -109,6 +108,9 @@ export async function POST(req: Request) {
 
     // Use file search system prompt for GPT-5 models with file search enabled
     const isGPT5Model = resolvedModel.startsWith('gpt-5')
+    
+    // Enable file search by default for all models per file-search-first-query spec
+    const effectiveEnableSearch = enableSearch !== false // Default to true
 
     // Log request context
     try {
@@ -117,13 +119,13 @@ export async function POST(req: Request) {
         at: "api.chat.POST",
         model: resolvedModel,
         provider,
-        enableSearch,
+        enableSearch: effectiveEnableSearch,
         reasoningEffort,
         verbosity,
         temperature: isGPT5Model ? 1 : undefined,
       }, "chat request")
     } catch {}
-    const effectiveSystemPrompt = enableSearch && isGPT5Model 
+    const effectiveSystemPrompt = effectiveEnableSearch 
       ? FILE_SEARCH_SYSTEM_PROMPT 
       : (systemPrompt || SYSTEM_PROMPT_DEFAULT)
 
@@ -143,9 +145,9 @@ export async function POST(req: Request) {
         name: 'chat-completion',
         inputs: {
           model: resolvedModel,
-          messages: messages.map((m: undefined) => ({ role: m.role, content: m.content })),
+          messages: messages.map((m: any) => ({ role: m.role, content: m.content })),
           reasoningEffort,
-          enableSearch,
+          enableSearch: effectiveEnableSearch,
         },
         runType: 'chain',
         metadata: {
@@ -153,20 +155,20 @@ export async function POST(req: Request) {
           chatId,
           model: resolvedModel,
           reasoningEffort,
-          enableSearch,
+          enableSearch: effectiveEnableSearch,
         },
       })) as { id?: string } | null
       langsmithRunId = run?.id || null
     }
 
-    // Configure tools based on file search enablement
-    const tools: ToolSet = enableSearch && isGPT5Model 
+    // Configure tools - always include file search tool when enabled (not just for GPT-5)
+    const tools: ToolSet = effectiveEnableSearch 
       ? { fileSearch: fileSearchTool } 
       : ({} as ToolSet)
 
     // Configure model settings with reasoning effort
     const modelSettings = {
-      enableSearch,
+      enableSearch: effectiveEnableSearch,
       reasoningEffort,
       verbosity,
       headers: isGPT5Model ? {
@@ -178,11 +180,11 @@ export async function POST(req: Request) {
     const result = streamText({
       model: modelConfig.apiSdk(apiKey, modelSettings),
       system: effectiveSystemPrompt,
-      messages: messages,
+      messages: messages as any,
       tools,
       // GPT-5 models only support default temperature = 1
       temperature: isGPT5Model ? 1 : undefined,
-      maxSteps: enableSearch && isGPT5Model ? 10 : 1,
+      maxSteps: effectiveEnableSearch ? 10 : 1,
       onError: (err: unknown) => {
         console.error("Streaming error occurred:", err)
         // Don't set streamError anymore - let the AI SDK handle it through the stream
@@ -226,7 +228,7 @@ export async function POST(req: Request) {
                 inputTokens: usage.inputTokens,
                 outputTokens: usage.outputTokens,
                 reasoningEffort,
-                enableSearch,
+                enableSearch: effectiveEnableSearch,
               },
             })
           }
@@ -237,11 +239,7 @@ export async function POST(req: Request) {
     return result.toUIMessageStreamResponse({
       sendReasoning: true,
       sendSources: true,
-      getErrorMessage: (error: unknown) => {
-        console.error("Error forwarded to client:", error)
-        return extractErrorMessage(error)
-      },
-    });
+    } as any);
   } catch (err: unknown) {
     console.error("Error in /api/chat:", err)
     const error = err as {

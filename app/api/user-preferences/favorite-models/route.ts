@@ -6,10 +6,12 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
 
     if (!supabase) {
-      return NextResponse.json(
-        { error: "Database connection failed" },
-        { status: 500 }
-      )
+      // Return empty favorites when Supabase is not configured
+      return NextResponse.json({
+        success: true,
+        favorite_models: [],
+        message: "Database not configured - using default models"
+      })
     }
 
     // Get the current user
@@ -19,7 +21,12 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      // Return empty favorites when user is not authenticated
+      return NextResponse.json({
+        success: true,
+        favorite_models: [],
+        message: "User not authenticated - using default models"
+      })
     }
 
     // Parse the request body
@@ -78,10 +85,11 @@ export async function GET() {
     const supabase = await createClient()
 
     if (!supabase) {
-      return NextResponse.json(
-        { error: "Database connection failed" },
-        { status: 500 }
-      )
+      // Return empty favorites when Supabase is not configured
+      return NextResponse.json({
+        favorite_models: [],
+        message: "Database not configured - using default models"
+      })
     }
 
     // Get the current user
@@ -91,7 +99,11 @@ export async function GET() {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      // Return empty favorites when user is not authenticated
+      return NextResponse.json({
+        favorite_models: [],
+        message: "User not authenticated - using default models"
+      })
     }
 
     // Get the user's favorite models
