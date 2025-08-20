@@ -1,4 +1,4 @@
-import { Message as MessageAISDK } from "ai"
+import { UIMessage as MessageAISDK } from "ai"
 
 /**
  * Clean messages when switching between agents with different tool capabilities.
@@ -6,9 +6,9 @@ import { Message as MessageAISDK } from "ai"
  * to prevent OpenAI API errors.
  */
 export function cleanMessagesForTools(
-  messages: MessageAISDK[],
+  messages: undefined[],
   hasTools: boolean
-): MessageAISDK[] {
+): undefined[] {
   if (hasTools) {
     return messages
   }
@@ -23,7 +23,7 @@ export function cleanMessagesForTools(
       }
 
       if (message.role === "assistant") {
-        const cleanedMessage: MessageAISDK = { ...message }
+        const cleanedMessage: undefined = { ...message }
 
         if (message.toolInvocations && message.toolInvocations.length > 0) {
           delete cleanedMessage.toolInvocations
@@ -106,7 +106,7 @@ export function cleanMessagesForTools(
 
       return message
     })
-    .filter((message): message is MessageAISDK => message !== null)
+    .filter((message): message is undefined => message !== null)
 
   return cleanedMessages
 }
@@ -114,7 +114,7 @@ export function cleanMessagesForTools(
 /**
  * Check if a message contains tool-related content
  */
-export function messageHasToolContent(message: MessageAISDK): boolean {
+export function messageHasToolContent(message: undefined): boolean {
   return !!(
     message.toolInvocations?.length ||
     (message as { role: string }).role === "tool" ||

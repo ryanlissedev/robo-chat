@@ -3,7 +3,7 @@ import { createGoogleGenerativeAI, google } from "@ai-sdk/google"
 import { createMistral, mistral } from "@ai-sdk/mistral"
 import { createOpenAI, openai } from "@ai-sdk/openai"
 import { createPerplexity, perplexity } from "@ai-sdk/perplexity"
-import type { LanguageModelV1 } from "@ai-sdk/provider"
+import type { LanguageModelV2 } from 'ai'
 import { createXai, xai } from "@ai-sdk/xai"
 import { getProviderForModel } from "./provider-map"
 import type {
@@ -51,10 +51,7 @@ const getOllamaBaseURL = () => {
   }
 
   // Server-side: check environment variables
-  return (
-    process.env.OLLAMA_BASE_URL?.replace(/\/+$/, "") + "/v1" ||
-    "http://localhost:11434/v1"
-  )
+  return (process.env.OLLAMA_BASE_URL?.replace(/\/+$/, "") + "/v1" || "http://localhost:11434/v1");
 }
 
 // Create Ollama provider instance with configurable baseURL
@@ -96,8 +93,7 @@ export function openproviders<T extends SupportedModel>(
     if (apiKey) {
       const openaiProvider = createOpenAI({
         apiKey,
-        compatibility: "strict",
-        headers: customHeaders,
+        headers: customHeaders
       })
       return openaiProvider(
         modelId as OpenAIModel,

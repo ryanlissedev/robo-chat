@@ -3,9 +3,9 @@ import { logger } from "@/lib/logger"
 import { getAllModels } from "@/lib/models"
 import { getProviderForModel } from "@/lib/openproviders/provider-map"
 import type { ProviderWithoutOllama } from "@/lib/user-keys"
-import type { Attachment } from "@ai-sdk/ui-utils"
+import type { Attachment } from 'ai'
 import { streamText } from "ai"
-import type { Message as MessageAISDK, ToolSet } from "ai"
+import type { UIMessage as MessageAISDK, ToolSet } from "ai"
 import { fileSearchTool } from "@/lib/tools/file-search"
 import {
   isLangSmithEnabled,
@@ -32,12 +32,12 @@ type TokenUsage = {
 }
 
 type ResponseWithUsage = {
-  usage?: TokenUsage
+  usage?: LanguageModelUsage
   messages: unknown[]
 }
 
 type ChatRequest = {
-  messages: MessageAISDK[]
+  messages: undefined[]
   chatId: string
   userId: string
   model: string
@@ -143,7 +143,7 @@ export async function POST(req: Request) {
         name: 'chat-completion',
         inputs: {
           model: resolvedModel,
-          messages: messages.map((m: MessageAISDK) => ({ role: m.role, content: m.content })),
+          messages: messages.map((m: undefined) => ({ role: m.role, content: m.content })),
           reasoningEffort,
           enableSearch,
         },
@@ -223,8 +223,8 @@ export async function POST(req: Request) {
               runId: actualRunId,
               metrics: {
                 totalTokens: usage.totalTokens,
-                promptTokens: usage.promptTokens,
-                completionTokens: usage.completionTokens,
+                inputTokens: usage.inputTokens,
+                outputTokens: usage.outputTokens,
                 reasoningEffort,
                 enableSearch,
               },
@@ -234,14 +234,14 @@ export async function POST(req: Request) {
       },
     })
 
-    return result.toDataStreamResponse({
+    return result.toUIMessageStreamResponse({
       sendReasoning: true,
       sendSources: true,
       getErrorMessage: (error: unknown) => {
         console.error("Error forwarded to client:", error)
         return extractErrorMessage(error)
       },
-    })
+    });
   } catch (err: unknown) {
     console.error("Error in /api/chat:", err)
     const error = err as {

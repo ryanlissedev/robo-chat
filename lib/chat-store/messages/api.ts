@@ -1,11 +1,11 @@
 import { createClient } from "@/lib/supabase/client"
 import { isSupabaseEnabled } from "@/lib/supabase/config"
-import type { Message as MessageAISDK } from "ai"
+import type { UIMessage as MessageAISDK } from "ai"
 import { readFromIndexedDB, writeToIndexedDB } from "../persist"
 
 export async function getMessagesFromDb(
   chatId: string
-): Promise<MessageAISDK[]> {
+): Promise<undefined[]> {
   // fallback to local cache only
   if (!isSupabaseEnabled) {
     const cached = await getCachedMessages(chatId)
@@ -33,13 +33,13 @@ export async function getMessagesFromDb(
     id: String(message.id),
     content: message.content ?? "",
     createdAt: new Date(message.created_at || ""),
-    parts: (message?.parts as MessageAISDK["parts"]) || undefined,
+    parts: (message?.parts as undefined["parts"]) || undefined,
     message_group_id: message.message_group_id,
     model: message.model,
-  }))
+  }));
 }
 
-async function insertMessageToDb(chatId: string, message: MessageAISDK) {
+async function insertMessageToDb(chatId: string, message: undefined) {
   const supabase = createClient()
   if (!supabase) return
 
@@ -54,7 +54,7 @@ async function insertMessageToDb(chatId: string, message: MessageAISDK) {
   })
 }
 
-async function insertMessagesToDb(chatId: string, messages: MessageAISDK[]) {
+async function insertMessagesToDb(chatId: string, messages: undefined[]) {
   const supabase = createClient()
   if (!supabase) return
 
@@ -87,12 +87,12 @@ async function deleteMessagesFromDb(chatId: string) {
 
 type ChatMessageEntry = {
   id: string
-  messages: MessageAISDK[]
+  messages: undefined[]
 }
 
 export async function getCachedMessages(
   chatId: string
-): Promise<MessageAISDK[]> {
+): Promise<undefined[]> {
   const entry = await readFromIndexedDB<ChatMessageEntry>("messages", chatId)
 
   if (!entry || Array.isArray(entry)) return []
@@ -104,14 +104,14 @@ export async function getCachedMessages(
 
 export async function cacheMessages(
   chatId: string,
-  messages: MessageAISDK[]
+  messages: undefined[]
 ): Promise<void> {
   await writeToIndexedDB("messages", { id: chatId, messages })
 }
 
 export async function addMessage(
   chatId: string,
-  message: MessageAISDK
+  message: undefined
 ): Promise<void> {
   await insertMessageToDb(chatId, message)
   const current = await getCachedMessages(chatId)
@@ -122,7 +122,7 @@ export async function addMessage(
 
 export async function setMessages(
   chatId: string,
-  messages: MessageAISDK[]
+  messages: undefined[]
 ): Promise<void> {
   await insertMessagesToDb(chatId, messages)
   await writeToIndexedDB("messages", { id: chatId, messages })
