@@ -121,7 +121,7 @@ export async function POST(req: Request) {
                 name: filePart.name || 'attachment',
               };
             }) || [];
-      } else if (userMessage.content) {
+      } else if ('content' in userMessage && userMessage.content) {
         // Legacy content format
         textContent =
           typeof userMessage.content === 'string'
