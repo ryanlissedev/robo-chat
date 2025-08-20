@@ -1,15 +1,15 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
  * Format a number with commas for thousands, etc
  */
 export function formatNumber(n: number) {
-  return new Intl.NumberFormat("en-US").format(n)
+  return new Intl.NumberFormat('en-US').format(n);
 }
 
 /**
@@ -21,17 +21,17 @@ export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null
+  let timeout: NodeJS.Timeout | null = null;
 
-  return function (...args: Parameters<T>): void {
+  return (...args: Parameters<T>): void => {
     if (timeout) {
-      clearTimeout(timeout)
+      clearTimeout(timeout);
     }
 
     timeout = setTimeout(() => {
-      func(...args)
-    }, wait)
-  }
+      func(...args);
+    }, wait);
+  };
 }
 
-export const isDev = process.env.NODE_ENV === "development"
+export const isDev = process.env.NODE_ENV === 'development';

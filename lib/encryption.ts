@@ -1,60 +1,62 @@
-import { createCipheriv, createDecipheriv, randomBytes } from "crypto"
+import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 if (!ENCRYPTION_KEY) {
-  throw new Error("ENCRYPTION_KEY is required")
+  throw new Error('ENCRYPTION_KEY is required');
 }
-const ALGORITHM = "aes-256-gcm"
+const ALGORITHM = 'aes-256-gcm';
 
-const key = Buffer.from(ENCRYPTION_KEY!, "base64")
+const key = Buffer.from(ENCRYPTION_KEY!, 'base64');
 
 if (key.length !== 32) {
-  throw new Error("ENCRYPTION_KEY must be 32 bytes long")
+  throw new Error('ENCRYPTION_KEY must be 32 bytes long');
 }
 
 export function encryptKey(plaintext: string): {
-  encrypted: string
-  iv: string
+  encrypted: string;
+  iv: string;
 } {
-  const iv = randomBytes(16)
-  const cipher = createCipheriv(ALGORITHM, key, iv)
+  const iv = randomBytes(16);
+  const cipher = createCipheriv(ALGORITHM, key, iv);
 
-  let encrypted = cipher.update(plaintext, "utf8", "hex")
-  encrypted += cipher.final("hex")
+  let encrypted = cipher.update(plaintext, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
 
-  const authTag = cipher.getAuthTag()
-  const encryptedWithTag = encrypted + ":" + authTag.toString("hex")
+  const authTag = cipher.getAuthTag();
+  const encryptedWithTag = `${encrypted}:${authTag.toString('hex')}`;
 
   return {
     encrypted: encryptedWithTag,
-    iv: iv.toString("hex"),
-  }
+    iv: iv.toString('hex'),
+  };
 }
 
 export function decryptKey(encryptedData: string, ivHex: string): string {
-  const [encrypted, authTagHex] = encryptedData.split(":")
-  const iv = Buffer.from(ivHex, "hex")
-  const authTag = Buffer.from(authTagHex, "hex")
+  const [encrypted, authTagHex] = encryptedData.split(':');
+  const iv = Buffer.from(ivHex, 'hex');
+  const authTag = Buffer.from(authTagHex, 'hex');
 
-  const decipher = createDecipheriv(ALGORITHM, key, iv)
-  decipher.setAuthTag(authTag)
+  const decipher = createDecipheriv(ALGORITHM, key, iv);
+  decipher.setAuthTag(authTag);
 
-  let decrypted = decipher.update(encrypted, "hex", "utf8")
-  decrypted += decipher.final("utf8")
+  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
 
-  return decrypted
+  return decrypted;
 }
 
 export function maskKey(key: string): string {
-  if (!key) return ""
+  if (!key) {
+    return '';
+  }
   if (key.length < 8) {
-    return "*".repeat(key.length)
+    return '*'.repeat(key.length);
   }
   if (key.length === 8) {
-    return "*".repeat(8)
+    return '*'.repeat(8);
   }
-  const prefix = key.slice(0, 4)
-  const suffix = key.slice(-4)
-  const maskedMiddle = "*".repeat(Math.max(0, key.length - 8))
-  return `${prefix}${maskedMiddle}${suffix}`
+  const prefix = key.slice(0, 4);
+  const suffix = key.slice(-4);
+  const maskedMiddle = '*'.repeat(Math.max(0, key.length - 8));
+  return `${prefix}${maskedMiddle}${suffix}`;
 }

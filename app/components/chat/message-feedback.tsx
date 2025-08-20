@@ -1,28 +1,28 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { ThumbsUp, ThumbsDown } from '@phosphor-icons/react'
-import { cn } from '@/lib/utils'
+import { ThumbsDown, ThumbsUp } from '@phosphor-icons/react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { toast } from 'sonner'
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
-export type FeedbackType = 'upvote' | 'downvote' | null
+export type FeedbackType = 'upvote' | 'downvote' | null;
 
-interface MessageFeedbackProps {
-  messageId: string
-  initialFeedback?: FeedbackType
-  onFeedback?: (feedback: FeedbackType, comment?: string) => Promise<void>
-  langsmithRunId?: string
-  className?: string
-}
+type MessageFeedbackProps = {
+  messageId: string;
+  initialFeedback?: FeedbackType;
+  onFeedback?: (feedback: FeedbackType, comment?: string) => Promise<void>;
+  langsmithRunId?: string;
+  className?: string;
+};
 
 export function MessageFeedback({
   messageId,
@@ -31,19 +31,24 @@ export function MessageFeedback({
   langsmithRunId,
   className,
 }: MessageFeedbackProps) {
-  const [feedback, setFeedback] = useState<FeedbackType>(initialFeedback)
-  const [loading, setLoading] = useState(false)
-  const [showCommentDialog, setShowCommentDialog] = useState(false)
-  const [comment, setComment] = useState('')
-  const [pendingFeedback, setPendingFeedback] = useState<FeedbackType>(null)
+  const [feedback, setFeedback] = useState<FeedbackType>(initialFeedback);
+  const [loading, setLoading] = useState(false);
+  const [showCommentDialog, setShowCommentDialog] = useState(false);
+  const [comment, setComment] = useState('');
+  const [pendingFeedback, setPendingFeedback] = useState<FeedbackType>(null);
 
-  const handleFeedback = async (type: FeedbackType, feedbackComment?: string) => {
-    if (loading) return
+  const handleFeedback = async (
+    type: FeedbackType,
+    feedbackComment?: string
+  ) => {
+    if (loading) {
+      return;
+    }
 
-    setLoading(true)
+    setLoading(true);
     try {
       // Toggle feedback if clicking the same button
-      const newFeedback = feedback === type ? null : type
+      const newFeedback = feedback === type ? null : type;
 
       // Call the feedback API
       const response = await fetch('/api/feedback', {
@@ -57,17 +62,17 @@ export function MessageFeedback({
           comment: feedbackComment,
           runId: langsmithRunId,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to submit feedback')
+        throw new Error('Failed to submit feedback');
       }
 
-      setFeedback(newFeedback)
+      setFeedback(newFeedback);
 
       // Call the optional callback
       if (onFeedback) {
-        await onFeedback(newFeedback, feedbackComment)
+        await onFeedback(newFeedback, feedbackComment);
       }
 
       // Show success toast
@@ -75,47 +80,46 @@ export function MessageFeedback({
         toast.success(
           newFeedback === 'upvote'
             ? 'Thanks for your feedback!'
-            : 'Thanks for letting us know. We\'ll improve.'
-        )
+            : "Thanks for letting us know. We'll improve."
+        );
       } else {
-        toast.success('Feedback removed')
+        toast.success('Feedback removed');
       }
 
       // Close comment dialog if open
-      setShowCommentDialog(false)
-      setComment('')
-      setPendingFeedback(null)
-    } catch (error) {
-      console.error('Error submitting feedback:', error)
-      toast.error('Failed to submit feedback')
+      setShowCommentDialog(false);
+      setComment('');
+      setPendingFeedback(null);
+    } catch {
+      toast.error('Failed to submit feedback');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleDownvote = () => {
-    setPendingFeedback('downvote')
-    setShowCommentDialog(true)
-  }
+    setPendingFeedback('downvote');
+    setShowCommentDialog(true);
+  };
 
   const submitDownvote = () => {
-    handleFeedback(pendingFeedback, comment)
-  }
+    handleFeedback(pendingFeedback, comment);
+  };
 
   return (
     <>
       <div className={cn('flex items-center gap-1', className)}>
         <button
-          onClick={() => handleFeedback('upvote')}
-          disabled={loading}
+          aria-label="Upvote message"
           className={cn(
-            'p-1.5 rounded-md transition-all',
+            'rounded-md p-1.5 transition-all',
             'hover:bg-accent/50',
             feedback === 'upvote' && 'bg-accent',
-            loading && 'opacity-50 cursor-not-allowed'
+            loading && 'cursor-not-allowed opacity-50'
           )}
+          disabled={loading}
+          onClick={() => handleFeedback('upvote')}
           title="This was helpful"
-          aria-label="Upvote message"
         >
           <ThumbsUp
             className={cn(
@@ -127,16 +131,16 @@ export function MessageFeedback({
         </button>
 
         <button
-          onClick={handleDownvote}
-          disabled={loading}
+          aria-label="Downvote message"
           className={cn(
-            'p-1.5 rounded-md transition-all',
+            'rounded-md p-1.5 transition-all',
             'hover:bg-accent/50',
             feedback === 'downvote' && 'bg-accent',
-            loading && 'opacity-50 cursor-not-allowed'
+            loading && 'cursor-not-allowed opacity-50'
           )}
+          disabled={loading}
+          onClick={handleDownvote}
           title="This wasn't helpful"
-          aria-label="Downvote message"
         >
           <ThumbsDown
             className={cn(
@@ -148,44 +152,42 @@ export function MessageFeedback({
         </button>
       </div>
 
-      <Dialog open={showCommentDialog} onOpenChange={setShowCommentDialog}>
+      <Dialog onOpenChange={setShowCommentDialog} open={showCommentDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Help us improve</DialogTitle>
             <DialogDescription>
-              What went wrong with this response? Your feedback helps us get better.
+              What went wrong with this response? Your feedback helps us get
+              better.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <Textarea
+              className="min-h-[100px]"
+              onChange={(e) => setComment(e.target.value)}
               placeholder="Tell us what could be improved... (optional)"
               value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              className="min-h-[100px]"
             />
           </div>
           <div className="flex justify-end gap-2">
             <Button
-              variant="outline"
               onClick={() => {
-                setShowCommentDialog(false)
-                setComment('')
-                setPendingFeedback(null)
+                setShowCommentDialog(false);
+                setComment('');
+                setPendingFeedback(null);
               }}
+              variant="outline"
             >
               Cancel
             </Button>
-            <Button
-              onClick={submitDownvote}
-              disabled={loading}
-            >
+            <Button disabled={loading} onClick={submitDownvote}>
               Submit Feedback
             </Button>
           </div>
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }
 
 // Compact version for inline use
@@ -196,15 +198,17 @@ export function MessageFeedbackInline({
   langsmithRunId,
   className,
 }: MessageFeedbackProps) {
-  const [feedback, setFeedback] = useState<FeedbackType>(initialFeedback)
-  const [loading, setLoading] = useState(false)
+  const [feedback, setFeedback] = useState<FeedbackType>(initialFeedback);
+  const [loading, setLoading] = useState(false);
 
   const handleQuickFeedback = async (type: FeedbackType) => {
-    if (loading) return
+    if (loading) {
+      return;
+    }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const newFeedback = feedback === type ? null : type
+      const newFeedback = feedback === type ? null : type;
 
       const response = await fetch('/api/feedback', {
         method: 'POST',
@@ -216,36 +220,35 @@ export function MessageFeedbackInline({
           feedback: newFeedback,
           runId: langsmithRunId,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to submit feedback')
+        throw new Error('Failed to submit feedback');
       }
 
-      setFeedback(newFeedback)
+      setFeedback(newFeedback);
 
       if (onFeedback) {
-        await onFeedback(newFeedback)
+        await onFeedback(newFeedback);
       }
-    } catch (error) {
-      console.error('Error submitting feedback:', error)
+    } catch {
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className={cn('inline-flex items-center gap-0.5 ml-2', className)}>
+    <div className={cn('ml-2 inline-flex items-center gap-0.5', className)}>
       <button
-        onClick={() => handleQuickFeedback('upvote')}
-        disabled={loading}
         className={cn(
-          'p-1 rounded transition-all',
+          'rounded p-1 transition-all',
           'hover:bg-accent/50',
           feedback === 'upvote' && 'text-green-500',
           !feedback && 'text-muted-foreground/50',
-          loading && 'opacity-50 cursor-not-allowed'
+          loading && 'cursor-not-allowed opacity-50'
         )}
+        disabled={loading}
+        onClick={() => handleQuickFeedback('upvote')}
         title="Helpful"
       >
         <ThumbsUp
@@ -254,15 +257,15 @@ export function MessageFeedbackInline({
         />
       </button>
       <button
-        onClick={() => handleQuickFeedback('downvote')}
-        disabled={loading}
         className={cn(
-          'p-1 rounded transition-all',
+          'rounded p-1 transition-all',
           'hover:bg-accent/50',
           feedback === 'downvote' && 'text-red-500',
           !feedback && 'text-muted-foreground/50',
-          loading && 'opacity-50 cursor-not-allowed'
+          loading && 'cursor-not-allowed opacity-50'
         )}
+        disabled={loading}
+        onClick={() => handleQuickFeedback('downvote')}
         title="Not helpful"
       >
         <ThumbsDown
@@ -271,5 +274,5 @@ export function MessageFeedbackInline({
         />
       </button>
     </div>
-  )
+  );
 }

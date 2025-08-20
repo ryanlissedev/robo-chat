@@ -1,75 +1,75 @@
-"use client"
+'use client';
 
-import { create } from "zustand"
-import { devtools, subscribeWithSelector } from "zustand/middleware"
+import { create } from 'zustand';
+import { devtools, subscribeWithSelector } from 'zustand/middleware';
 
 // Types
-export type ReasoningEffort = "low" | "medium" | "high"
+export type ReasoningEffort = 'low' | 'medium' | 'high';
 
-export interface DialogState {
-  auth: boolean
-  feedback: boolean
-  createProject: boolean
-  deleteChat: boolean
-  deleteProject: boolean
-  settings: boolean
-  publish: boolean
-}
+export type DialogState = {
+  auth: boolean;
+  feedback: boolean;
+  createProject: boolean;
+  deleteChat: boolean;
+  deleteProject: boolean;
+  settings: boolean;
+  publish: boolean;
+};
 
-export interface ChatUIState {
-  enableSearch: boolean
-  reasoningEffort: ReasoningEffort
-  isSubmitting: boolean
-  hasDialogAuth: boolean
+export type ChatUIState = {
+  enableSearch: boolean;
+  reasoningEffort: ReasoningEffort;
+  isSubmitting: boolean;
+  hasDialogAuth: boolean;
   quotedText: {
-    text: string
-    messageId: string
-  } | null
-}
+    text: string;
+    messageId: string;
+  } | null;
+};
 
-export interface FormState {
+export type FormState = {
   // Temporary form data for optimistic updates
-  createProjectName: string
-  feedbackComment: string
-  editingMessageId: string | null
-  editingContent: string
-}
+  createProjectName: string;
+  feedbackComment: string;
+  editingMessageId: string | null;
+  editingContent: string;
+};
 
-export interface ExpandableStates {
+export type ExpandableStates = {
   // Track which components are expanded/collapsed
-  toolInvocations: Record<string, boolean>
-  sourcesList: Record<string, boolean>
-  reasoning: Record<string, boolean>
-}
+  toolInvocations: Record<string, boolean>;
+  sourcesList: Record<string, boolean>;
+  reasoning: Record<string, boolean>;
+};
 
-export interface LoadingStates {
+export type LoadingStates = {
   // Track loading states for various operations
-  googleSignIn: boolean
-  feedbackSubmission: boolean
-  fileUpload: boolean
-  messageEdit: boolean
-  projectCreation: boolean
-  projectDeletion: boolean
-  chatDeletion: boolean
-}
+  googleSignIn: boolean;
+  feedbackSubmission: boolean;
+  fileUpload: boolean;
+  messageEdit: boolean;
+  projectCreation: boolean;
+  projectDeletion: boolean;
+  chatDeletion: boolean;
+};
 
-export interface ErrorStates {
+export type ErrorStates = {
   // Track error states
-  googleSignIn: string | null
-  feedbackSubmission: string | null
-  fileUpload: string | null
-  messageEdit: string | null
-  projectCreation: string | null
-}
+  googleSignIn: string | null;
+  feedbackSubmission: string | null;
+  fileUpload: string | null;
+  messageEdit: string | null;
+  projectCreation: string | null;
+};
 
-export interface UIState {
-  dialogs: DialogState
-  chatUI: ChatUIState
-  forms: FormState
-  expandable: ExpandableStates
-  loading: LoadingStates
-  errors: ErrorStates
-}
+export type UIState = {
+  dialogs: DialogState;
+  chatUI: ChatUIState;
+  forms: FormState;
+  expandable: ExpandableStates;
+  loading: LoadingStates;
+  errors: ErrorStates;
+};
 
 // Initial state
 const initialDialogState: DialogState = {
@@ -80,28 +80,28 @@ const initialDialogState: DialogState = {
   deleteProject: false,
   settings: false,
   publish: false,
-}
+};
 
 const initialChatUIState: ChatUIState = {
   enableSearch: true,
-  reasoningEffort: "medium",
+  reasoningEffort: 'medium',
   isSubmitting: false,
   hasDialogAuth: false,
   quotedText: null,
-}
+};
 
 const initialFormState: FormState = {
-  createProjectName: "",
-  feedbackComment: "",
+  createProjectName: '',
+  feedbackComment: '',
   editingMessageId: null,
-  editingContent: "",
-}
+  editingContent: '',
+};
 
 const initialExpandableStates: ExpandableStates = {
   toolInvocations: {},
   sourcesList: {},
   reasoning: {},
-}
+};
 
 const initialLoadingStates: LoadingStates = {
   googleSignIn: false,
@@ -111,7 +111,7 @@ const initialLoadingStates: LoadingStates = {
   projectCreation: false,
   projectDeletion: false,
   chatDeletion: false,
-}
+};
 
 const initialErrorStates: ErrorStates = {
   googleSignIn: null,
@@ -119,49 +119,52 @@ const initialErrorStates: ErrorStates = {
   fileUpload: null,
   messageEdit: null,
   projectCreation: null,
-}
+};
 
 // Store definition
 export interface UIStore extends UIState {
   // Dialog actions
-  openDialog: (dialog: keyof DialogState) => void
-  closeDialog: (dialog: keyof DialogState) => void
-  closeAllDialogs: () => void
+  openDialog: (dialog: keyof DialogState) => void;
+  closeDialog: (dialog: keyof DialogState) => void;
+  closeAllDialogs: () => void;
 
   // Chat UI actions
-  setEnableSearch: (enabled: boolean) => void
-  setReasoningEffort: (effort: ReasoningEffort) => void
-  setIsSubmitting: (isSubmitting: boolean) => void
-  setHasDialogAuth: (hasAuth: boolean) => void
-  setQuotedText: (quoted: ChatUIState["quotedText"]) => void
-  clearQuotedText: () => void
+  setEnableSearch: (enabled: boolean) => void;
+  setReasoningEffort: (effort: ReasoningEffort) => void;
+  setIsSubmitting: (isSubmitting: boolean) => void;
+  setHasDialogAuth: (hasAuth: boolean) => void;
+  setQuotedText: (quoted: ChatUIState['quotedText']) => void;
+  clearQuotedText: () => void;
 
   // Form actions
-  setFormField: <K extends keyof FormState>(field: K, value: FormState[K]) => void
-  clearForm: () => void
-  clearFormField: (field: keyof FormState) => void
+  setFormField: <K extends keyof FormState>(
+    field: K,
+    value: FormState[K]
+  ) => void;
+  clearForm: () => void;
+  clearFormField: (field: keyof FormState) => void;
 
   // Expandable actions
   setExpanded: (
     category: keyof ExpandableStates,
     id: string,
     expanded: boolean
-  ) => void
-  toggleExpanded: (category: keyof ExpandableStates, id: string) => void
-  clearExpandedStates: (category?: keyof ExpandableStates) => void
+  ) => void;
+  toggleExpanded: (category: keyof ExpandableStates, id: string) => void;
+  clearExpandedStates: (category?: keyof ExpandableStates) => void;
 
   // Loading actions
-  setLoading: (operation: keyof LoadingStates, loading: boolean) => void
-  clearAllLoading: () => void
+  setLoading: (operation: keyof LoadingStates, loading: boolean) => void;
+  clearAllLoading: () => void;
 
   // Error actions
-  setError: (operation: keyof ErrorStates, error: string | null) => void
-  clearError: (operation: keyof ErrorStates) => void
-  clearAllErrors: () => void
+  setError: (operation: keyof ErrorStates, error: string | null) => void;
+  clearError: (operation: keyof ErrorStates) => void;
+  clearAllErrors: () => void;
 
   // Utility actions
-  reset: () => void
-  resetDialog: (dialog: keyof DialogState) => void
+  reset: () => void;
+  resetDialog: (dialog: keyof DialogState) => void;
 }
 
 // Create the store
@@ -196,11 +199,7 @@ export const useUIStore = create<UIStore>()(
         ),
 
       closeAllDialogs: () =>
-        set(
-          { dialogs: initialDialogState },
-          false,
-          "closeAllDialogs"
-        ),
+        set({ dialogs: initialDialogState }, false, 'closeAllDialogs'),
 
       // Chat UI actions
       setEnableSearch: (enabled) =>
@@ -245,7 +244,7 @@ export const useUIStore = create<UIStore>()(
             chatUI: { ...state.chatUI, quotedText: quoted },
           }),
           false,
-          "setQuotedText"
+          'setQuotedText'
         ),
 
       clearQuotedText: () =>
@@ -254,7 +253,7 @@ export const useUIStore = create<UIStore>()(
             chatUI: { ...state.chatUI, quotedText: null },
           }),
           false,
-          "clearQuotedText"
+          'clearQuotedText'
         ),
 
       // Form actions
@@ -267,12 +266,7 @@ export const useUIStore = create<UIStore>()(
           `setFormField/${field}`
         ),
 
-      clearForm: () =>
-        set(
-          { forms: initialFormState },
-          false,
-          "clearForm"
-        ),
+      clearForm: () => set({ forms: initialFormState }, false, 'clearForm'),
 
       clearFormField: (field) =>
         set(
@@ -300,7 +294,7 @@ export const useUIStore = create<UIStore>()(
         ),
 
       toggleExpanded: (category, id) => {
-        const currentState = get().expandable[category][id] ?? false
+        const currentState = get().expandable[category][id] ?? false;
         set(
           (state) => ({
             expandable: {
@@ -313,7 +307,7 @@ export const useUIStore = create<UIStore>()(
           }),
           false,
           `toggleExpanded/${category}/${id}`
-        )
+        );
       },
 
       clearExpandedStates: (category) =>
@@ -324,7 +318,7 @@ export const useUIStore = create<UIStore>()(
               : initialExpandableStates,
           }),
           false,
-          `clearExpandedStates/${category || "all"}`
+          `clearExpandedStates/${category || 'all'}`
         ),
 
       // Loading actions
@@ -338,11 +332,7 @@ export const useUIStore = create<UIStore>()(
         ),
 
       clearAllLoading: () =>
-        set(
-          { loading: initialLoadingStates },
-          false,
-          "clearAllLoading"
-        ),
+        set({ loading: initialLoadingStates }, false, 'clearAllLoading'),
 
       // Error actions
       setError: (operation, error) =>
@@ -364,11 +354,7 @@ export const useUIStore = create<UIStore>()(
         ),
 
       clearAllErrors: () =>
-        set(
-          { errors: initialErrorStates },
-          false,
-          "clearAllErrors"
-        ),
+        set({ errors: initialErrorStates }, false, 'clearAllErrors'),
 
       // Utility actions
       reset: () =>
@@ -382,7 +368,7 @@ export const useUIStore = create<UIStore>()(
             errors: initialErrorStates,
           },
           false,
-          "reset"
+          'reset'
         ),
 
       resetDialog: (dialog) =>
@@ -398,117 +384,132 @@ export const useUIStore = create<UIStore>()(
         ),
     })),
     {
-      name: "ui-store",
-      enabled: process.env.NODE_ENV === "development",
+      name: 'ui-store',
+      enabled: process.env.NODE_ENV === 'development',
     }
   )
-)
+);
 
 // Selectors for performance optimization
 export const useDialogState = (dialog: keyof DialogState) =>
-  useUIStore((state) => state.dialogs[dialog])
+  useUIStore((state) => state.dialogs[dialog]);
 
-export const useChatUIState = () =>
-  useUIStore((state) => state.chatUI)
+export const useChatUIState = () => useUIStore((state) => state.chatUI);
 
-export const useFormState = () =>
-  useUIStore((state) => state.forms)
+export const useFormState = () => useUIStore((state) => state.forms);
 
-export const useExpandableState = (category: keyof ExpandableStates, id: string) =>
-  useUIStore((state) => state.expandable[category][id] ?? false)
+export const useExpandableState = (
+  category: keyof ExpandableStates,
+  id: string
+) => useUIStore((state) => state.expandable[category][id] ?? false);
 
 export const useLoadingState = (operation: keyof LoadingStates) =>
-  useUIStore((state) => state.loading[operation])
+  useUIStore((state) => state.loading[operation]);
 
 export const useErrorState = (operation: keyof ErrorStates) =>
-  useUIStore((state) => state.errors[operation])
+  useUIStore((state) => state.errors[operation]);
 
 // Compound selectors
-export const useDialogActions = () =>
-  useUIStore((state) => ({
-    openDialog: state.openDialog,
-    closeDialog: state.closeDialog,
-    closeAllDialogs: state.closeAllDialogs,
-    resetDialog: state.resetDialog,
-  }))
+export const useDialogActions = () => {
+  const openDialog = useUIStore((state) => state.openDialog);
+  const closeDialog = useUIStore((state) => state.closeDialog);
+  const closeAllDialogs = useUIStore((state) => state.closeAllDialogs);
+  const resetDialog = useUIStore((state) => state.resetDialog);
 
-export const useChatUIActions = () =>
-  useUIStore((state) => ({
-    setEnableSearch: state.setEnableSearch,
-    setReasoningEffort: state.setReasoningEffort,
-    setIsSubmitting: state.setIsSubmitting,
-    setHasDialogAuth: state.setHasDialogAuth,
-    setQuotedText: state.setQuotedText,
-    clearQuotedText: state.clearQuotedText,
-  }))
+  return { openDialog, closeDialog, closeAllDialogs, resetDialog };
+};
 
-export const useFormActions = () =>
-  useUIStore((state) => ({
-    setFormField: state.setFormField,
-    clearForm: state.clearForm,
-    clearFormField: state.clearFormField,
-  }))
+export const useChatUIActions = () => {
+  const setEnableSearch = useUIStore((state) => state.setEnableSearch);
+  const setReasoningEffort = useUIStore((state) => state.setReasoningEffort);
+  const setIsSubmitting = useUIStore((state) => state.setIsSubmitting);
+  const setHasDialogAuth = useUIStore((state) => state.setHasDialogAuth);
+  const setQuotedText = useUIStore((state) => state.setQuotedText);
+  const clearQuotedText = useUIStore((state) => state.clearQuotedText);
 
-export const useExpandableActions = () =>
-  useUIStore((state) => ({
-    setExpanded: state.setExpanded,
-    toggleExpanded: state.toggleExpanded,
-    clearExpandedStates: state.clearExpandedStates,
-  }))
+  return {
+    setEnableSearch,
+    setReasoningEffort,
+    setIsSubmitting,
+    setHasDialogAuth,
+    setQuotedText,
+    clearQuotedText,
+  };
+};
 
-export const useLoadingActions = () =>
-  useUIStore((state) => ({
-    setLoading: state.setLoading,
-    clearAllLoading: state.clearAllLoading,
-  }))
+export const useFormActions = () => {
+  const setFormField = useUIStore((state) => state.setFormField);
+  const clearForm = useUIStore((state) => state.clearForm);
+  const clearFormField = useUIStore((state) => state.clearFormField);
 
-export const useErrorActions = () =>
-  useUIStore((state) => ({
-    setError: state.setError,
-    clearError: state.clearError,
-    clearAllErrors: state.clearAllErrors,
-  }))
+  return { setFormField, clearForm, clearFormField };
+};
+
+export const useExpandableActions = () => {
+  const setExpanded = useUIStore((state) => state.setExpanded);
+  const toggleExpanded = useUIStore((state) => state.toggleExpanded);
+  const clearExpandedStates = useUIStore((state) => state.clearExpandedStates);
+
+  return { setExpanded, toggleExpanded, clearExpandedStates };
+};
+
+export const useLoadingActions = () => {
+  const setLoading = useUIStore((state) => state.setLoading);
+  const clearAllLoading = useUIStore((state) => state.clearAllLoading);
+
+  return { setLoading, clearAllLoading };
+};
+
+export const useErrorActions = () => {
+  const setError = useUIStore((state) => state.setError);
+  const clearError = useUIStore((state) => state.clearError);
+  const clearAllErrors = useUIStore((state) => state.clearAllErrors);
+
+  return { setError, clearError, clearAllErrors };
+};
 
 // Utility hooks for common patterns
 export const useDialogToggle = (dialog: keyof DialogState) => {
-  const isOpen = useDialogState(dialog)
-  const { openDialog, closeDialog } = useDialogActions()
-  
-  return {
-    isOpen,
-    open: () => openDialog(dialog),
-    close: () => closeDialog(dialog),
-    toggle: () => isOpen ? closeDialog(dialog) : openDialog(dialog),
-  }
-}
+  const isOpen = useDialogState(dialog);
+  const openDialog = useUIStore((state) => state.openDialog);
+  const closeDialog = useUIStore((state) => state.closeDialog);
+
+  const open = () => openDialog(dialog);
+  const close = () => closeDialog(dialog);
+  const toggle = () => (isOpen ? closeDialog(dialog) : openDialog(dialog));
+
+  return { isOpen, open, close, toggle };
+};
 
 export const useOptimisticState = <T>(
-  initialValue: T,
+  _initialValue: T,
   operation: keyof LoadingStates
 ) => {
-  const isLoading = useLoadingState(operation)
-  const error = useErrorState(operation as keyof ErrorStates)
-  const { setLoading } = useLoadingActions()
-  const { setError, clearError } = useErrorActions()
+  const isLoading = useLoadingState(operation);
+  const error = useErrorState(operation as keyof ErrorStates);
+  const setLoading = useUIStore((state) => state.setLoading);
+  const setError = useUIStore((state) => state.setError);
+  const clearError = useUIStore((state) => state.clearError);
 
   const execute = async (asyncFn: () => Promise<T>): Promise<T | null> => {
     try {
-      setLoading(operation, true)
-      clearError(operation as keyof ErrorStates)
-      const result = await asyncFn()
-      return result
+      setLoading(operation, true);
+      clearError(operation as keyof ErrorStates);
+      const result = await asyncFn();
+      return result;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred"
-      setError(operation as keyof ErrorStates, errorMessage)
-      return null
+      const errorMessage =
+        err instanceof Error ? err.message : 'An error occurred';
+      setError(operation as keyof ErrorStates, errorMessage);
+      return null;
     } finally {
-      setLoading(operation, false)
+      setLoading(operation, false);
     }
-  }
+  };
 
   return {
     isLoading,
     error,
     execute,
-  }
-}
+  };
+};

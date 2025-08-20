@@ -1,51 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { 
-  decryptApiKey,
+import { type NextRequest, NextResponse } from 'next/server';
+import {
   encryptApiKey,
   generateApiKey,
-  validateApiKeyFormat 
-} from '@/lib/security/encryption'
-import { rateLimit, logSecurityEvent } from '@/lib/security/middleware'
+  validateApiKeyFormat,
+} from '@/lib/security/encryption';
+import { logSecurityEvent, rateLimit } from '@/lib/security/middleware';
+import { createClient } from '@/lib/supabase/server';
 
 // POST: Rotate an API key
 export async function POST(req: NextRequest) {
   // Apply rate limiting
-  const rateLimitResponse = await rateLimit(req, 'api_key_operations')
-  if (rateLimitResponse) return rateLimitResponse
+  const rateLimitResponse = await rateLimit(req, 'api_key_operations');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
 
   try {
-    const body = await req.json()
-    const { provider, newApiKey, autoGenerate = false } = body
+    const body = await req.json();
+    const { provider, newApiKey, autoGenerate = false } = body;
 
     if (!provider) {
       return NextResponse.json(
         { error: 'Provider is required' },
         { status: 400 }
-      )
+      );
     }
 
-    if (!autoGenerate && !newApiKey) {
+    if (!(autoGenerate || newApiKey)) {
       return NextResponse.json(
         { error: 'New API key is required or set autoGenerate to true' },
         { status: 400 }
-      )
+      );
     }
 
-    const supabase = await createClient()
+    const supabase = await createClient();
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database connection failed' },
         { status: 500 }
-      )
+      );
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
-      )
+      );
     }
 
     // Get the current key
@@ -54,21 +58,21 @@ export async function POST(req: NextRequest) {
       .select('encrypted_key, iv')
       .eq('user_id', user.id)
       .eq('provider', provider)
-      .single()
+      .single();
 
     if (fetchError || !currentKey) {
       return NextResponse.json(
         { error: 'No existing API key found for rotation' },
         { status: 404 }
-      )
+      );
     }
 
     // Prepare the new key
-    let finalNewKey = newApiKey
+    let finalNewKey = newApiKey;
     if (autoGenerate) {
       // Generate a new key (useful for internal APIs)
-      const prefix = provider === 'internal' ? 'rr' : 'sk'
-      finalNewKey = generateApiKey(prefix)
+      const prefix = provider === 'internal' ? 'rr' : 'sk';
+      finalNewKey = generateApiKey(prefix);
     }
 
     // Validate new key format
@@ -76,14 +80,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: `Invalid API key format for ${provider}` },
         { status: 400 }
-      )
+      );
     }
 
     // Encrypt the new key
-    const { encrypted, iv } = encryptApiKey(finalNewKey, user.id)
+    const { encrypted, iv } = encryptApiKey(finalNewKey, user.id);
 
     // Start a transaction-like operation
-    const timestamp = new Date().toISOString()
+    const timestamp = new Date().toISOString();
 
     // Backup the old key (store in audit log with encrypted value) - optional
     try {
@@ -91,8 +95,8 @@ export async function POST(req: NextRequest) {
         provider,
         old_encrypted: currentKey.encrypted_key,
         old_iv: currentKey.iv,
-        rotation_timestamp: timestamp
-      })
+        rotation_timestamp: timestamp,
+      });
     } catch {}
 
     // Update with the new encrypted key
@@ -102,83 +106,82 @@ export async function POST(req: NextRequest) {
         encrypted_key: encrypted,
         iv,
         last_rotated: timestamp,
-        updated_at: timestamp
+        updated_at: timestamp,
       })
       .eq('user_id', user.id)
-      .eq('provider', provider)
+      .eq('provider', provider);
 
     if (updateError) {
-      // Try to restore if update fails
-      console.error('Failed to rotate API key:', updateError)
-      
       try {
         await logSecurityEvent(supabase, user.id, 'key_rotation_failed', {
           provider,
-          error: updateError.message
-        })
+          error: updateError.message,
+        });
       } catch {}
 
       return NextResponse.json(
         { error: 'Failed to rotate API key' },
         { status: 500 }
-      )
+      );
     }
 
     // Log successful rotation (optional)
     try {
       await logSecurityEvent(supabase, user.id, 'key_rotated', {
         provider,
-        auto_generated: autoGenerate
-      })
+        auto_generated: autoGenerate,
+      });
     } catch {}
 
     // Return the new key only if auto-generated
-    const response: any = {
+    const response: { success: boolean; message: string; new_key?: string; warning?: string } = {
       success: true,
-      message: 'API key rotated successfully'
-    }
+      message: 'API key rotated successfully',
+    };
 
     if (autoGenerate) {
-      response.new_key = finalNewKey
-      response.warning = 'Save this key securely. It will not be shown again.'
+      response.new_key = finalNewKey;
+      response.warning = 'Save this key securely. It will not be shown again.';
     }
 
-    return NextResponse.json(response)
-  } catch (error) {
-    console.error('Error in POST /api/settings/rotate-key:', error)
+    return NextResponse.json(response);
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 
 // GET: Check if key needs rotation
 export async function GET(req: NextRequest) {
-  const provider = req.nextUrl.searchParams.get('provider')
+  const provider = req.nextUrl.searchParams.get('provider');
 
   if (!provider) {
     return NextResponse.json(
       { error: 'Provider is required' },
       { status: 400 }
-    )
+    );
   }
 
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database connection failed' },
         { status: 500 }
-      )
+      );
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
-      )
+      );
     }
 
     // Get the key's last rotation date
@@ -187,36 +190,30 @@ export async function GET(req: NextRequest) {
       .select('created_at')
       .eq('user_id', user.id)
       .eq('provider', provider)
-      .single()
+      .single();
 
     if (fetchError || !keyData) {
-      return NextResponse.json(
-        { error: 'API key not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'API key not found' }, { status: 404 });
     }
 
     // Optional: user's security settings (table may not exist)
-    let rotationConfig: any = {}
+    let rotationConfig: { requireApiKeyRotation?: boolean; rotationDays?: number } = {};
     try {
-      const { data: securitySettings } = await supabase
-        .from('user_security_settings')
-        .select('config')
-        .eq('user_id', user.id)
-        .single()
-      rotationConfig = securitySettings?.config || {}
+      // For now, use default rotation settings
+      // TODO: Add security settings to user_preferences table in future migration
+      rotationConfig = { requireApiKeyRotation: false, rotationDays: 90 };
     } catch {}
-    const requireRotation = rotationConfig.requireApiKeyRotation ?? false
-    const rotationDays = rotationConfig.rotationDays ?? 90
+    const requireRotation = rotationConfig.requireApiKeyRotation ?? false;
+    const rotationDays = rotationConfig.rotationDays ?? 90;
 
     // Calculate if rotation is needed
-    const lastRotated = new Date(keyData.created_at as unknown as string)
+    const lastRotated = new Date(keyData.created_at as unknown as string);
     const daysSinceRotation = Math.floor(
       (Date.now() - lastRotated.getTime()) / (1000 * 60 * 60 * 24)
-    )
+    );
 
-    const needsRotation = requireRotation && daysSinceRotation >= rotationDays
-    const recommendedRotation = daysSinceRotation >= 180 // Recommend after 6 months
+    const needsRotation = requireRotation && daysSinceRotation >= rotationDays;
+    const recommendedRotation = daysSinceRotation >= 180; // Recommend after 6 months
 
     return NextResponse.json({
       needsRotation,
@@ -224,14 +221,13 @@ export async function GET(req: NextRequest) {
       daysSinceRotation,
       rotationPolicy: {
         enabled: requireRotation,
-        days: rotationDays
-      }
-    })
-  } catch (error) {
-    console.error('Error in GET /api/settings/rotate-key:', error)
+        days: rotationDays,
+      },
+    });
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }

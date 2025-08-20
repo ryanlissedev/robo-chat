@@ -1,50 +1,50 @@
-"use client"
+'use client';
 
-import { PopoverContentAuth } from "@/app/components/chat-input/popover-content-auth"
-import { useBreakpoint } from "@/app/hooks/use-breakpoint"
-import { useKeyShortcut } from "@/app/hooks/use-key-shortcut"
-import { Button } from "@/components/ui/button"
+import {
+  CaretDownIcon,
+  MagnifyingGlassIcon,
+  StarIcon,
+} from '@phosphor-icons/react';
+import { useRef, useState } from 'react';
+import { PopoverContentAuth } from '@/app/components/chat-input/popover-content-auth';
+import { useBreakpoint } from '@/app/hooks/use-breakpoint';
+import { useKeyShortcut } from '@/app/hooks/use-key-shortcut';
+import { Button } from '@/components/ui/button';
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer"
+} from '@/components/ui/drawer';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Popover, PopoverTrigger } from "@/components/ui/popover"
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverTrigger } from '@/components/ui/popover';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { useModel } from "@/lib/model-store/provider"
-import { filterAndSortModels } from "@/lib/model-store/utils"
-import { ModelConfig } from "@/lib/models/types"
-import { PROVIDERS } from "@/lib/providers"
-import { useUserPreferences } from "@/lib/user-preference-store/provider"
-import { cn } from "@/lib/utils"
-import {
-  CaretDownIcon,
-  MagnifyingGlassIcon,
-  StarIcon,
-} from "@phosphor-icons/react"
-import { useRef, useState } from "react"
-import { ProModelDialog } from "./pro-dialog"
-import { SubMenu } from "./sub-menu"
+} from '@/components/ui/tooltip';
+import { useModel } from '@/lib/model-store/provider';
+import { filterAndSortModels } from '@/lib/model-store/utils';
+import type { ModelConfig } from '@/lib/models/types';
+import { PROVIDERS } from '@/lib/providers';
+import { useUserPreferences } from '@/lib/user-preference-store/provider';
+import { cn } from '@/lib/utils';
+import { ProModelDialog } from './pro-dialog';
+import { SubMenu } from './sub-menu';
 
 type ModelSelectorProps = {
-  selectedModelId: string
-  setSelectedModelId: (modelId: string) => void
-  className?: string
-  isUserAuthenticated?: boolean
-}
+  selectedModelId: string;
+  setSelectedModelId: (modelId: string) => void;
+  className?: string;
+  isUserAuthenticated?: boolean;
+};
 
 export function ModelSelector({
   selectedModelId,
@@ -52,59 +52,59 @@ export function ModelSelector({
   className,
   isUserAuthenticated = true,
 }: ModelSelectorProps) {
-  const { models, isLoading: isLoadingModels, favoriteModels } = useModel()
-  const { isModelHidden } = useUserPreferences()
+  const { models, isLoading: isLoadingModels, favoriteModels } = useModel();
+  const { isModelHidden } = useUserPreferences();
 
-  const currentModel = models.find((model) => model.id === selectedModelId)
+  const currentModel = models.find((model) => model.id === selectedModelId);
   const currentProvider = PROVIDERS.find(
     (provider) => provider.id === currentModel?.icon
-  )
-  const isMobile = useBreakpoint(768)
+  );
+  const isMobile = useBreakpoint(768);
 
-  const [hoveredModel, setHoveredModel] = useState<string | null>(null)
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [isProDialogOpen, setIsProDialogOpen] = useState(false)
-  const [selectedProModel, setSelectedProModel] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState("")
+  const [hoveredModel, setHoveredModel] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isProDialogOpen, setIsProDialogOpen] = useState(false);
+  const [selectedProModel, setSelectedProModel] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Ref for input to maintain focus
-  const searchInputRef = useRef<HTMLInputElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useKeyShortcut(
-    (e) => (e.key === "p" || e.key === "P") && e.metaKey && e.shiftKey,
+    (e) => (e.key === 'p' || e.key === 'P') && e.metaKey && e.shiftKey,
     () => {
       if (isMobile) {
-        setIsDrawerOpen((prev) => !prev)
+        setIsDrawerOpen((prev) => !prev);
       } else {
-        setIsDropdownOpen((prev) => !prev)
+        setIsDropdownOpen((prev) => !prev);
       }
     }
-  )
+  );
 
   const renderModelItem = (model: ModelConfig) => {
-    const isLocked = !model.accessible
-    const provider = PROVIDERS.find((provider) => provider.id === model.icon)
+    const isLocked = !model.accessible;
+    const provider = PROVIDERS.find((provider) => provider.id === model.icon);
 
     return (
       <div
-        key={model.id}
         className={cn(
-          "flex w-full items-center justify-between px-3 py-2",
-          selectedModelId === model.id && "bg-accent"
+          'flex w-full items-center justify-between px-3 py-2',
+          selectedModelId === model.id && 'bg-accent'
         )}
+        key={model.id}
         onClick={() => {
           if (isLocked) {
-            setSelectedProModel(model.id)
-            setIsProDialogOpen(true)
-            return
+            setSelectedProModel(model.id);
+            setIsProDialogOpen(true);
+            return;
           }
 
-          setSelectedModelId(model.id)
+          setSelectedModelId(model.id);
           if (isMobile) {
-            setIsDrawerOpen(false)
+            setIsDrawerOpen(false);
           } else {
-            setIsDropdownOpen(false)
+            setIsDropdownOpen(false);
           }
         }}
       >
@@ -115,60 +115,62 @@ export function ModelSelector({
           </div>
         </div>
         {isLocked && (
-          <div className="border-input bg-accent text-muted-foreground flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-medium">
+          <div className="flex items-center gap-0.5 rounded-full border border-input bg-accent px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground">
             <StarIcon className="size-2" />
             <span>Locked</span>
           </div>
         )}
       </div>
-    )
-  }
+    );
+  };
 
   // Get the hovered model data
-  const hoveredModelData = models.find((model) => model.id === hoveredModel)
+  const hoveredModelData = models.find((model) => model.id === hoveredModel);
 
   const filteredModels = filterAndSortModels(
     models,
     favoriteModels || [],
     searchQuery,
     isModelHidden
-  )
+  );
 
   const trigger = (
     <Button
-      variant="outline"
-      className={cn("dark:bg-secondary justify-between", className)}
+      className={cn('justify-between dark:bg-secondary', className)}
       disabled={isLoadingModels}
+      variant="outline"
+      data-testid="model-selector-trigger"
     >
       <div className="flex items-center gap-2">
         {currentProvider?.icon && <currentProvider.icon className="size-5" />}
-        <span>{currentModel?.name || "Select model"}</span>
+        <span data-testid="selected-model-name">{currentModel?.name || 'Select model'}</span>
       </div>
       <CaretDownIcon className="size-4 opacity-50" />
     </Button>
-  )
+  );
 
   // Handle input change without losing focus
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation()
-    setSearchQuery(e.target.value)
-  }
+    e.stopPropagation();
+    setSearchQuery(e.target.value);
+  };
 
-  // If user is not authenticated, show the auth popover
-  if (!isUserAuthenticated) {
+  // INTERNAL USE: Always allow model selection for guest users
+  // If user is not authenticated, show the auth popover (disabled for internal use)
+  if (false && !isUserAuthenticated) {
     return (
       <Popover>
         <Tooltip>
           <TooltipTrigger asChild>
             <PopoverTrigger asChild>
               <Button
-                size="sm"
-                variant="secondary"
                 className={cn(
-                  "border-border dark:bg-secondary text-accent-foreground h-9 w-auto border bg-transparent",
+                  'h-9 w-auto border border-border bg-transparent text-accent-foreground dark:bg-secondary',
                   className
                 )}
+                size="sm"
                 type="button"
+                variant="secondary"
               >
                 {currentProvider?.icon && (
                   <currentProvider.icon className="size-5" />
@@ -182,18 +184,18 @@ export function ModelSelector({
         </Tooltip>
         <PopoverContentAuth />
       </Popover>
-    )
+    );
   }
 
   if (isMobile) {
     return (
       <>
         <ProModelDialog
+          currentModel={selectedProModel || ''}
           isOpen={isProDialogOpen}
           setIsOpen={setIsProDialogOpen}
-          currentModel={selectedProModel || ""}
         />
-        <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <Drawer onOpenChange={setIsDrawerOpen} open={isDrawerOpen}>
           <DrawerTrigger asChild>{trigger}</DrawerTrigger>
           <DrawerContent>
             <DrawerHeader>
@@ -201,21 +203,21 @@ export function ModelSelector({
             </DrawerHeader>
             <div className="px-4 pb-2">
               <div className="relative">
-                <MagnifyingGlassIcon className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
+                <MagnifyingGlassIcon className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  ref={searchInputRef}
-                  placeholder="Search models..."
                   className="pl-8"
-                  value={searchQuery}
                   onChange={handleSearchChange}
                   onClick={(e) => e.stopPropagation()}
+                  placeholder="Search models..."
+                  ref={searchInputRef}
+                  value={searchQuery}
                 />
               </div>
             </div>
             <div className="flex h-full flex-col space-y-0 overflow-y-auto px-4 pb-6">
               {isLoadingModels ? (
                 <div className="flex h-full flex-col items-center justify-center p-6 text-center">
-                  <p className="text-muted-foreground mb-2 text-sm">
+                  <p className="mb-2 text-muted-foreground text-sm">
                     Loading models...
                   </p>
                 </div>
@@ -223,14 +225,14 @@ export function ModelSelector({
                 filteredModels.map((model) => renderModelItem(model))
               ) : (
                 <div className="flex h-full flex-col items-center justify-center p-6 text-center">
-                  <p className="text-muted-foreground mb-2 text-sm">
+                  <p className="mb-2 text-muted-foreground text-sm">
                     No results found.
                   </p>
                   <a
-                    href="https://github.com/ibelick/zola/issues/new?title=Model%20Request%3A%20"
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="text-muted-foreground text-sm underline"
+                    href="https://github.com/ibelick/zola/issues/new?title=Model%20Request%3A%20"
+                    rel="noopener noreferrer"
+                    target="_blank"
                   >
                     Request a new model
                   </a>
@@ -240,95 +242,99 @@ export function ModelSelector({
           </DrawerContent>
         </Drawer>
       </>
-    )
+    );
   }
 
   return (
     <div>
       <ProModelDialog
+        currentModel={selectedProModel || ''}
         isOpen={isProDialogOpen}
         setIsOpen={setIsProDialogOpen}
-        currentModel={selectedProModel || ""}
       />
       <Tooltip>
         <DropdownMenu
-          open={isDropdownOpen}
           onOpenChange={(open) => {
-            setIsDropdownOpen(open)
-            if (!open) {
-              setHoveredModel(null)
-              setSearchQuery("")
+            setIsDropdownOpen(open);
+            if (open) {
+              if (selectedModelId) {
+                setHoveredModel(selectedModelId);
+              }
             } else {
-              if (selectedModelId) setHoveredModel(selectedModelId)
+              setHoveredModel(null);
+              setSearchQuery('');
             }
           }}
+          open={isDropdownOpen}
         >
           <TooltipTrigger asChild>
             <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
           </TooltipTrigger>
           <TooltipContent>Switch model ⌘⇧P</TooltipContent>
           <DropdownMenuContent
-            className="flex h-[320px] w-[300px] flex-col space-y-0.5 overflow-visible p-0"
             align="start"
-            sideOffset={4}
+            className="flex h-[320px] w-[300px] flex-col space-y-0.5 overflow-visible p-0"
             forceMount
             side="top"
+            sideOffset={4}
+            data-testid="model-selector-content"
           >
-            <div className="bg-background sticky top-0 z-10 rounded-t-md border-b px-0 pt-0 pb-0">
+            <div className="sticky top-0 z-10 rounded-t-md border-b bg-background px-0 pt-0 pb-0">
               <div className="relative">
-                <MagnifyingGlassIcon className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
+                <MagnifyingGlassIcon className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  ref={searchInputRef}
-                  placeholder="Search models..."
-                  className="dark:bg-popover rounded-b-none border border-none pl-8 shadow-none focus-visible:ring-0"
-                  value={searchQuery}
+                  className="rounded-b-none border border-none pl-8 shadow-none focus-visible:ring-0 dark:bg-popover"
                   onChange={handleSearchChange}
                   onClick={(e) => e.stopPropagation()}
                   onFocus={(e) => e.stopPropagation()}
                   onKeyDown={(e) => e.stopPropagation()}
+                  placeholder="Search models..."
+                  ref={searchInputRef}
+                  value={searchQuery}
                 />
               </div>
             </div>
             <div className="flex h-full flex-col space-y-0 overflow-y-auto px-1 pt-0 pb-0">
               {isLoadingModels ? (
                 <div className="flex h-full flex-col items-center justify-center p-6 text-center">
-                  <p className="text-muted-foreground mb-2 text-sm">
+                  <p className="mb-2 text-muted-foreground text-sm">
                     Loading models...
                   </p>
                 </div>
               ) : filteredModels.length > 0 ? (
                 filteredModels.map((model) => {
-                  const isLocked = !model.accessible
+                  const isLocked = !model.accessible;
                   const provider = PROVIDERS.find(
                     (provider) => provider.id === model.icon
-                  )
+                  );
 
                   return (
                     <DropdownMenuItem
-                      key={model.id}
                       className={cn(
-                        "flex w-full items-center justify-between px-3 py-2",
-                        selectedModelId === model.id && "bg-accent"
+                        'flex w-full items-center justify-between px-3 py-2',
+                        selectedModelId === model.id && 'bg-accent'
                       )}
-                      onSelect={() => {
-                        if (isLocked) {
-                          setSelectedProModel(model.id)
-                          setIsProDialogOpen(true)
-                          return
-                        }
-
-                        setSelectedModelId(model.id)
-                        setIsDropdownOpen(false)
-                      }}
+                      key={model.id}
+                      data-testid={`model-option-${model.id}`}
                       onFocus={() => {
                         if (isDropdownOpen) {
-                          setHoveredModel(model.id)
+                          setHoveredModel(model.id);
                         }
                       }}
                       onMouseEnter={() => {
                         if (isDropdownOpen) {
-                          setHoveredModel(model.id)
+                          setHoveredModel(model.id);
                         }
+                      }}
+                      onSelect={() => {
+                        if (isLocked) {
+                          setSelectedProModel(model.id);
+                          setIsProDialogOpen(true);
+                          return;
+                        }
+
+                        setSelectedModelId(model.id);
+                        setIsDropdownOpen(false);
                       }}
                     >
                       <div className="flex items-center gap-3">
@@ -338,23 +344,23 @@ export function ModelSelector({
                         </div>
                       </div>
                       {isLocked && (
-                        <div className="border-input bg-accent text-muted-foreground flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-medium">
+                        <div className="flex items-center gap-0.5 rounded-full border border-input bg-accent px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground">
                           <span>Locked</span>
                         </div>
                       )}
                     </DropdownMenuItem>
-                  )
+                  );
                 })
               ) : (
                 <div className="flex h-full flex-col items-center justify-center p-6 text-center">
-                  <p className="text-muted-foreground mb-1 text-sm">
+                  <p className="mb-1 text-muted-foreground text-sm">
                     No results found.
                   </p>
                   <a
-                    href="https://github.com/ibelick/zola/issues/new?title=Model%20Request%3A%20"
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="text-muted-foreground text-sm underline"
+                    href="https://github.com/ibelick/zola/issues/new?title=Model%20Request%3A%20"
+                    rel="noopener noreferrer"
+                    target="_blank"
                   >
                     Request a new model
                   </a>
@@ -372,5 +378,5 @@ export function ModelSelector({
         </DropdownMenu>
       </Tooltip>
     </div>
-  )
+  );
 }

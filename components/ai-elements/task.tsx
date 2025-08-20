@@ -1,11 +1,16 @@
 'use client';
 
-const Collapsible = (props: any) => <div {...props} />
-const CollapsibleContent = (props: any) => <div {...props} />
-const CollapsibleTrigger = (props: any) => <button {...props} />
-import { cn } from '@/lib/utils';
+type CollapsibleProps = React.HTMLAttributes<HTMLDivElement>;
+type CollapsibleContentProps = React.HTMLAttributes<HTMLDivElement>;
+type CollapsibleTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
+
+const Collapsible = (props: CollapsibleProps) => <div {...props} />;
+const CollapsibleContent = (props: CollapsibleContentProps) => <div {...props} />;
+const CollapsibleTrigger = (props: CollapsibleTriggerProps) => <button {...props} />;
+
 import { ChevronDownIcon, SearchIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
+import { cn } from '@/lib/utils';
 
 export type TaskItemFileProps = ComponentProps<'div'>;
 

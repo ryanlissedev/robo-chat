@@ -1,61 +1,63 @@
-import { LinkMarkdown } from "@/app/components/chat/link-markdown"
-import { cn } from "@/lib/utils"
-import { marked } from "marked"
-import { memo, useId, useMemo } from "react"
-import ReactMarkdown, { Components } from "react-markdown"
-import remarkBreaks from "remark-breaks"
-import remarkGfm from "remark-gfm"
-import { ButtonCopy } from "../common/button-copy"
+import { marked } from 'marked';
+import { memo, useId, useMemo } from 'react';
+import ReactMarkdown, { type Components } from 'react-markdown';
+import remarkBreaks from 'remark-breaks';
+import remarkGfm from 'remark-gfm';
+import { LinkMarkdown } from '@/app/components/chat/link-markdown';
+import { cn } from '@/lib/utils';
+import { ButtonCopy } from '../common/button-copy';
 import {
   CodeBlock,
   CodeBlockCode,
   CodeBlockGroup,
-} from "../prompt-kit/code-block"
+} from '../prompt-kit/code-block';
 
 export type MarkdownProps = {
-  children: string
-  id?: string
-  className?: string
-  components?: Partial<Components>
-}
+  children: string;
+  id?: string;
+  className?: string;
+  components?: Partial<Components>;
+};
 
 function parseMarkdownIntoBlocks(markdown: string): string[] {
-  const tokens = marked.lexer(markdown)
-  return tokens.map((token) => token.raw)
+  const tokens = marked.lexer(markdown);
+  return tokens.map((token) => token.raw);
 }
 
 function extractLanguage(className?: string): string {
-  if (!className) return "plaintext"
-  const match = className.match(/language-(\w+)/)
-  return match ? match[1] : "plaintext"
+  if (!className) {
+    return 'plaintext';
+  }
+  const match = className.match(/language-(\w+)/);
+  return match ? match[1] : 'plaintext';
 }
 
 const INITIAL_COMPONENTS: Partial<Components> = {
-  code: function CodeComponent({ className, children, ...props }) {
+  code({ className, children, ...props }) {
     const isInline =
       !props.node?.position?.start.line ||
-      props.node?.position?.start.line === props.node?.position?.end.line
+      props.node?.position?.start.line === props.node?.position?.end.line;
 
     if (isInline) {
       return (
         <span
           className={cn(
-            "bg-primary-foreground rounded-sm px-1 font-mono text-sm",
+            'rounded-sm bg-primary-foreground px-1 font-mono text-sm',
             className
           )}
           {...props}
         >
           {children}
         </span>
-      )
+      );
     }
 
-    const language = extractLanguage(className)
+    const language = extractLanguage(className);
 
     return (
       <CodeBlock className={className}>
         <CodeBlockGroup className="flex h-9 items-center justify-between px-4">
-          <div className="text-muted-foreground py-1 pr-2 font-mono text-xs">
+          <div className="py-1 pr-2 font-mono text-muted-foreground text-xs">
             {language}
           </div>
         </CodeBlockGroup>
@@ -66,45 +68,47 @@ const INITIAL_COMPONENTS: Partial<Components> = {
         </div>
         <CodeBlockCode code={children as string} language={language} />
       </CodeBlock>
-    )
+    );
   },
-  a: function AComponent({ href, children, ...props }) {
-    if (!href) return <span {...props}>{children}</span>
+  a({ href, children, ...props }) {
+    if (!href) {
+      return <span {...props}>{children}</span>;
+    }
 
     return (
       <LinkMarkdown href={href} {...props}>
         {children}
       </LinkMarkdown>
-    )
+    );
   },
-  pre: function PreComponent({ children }) {
-    return <>{children}</>
+  pre({ children }) {
+    return <>{children}</>;
   },
-}
+};
 
 const MemoizedMarkdownBlock = memo(
   function MarkdownBlock({
     content,
     components = INITIAL_COMPONENTS,
   }: {
-    content: string
-    components?: Partial<Components>
+    content: string;
+    components?: Partial<Components>;
   }) {
     return (
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkBreaks]}
         components={components}
+        remarkPlugins={[remarkGfm, remarkBreaks]}
       >
         {content}
       </ReactMarkdown>
-    )
+    );
   },
   function propsAreEqual(prevProps, nextProps) {
-    return prevProps.content === nextProps.content
+    return prevProps.content === nextProps.content;
   }
-)
+);
 
-MemoizedMarkdownBlock.displayName = "MemoizedMarkdownBlock"
+MemoizedMarkdownBlock.displayName = 'MemoizedMarkdownBlock';
 
 function MarkdownComponent({
   children,
@@ -112,24 +116,24 @@ function MarkdownComponent({
   className,
   components = INITIAL_COMPONENTS,
 }: MarkdownProps) {
-  const generatedId = useId()
-  const blockId = id ?? generatedId
-  const blocks = useMemo(() => parseMarkdownIntoBlocks(children), [children])
+  const generatedId = useId();
+  const blockId = id ?? generatedId;
+  const blocks = useMemo(() => parseMarkdownIntoBlocks(children), [children]);
 
   return (
     <div className={className}>
       {blocks.map((block, index) => (
         <MemoizedMarkdownBlock
-          key={`${blockId}-block-${index}`}
-          content={block}
           components={components}
+          content={block}
+          key={`${blockId}-block-${index}`}
         />
       ))}
     </div>
-  )
+  );
 }
 
-const Markdown = memo(MarkdownComponent)
-Markdown.displayName = "Markdown"
+const Markdown = memo(MarkdownComponent);
+Markdown.displayName = 'Markdown';
 
-export { Markdown }
+export { Markdown };

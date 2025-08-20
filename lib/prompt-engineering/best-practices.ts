@@ -3,26 +3,29 @@
  * Based on: https://help.openai.com/en/articles/6654000-best-practices-for-prompt-engineering-with-the-openai-api
  */
 
-interface PromptConfig {
-  systemPrompt?: string
-  userMessage: string
-  context?: string[]
-  examples?: Array<{ input: string; output: string }>
-  temperature?: number
-  maxOutputTokens?: number
-}
+type PromptConfig = {
+  systemPrompt?: string;
+  userMessage: string;
+  context?: string[];
+  examples?: Array<{ input: string; output: string }>;
+  temperature?: number;
+  maxOutputTokens?: number;
+};
 
 /**
  * Best Practice 1: Write clear instructions
  * Be specific about what you want the model to do
  */
-export function createClearInstruction(task: string, details: string[]): string {
+export function createClearInstruction(
+  task: string,
+  details: string[]
+): string {
   const instructions = [
     `Task: ${task}`,
     'Requirements:',
     ...details.map((d, i) => `${i + 1}. ${d}`),
-  ]
-  return instructions.join('\n')
+  ];
+  return instructions.join('\n');
 }
 
 /**
@@ -33,14 +36,16 @@ export function addReferenceContext(
   prompt: string,
   references: string[]
 ): string {
-  if (references.length === 0) return prompt
-  
+  if (references.length === 0) {
+    return prompt;
+  }
+
   return `${prompt}
 
 Reference Information:
 ${references.map((ref, i) => `[${i + 1}] ${ref}`).join('\n')}
 
-Use the above references to inform your response.`
+Use the above references to inform your response.`;
 }
 
 /**
@@ -53,7 +58,7 @@ export function createChainOfThought(task: string, steps: string[]): string {
 Let's approach this step-by-step:
 ${steps.map((step, i) => `Step ${i + 1}: ${step}`).join('\n')}
 
-Please work through each step carefully and show your reasoning.`
+Please work through each step carefully and show your reasoning.`;
 }
 
 /**
@@ -69,7 +74,7 @@ Before providing your final answer, please:
 3. Evaluate trade-offs
 4. Explain your reasoning
 
-Then provide your solution.`
+Then provide your solution.`;
 }
 
 /**
@@ -83,46 +88,46 @@ export function createToolPrompt(
   return `${task}
 
 You have access to the following tools:
-${availableTools.map(tool => `- ${tool}`).join('\n')}
+${availableTools.map((tool) => `- ${tool}`).join('\n')}
 
-Use these tools when needed for accurate information or calculations.`
+Use these tools when needed for accurate information or calculations.`;
 }
 
 /**
  * Best Practice 6: Test changes systematically
  * Create evaluation criteria for prompt improvements
  */
-export interface EvaluationCriteria {
-  accuracy: boolean
-  relevance: boolean
-  completeness: boolean
-  clarity: boolean
-  safety: boolean
-}
+export type EvaluationCriteria = {
+  accuracy: boolean;
+  relevance: boolean;
+  completeness: boolean;
+  clarity: boolean;
+  safety: boolean;
+};
 
 export function evaluateResponse(
-  response: string,
+  _response: string,
   criteria: Partial<EvaluationCriteria>
 ): Record<string, boolean> {
-  const results: Record<string, boolean> = {}
-  
+  const results: Record<string, boolean> = {};
+
   if (criteria.accuracy !== undefined) {
-    results.accuracy = criteria.accuracy
+    results.accuracy = criteria.accuracy;
   }
   if (criteria.relevance !== undefined) {
-    results.relevance = criteria.relevance
+    results.relevance = criteria.relevance;
   }
   if (criteria.completeness !== undefined) {
-    results.completeness = criteria.completeness
+    results.completeness = criteria.completeness;
   }
   if (criteria.clarity !== undefined) {
-    results.clarity = criteria.clarity
+    results.clarity = criteria.clarity;
   }
   if (criteria.safety !== undefined) {
-    results.safety = criteria.safety
+    results.safety = criteria.safety;
   }
-  
-  return results
+
+  return results;
 }
 
 /**
@@ -135,9 +140,9 @@ export function addDelimiters(
     .map(({ label, content }) => {
       return `### ${label} ###
 ${content}
-### End ${label} ###`
+### End ${label} ###`;
     })
-    .join('\n\n')
+    .join('\n\n');
 }
 
 /**
@@ -149,15 +154,16 @@ export function specifyOutputFormat(
 ): string {
   const formatInstructions = {
     json: 'Provide your response as valid JSON.',
-    markdown: 'Format your response using Markdown with appropriate headers and formatting.',
+    markdown:
+      'Format your response using Markdown with appropriate headers and formatting.',
     list: 'Provide your response as a numbered or bulleted list.',
     code: 'Include code examples with proper syntax highlighting and comments.',
     structured: 'Structure your response with clear sections and subsections.',
-  }
-  
+  };
+
   return `${prompt}
 
-Output Format: ${formatInstructions[format]}`
+Output Format: ${formatInstructions[format]}`;
 }
 
 /**
@@ -167,47 +173,53 @@ export function addFewShotExamples(
   prompt: string,
   examples: Array<{ input: string; output: string }>
 ): string {
-  if (examples.length === 0) return prompt
-  
+  if (examples.length === 0) {
+    return prompt;
+  }
+
   const exampleText = examples
     .map((ex, i) => {
       return `Example ${i + 1}:
 Input: ${ex.input}
-Output: ${ex.output}`
+Output: ${ex.output}`;
     })
-    .join('\n\n')
-  
+    .join('\n\n');
+
   return `${prompt}
 
 Here are some examples:
 
 ${exampleText}
 
-Now, based on these examples, please process the following:`
+Now, based on these examples, please process the following:`;
 }
 
 /**
  * Create an optimized prompt following all best practices
  */
 export function createOptimizedPrompt(config: PromptConfig): string {
-  let prompt = config.userMessage
-  
+  let prompt = config.userMessage;
+
   // Add context if provided
   if (config.context && config.context.length > 0) {
-    prompt = addReferenceContext(prompt, config.context)
+    prompt = addReferenceContext(prompt, config.context);
   }
-  
+
   // Add examples if provided
   if (config.examples && config.examples.length > 0) {
-    prompt = addFewShotExamples(prompt, config.examples)
+    prompt = addFewShotExamples(prompt, config.examples);
   }
-  
+
   // Add reasoning request for complex tasks
-  if (prompt.length > 200 || prompt.includes('analyze') || prompt.includes('evaluate')) {
-    prompt = addReasoningRequest(prompt)
+  if (
+    prompt.length > 200 ||
+    prompt.includes('analyze') ||
+    prompt.includes('evaluate')
+  ) {
+    prompt = addReasoningRequest(prompt);
   }
-  
-  return prompt
+
+  return prompt;
 }
 
 /**
@@ -222,7 +234,7 @@ Security Considerations:
 - Include proper input validation and sanitization
 - Implement appropriate access controls and authentication
 - Follow the principle of least privilege
-- Include audit logging where appropriate`
+- Include audit logging where appropriate`;
 }
 
 /**
@@ -233,16 +245,20 @@ export function addRoleContext(
   role: 'developer' | 'security-engineer' | 'architect' | 'devops'
 ): string {
   const roleContexts = {
-    developer: 'Provide practical, implementable code with clear comments and error handling.',
-    'security-engineer': 'Focus on security implications, threat modeling, and defensive measures.',
-    architect: 'Consider system design, scalability, maintainability, and architectural patterns.',
-    devops: 'Include deployment considerations, monitoring, CI/CD, and infrastructure as code.',
-  }
-  
+    developer:
+      'Provide practical, implementable code with clear comments and error handling.',
+    'security-engineer':
+      'Focus on security implications, threat modeling, and defensive measures.',
+    architect:
+      'Consider system design, scalability, maintainability, and architectural patterns.',
+    devops:
+      'Include deployment considerations, monitoring, CI/CD, and infrastructure as code.',
+  };
+
   return `${prompt}
 
 Target Audience: ${role}
-${roleContexts[role]}`
+${roleContexts[role]}`;
 }
 
 /**
@@ -256,9 +272,9 @@ export function getOptimalTemperature(
     analytical: 0.3,
     code: 0.2,
     factual: 0.1,
-  }
-  
-  return temperatures[taskType]
+  };
+
+  return temperatures[taskType];
 }
 
 /**
@@ -286,5 +302,5 @@ Response Style:
 - Provide clear explanations with examples
 - Include references to security frameworks and standards
 - Suggest tools and libraries that enhance security
-- Always validate and sanitize inputs in code examples`
+- Always validate and sanitize inputs in code examples`;
 }

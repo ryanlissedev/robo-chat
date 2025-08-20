@@ -6,7 +6,7 @@ export const env = {
   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY!,
   XAI_API_KEY: process.env.XAI_API_KEY!,
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY!,
-}
+};
 
 export function createEnvWithUserKeys(
   userKeys: Record<string, string> = {}
@@ -20,5 +20,5 @@ export function createEnvWithUserKeys(
     ANTHROPIC_API_KEY: userKeys.anthropic || env.ANTHROPIC_API_KEY,
     XAI_API_KEY: userKeys.xai || env.XAI_API_KEY,
     OPENROUTER_API_KEY: userKeys.openrouter || env.OPENROUTER_API_KEY,
-  }
+  };
 }

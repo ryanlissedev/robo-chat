@@ -1,27 +1,25 @@
-import { chromium, FullConfig } from '@playwright/test'
+import { chromium, type FullConfig } from '@playwright/test';
 
-async function globalSetup(config: FullConfig) {
+async function globalSetup(_config: FullConfig) {
   // Launch browser for authentication setup if needed
-  const browser = await chromium.launch()
-  const context = await browser.newContext()
-  const page = await context.newPage()
-
-  console.log('🧪 Setting up E2E test environment...')
+  const browser = await chromium.launch();
+  const context = await browser.newContext();
+  const page = await context.newPage();
 
   try {
     // Navigate to the application
-    await page.goto('http://localhost:3000')
-    
-    // Wait for the app to be ready
-    await page.waitForSelector('[data-testid="app-ready"]', { 
-      timeout: 30000,
-      state: 'attached'
-    }).catch(() => {
-      // If no specific ready indicator, just wait for body
-      return page.waitForSelector('body')
-    })
+    await page.goto('http://localhost:3000');
 
-    console.log('✅ Application is ready for testing')
+    // Wait for the app to be ready
+    await page
+      .waitForSelector('[data-testid="app-ready"]', {
+        timeout: 30_000,
+        state: 'attached',
+      })
+      .catch(() => {
+        // If no specific ready indicator, just wait for body
+        return page.waitForSelector('body');
+      });
 
     // You can add authentication setup here if needed
     // For example, if you need to log in a test user:
@@ -35,14 +33,10 @@ async function globalSetup(config: FullConfig) {
     // Save authentication state
     await context.storageState({ path: './tests/e2e/auth.json' })
     */
-
-  } catch (error) {
-    console.error('❌ Failed to set up E2E environment:', error)
-    throw error
   } finally {
-    await context.close()
-    await browser.close()
+    await context.close();
+    await browser.close();
   }
 }
 
-export default globalSetup
+export default globalSetup;

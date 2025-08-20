@@ -3,23 +3,23 @@
  * Based on: https://platform.openai.com/docs/guides/retrieval
  */
 
-import OpenAI from 'openai'
+import type OpenAI from 'openai';
 
-export interface QueryRewriteConfig {
-  strategy: 'expansion' | 'refinement' | 'decomposition' | 'multi-perspective'
-  context?: string
-  previousQueries?: string[]
-  domain?: string
-}
+export type QueryRewriteConfig = {
+  strategy: 'expansion' | 'refinement' | 'decomposition' | 'multi-perspective';
+  context?: string;
+  previousQueries?: string[];
+  domain?: string;
+};
 
-export interface RetrievalResult {
-  id: string
-  content: string
-  score: number
-  metadata?: Record<string, any>
-  file_id?: string
-  file_name?: string
-}
+export type RetrievalResult = {
+  id: string;
+  content: string;
+  score: number;
+  metadata?: Record<string, unknown>;
+  file_id?: string;
+  file_name?: string;
+};
 
 /**
  * Query Expansion: Add synonyms and related terms
@@ -33,7 +33,8 @@ export async function expandQuery(
     messages: [
       {
         role: 'system',
-        content: 'You are a query expansion expert. Generate alternative phrasings and related terms for search queries.'
+        content:
+          'You are a query expansion expert. Generate alternative phrasings and related terms for search queries.',
       },
       {
         role: 'user',
@@ -41,17 +42,17 @@ export async function expandQuery(
         
 Query: "${query}"
 
-Provide variations as a JSON array of strings.`
-      }
+Provide variations as a JSON array of strings.`,
+      },
     ],
-    response_format: { type: 'json_object' }
-  })
+    response_format: { type: 'json_object' },
+  });
 
   try {
-    const result = JSON.parse(response.choices[0].message.content || '{}')
-    return result.variations || [query]
+    const result = JSON.parse(response.choices[0].message.content || '{}');
+    return result.variations || [query];
   } catch {
-    return [query]
+    return [query];
   }
 }
 
@@ -68,7 +69,8 @@ export async function refineQuery(
     messages: [
       {
         role: 'system',
-        content: 'You are a query refinement expert. Improve search queries for better retrieval accuracy.'
+        content:
+          'You are a query refinement expert. Improve search queries for better retrieval accuracy.',
       },
       {
         role: 'user',
@@ -77,12 +79,12 @@ export async function refineQuery(
 Original Query: "${query}"
 Context: ${context}
 
-Provide a single refined query that will retrieve the most relevant information.`
-      }
+Provide a single refined query that will retrieve the most relevant information.`,
+      },
     ],
-  })
+  });
 
-  return response.choices[0].message.content || query
+  return response.choices[0].message.content || query;
 }
 
 /**
@@ -97,7 +99,8 @@ export async function decomposeQuery(
     messages: [
       {
         role: 'system',
-        content: 'You are a query decomposition expert. Break complex queries into simpler sub-queries.'
+        content:
+          'You are a query decomposition expert. Break complex queries into simpler sub-queries.',
       },
       {
         role: 'user',
@@ -105,17 +108,17 @@ export async function decomposeQuery(
 
 Complex Query: "${query}"
 
-Return as a JSON array of sub-queries.`
-      }
+Return as a JSON array of sub-queries.`,
+      },
     ],
-    response_format: { type: 'json_object' }
-  })
+    response_format: { type: 'json_object' },
+  });
 
   try {
-    const result = JSON.parse(response.choices[0].message.content || '{}')
-    return result.subqueries || [query]
+    const result = JSON.parse(response.choices[0].message.content || '{}');
+    return result.subqueries || [query];
   } catch {
-    return [query]
+    return [query];
   }
 }
 
@@ -131,7 +134,8 @@ export async function generateMultiPerspectiveQueries(
     messages: [
       {
         role: 'system',
-        content: 'Generate multiple perspectives on a query for comprehensive retrieval.'
+        content:
+          'Generate multiple perspectives on a query for comprehensive retrieval.',
       },
       {
         role: 'user',
@@ -139,17 +143,17 @@ export async function generateMultiPerspectiveQueries(
 
 Query: "${query}"
 
-Provide 3-4 different angles or perspectives as a JSON array.`
-      }
+Provide 3-4 different angles or perspectives as a JSON array.`,
+      },
     ],
-    response_format: { type: 'json_object' }
-  })
+    response_format: { type: 'json_object' },
+  });
 
   try {
-    const result = JSON.parse(response.choices[0].message.content || '{}')
-    return result.perspectives || [query]
+    const result = JSON.parse(response.choices[0].message.content || '{}');
+    return result.perspectives || [query];
   } catch {
-    return [query]
+    return [query];
   }
 }
 
@@ -166,7 +170,8 @@ export async function generateHypotheticalDocument(
     messages: [
       {
         role: 'system',
-        content: 'Generate a hypothetical document that would perfectly answer the given query.'
+        content:
+          'Generate a hypothetical document that would perfectly answer the given query.',
       },
       {
         role: 'user',
@@ -174,12 +179,12 @@ export async function generateHypotheticalDocument(
 
 Query: "${query}"
 
-Write as if you were the ideal document containing this information.`
-      }
+Write as if you were the ideal document containing this information.`,
+      },
     ],
-  })
+  });
 
-  return response.choices[0].message.content || query
+  return response.choices[0].message.content || query;
 }
 
 /**
@@ -192,20 +197,21 @@ export async function rewriteQuery(
 ): Promise<string[]> {
   switch (config.strategy) {
     case 'expansion':
-      return expandQuery(query, openai)
-    
-    case 'refinement':
-      const refined = await refineQuery(query, config.context || '', openai)
-      return [refined]
-    
+      return expandQuery(query, openai);
+
+    case 'refinement': {
+      const refined = await refineQuery(query, config.context || '', openai);
+      return [refined];
+    }
+
     case 'decomposition':
-      return decomposeQuery(query, openai)
-    
+      return decomposeQuery(query, openai);
+
     case 'multi-perspective':
-      return generateMultiPerspectiveQueries(query, openai)
-    
+      return generateMultiPerspectiveQueries(query, openai);
+
     default:
-      return [query]
+      return [query];
   }
 }
 
@@ -216,16 +222,19 @@ export async function rerankResults(
   query: string,
   results: RetrievalResult[],
   openai: OpenAI,
-  topK: number = 5
+  topK = 5
 ): Promise<RetrievalResult[]> {
-  if (results.length <= topK) return results
+  if (results.length <= topK) {
+    return results;
+  }
 
   const response = await openai.chat.completions.create({
     model: 'gpt-5-mini',
     messages: [
       {
         role: 'system',
-        content: 'You are a relevance ranking expert. Score each document based on relevance to the query.'
+        content:
+          'You are a relevance ranking expert. Score each document based on relevance to the query.',
       },
       {
         role: 'user',
@@ -236,35 +245,35 @@ Query: "${query}"
 Documents:
 ${results.map((r, i) => `[${i}] ${r.content.substring(0, 500)}...`).join('\n\n')}
 
-Return as JSON: { "rankings": [indices in order of relevance] }`
-      }
+Return as JSON: { "rankings": [indices in order of relevance] }`,
+      },
     ],
-    response_format: { type: 'json_object' }
-  })
+    response_format: { type: 'json_object' },
+  });
 
   try {
-    const result = JSON.parse(response.choices[0].message.content || '{}')
-    const rankings = result.rankings || []
-    
+    const result = JSON.parse(response.choices[0].message.content || '{}');
+    const rankings = result.rankings || [];
+
     // Reorder results based on rankings
     const reranked = rankings
       .map((index: number) => results[index])
       .filter(Boolean)
-      .slice(0, topK)
-    
+      .slice(0, topK);
+
     // Add any missing results to maintain topK
     if (reranked.length < topK) {
-      const usedIndices = new Set(rankings)
+      const usedIndices = new Set(rankings);
       for (let i = 0; i < results.length && reranked.length < topK; i++) {
         if (!usedIndices.has(i)) {
-          reranked.push(results[i])
+          reranked.push(results[i]);
         }
       }
     }
-    
-    return reranked
+
+    return reranked;
   } catch {
-    return results.slice(0, topK)
+    return results.slice(0, topK);
   }
 }
 
@@ -283,7 +292,7 @@ export async function crossEncoderRerank(
       messages: [
         {
           role: 'system',
-          content: 'Score the relevance of a document to a query from 0-100.'
+          content: 'Score the relevance of a document to a query from 0-100.',
         },
         {
           role: 'user',
@@ -291,34 +300,39 @@ export async function crossEncoderRerank(
           
 Document: "${result.content.substring(0, 1000)}"
 
-Provide a relevance score from 0-100 as a JSON object: { "score": number }`
-        }
+Provide a relevance score from 0-100 as a JSON object: { "score": number }`,
+        },
       ],
-      response_format: { type: 'json_object' }
-    })
+      response_format: { type: 'json_object' },
+    });
 
     try {
-      const scoreResult = JSON.parse(response.choices[0].message.content || '{}')
+      const scoreResult = JSON.parse(
+        response.choices[0].message.content || '{}'
+      );
       return {
         ...result,
         score: scoreResult.score || 0,
-        originalIndex: index
-      }
+        originalIndex: index,
+      };
     } catch {
       return {
         ...result,
         score: 0,
-        originalIndex: index
-      }
+        originalIndex: index,
+      };
     }
-  })
+  });
 
-  const scoredResults = await Promise.all(scoringPromises)
-  
+  const scoredResults = await Promise.all(scoringPromises);
+
   // Sort by score descending
   return scoredResults
     .sort((a, b) => b.score - a.score)
-    .map(({ originalIndex, ...rest }) => rest)
+    .map(({ originalIndex: _originalIndex, ...rest }) => {
+      void _originalIndex; // Mark as intentionally unused
+      return rest;
+    });
 }
 
 /**
@@ -326,63 +340,65 @@ Provide a relevance score from 0-100 as a JSON object: { "score": number }`
  */
 export function diversityRerank(
   results: RetrievalResult[],
-  lambda: number = 0.5 // Balance between relevance and diversity
+  lambda = 0.5 // Balance between relevance and diversity
 ): RetrievalResult[] {
-  if (results.length <= 1) return results
+  if (results.length <= 1) {
+    return results;
+  }
 
-  const selected: RetrievalResult[] = []
-  const remaining = [...results]
-  
+  const selected: RetrievalResult[] = [];
+  const remaining = [...results];
+
   // Select the most relevant first
-  selected.push(remaining.shift()!)
-  
+  selected.push(remaining.shift()!);
+
   while (remaining.length > 0 && selected.length < 10) {
-    let bestScore = -Infinity
-    let bestIndex = -1
-    
+    let bestScore = Number.NEGATIVE_INFINITY;
+    let bestIndex = -1;
+
     for (let i = 0; i < remaining.length; i++) {
-      const candidate = remaining[i]
-      
+      const candidate = remaining[i];
+
       // Relevance score (already provided)
-      const relevance = candidate.score
-      
+      const relevance = candidate.score;
+
       // Diversity score (simplified - based on content difference)
-      let maxSimilarity = 0
+      let maxSimilarity = 0;
       for (const doc of selected) {
-        const similarity = calculateSimilarity(candidate.content, doc.content)
-        maxSimilarity = Math.max(maxSimilarity, similarity)
+        const similarity = calculateSimilarity(candidate.content, doc.content);
+        maxSimilarity = Math.max(maxSimilarity, similarity);
       }
-      
+
       // MMR score
-      const mmrScore = lambda * relevance - (1 - lambda) * maxSimilarity
-      
+      const mmrScore = lambda * relevance - (1 - lambda) * maxSimilarity;
+
       if (mmrScore > bestScore) {
-        bestScore = mmrScore
-        bestIndex = i
+        bestScore = mmrScore;
+        bestIndex = i;
       }
     }
-    
+
     if (bestIndex >= 0) {
-      selected.push(remaining.splice(bestIndex, 1)[0])
+      selected.push(remaining.splice(bestIndex, 1)[0]);
     } else {
-      break
+      break;
     }
   }
-  
-  return selected
+
+  return selected;
 }
 
 /**
  * Simple similarity calculation (Jaccard similarity)
  */
 function calculateSimilarity(text1: string, text2: string): number {
-  const words1 = new Set(text1.toLowerCase().split(/\s+/))
-  const words2 = new Set(text2.toLowerCase().split(/\s+/))
-  
-  const intersection = new Set([...words1].filter(x => words2.has(x)))
-  const union = new Set([...words1, ...words2])
-  
-  return intersection.size / union.size
+  const words1 = new Set(text1.toLowerCase().split(/\s+/));
+  const words2 = new Set(text2.toLowerCase().split(/\s+/));
+
+  const intersection = new Set([...words1].filter((x) => words2.has(x)));
+  const union = new Set([...words1, ...words2]);
+
+  return intersection.size / union.size;
 }
 
 /**
@@ -391,57 +407,60 @@ function calculateSimilarity(text1: string, text2: string): number {
 export function applyMetadataFilters(
   results: RetrievalResult[],
   filters: {
-    fileTypes?: string[]
-    dateRange?: { start: Date; end: Date }
-    tags?: string[]
-    minScore?: number
+    fileTypes?: string[];
+    dateRange?: { start: Date; end: Date };
+    tags?: string[];
+    minScore?: number;
   }
 ): RetrievalResult[] {
-  let filtered = [...results]
-  
+  let filtered = [...results];
+
   // Apply filters
   if (filters.fileTypes && filters.fileTypes.length > 0) {
-    filtered = filtered.filter(r => 
-      filters.fileTypes!.includes(r.metadata?.fileType)
-    )
+    filtered = filtered.filter((r) =>
+      filters.fileTypes?.includes(r.metadata?.fileType)
+    );
   }
-  
-  if (filters.dateRange) {
-    filtered = filtered.filter(r => {
-      const date = new Date(r.metadata?.createdAt)
-      return date >= filters.dateRange!.start && date <= filters.dateRange!.end
-    })
+
+  if (filters.dateRange && filters.dateRange.start && filters.dateRange.end) {
+    const { start, end } = filters.dateRange;
+    filtered = filtered.filter((r) => {
+      const createdAt = r.metadata?.createdAt;
+      if (!createdAt) return false;
+      const date = new Date(createdAt);
+      return !isNaN(date.getTime()) && date >= start && date <= end;
+    });
   }
-  
+
   if (filters.tags && filters.tags.length > 0) {
-    filtered = filtered.filter(r => {
-      const docTags = r.metadata?.tags || []
-      return filters.tags!.some(tag => docTags.includes(tag))
-    })
+    filtered = filtered.filter((r) => {
+      const docTags = r.metadata?.tags || [];
+      return filters.tags?.some((tag) => docTags.includes(tag));
+    });
   }
-  
+
   if (filters.minScore !== undefined) {
-    filtered = filtered.filter(r => r.score >= filters.minScore!)
+    filtered = filtered.filter((r) => r.score >= filters.minScore!);
   }
-  
-  return filtered
+
+  return filtered;
 }
 
 /**
  * Main retrieval pipeline with query rewriting and reranking
  */
-export interface RetrievalPipelineConfig {
-  queryRewriting?: boolean
-  rewriteStrategy?: QueryRewriteConfig['strategy']
-  reranking?: boolean
-  rerankingMethod?: 'semantic' | 'cross-encoder' | 'diversity'
-  metadataFilters?: Parameters<typeof applyMetadataFilters>[1]
-  topK?: number
-}
+export type RetrievalPipelineConfig = {
+  queryRewriting?: boolean;
+  rewriteStrategy?: QueryRewriteConfig['strategy'];
+  reranking?: boolean;
+  rerankingMethod?: 'semantic' | 'cross-encoder' | 'diversity';
+  metadataFilters?: Parameters<typeof applyMetadataFilters>[1];
+  topK?: number;
+};
 
 export async function enhancedRetrieval(
   query: string,
-  vectorStoreId: string,
+  _vectorStoreId: string,
   openai: OpenAI,
   config: RetrievalPipelineConfig = {}
 ): Promise<RetrievalResult[]> {
@@ -451,52 +470,50 @@ export async function enhancedRetrieval(
     reranking = true,
     rerankingMethod = 'semantic',
     metadataFilters,
-    topK = 5
-  } = config
-  
+    topK = 5,
+  } = config;
+
   // Step 1: Query Rewriting
-  let queries = [query]
+  let queries = [query];
   if (queryRewriting) {
-    queries = await rewriteQuery(
-      query,
-      { strategy: rewriteStrategy },
-      openai
-    )
+    queries = await rewriteQuery(query, { strategy: rewriteStrategy }, openai);
   }
-  
+
   // Step 2: Retrieval from Vector Store
-  const allResults: RetrievalResult[] = []
+  const allResults: RetrievalResult[] = [];
   // Placeholder: beta vector store search API may change; feature-gate and return empty results
-  for (const _q of queries) {
+  for (const _query of queries) {
     // Skip live retrieval to avoid unsupported API usage
+    // Prefix with underscore to indicate intentionally unused
+    void _query;
   }
-  
+
   // Remove duplicates
   const uniqueResults = Array.from(
-    new Map(allResults.map(r => [r.id, r])).values()
-  )
-  
+    new Map(allResults.map((r) => [r.id, r])).values()
+  );
+
   // Step 3: Apply Metadata Filters
-  let filtered = uniqueResults
+  let filtered = uniqueResults;
   if (metadataFilters) {
-    filtered = applyMetadataFilters(filtered, metadataFilters)
+    filtered = applyMetadataFilters(filtered, metadataFilters);
   }
-  
+
   // Step 4: Reranking
-  let reranked = filtered
+  let reranked = filtered;
   if (reranking) {
     switch (rerankingMethod) {
       case 'semantic':
-        reranked = await rerankResults(query, filtered, openai, topK)
-        break
+        reranked = await rerankResults(query, filtered, openai, topK);
+        break;
       case 'cross-encoder':
-        reranked = await crossEncoderRerank(query, filtered, openai)
-        break
+        reranked = await crossEncoderRerank(query, filtered, openai);
+        break;
       case 'diversity':
-        reranked = diversityRerank(filtered)
-        break
+        reranked = diversityRerank(filtered);
+        break;
     }
   }
-  
-  return reranked.slice(0, topK)
+
+  return reranked.slice(0, topK);
 }

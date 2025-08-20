@@ -1,14 +1,20 @@
 'use client';
 
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
+
 // Collapsible UI is not present; inline a simple fallback wrapper
-const Collapsible = (props: any) => <div {...props} />
-const CollapsibleContent = (props: any) => <div {...props} />
-const CollapsibleTrigger = (props: any) => <button {...props} />
-import { cn } from '@/lib/utils';
+type CollapsibleProps = React.HTMLAttributes<HTMLDivElement>;
+type CollapsibleContentProps = React.HTMLAttributes<HTMLDivElement>;
+type CollapsibleTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
+
+const Collapsible = (props: CollapsibleProps) => <div {...props} />;
+const CollapsibleContent = (props: CollapsibleContentProps) => <div {...props} />;
+const CollapsibleTrigger = (props: CollapsibleTriggerProps) => <button {...props} />;
+
 import { BrainIcon, ChevronDownIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { createContext, memo, useContext, useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
 import { Response } from './response';
 
 type ReasoningContextValue = {
@@ -118,7 +124,6 @@ export type ReasoningTriggerProps = ComponentProps<
 export const ReasoningTrigger = memo(
   ({
     className,
-    title = 'Reasoning',
     children,
     ...props
   }: ReasoningTriggerProps) => {

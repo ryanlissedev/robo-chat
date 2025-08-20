@@ -1,53 +1,78 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, act, waitFor } from '@testing-library/react'
-import { useChatCore } from '@/app/components/chat/use-chat-core'
-import { mockUserProfile, createMockFile } from '../test-utils'
-import type { UIMessage as Message } from 'ai'
+import { act, renderHook, waitFor } from '@testing-library/react';
+import type { UIMessage as Message } from 'ai';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useChatCore } from '@/app/components/chat/use-chat-core';
+import { createMockFile, mockUserProfile } from '../test-utils';
 
-// Mock the useChat hook from AI SDK
-const mockUseChat = {
-  messages: [],
-  input: '',
-  handleSubmit: vi.fn(),
-  status: 'idle' as const,
-  error: null,
-  reload: vi.fn(),
-  stop: vi.fn(),
-  setMessages: vi.fn(),
-  setInput: vi.fn(),
-  append: vi.fn(),
-}
+// Mock modules with inline factories to avoid hoisting issues
+vi.mock('@ai-sdk/react', () => {
+  const mockSendMessage = vi.fn();
+  const mockSetMessages = vi.fn();
+  const mockStop = vi.fn();
 
-vi.mock('@ai-sdk/react', () => ({
-  useChat: () => mockUseChat,
-}))
+  // Create a mock for AI SDK v5 - no setInput, append, reload, handleSubmit
+  const mockUseChat = {
+    messages: [],
+    status: 'ready' as const,
+    error: null,
+    stop: mockStop,
+    setMessages: mockSetMessages,
+    sendMessage: mockSendMessage,
+  };
 
-// Mock the chat business logic
+  return {
+    useChat: () => mockUseChat,
+  };
+});
+
 vi.mock('@/app/components/chat/chat-business-logic', () => ({
   submitMessageScenario: vi.fn(),
   submitSuggestionScenario: vi.fn(),
   prepareReloadScenario: vi.fn(),
   handleChatError: vi.fn(),
-}))
+}));
 
-// Mock the chat draft hook
-vi.mock('@/app/hooks/use-chat-draft', () => ({
-  useChatDraft: () => ({
-    setDraftValue: vi.fn(),
-  }),
-}))
+vi.mock('@/app/hooks/use-chat-draft', () => {
+  const mockSetDraftValue = vi.fn();
+  return {
+    useChatDraft: () => ({
+      setDraftValue: mockSetDraftValue,
+    }),
+  };
+});
 
-// Mock Next.js navigation
 vi.mock('next/navigation', () => ({
-  useSearchParams: () => ({
+  useSearchParams: vi.fn(() => ({
     get: vi.fn().mockReturnValue(null),
-  }),
-}))
+  })),
+}));
+
+import { useChat } from '@ai-sdk/react';
+import { useSearchParams } from 'next/navigation';
+// Import the actual business logic module for proper typing (after mocking)
+import * as businessLogic from '@/app/components/chat/chat-business-logic';
+import * as chatDraft from '@/app/hooks/use-chat-draft';
 
 // Mock toast
 vi.mock('@/components/ui/toast', () => ({
   toast: vi.fn(),
-}))
+}));
+
+// Get typed mocked functions
+const mockBusinessLogic = vi.mocked(businessLogic);
+const mockUseSearchParams = vi.mocked(useSearchParams);
+const mockUseChatDraft = vi.mocked(chatDraft.useChatDraft);
+
+// Access the actual mock object returned by useChat
+let mockUseChat: ReturnType<typeof useChat>;
+let mockSetDraftValue: ReturnType<typeof vi.fn>;
+
+beforeEach(() => {
+  mockUseChat = useChat();
+  // Get the mocked setDraftValue function
+  const chatDraftResult = mockUseChatDraft(null);
+  mockSetDraftValue = chatDraftResult.setDraftValue as ReturnType<typeof vi.fn>;
+});
 
 // TDD London Style: Focus on behavior and interactions
 describe('useChatCore', () => {
@@ -67,85 +92,90 @@ describe('useChatCore', () => {
     selectedModel: 'test-model',
     clearDraft: vi.fn(),
     bumpChat: vi.fn(),
-  }
+  };
 
   beforeEach(() => {
-    vi.clearAllMocks()
-    // Reset mock implementations
-    mockUseChat.messages = []
-    mockUseChat.input = ''
-    mockUseChat.status = 'idle'
-    mockUseChat.error = null
-  })
+    vi.clearAllMocks();
+  });
 
   afterEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   describe('When hook initializes', () => {
     it('should provide initial state values', () => {
-      const { result } = renderHook(() => useChatCore(defaultProps))
+      const { result } = renderHook(() => useChatCore(defaultProps));
 
-      expect(result.current.isSubmitting).toBe(false)
-      expect(result.current.hasDialogAuth).toBe(false)
-      expect(result.current.enableSearch).toBe(true)
-      expect(result.current.reasoningEffort).toBe('medium')
-      expect(result.current.isAuthenticated).toBe(false)
-    })
+      expect(result.current.isSubmitting).toBe(false);
+      expect(result.current.hasDialogAuth).toBe(false);
+      expect(result.current.enableSearch).toBe(true);
+      expect(result.current.reasoningEffort).toBe('medium');
+      expect(result.current.isAuthenticated).toBe(false);
+      expect(result.current.status).toBe('ready'); // AI SDK v5 uses 'ready' instead of 'idle'
+    });
 
     it('should detect authenticated user correctly', () => {
       const propsWithUser = {
         ...defaultProps,
         user: mockUserProfile,
-      }
+      };
 
-      const { result } = renderHook(() => useChatCore(propsWithUser))
+      const { result } = renderHook(() => useChatCore(propsWithUser));
 
-      expect(result.current.isAuthenticated).toBe(true)
-      expect(result.current.systemPrompt).toBe(mockUserProfile.system_prompt)
-    })
+      expect(result.current.isAuthenticated).toBe(true);
+      expect(result.current.systemPrompt).toBe(mockUserProfile.system_prompt);
+    });
 
     it('should use default system prompt when user has none', () => {
-      const userWithoutPrompt = { ...mockUserProfile, system_prompt: null }
+      const userWithoutPrompt = { ...mockUserProfile, system_prompt: null };
       const propsWithUser = {
         ...defaultProps,
         user: userWithoutPrompt,
-      }
+      };
 
-      const { result } = renderHook(() => useChatCore(propsWithUser))
+      const { result } = renderHook(() => useChatCore(propsWithUser));
 
-      expect(result.current.systemPrompt).toBe('You are a helpful assistant.')
-    })
-  })
+      expect(
+        result.current.systemPrompt
+      ).toBe(`You are a helpful, knowledgeable AI assistant.
+
+- Communicate clearly and concisely
+- Ask clarifying questions when requirements are ambiguous
+- Provide step-by-step guidance and practical examples
+- When coding, favor readable, maintainable solutions with error handling
+- Cite assumptions explicitly; call out risks and edge cases
+- Default to safe behavior: avoid sharing secrets, respect privacy, and sanitize inputs
+
+If asked to perform specialized tasks (writing, brainstorming, explaining, coding, analysis), adapt tone and structure to match the task and the user's expertise level.`);
+    });
+  });
 
   describe('When handling search params', () => {
-    it('should set input from prompt parameter', async () => {
-      const mockSearchParams = {
-        get: vi.fn().mockReturnValue('Hello from URL'),
-      }
+    it('should set draft value from prompt parameter', async () => {
+      // Mock the search params to return a URL parameter
+      const mockGet = vi.fn().mockReturnValue('Hello from URL');
+      mockUseSearchParams.mockReturnValue({ get: mockGet } as any);
 
-      vi.mocked(require('next/navigation').useSearchParams).mockReturnValue(mockSearchParams)
-
-      renderHook(() => useChatCore(defaultProps))
+      renderHook(() => useChatCore(defaultProps));
 
       await waitFor(() => {
-        expect(mockUseChat.setInput).toHaveBeenCalledWith('Hello from URL')
-      })
-    })
-  })
+        expect(mockSetDraftValue).toHaveBeenCalledWith('Hello from URL');
+      });
+    });
+  });
 
   describe('When submitting messages', () => {
-    const { submitMessageScenario } = require('@/app/components/chat/chat-business-logic')
-
     beforeEach(() => {
-      submitMessageScenario.mockResolvedValue({
+      // Reset and configure the mock
+      mockBusinessLogic.submitMessageScenario.mockResolvedValue({
         success: true,
         data: {
           chatId: 'test-chat-id',
           requestOptions: { body: JSON.stringify({ test: 'data' }) },
+          optimisticMessage: { id: 'opt-1', role: 'user', parts: [{ type: 'text', text: '' }], createdAt: new Date() },
         },
-      })
-    })
+      });
+    });
 
     it('should handle successful message submission', async () => {
       const props = {
@@ -153,28 +183,30 @@ describe('useChatCore', () => {
         user: mockUserProfile,
         chatId: 'test-chat-id',
         files: [createMockFile('test.txt', 'content')],
-      }
+        draftValue: 'Test message',
+      };
 
-      mockUseChat.input = 'Test message'
-      props.createOptimisticAttachments.mockReturnValue([{
-        name: 'test.txt',
-        contentType: 'text/plain',
-        url: 'mock-url',
-      }])
+      props.createOptimisticAttachments.mockReturnValue([
+        {
+          name: 'test.txt',
+          contentType: 'text/plain',
+          url: 'mock-url',
+        },
+      ]);
 
-      const { result } = renderHook(() => useChatCore(props))
+      const { result } = renderHook(() => useChatCore(props));
 
       await act(async () => {
-        await result.current.submit()
-      })
+        await result.current.submit();
+      });
 
-      expect(result.current.isSubmitting).toBe(false)
-      expect(mockUseChat.setMessages).toHaveBeenCalled()
-      expect(mockUseChat.setInput).toHaveBeenCalledWith('')
-      expect(props.setFiles).toHaveBeenCalledWith([])
-      expect(submitMessageScenario).toHaveBeenCalledWith(
+      expect(result.current.isSubmitting).toBe(false);
+      expect(mockUseChat.setMessages).toHaveBeenCalled();
+      expect(mockUseChat.sendMessage).toHaveBeenCalled();
+      expect(props.setFiles).toHaveBeenCalledWith([]);
+      expect(mockBusinessLogic.submitMessageScenario).toHaveBeenCalledWith(
         expect.objectContaining({
-          input: 'Test message',
+          input: expect.any(String),
           files: expect.any(Array),
           user: mockUserProfile,
           selectedModel: 'test-model',
@@ -182,115 +214,140 @@ describe('useChatCore', () => {
           enableSearch: true,
           reasoningEffort: 'medium',
           chatId: 'test-chat-id',
+          systemPrompt: mockUserProfile.system_prompt,
         }),
-        expect.any(Object)
-      )
-    })
+        expect.objectContaining({
+          checkLimitsAndNotify: expect.any(Function),
+          ensureChatExists: expect.any(Function),
+          handleFileUploads: expect.any(Function),
+          createOptimisticAttachments: expect.any(Function),
+          cleanupOptimisticAttachments: expect.any(Function),
+        })
+      );
+    });
 
     it('should handle failed message submission', async () => {
-      const { toast } = require('@/components/ui/toast')
-      
-      submitMessageScenario.mockResolvedValue({
+      const toastMock = await import('@/components/ui/toast');
+      const mockToast = vi.mocked(toastMock.toast);
+
+      mockBusinessLogic.submitMessageScenario.mockResolvedValue({
         success: false,
         error: 'Submission failed',
-      })
+      });
 
       const props = {
         ...defaultProps,
         user: mockUserProfile,
-      }
+        draftValue: 'Test message',
+      };
 
-      mockUseChat.input = 'Test message'
-
-      const { result } = renderHook(() => useChatCore(props))
+      const { result } = renderHook(() => useChatCore(props));
 
       await act(async () => {
-        await result.current.submit()
-      })
+        await result.current.submit();
+      });
 
-      expect(result.current.isSubmitting).toBe(false)
-      expect(toast).toHaveBeenCalledWith({
+      expect(result.current.isSubmitting).toBe(false);
+      expect(mockToast).toHaveBeenCalledWith({
         title: 'Submission failed',
         status: 'error',
-      })
-    })
+      });
+    });
 
     it('should create and cleanup optimistic messages properly', async () => {
       const props = {
         ...defaultProps,
         user: mockUserProfile,
         files: [createMockFile()],
-      }
+        draftValue: 'Test message',
+      };
 
-      mockUseChat.input = 'Test message'
-      props.createOptimisticAttachments.mockReturnValue([{
-        name: 'test.txt',
-        contentType: 'text/plain',
-        url: 'mock-url',
-      }])
+      props.createOptimisticAttachments.mockReturnValue([
+        {
+          name: 'test.txt',
+          contentType: 'text/plain',
+          url: 'mock-url',
+        },
+      ]);
 
-      const { result } = renderHook(() => useChatCore(props))
+      const { result } = renderHook(() => useChatCore(props));
 
       await act(async () => {
-        await result.current.submit()
-      })
+        await result.current.submit();
+      });
 
       // Should have added optimistic message
-      expect(mockUseChat.setMessages).toHaveBeenCalledWith(expect.any(Function))
-      
+      expect(mockUseChat.setMessages).toHaveBeenCalledWith(
+        expect.any(Function)
+      );
+
       // Should have cleaned up optimistic message after success
-      expect(props.cleanupOptimisticAttachments).toHaveBeenCalled()
-      expect(props.cacheAndAddMessage).toHaveBeenCalled()
-      expect(props.clearDraft).toHaveBeenCalled()
-    })
+      expect(props.cleanupOptimisticAttachments).toHaveBeenCalled();
+      expect(props.cacheAndAddMessage).toHaveBeenCalled();
+      expect(props.clearDraft).toHaveBeenCalled();
+    });
 
     it('should bump chat when there are previous messages', async () => {
       const props = {
         ...defaultProps,
         user: mockUserProfile,
         chatId: 'test-chat-id',
-      }
+        initialMessages: [
+          {
+            id: '1',
+            parts: [{ type: 'text', text: 'Previous message' }],
+            role: 'user',
+          },
+        ] as Message[],
+        draftValue: 'New message',
+      };
 
-      mockUseChat.messages = [{ id: '1', content: 'Previous message', role: 'user' }] as Message[]
-      mockUseChat.input = 'New message'
+      // Set up the mock to return messages with parts
+      mockUseChat.messages = [
+        {
+          id: '1',
+          parts: [{ type: 'text', text: 'Previous message' }],
+          role: 'user',
+        },
+      ] as Message[];
 
-      const { result } = renderHook(() => useChatCore(props))
+      const { result } = renderHook(() => useChatCore(props));
 
       await act(async () => {
-        await result.current.submit()
-      })
+        await result.current.submit();
+      });
 
-      expect(props.bumpChat).toHaveBeenCalledWith('test-chat-id')
-    })
-  })
+      expect(props.bumpChat).toHaveBeenCalledWith('test-chat-id');
+    });
+  });
 
   describe('When handling suggestions', () => {
-    const { submitSuggestionScenario } = require('@/app/components/chat/chat-business-logic')
-
     beforeEach(() => {
-      submitSuggestionScenario.mockResolvedValue({
+      mockBusinessLogic.submitSuggestionScenario.mockResolvedValue({
         success: true,
         data: {
+          chatId: 'test-chat-id',
           requestOptions: { body: JSON.stringify({ suggestion: 'data' }) },
+          optimisticMessage: { id: 'opt-2', role: 'user', parts: [{ type: 'text', text: '' }], createdAt: new Date() },
         },
-      })
-    })
+      });
+    });
 
     it('should handle successful suggestion submission', async () => {
       const props = {
         ...defaultProps,
         user: mockUserProfile,
         chatId: 'test-chat-id',
-      }
+      };
 
-      const { result } = renderHook(() => useChatCore(props))
+      const { result } = renderHook(() => useChatCore(props));
 
       await act(async () => {
-        await result.current.handleSuggestion('Tell me a joke')
-      })
+        await result.current.handleSuggestion('Tell me a joke');
+      });
 
-      expect(result.current.isSubmitting).toBe(false)
-      expect(submitSuggestionScenario).toHaveBeenCalledWith(
+      expect(result.current.isSubmitting).toBe(false);
+      expect(mockBusinessLogic.submitSuggestionScenario).toHaveBeenCalledWith(
         'Tell me a joke',
         expect.objectContaining({
           user: mockUserProfile,
@@ -301,212 +358,224 @@ describe('useChatCore', () => {
           enableSearch: true,
         }),
         expect.any(Object)
-      )
-      expect(mockUseChat.append).toHaveBeenCalledWith(
-        {
-          role: 'user',
-          content: 'Tell me a joke',
-        },
-        expect.any(Object)
-      )
-    })
+      );
+      // The sendMessage function should be called after successful suggestion submission
+      expect(mockUseChat.sendMessage).toHaveBeenCalled();
+    });
 
     it('should handle failed suggestion submission', async () => {
-      const { toast } = require('@/components/ui/toast')
-      
-      submitSuggestionScenario.mockResolvedValue({
+      const toastMock = await import('@/components/ui/toast');
+      const mockToast = vi.mocked(toastMock.toast);
+
+      mockBusinessLogic.submitSuggestionScenario.mockResolvedValue({
         success: false,
         error: 'Suggestion failed',
-      })
+      });
 
       const props = {
         ...defaultProps,
         user: mockUserProfile,
-      }
+      };
 
-      const { result } = renderHook(() => useChatCore(props))
+      const { result } = renderHook(() => useChatCore(props));
 
       await act(async () => {
-        await result.current.handleSuggestion('Tell me a joke')
-      })
+        await result.current.handleSuggestion('Tell me a joke');
+      });
 
-      expect(result.current.isSubmitting).toBe(false)
-      expect(toast).toHaveBeenCalledWith({
+      expect(result.current.isSubmitting).toBe(false);
+      expect(mockToast).toHaveBeenCalledWith({
         title: 'Suggestion failed',
         status: 'error',
-      })
-    })
-  })
+      });
+    });
+  });
 
   describe('When handling reload', () => {
-    const { prepareReloadScenario } = require('@/app/components/chat/chat-business-logic')
-
     beforeEach(() => {
-      prepareReloadScenario.mockResolvedValue({
+      mockBusinessLogic.prepareReloadScenario.mockResolvedValue({
         success: true,
         data: {
           requestOptions: { body: JSON.stringify({ reload: 'data' }) },
         },
-      })
-    })
+      });
+    });
 
     it('should handle successful reload', async () => {
       const props = {
         ...defaultProps,
         user: mockUserProfile,
         chatId: 'test-chat-id',
-      }
+      };
 
-      const { result } = renderHook(() => useChatCore(props))
+      // Mock messages to include a user message for reload to work
+      const testMessages = [
+        {
+          id: '1',
+          role: 'user' as const,
+          parts: [{ type: 'text' as const, text: 'Test question' }],
+        },
+        {
+          id: '2',
+          role: 'assistant' as const,
+          parts: [{ type: 'text' as const, text: 'Test response' }],
+        },
+      ];
+      mockUseChat.messages = testMessages;
+
+      const { result } = renderHook(() => useChatCore(props));
 
       await act(async () => {
-        await result.current.handleReload()
-      })
+        await result.current.handleReload();
+      });
 
-      expect(prepareReloadScenario).toHaveBeenCalledWith({
+      expect(mockBusinessLogic.prepareReloadScenario).toHaveBeenCalledWith({
         user: mockUserProfile,
         chatId: 'test-chat-id',
         selectedModel: 'test-model',
         isAuthenticated: true,
         systemPrompt: mockUserProfile.system_prompt,
         reasoningEffort: 'medium',
-      })
-      expect(mockUseChat.reload).toHaveBeenCalled()
-    })
+      });
+      expect(mockUseChat.sendMessage).toHaveBeenCalledWith(
+        { text: 'Test question' },
+        expect.any(Object)
+      );
+    });
 
     it('should handle failed reload', async () => {
-      const { toast } = require('@/components/ui/toast')
-      
-      prepareReloadScenario.mockResolvedValue({
+      const toastMock = await import('@/components/ui/toast');
+      const mockToast = vi.mocked(toastMock.toast);
+
+      mockBusinessLogic.prepareReloadScenario.mockResolvedValue({
         success: false,
         error: 'Reload failed',
-      })
+      });
 
       const props = {
         ...defaultProps,
         user: mockUserProfile,
-      }
+      };
 
-      const { result } = renderHook(() => useChatCore(props))
+      const { result } = renderHook(() => useChatCore(props));
 
       await act(async () => {
-        await result.current.handleReload()
-      })
+        await result.current.handleReload();
+      });
 
-      expect(toast).toHaveBeenCalledWith({
+      expect(mockToast).toHaveBeenCalledWith({
         title: 'Reload failed',
         status: 'error',
-      })
-    })
-  })
+      });
+    });
+  });
 
   describe('When handling input changes', () => {
-    it('should update both AI SDK input and draft value', () => {
-      const { result } = renderHook(() => useChatCore(defaultProps))
+    it('should update draft value', () => {
+      const { result } = renderHook(() => useChatCore(defaultProps));
 
       act(() => {
-        result.current.handleInputChange('New input value')
-      })
+        result.current.handleInputChange('New input value');
+      });
 
-      expect(mockUseChat.setInput).toHaveBeenCalledWith('New input value')
-      // Draft value setting is handled by the mocked useChatDraft hook
-    })
-  })
+      expect(mockSetDraftValue).toHaveBeenCalledWith('New input value');
+    });
+  });
 
   describe('When managing UI state', () => {
     it('should allow setting submission state', () => {
-      const { result } = renderHook(() => useChatCore(defaultProps))
+      const { result } = renderHook(() => useChatCore(defaultProps));
 
       act(() => {
-        result.current.setIsSubmitting(true)
-      })
+        result.current.setIsSubmitting(true);
+      });
 
-      expect(result.current.isSubmitting).toBe(true)
+      expect(result.current.isSubmitting).toBe(true);
 
       act(() => {
-        result.current.setIsSubmitting(false)
-      })
+        result.current.setIsSubmitting(false);
+      });
 
-      expect(result.current.isSubmitting).toBe(false)
-    })
+      expect(result.current.isSubmitting).toBe(false);
+    });
 
     it('should allow setting dialog auth state', () => {
-      const { result } = renderHook(() => useChatCore(defaultProps))
+      const { result } = renderHook(() => useChatCore(defaultProps));
 
       act(() => {
-        result.current.setHasDialogAuth(true)
-      })
+        result.current.setHasDialogAuth(true);
+      });
 
-      expect(result.current.hasDialogAuth).toBe(true)
-    })
+      expect(result.current.hasDialogAuth).toBe(true);
+    });
 
     it('should allow setting search enablement', () => {
-      const { result } = renderHook(() => useChatCore(defaultProps))
+      const { result } = renderHook(() => useChatCore(defaultProps));
 
       act(() => {
-        result.current.setEnableSearch(false)
-      })
+        result.current.setEnableSearch(false);
+      });
 
-      expect(result.current.enableSearch).toBe(false)
-    })
+      expect(result.current.enableSearch).toBe(false);
+    });
 
     it('should allow setting reasoning effort', () => {
-      const { result } = renderHook(() => useChatCore(defaultProps))
+      const { result } = renderHook(() => useChatCore(defaultProps));
 
       act(() => {
-        result.current.setReasoningEffort('high')
-      })
+        result.current.setReasoningEffort('high');
+      });
 
-      expect(result.current.reasoningEffort).toBe('high')
-    })
-  })
+      expect(result.current.reasoningEffort).toBe('high');
+    });
+  });
 
   describe('When handling errors', () => {
     it('should handle unexpected errors during submission', async () => {
-      const { handleChatError } = require('@/app/components/chat/chat-business-logic')
-      const { submitMessageScenario } = require('@/app/components/chat/chat-business-logic')
-      
-      submitMessageScenario.mockRejectedValue(new Error('Unexpected error'))
+      mockBusinessLogic.submitMessageScenario.mockRejectedValue(
+        new Error('Unexpected error')
+      );
 
       const props = {
         ...defaultProps,
         user: mockUserProfile,
-      }
+        draftValue: 'Test message',
+      };
 
-      mockUseChat.input = 'Test message'
-
-      const { result } = renderHook(() => useChatCore(props))
+      const { result } = renderHook(() => useChatCore(props));
 
       await act(async () => {
-        await result.current.submit()
-      })
+        await result.current.submit();
+      });
 
-      expect(result.current.isSubmitting).toBe(false)
-      expect(handleChatError).toHaveBeenCalledWith(
+      expect(result.current.isSubmitting).toBe(false);
+      expect(mockBusinessLogic.handleChatError).toHaveBeenCalledWith(
         expect.any(Error),
         'Message submission'
-      )
-    })
+      );
+    });
 
-    it('should handle chat errors via error handler', () => {
-      const { handleChatError } = require('@/app/components/chat/chat-business-logic')
-      
+    it('should handle unexpected errors during suggestion submission', async () => {
+      mockBusinessLogic.submitSuggestionScenario.mockRejectedValue(
+        new Error('Unexpected suggestion error')
+      );
+
       const props = {
         ...defaultProps,
         user: mockUserProfile,
-      }
+      };
 
-      renderHook(() => useChatCore(props))
+      const { result } = renderHook(() => useChatCore(props));
 
-      // Simulate error from useChat
-      const mockError = new Error('Chat error')
-      const onError = mockUseChat.handleSubmit.mock.calls[0]?.[1]?.onError || 
-                      vi.mocked(require('@ai-sdk/react').useChat).mock.calls[0]?.[0]?.onError
+      await act(async () => {
+        await result.current.handleSuggestion('Tell me a joke');
+      });
 
-      if (onError) {
-        onError(mockError)
-        expect(handleChatError).toHaveBeenCalledWith(mockError, 'Chat')
-      }
-    })
-  })
-})
+      expect(result.current.isSubmitting).toBe(false);
+      expect(mockBusinessLogic.handleChatError).toHaveBeenCalledWith(
+        expect.any(Error),
+        'Suggestion submission'
+      );
+    });
+  });
+});

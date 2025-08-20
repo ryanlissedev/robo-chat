@@ -1,10 +1,15 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-const Collapsible = (props: any) => <div {...props} />
-const CollapsibleContent = (props: any) => <div {...props} />
-const CollapsibleTrigger = (props: any) => <button {...props} />
-import { cn } from '@/lib/utils';
+
+type CollapsibleProps = React.HTMLAttributes<HTMLDivElement>;
+type CollapsibleContentProps = React.HTMLAttributes<HTMLDivElement>;
+type CollapsibleTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
+
+const Collapsible = (props: CollapsibleProps) => <div {...props} />;
+const CollapsibleContent = (props: CollapsibleContentProps) => <div {...props} />;
+const CollapsibleTrigger = (props: CollapsibleTriggerProps) => <button {...props} />;
+
 import type { ToolUIPart } from 'ai';
 import {
   CheckCircleIcon,
@@ -15,6 +20,7 @@ import {
   XCircleIcon,
 } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 import { CodeBlock } from './code-block';
 
 export type ToolProps = ComponentProps<typeof Collapsible>;

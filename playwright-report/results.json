@@ -1,0 +1,593 @@
+{
+  "config": {
+    "configFile": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright.config.ts",
+    "rootDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/global-setup.ts",
+    "globalTeardown": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/global-teardown.ts",
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 4
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ],
+      [
+        "junit",
+        {
+          "outputFile": "playwright-report/results.xml"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "Mobile Chrome",
+        "name": "Mobile Chrome",
+        "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "Mobile Safari",
+        "name": "Mobile Safari",
+        "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "Microsoft Edge",
+        "name": "Microsoft Edge",
+        "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "Google Chrome",
+        "name": "Google Chrome",
+        "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.55.0",
+    "workers": 4,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "chat-flow.spec.ts",
+      "file": "chat-flow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Chat Message Flow",
+          "file": "chat-flow.spec.ts",
+          "line": 4,
+          "column": 6,
+          "specs": [],
+          "suites": [
+            {
+              "title": "When user sends a message",
+              "file": "chat-flow.spec.ts",
+              "line": 60,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should display the message and show loading indicator",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 48305,
+                          "error": {
+                            "message": "TimeoutError: page.waitForSelector: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]') to be visible\u001b[22m\n",
+                            "stack": "TimeoutError: page.waitForSelector: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]') to be visible\u001b[22m\n\n    at Object.chatInput (/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts:40:20)\n    at /Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/chat-flow.spec.ts:66:7",
+                            "location": {
+                              "file": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts",
+                              "column": 20,
+                              "line": 40
+                            },
+                            "snippet": "\u001b[90m   at \u001b[39mfixtures.ts:40\n\n  38 |       chatInput: async () => {\n  39 |         await page.goto('/');\n> 40 |         await page.waitForSelector('[data-testid=\"chat-input\"]', {\n     |                    ^\n  41 |           state: 'visible',\n  42 |         });\n  43 |       },"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts",
+                                "column": 20,
+                                "line": 40
+                              },
+                              "message": "TimeoutError: page.waitForSelector: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]') to be visible\u001b[22m\n\n\n   at fixtures.ts:40\n\n  38 |       chatInput: async () => {\n  39 |         await page.goto('/');\n> 40 |         await page.waitForSelector('[data-testid=\"chat-input\"]', {\n     |                    ^\n  41 |           state: 'visible',\n  42 |         });\n  43 |       },\n    at Object.chatInput (/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts:40:20)\n    at /Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/chat-flow.spec.ts:66:7"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-20T17:56:03.354Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-chromium/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-chromium/video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-chromium/error-context.md"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts",
+                            "column": 20,
+                            "line": 40
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "57d300a4d5b28e5bd677-f0d1b5c0e0ae35c147be",
+                  "file": "chat-flow.spec.ts",
+                  "line": 61,
+                  "column": 9
+                },
+                {
+                  "title": "should display the message and show loading indicator",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "firefox",
+                      "projectName": "firefox",
+                      "results": [
+                        {
+                          "workerIndex": 1,
+                          "parallelIndex": 1,
+                          "status": "failed",
+                          "duration": 5,
+                          "error": {
+                            "message": "Error: browserType.launch: Executable doesn't exist at /Users/neo/Library/Caches/ms-playwright/firefox-1490/firefox/Nightly.app/Contents/MacOS/firefox\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                            "stack": "Error: browserType.launch: Executable doesn't exist at /Users/neo/Library/Caches/ms-playwright/firefox-1490/firefox/Nightly.app/Contents/MacOS/firefox\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                          },
+                          "errors": [
+                            {
+                              "message": "Error: browserType.launch: Executable doesn't exist at /Users/neo/Library/Caches/ms-playwright/firefox-1490/firefox/Nightly.app/Contents/MacOS/firefox\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-20T17:56:03.171Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "57d300a4d5b28e5bd677-479e8bd996c967392371",
+                  "file": "chat-flow.spec.ts",
+                  "line": 61,
+                  "column": 9
+                },
+                {
+                  "title": "should display the message and show loading indicator",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "webkit",
+                      "projectName": "webkit",
+                      "results": [
+                        {
+                          "workerIndex": 2,
+                          "parallelIndex": 2,
+                          "status": "failed",
+                          "duration": 9,
+                          "error": {
+                            "message": "Error: browserType.launch: Executable doesn't exist at /Users/neo/Library/Caches/ms-playwright/webkit-2203/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                            "stack": "Error: browserType.launch: Executable doesn't exist at /Users/neo/Library/Caches/ms-playwright/webkit-2203/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                          },
+                          "errors": [
+                            {
+                              "message": "Error: browserType.launch: Executable doesn't exist at /Users/neo/Library/Caches/ms-playwright/webkit-2203/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-20T17:56:03.190Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "57d300a4d5b28e5bd677-df0ae64245c21ec12c1e",
+                  "file": "chat-flow.spec.ts",
+                  "line": 61,
+                  "column": 9
+                },
+                {
+                  "title": "should display the message and show loading indicator",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "Mobile Chrome",
+                      "projectName": "Mobile Chrome",
+                      "results": [
+                        {
+                          "workerIndex": 3,
+                          "parallelIndex": 3,
+                          "status": "failed",
+                          "duration": 46640,
+                          "error": {
+                            "message": "TimeoutError: page.waitForSelector: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]') to be visible\u001b[22m\n",
+                            "stack": "TimeoutError: page.waitForSelector: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]') to be visible\u001b[22m\n\n    at Object.chatInput (/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts:40:20)\n    at /Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/chat-flow.spec.ts:66:7",
+                            "location": {
+                              "file": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts",
+                              "column": 20,
+                              "line": 40
+                            },
+                            "snippet": "\u001b[90m   at \u001b[39mfixtures.ts:40\n\n  38 |       chatInput: async () => {\n  39 |         await page.goto('/');\n> 40 |         await page.waitForSelector('[data-testid=\"chat-input\"]', {\n     |                    ^\n  41 |           state: 'visible',\n  42 |         });\n  43 |       },"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts",
+                                "column": 20,
+                                "line": 40
+                              },
+                              "message": "TimeoutError: page.waitForSelector: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]') to be visible\u001b[22m\n\n\n   at fixtures.ts:40\n\n  38 |       chatInput: async () => {\n  39 |         await page.goto('/');\n> 40 |         await page.waitForSelector('[data-testid=\"chat-input\"]', {\n     |                    ^\n  41 |           state: 'visible',\n  42 |         });\n  43 |       },\n    at Object.chatInput (/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts:40:20)\n    at /Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/chat-flow.spec.ts:66:7"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-20T17:56:03.225Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-Mobile-Chrome/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-Mobile-Chrome/video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-Mobile-Chrome/error-context.md"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts",
+                            "column": 20,
+                            "line": 40
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "57d300a4d5b28e5bd677-10adffe2ee111e5a9f13",
+                  "file": "chat-flow.spec.ts",
+                  "line": 61,
+                  "column": 9
+                },
+                {
+                  "title": "should display the message and show loading indicator",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "Mobile Safari",
+                      "projectName": "Mobile Safari",
+                      "results": [
+                        {
+                          "workerIndex": 5,
+                          "parallelIndex": 1,
+                          "status": "failed",
+                          "duration": 4,
+                          "error": {
+                            "message": "Error: browserType.launch: Executable doesn't exist at /Users/neo/Library/Caches/ms-playwright/webkit-2203/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                            "stack": "Error: browserType.launch: Executable doesn't exist at /Users/neo/Library/Caches/ms-playwright/webkit-2203/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                          },
+                          "errors": [
+                            {
+                              "message": "Error: browserType.launch: Executable doesn't exist at /Users/neo/Library/Caches/ms-playwright/webkit-2203/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-20T17:56:05.683Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "57d300a4d5b28e5bd677-f3074bdb0e0153e23281",
+                  "file": "chat-flow.spec.ts",
+                  "line": 61,
+                  "column": 9
+                },
+                {
+                  "title": "should display the message and show loading indicator",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "Microsoft Edge",
+                      "projectName": "Microsoft Edge",
+                      "results": [
+                        {
+                          "workerIndex": 4,
+                          "parallelIndex": 2,
+                          "status": "failed",
+                          "duration": 5,
+                          "error": {
+                            "message": "Error: browserType.launch: Chromium distribution 'msedge' is not found at /Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge\nRun \"npx playwright install msedge\"",
+                            "stack": "Error: browserType.launch: Chromium distribution 'msedge' is not found at /Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge\nRun \"npx playwright install msedge\""
+                          },
+                          "errors": [
+                            {
+                              "message": "Error: browserType.launch: Chromium distribution 'msedge' is not found at /Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge\nRun \"npx playwright install msedge\""
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-20T17:56:06.030Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "57d300a4d5b28e5bd677-52a22ac8df625bdc6dee",
+                  "file": "chat-flow.spec.ts",
+                  "line": 61,
+                  "column": 9
+                },
+                {
+                  "title": "should display the message and show loading indicator",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "Google Chrome",
+                      "projectName": "Google Chrome",
+                      "results": [
+                        {
+                          "workerIndex": 6,
+                          "parallelIndex": 1,
+                          "status": "failed",
+                          "duration": 43215,
+                          "error": {
+                            "message": "TimeoutError: page.waitForSelector: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]') to be visible\u001b[22m\n",
+                            "stack": "TimeoutError: page.waitForSelector: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]') to be visible\u001b[22m\n\n    at Object.chatInput (/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts:40:20)\n    at /Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/chat-flow.spec.ts:66:7",
+                            "location": {
+                              "file": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts",
+                              "column": 20,
+                              "line": 40
+                            },
+                            "snippet": "\u001b[90m   at \u001b[39mfixtures.ts:40\n\n  38 |       chatInput: async () => {\n  39 |         await page.goto('/');\n> 40 |         await page.waitForSelector('[data-testid=\"chat-input\"]', {\n     |                    ^\n  41 |           state: 'visible',\n  42 |         });\n  43 |       },"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts",
+                                "column": 20,
+                                "line": 40
+                              },
+                              "message": "TimeoutError: page.waitForSelector: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]') to be visible\u001b[22m\n\n\n   at fixtures.ts:40\n\n  38 |       chatInput: async () => {\n  39 |         await page.goto('/');\n> 40 |         await page.waitForSelector('[data-testid=\"chat-input\"]', {\n     |                    ^\n  41 |           state: 'visible',\n  42 |         });\n  43 |       },\n    at Object.chatInput (/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts:40:20)\n    at /Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/chat-flow.spec.ts:66:7"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-20T17:56:07.119Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-Google-Chrome/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-Google-Chrome/video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-Google-Chrome/error-context.md"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/fixtures.ts",
+                            "column": 20,
+                            "line": 40
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "57d300a4d5b28e5bd677-83b756ba0bdf6b8f230f",
+                  "file": "chat-flow.spec.ts",
+                  "line": 61,
+                  "column": 9
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-08-20T17:55:16.666Z",
+    "duration": 98661.16900000001,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 7,
+    "flaky": 0
+  }
+}

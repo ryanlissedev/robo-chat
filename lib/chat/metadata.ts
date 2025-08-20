@@ -3,58 +3,58 @@
  * Provides rich metadata for messages, tool calls, and system events
  */
 
-import type { UIMessage } from 'ai'
+import type { UIMessage } from 'ai';
 
-export interface MessageMetadata {
+export type MessageMetadata = {
   // Timing information
-  timestamp: Date
-  processingTime?: number
-  streamStartTime?: Date
-  streamEndTime?: Date
-  
+  timestamp: Date;
+  processingTime?: number;
+  streamStartTime?: Date;
+  streamEndTime?: Date;
+
   // Model information
-  model?: string
-  temperature?: number
-  maxTokens?: number
-  
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+
   // Usage statistics
-  promptTokens?: number
-  completionTokens?: number
-  totalTokens?: number
-  
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+
   // Tool information
-  toolCalls?: ToolCallMetadata[]
-  
+  toolCalls?: ToolCallMetadata[];
+
   // Error tracking
   error?: {
-    code: string
-    message: string
-    retryable: boolean
-    timestamp: Date
-  }
-  
-  // User context
-  userId?: string
-  sessionId?: string
-  
-  // Feature flags
-  searchEnabled?: boolean
-  reasoningEffort?: 'low' | 'medium' | 'high'
-  
-  // Custom fields
-  custom?: Record<string, any>
-}
+    code: string;
+    message: string;
+    retryable: boolean;
+    timestamp: Date;
+  };
 
-export interface ToolCallMetadata {
-  toolName: string
-  toolCallId: string
-  startTime: Date
-  endTime?: Date
-  duration?: number
-  status: 'pending' | 'success' | 'error'
-  error?: string
-  result?: any
-}
+  // User context
+  userId?: string;
+  sessionId?: string;
+
+  // Feature flags
+  searchEnabled?: boolean;
+  reasoningEffort?: 'low' | 'medium' | 'high';
+
+  // Custom fields
+  custom?: Record<string, unknown>;
+};
+
+export type ToolCallMetadata = {
+  toolName: string;
+  toolCallId: string;
+  startTime: Date;
+  endTime?: Date;
+  duration?: number;
+  status: 'pending' | 'success' | 'error';
+  error?: string;
+  result?: unknown;
+};
 
 /**
  * Create metadata for a new message
@@ -65,7 +65,7 @@ export function createMessageMetadata(
   return {
     timestamp: new Date(),
     ...options,
-  }
+  };
 }
 
 /**
@@ -74,18 +74,19 @@ export function createMessageMetadata(
 export function updateMessageTiming(
   metadata: MessageMetadata,
   updates: {
-    streamStartTime?: Date
-    streamEndTime?: Date
-    processingTime?: number
+    streamStartTime?: Date;
+    streamEndTime?: Date;
+    processingTime?: number;
   }
 ): MessageMetadata {
   return {
     ...metadata,
     ...updates,
-    processingTime: updates.streamEndTime && updates.streamStartTime
-      ? updates.streamEndTime.getTime() - updates.streamStartTime.getTime()
-      : updates.processingTime,
-  }
+    processingTime:
+      updates.streamEndTime && updates.streamStartTime
+        ? updates.streamEndTime.getTime() - updates.streamStartTime.getTime()
+        : updates.processingTime,
+  };
 }
 
 /**
@@ -95,68 +96,76 @@ export function trackToolCall(
   metadata: MessageMetadata,
   toolCall: ToolCallMetadata
 ): MessageMetadata {
-  const toolCalls = metadata.toolCalls || []
-  const existingIndex = toolCalls.findIndex(tc => tc.toolCallId === toolCall.toolCallId)
-  
+  const toolCalls = metadata.toolCalls || [];
+  const existingIndex = toolCalls.findIndex(
+    (tc) => tc.toolCallId === toolCall.toolCallId
+  );
+
   if (existingIndex >= 0) {
-    toolCalls[existingIndex] = toolCall
+    toolCalls[existingIndex] = toolCall;
   } else {
-    toolCalls.push(toolCall)
+    toolCalls.push(toolCall);
   }
-  
+
   return {
     ...metadata,
     toolCalls,
-  }
+  };
 }
 
 /**
  * Extract metadata from AI SDK v5 message
  */
 export function extractMessageMetadata(message: UIMessage): MessageMetadata {
+  // AI SDK v5 UIMessage doesn't have createdAt property, so use current time
+  // or extract from experimental_metadata if available
   const metadata: MessageMetadata = {
-    timestamp: message.createdAt || new Date(),
-  }
-  
+    timestamp: new Date(),
+  };
+
   // Extract tool calls if present
   if ('toolInvocations' in message && Array.isArray(message.toolInvocations)) {
-    metadata.toolCalls = message.toolInvocations.map(invocation => ({
+    metadata.toolCalls = message.toolInvocations.map((invocation) => ({
       toolName: invocation.toolName,
       toolCallId: invocation.toolCallId,
       startTime: new Date(),
-      status: invocation.state === 'result' ? 'success' : 
-              invocation.state === 'error' ? 'error' : 'pending',
+      status:
+        invocation.state === 'result'
+          ? 'success'
+          : invocation.state === 'error'
+            ? 'error'
+            : 'pending',
       result: invocation.state === 'result' ? invocation.result : undefined,
       error: invocation.state === 'error' ? invocation.error : undefined,
-    }))
+    }));
   }
-  
+
   // Extract experimental metadata if present
   if ('experimental_metadata' in message) {
-    const experimental = message.experimental_metadata as any
+    const experimental = message.experimental_metadata as Record<string, unknown>;
     if (experimental) {
-      metadata.model = experimental.model
-      metadata.temperature = experimental.temperature
-      metadata.maxTokens = experimental.maxTokens
-      metadata.promptTokens = experimental.promptTokens
-      metadata.completionTokens = experimental.completionTokens
-      metadata.totalTokens = experimental.totalTokens
+      metadata.model = experimental.model;
+      metadata.temperature = experimental.temperature;
+      metadata.maxTokens = experimental.maxTokens;
+      metadata.promptTokens = experimental.promptTokens;
+      metadata.completionTokens = experimental.completionTokens;
+      metadata.totalTokens = experimental.totalTokens;
     }
   }
-  
-  return metadata
+
+  return metadata;
 }
 
 /**
  * Aggregate metadata for analytics
  */
 export function aggregateMetadata(messages: UIMessage[]): {
-  totalTokens: number
-  totalProcessingTime: number
-  averageProcessingTime: number
-  toolCallCount: number
-  errorCount: number
-  modelUsage: Record<string, number>
+  totalTokens: number;
+  totalProcessingTime: number;
+  averageProcessingTime: number;
+  toolCallCount: number;
+  errorCount: number;
+  modelUsage: Record<string, number>;
 } {
   const result = {
     totalTokens: 0,
@@ -165,63 +174,64 @@ export function aggregateMetadata(messages: UIMessage[]): {
     toolCallCount: 0,
     errorCount: 0,
     modelUsage: {} as Record<string, number>,
-  }
-  
-  let messageCount = 0
-  
-  messages.forEach(message => {
-    const metadata = extractMessageMetadata(message)
-    
+  };
+
+  let messageCount = 0;
+
+  messages.forEach((message) => {
+    const metadata = extractMessageMetadata(message);
+
     if (metadata.totalTokens) {
-      result.totalTokens += metadata.totalTokens
+      result.totalTokens += metadata.totalTokens;
     }
-    
+
     if (metadata.processingTime) {
-      result.totalProcessingTime += metadata.processingTime
-      messageCount++
+      result.totalProcessingTime += metadata.processingTime;
+      messageCount++;
     }
-    
+
     if (metadata.toolCalls) {
-      result.toolCallCount += metadata.toolCalls.length
+      result.toolCallCount += metadata.toolCalls.length;
     }
-    
+
     if (metadata.error) {
-      result.errorCount++
+      result.errorCount++;
     }
-    
+
     if (metadata.model) {
-      result.modelUsage[metadata.model] = (result.modelUsage[metadata.model] || 0) + 1
+      result.modelUsage[metadata.model] =
+        (result.modelUsage[metadata.model] || 0) + 1;
     }
-  })
-  
+  });
+
   if (messageCount > 0) {
-    result.averageProcessingTime = result.totalProcessingTime / messageCount
+    result.averageProcessingTime = result.totalProcessingTime / messageCount;
   }
-  
-  return result
+
+  return result;
 }
 
 /**
  * Format metadata for display
  */
 export function formatMetadata(metadata: MessageMetadata): string {
-  const parts: string[] = []
-  
+  const parts: string[] = [];
+
   if (metadata.model) {
-    parts.push(`Model: ${metadata.model}`)
+    parts.push(`Model: ${metadata.model}`);
   }
-  
+
   if (metadata.totalTokens) {
-    parts.push(`Tokens: ${metadata.totalTokens}`)
+    parts.push(`Tokens: ${metadata.totalTokens}`);
   }
-  
+
   if (metadata.processingTime) {
-    parts.push(`Time: ${(metadata.processingTime / 1000).toFixed(2)}s`)
+    parts.push(`Time: ${(metadata.processingTime / 1000).toFixed(2)}s`);
   }
-  
+
   if (metadata.toolCalls && metadata.toolCalls.length > 0) {
-    parts.push(`Tools: ${metadata.toolCalls.length}`)
+    parts.push(`Tools: ${metadata.toolCalls.length}`);
   }
-  
-  return parts.join(' • ')
+
+  return parts.join(' • ');
 }

@@ -1,109 +1,111 @@
-"use client"
+'use client';
 
-import { Button } from "@/components/ui/button"
-import { toast } from "@/components/ui/toast"
-import { createClient } from "@/lib/supabase/client"
-import { isSupabaseEnabled } from "@/lib/supabase/config"
-import { CaretLeft, SealCheck, Spinner } from "@phosphor-icons/react"
-import { AnimatePresence, motion } from "motion/react"
-import { useState } from "react"
+import { CaretLeft, SealCheck, Spinner } from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/toast';
+import { createClient } from '@/lib/supabase/client';
+import { isSupabaseEnabled } from '@/lib/supabase/config';
 
-const TRANSITION_CONTENT: any = {
-  ease: [0.16, 1, 0.3, 1],
+const TRANSITION_CONTENT = {
+  ease: [0.16, 1, 0.3, 1] as const,
   duration: 0.2,
-}
+};
 
 type FeedbackFormProps = {
-  authUserId?: string
-  onClose: () => void
-}
+  authUserId?: string;
+  onClose: () => void;
+};
 
 export function FeedbackForm({ authUserId, onClose }: FeedbackFormProps) {
   const [status, setStatus] = useState<
-    "idle" | "submitting" | "success" | "error"
-  >("idle")
-  const [feedback, setFeedback] = useState("")
+    'idle' | 'submitting' | 'success' | 'error'
+  >('idle');
+  const [feedback, setFeedback] = useState('');
 
   if (!isSupabaseEnabled) {
-    return null
+    return null;
   }
 
   const handleClose = () => {
-    setFeedback("")
-    setStatus("idle")
-    onClose()
-  }
+    setFeedback('');
+    setStatus('idle');
+    onClose();
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!authUserId) {
       toast({
-        title: "Please login to submit feedback",
-        status: "error",
-      })
-      return
+        title: 'Please login to submit feedback',
+        status: 'error',
+      });
+      return;
     }
 
-    setStatus("submitting")
-    if (!feedback.trim()) return
+    setStatus('submitting');
+    if (!feedback.trim()) {
+      return;
+    }
 
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       if (!supabase) {
         toast({
-          title: "Feedback is not supported in this deployment",
-          status: "info",
-        })
-        return
+          title: 'Feedback is not supported in this deployment',
+          status: 'info',
+        });
+        return;
       }
 
-      const { error } = await supabase.from("feedback").insert({
+      const { error } = await supabase.from('feedback').insert({
         message: feedback,
         user_id: authUserId,
-      })
+      });
 
       if (error) {
         toast({
           title: `Error submitting feedback: ${error}`,
-          status: "error",
-        })
-        setStatus("error")
-        return
+          status: 'error',
+        });
+        setStatus('error');
+        return;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1200))
+      await new Promise((resolve) => setTimeout(resolve, 1200));
 
-      setStatus("success")
+      setStatus('success');
 
       setTimeout(() => {
-        handleClose()
-      }, 2500)
+        handleClose();
+      }, 2500);
     } catch (error) {
       toast({
         title: `Error submitting feedback: ${error}`,
-        status: "error",
-      })
-      setStatus("error")
+        status: 'error',
+      });
+      setStatus('error');
     }
-  }
+  };
 
   return (
     <div className="h-[200px] w-full">
       <AnimatePresence mode="popLayout">
-        {status === "success" ? (
+        {status === 'success' ? (
           <motion.div
-            key="success"
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             className="flex h-[200px] w-full flex-col items-center justify-center"
-            initial={{ opacity: 0, y: -10, filter: "blur(2px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: 10, filter: "blur(2px)" }}
+            exit={{ opacity: 0, y: 10, filter: 'blur(2px)' }}
+            initial={{ opacity: 0, y: -10, filter: 'blur(2px)' }}
+            key="success"
             transition={TRANSITION_CONTENT}
           >
             <div className="rounded-full bg-green-500/10 p-1">
               <SealCheck className="size-6 text-green-500" />
             </div>
-            <p className="text-foreground mt-3 mb-1 text-center text-sm font-medium">
+            <p className="mt-3 mb-1 text-center font-medium text-foreground text-sm">
               Thank you for your time!
             </p>
             <p className="text-muted-foreground text-sm">
@@ -112,77 +114,77 @@ export function FeedbackForm({ authUserId, onClose }: FeedbackFormProps) {
           </motion.div>
         ) : (
           <motion.form
-            key="form"
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             className="flex h-full flex-col"
+            exit={{ opacity: 0, y: 10, filter: 'blur(2px)' }}
+            initial={{ opacity: 0, y: -10, filter: 'blur(2px)' }}
+            key="form"
             onSubmit={handleSubmit}
-            initial={{ opacity: 0, y: -10, filter: "blur(2px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: 10, filter: "blur(2px)" }}
             transition={TRANSITION_CONTENT}
           >
             <motion.span
-              aria-hidden="true"
-              initial={{
-                opacity: 1,
-              }}
               animate={{
                 opacity: feedback ? 0 : 1,
+              }}
+              aria-hidden="true"
+              className="pointer-events-none absolute top-3.5 left-4 select-none text-muted-foreground text-sm leading-[1.4]"
+              initial={{
+                opacity: 1,
               }}
               transition={{
                 duration: 0,
               }}
-              className="text-muted-foreground pointer-events-none absolute top-3.5 left-4 text-sm leading-[1.4] select-none"
             >
               What would make Zola better for you?
             </motion.span>
             <textarea
-              className="text-foreground h-full w-full resize-none rounded-md bg-transparent px-4 py-3.5 text-sm outline-hidden"
               autoFocus
+              className="h-full w-full resize-none rounded-md bg-transparent px-4 py-3.5 text-foreground text-sm outline-hidden"
+              disabled={status === 'submitting'}
               onChange={(e) => setFeedback(e.target.value)}
-              disabled={status === "submitting"}
             />
             <div
-              key="close"
               className="flex justify-between pt-2 pr-3 pb-3 pl-2"
+              key="close"
             >
               <Button
+                aria-label="Close"
+                className="rounded-lg"
+                disabled={status === 'submitting'}
+                onClick={handleClose}
+                size="sm"
                 type="button"
                 variant="ghost"
-                size="sm"
-                onClick={handleClose}
-                aria-label="Close"
-                disabled={status === "submitting"}
-                className="rounded-lg"
               >
-                <CaretLeft size={16} className="text-foreground" />
+                <CaretLeft className="text-foreground" size={16} />
               </Button>
               <Button
-                type="submit"
-                variant="outline"
-                size="sm"
                 aria-label="Submit feedback"
                 className="rounded-lg"
-                disabled={status === "submitting" || !feedback.trim()}
+                disabled={status === 'submitting' || !feedback.trim()}
+                size="sm"
+                type="submit"
+                variant="outline"
               >
                 <AnimatePresence mode="popLayout">
-                  {status === "submitting" ? (
+                  {status === 'submitting' ? (
                     <motion.span
-                      key="submitting"
-                      initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={TRANSITION_CONTENT}
                       className="inline-flex items-center gap-2"
+                      exit={{ opacity: 0, y: -10 }}
+                      initial={{ opacity: 0, y: 10 }}
+                      key="submitting"
+                      transition={TRANSITION_CONTENT}
                     >
                       <Spinner className="size-4 animate-spin" />
                       Sending...
                     </motion.span>
                   ) : (
                     <motion.span
-                      key="send"
-                      initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
+                      initial={{ opacity: 0, y: 10 }}
+                      key="send"
                       transition={TRANSITION_CONTENT}
                     >
                       Send
@@ -195,5 +197,5 @@ export function FeedbackForm({ authUserId, onClose }: FeedbackFormProps) {
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }

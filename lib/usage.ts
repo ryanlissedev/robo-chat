@@ -1,14 +1,14 @@
-import { UsageLimitError } from "@/lib/api"
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { UsageLimitError } from '@/lib/api';
 import {
   AUTH_DAILY_MESSAGE_LIMIT,
   DAILY_LIMIT_PRO_MODELS,
   FREE_MODELS_IDS,
   NON_AUTH_DAILY_MESSAGE_LIMIT,
-} from "@/lib/config"
-import { SupabaseClient } from "@supabase/supabase-js"
+} from '@/lib/config';
 
-const isFreeModel = (modelId: string) => FREE_MODELS_IDS.includes(modelId)
-const isProModel = (modelId: string) => !isFreeModel(modelId)
+const isFreeModel = (modelId: string) => FREE_MODELS_IDS.includes(modelId);
+const isProModel = (modelId: string) => !isFreeModel(modelId);
 
 /**
  * Checks the user's daily usage to see if they've reached their limit.
@@ -21,61 +21,126 @@ const isProModel = (modelId: string) => !isFreeModel(modelId)
  * @returns User data including message counts and reset date
  */
 export async function checkUsage(supabase: SupabaseClient, userId: string) {
-  const { data: userData, error: userDataError } = await supabase
-    .from("users")
-    .select(
-      "message_count, daily_message_count, daily_reset, anonymous, premium"
-    )
-    .eq("id", userId)
-    .maybeSingle()
+  // Try to get user data, handling missing columns gracefully
+  let userData: {
+    message_count?: number;
+    daily_message_count?: number;
+    daily_reset?: string | null;
+    anonymous?: boolean;
+    premium?: boolean;
+  } | null;
+  let userDataError: Error | null;
+
+  try {
+    const result = await supabase
+      .from('users')
+      .select(
+        'message_count, daily_message_count, daily_reset, anonymous, premium'
+      )
+      .eq('id', userId)
+      .maybeSingle();
+    userData = result.data;
+    userDataError = result.error;
+  } catch (error: unknown) {
+    // If daily_reset column doesn't exist, try without it
+    if (error instanceof Error && error.message?.includes('daily_reset does not exist')) {
+      const result = await supabase
+        .from('users')
+        .select('message_count, daily_message_count, anonymous, premium')
+        .eq('id', userId)
+        .maybeSingle();
+      userData = result.data;
+      userDataError = result.error;
+      // Set default daily_reset if column doesn't exist
+      if (userData) {
+        userData.daily_reset = null;
+      }
+    } else {
+      throw error;
+    }
+  }
 
   if (userDataError) {
-    throw new Error("Error fetchClienting user data: " + userDataError.message)
+    throw new Error(`Error fetchClienting user data: ${userDataError.message}`);
   }
   if (!userData) {
-    throw new Error("User record not found for id: " + userId)
+    throw new Error(`User record not found for id: ${userId}`);
   }
 
   // Decide which daily limit to use.
-  const isAnonymous = userData.anonymous
+  const isAnonymous = userData.anonymous;
+
+  // TEMPORARY: Bypass rate limits for guest users when disabled
+  const isRateLimitDisabled = process.env.DISABLE_RATE_LIMIT === 'true';
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  if (isAnonymous && (isRateLimitDisabled || isDevelopment)) {
+    return {
+      userData,
+      dailyCount: 0,
+      dailyLimit: NON_AUTH_DAILY_MESSAGE_LIMIT,
+    };
+  }
+
   // (Assuming these are imported from your config)
   const dailyLimit = isAnonymous
     ? NON_AUTH_DAILY_MESSAGE_LIMIT
-    : AUTH_DAILY_MESSAGE_LIMIT
+    : AUTH_DAILY_MESSAGE_LIMIT;
 
   // Reset the daily counter if the day has changed (using UTC).
-  const now = new Date()
-  let dailyCount = userData.daily_message_count || 0
-  const lastReset = userData.daily_reset ? new Date(userData.daily_reset) : null
+  const now = new Date();
+  let dailyCount = userData.daily_message_count || 0;
+  const lastReset = userData.daily_reset
+    ? new Date(userData.daily_reset)
+    : null;
 
   const isNewDay =
     !lastReset ||
     now.getUTCFullYear() !== lastReset.getUTCFullYear() ||
     now.getUTCMonth() !== lastReset.getUTCMonth() ||
-    now.getUTCDate() !== lastReset.getUTCDate()
+    now.getUTCDate() !== lastReset.getUTCDate();
 
   if (isNewDay) {
-    dailyCount = 0
-    const { error: resetError } = await supabase
-      .from("users")
-      .update({ daily_message_count: 0, daily_reset: now.toISOString() })
-      .eq("id", userId)
+    dailyCount = 0;
+    // Try to update with daily_reset column, fall back without it if column doesn't exist
+    try {
+      const { error: resetError } = await supabase
+        .from('users')
+        .update({ daily_message_count: 0, daily_reset: now.toISOString() })
+        .eq('id', userId);
 
-    if (resetError) {
-      throw new Error("Failed to reset daily count: " + resetError.message)
+      if (
+        resetError &&
+        !resetError.message?.includes('daily_reset does not exist')
+      ) {
+        throw new Error(`Failed to reset daily count: ${resetError.message}`);
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message?.includes('daily_reset does not exist')) {
+        // Fall back to updating without daily_reset column
+        const { error: resetError } = await supabase
+          .from('users')
+          .update({ daily_message_count: 0 })
+          .eq('id', userId);
+
+        if (resetError) {
+          throw new Error(`Failed to reset daily count: ${resetError.message}`);
+        }
+      } else {
+        throw error;
+      }
     }
   }
 
   // Check if the daily limit is reached.
   if (dailyCount >= dailyLimit) {
-    throw new UsageLimitError("Daily message limit reached.")
+    throw new UsageLimitError('Daily message limit reached.');
   }
 
   return {
     userData,
     dailyCount,
     dailyLimit,
-  }
+  };
 }
 
 /**
@@ -92,88 +157,108 @@ export async function incrementUsage(
   userId: string
 ): Promise<void> {
   const { data: userData, error: userDataError } = await supabase
-    .from("users")
-    .select("message_count, daily_message_count")
-    .eq("id", userId)
-    .maybeSingle()
+    .from('users')
+    .select('message_count, daily_message_count')
+    .eq('id', userId)
+    .maybeSingle();
 
   if (userDataError || !userData) {
     throw new Error(
-      "Error fetchClienting user data: " +
-        (userDataError?.message || "User not found")
-    )
+      'Error fetchClienting user data: ' +
+        (userDataError?.message || 'User not found')
+    );
   }
 
-  const messageCount = userData.message_count || 0
-  const dailyCount = userData.daily_message_count || 0
+  const messageCount = userData.message_count || 0;
+  const dailyCount = userData.daily_message_count || 0;
 
   // Increment both overall and daily message counts.
-  const newOverallCount = messageCount + 1
-  const newDailyCount = dailyCount + 1
+  const newOverallCount = messageCount + 1;
+  const newDailyCount = dailyCount + 1;
 
   const { error: updateError } = await supabase
-    .from("users")
+    .from('users')
     .update({
       message_count: newOverallCount,
       daily_message_count: newDailyCount,
       last_active_at: new Date().toISOString(),
     })
-    .eq("id", userId)
+    .eq('id', userId);
 
   if (updateError) {
-    throw new Error("Failed to update usage data: " + updateError.message)
+    throw new Error(`Failed to update usage data: ${updateError.message}`);
   }
 }
 
 export async function checkProUsage(supabase: SupabaseClient, userId: string) {
-  const { data: userData, error: userDataError } = await supabase
-    .from("users")
-    .select("daily_pro_message_count, daily_pro_reset")
-    .eq("id", userId)
-    .maybeSingle()
+  // Try to get user data, handling missing columns gracefully
+  let userData: {
+    daily_pro_message_count?: number;
+    daily_pro_reset?: string | null;
+  } | null;
+  let userDataError: Error | null;
+
+  try {
+    const result = await supabase
+      .from('users')
+      .select('daily_pro_message_count, daily_pro_reset')
+      .eq('id', userId)
+      .maybeSingle();
+    userData = result.data;
+    userDataError = result.error;
+  } catch (error: unknown) {
+    // If pro columns don't exist, return default values
+    if (error instanceof Error && error.message?.includes('does not exist')) {
+      return {
+        dailyProCount: 0,
+        limit: DAILY_LIMIT_PRO_MODELS,
+      };
+    }
+    throw error;
+  }
 
   if (userDataError) {
-    throw new Error("Error fetching user data: " + userDataError.message)
+    throw new Error(`Error fetching user data: ${userDataError.message}`);
   }
   if (!userData) {
-    throw new Error("User not found for ID: " + userId)
+    throw new Error(`User not found for ID: ${userId}`);
   }
 
-  let dailyProCount = userData.daily_pro_message_count || 0
-  const now = new Date()
+  let dailyProCount = userData.daily_pro_message_count || 0;
+  const now = new Date();
   const lastReset = userData.daily_pro_reset
     ? new Date(userData.daily_pro_reset)
-    : null
+    : null;
 
   const isNewDay =
     !lastReset ||
     now.getUTCFullYear() !== lastReset.getUTCFullYear() ||
     now.getUTCMonth() !== lastReset.getUTCMonth() ||
-    now.getUTCDate() !== lastReset.getUTCDate()
+    now.getUTCDate() !== lastReset.getUTCDate();
 
   if (isNewDay) {
-    dailyProCount = 0
+    dailyProCount = 0;
     const { error: resetError } = await supabase
-      .from("users")
+      .from('users')
       .update({
         daily_pro_message_count: 0,
         daily_pro_reset: now.toISOString(),
       })
-      .eq("id", userId)
+      .eq('id', userId);
 
     if (resetError) {
-      throw new Error("Failed to reset pro usage: " + resetError.message)
+      throw new Error(`Failed to reset pro usage: ${resetError.message}`);
     }
   }
 
   if (dailyProCount >= DAILY_LIMIT_PRO_MODELS) {
-    throw new UsageLimitError("Daily Pro model limit reached.")
+    throw new UsageLimitError('Daily Pro model limit reached.');
   }
 
   return {
     dailyProCount,
     limit: DAILY_LIMIT_PRO_MODELS,
-  }
+  };
 }
 
 export async function incrementProUsage(
@@ -181,27 +266,27 @@ export async function incrementProUsage(
   userId: string
 ) {
   const { data, error } = await supabase
-    .from("users")
-    .select("daily_pro_message_count")
-    .eq("id", userId)
-    .maybeSingle()
+    .from('users')
+    .select('daily_pro_message_count')
+    .eq('id', userId)
+    .maybeSingle();
 
   if (error || !data) {
-    throw new Error("Failed to fetch user usage for increment")
+    throw new Error('Failed to fetch user usage for increment');
   }
 
-  const count = data.daily_pro_message_count || 0
+  const count = data.daily_pro_message_count || 0;
 
   const { error: updateError } = await supabase
-    .from("users")
+    .from('users')
     .update({
       daily_pro_message_count: count + 1,
       last_active_at: new Date().toISOString(),
     })
-    .eq("id", userId)
+    .eq('id', userId);
 
   if (updateError) {
-    throw new Error("Failed to increment pro usage: " + updateError.message)
+    throw new Error(`Failed to increment pro usage: ${updateError.message}`);
   }
 }
 
@@ -211,14 +296,27 @@ export async function checkUsageByModel(
   modelId: string,
   isAuthenticated: boolean
 ) {
+  // TEMPORARY: Allow guest users to use pro models when rate limits disabled
+  const isRateLimitDisabled = process.env.DISABLE_RATE_LIMIT === 'true';
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
   if (isProModel(modelId)) {
-    if (!isAuthenticated) {
-      throw new UsageLimitError("You must log in to use this model.")
+    if (!(isAuthenticated || isRateLimitDisabled || isDevelopment)) {
+      throw new UsageLimitError('You must log in to use this model.');
     }
-    return await checkProUsage(supabase, userId)
+
+    // Skip pro usage check for guest users when rate limits disabled
+    if (!isAuthenticated && (isRateLimitDisabled || isDevelopment)) {
+      return {
+        dailyProCount: 0,
+        limit: DAILY_LIMIT_PRO_MODELS,
+      };
+    }
+
+    return await checkProUsage(supabase, userId);
   }
 
-  return await checkUsage(supabase, userId)
+  return await checkUsage(supabase, userId);
 }
 
 export async function incrementUsageByModel(
@@ -228,9 +326,11 @@ export async function incrementUsageByModel(
   isAuthenticated: boolean
 ) {
   if (isProModel(modelId)) {
-    if (!isAuthenticated) return
-    return await incrementProUsage(supabase, userId)
+    if (!isAuthenticated) {
+      return;
+    }
+    return await incrementProUsage(supabase, userId);
   }
 
-  return await incrementUsage(supabase, userId)
+  return await incrementUsage(supabase, userId);
 }

@@ -1,14 +1,13 @@
-import * as React from "react"
-import type { SVGProps } from "react"
+import type { SVGProps } from 'react';
 
 export default function DeepSeekIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
-      width={24}
+      fill="none"
       height={24}
       viewBox="0 0 24 24"
+      width={24}
       xmlns="http://www.w3.org/2000/svg"
-      fill="none"
       {...props}
     >
       <path
@@ -16,5 +15,5 @@ export default function DeepSeekIcon(props: SVGProps<SVGSVGElement>) {
         fill="#4D6BFE"
       />
     </svg>
-  )
+  );
 }

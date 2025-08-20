@@ -1,25 +1,36 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
+
 // Remove Carousel dependency to avoid missing component types
 type CarouselApi = {
-  scrollSnapList: () => number[]
-  selectedScrollSnap: () => number
-  on: (event: string, cb: () => void) => void
-}
-const Carousel: React.FC<any> = ({ children }) => <div>{children}</div>
-const CarouselContent: React.FC<any> = ({ children, ...props }) => (
+  scrollSnapList: () => number[];
+  selectedScrollSnap: () => number;
+  on: (event: string, cb: () => void) => void;
+};
+
+type CarouselProps = {
+  children: React.ReactNode;
+};
+
+type CarouselContentProps = {
+  children: React.ReactNode;
+  [key: string]: unknown;
+};
+
+type CarouselItemProps = {
+  children: React.ReactNode;
+  [key: string]: unknown;
+};
+
+const Carousel: React.FC<CarouselProps> = ({ children }) => <div>{children}</div>;
+const CarouselContent: React.FC<CarouselContentProps> = ({ children, ...props }) => (
   <div {...props}>{children}</div>
-)
-const CarouselItem: React.FC<any> = ({ children, ...props }) => (
+);
+const CarouselItem: React.FC<CarouselItemProps> = ({ children, ...props }) => (
   <div {...props}>{children}</div>
-)
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from '@/components/ui/hover-card';
-import { cn } from '@/lib/utils';
+);
+
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
 import {
   type ComponentProps,
@@ -29,6 +40,12 @@ import {
   useEffect,
   useState,
 } from 'react';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
+import { cn } from '@/lib/utils';
 
 export type InlineCitationProps = ComponentProps<'span'>;
 
@@ -197,11 +214,9 @@ export const InlineCitationCarouselPrev = ({
   className,
   ...props
 }: InlineCitationCarouselPrevProps) => {
-  const api = useCarouselApi();
-
   const handleClick = useCallback(() => {
     // no-op in fallback
-  }, [api]);
+  }, []);
 
   return (
     <button
@@ -222,11 +237,9 @@ export const InlineCitationCarouselNext = ({
   className,
   ...props
 }: InlineCitationCarouselNextProps) => {
-  const api = useCarouselApi();
-
   const handleClick = useCallback(() => {
     // no-op in fallback
-  }, [api]);
+  }, []);
 
   return (
     <button

@@ -76,9 +76,53 @@ CREATE TRIGGER update_user_keys_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+-- Add user_security_settings table for rotation configuration
+CREATE TABLE IF NOT EXISTS user_security_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  config JSONB NOT NULL DEFAULT '{
+    "requireApiKeyRotation": false,
+    "rotationDays": 90
+  }',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  UNIQUE(user_id)
+);
+
+-- Add RLS policies for user_security_settings
+ALTER TABLE user_security_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own security settings" ON user_security_settings
+  FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own security settings" ON user_security_settings
+  FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own security settings" ON user_security_settings
+  FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own security settings" ON user_security_settings
+  FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Add updated_at trigger for user_security_settings
+CREATE TRIGGER update_user_security_settings_updated_at
+  BEFORE UPDATE ON user_security_settings
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- Add indexes for performance
+CREATE INDEX IF NOT EXISTS idx_user_security_settings_user_id ON user_security_settings(user_id);
+
 -- Add comments for documentation
 COMMENT ON TABLE user_keys IS 'Stores AES-256-GCM encrypted API keys for various AI providers';
 COMMENT ON TABLE api_key_audit_log IS 'Audit trail for all API key operations';
+COMMENT ON TABLE user_security_settings IS 'User-specific security settings including API key rotation policies';
 
 COMMENT ON COLUMN user_keys.encrypted_key IS 'AES-256-GCM encrypted API key';
 COMMENT ON COLUMN user_keys.iv IS 'Initialization vector for AES-256-GCM encryption';
@@ -86,3 +130,4 @@ COMMENT ON COLUMN user_keys.auth_tag IS 'Authentication tag for GCM mode verific
 COMMENT ON COLUMN user_keys.masked_key IS 'Partially masked key for safe display';
 COMMENT ON COLUMN user_keys.last_rotated IS 'Last time this key was rotated';
 COMMENT ON COLUMN api_key_audit_log.action IS 'Type of operation: created, updated, deleted, rotated, accessed';
+COMMENT ON COLUMN user_security_settings.config IS 'JSON configuration for security settings like rotation policies';

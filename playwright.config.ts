@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig, devices } from '@playwright/test';
 
 /**
  * @see https://playwright.dev/docs/test-configuration
@@ -17,7 +17,7 @@ export default defineConfig({
   reporter: [
     ['html'],
     ['json', { outputFile: 'playwright-report/results.json' }],
-    ['junit', { outputFile: 'playwright-report/results.xml' }]
+    ['junit', { outputFile: 'playwright-report/results.xml' }],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
@@ -26,18 +26,18 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
-    
+
     /* Take screenshot on failure */
     screenshot: 'only-on-failure',
-    
+
     /* Record video on failure */
     video: 'retain-on-failure',
-    
+
     /* Global timeout for each test */
-    actionTimeout: 30000,
-    
+    actionTimeout: 30_000,
+
     /* Navigation timeout */
-    navigationTimeout: 60000
+    navigationTimeout: 60_000,
   },
 
   /* Configure projects for major browsers */
@@ -83,7 +83,7 @@ export default defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 120000,
+    timeout: 120_000,
   },
 
   /* Global setup and teardown */
@@ -91,13 +91,13 @@ export default defineConfig({
   globalTeardown: './tests/e2e/global-teardown.ts',
 
   /* Test timeout */
-  timeout: 60000,
-  
+  timeout: 60_000,
+
   /* Expect timeout */
   expect: {
-    timeout: 10000
+    timeout: 10_000,
   },
 
   /* Output directory for test artifacts */
   outputDir: 'playwright-test-results/',
-})
+});

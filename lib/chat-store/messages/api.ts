@@ -1,62 +1,88 @@
-import { createClient } from "@/lib/supabase/client"
-import { isSupabaseEnabled } from "@/lib/supabase/config"
+import { createClient } from '@/lib/supabase/client';
+import { isSupabaseEnabled } from '@/lib/supabase/config';
+import type { Tables } from '@/app/types/database.types';
 // Loosen message typing to reduce coupling
-import { readFromIndexedDB, writeToIndexedDB } from "../persist"
+import { readFromIndexedDB, writeToIndexedDB } from '../persist';
 
-export async function getMessagesFromDb(
-  chatId: string
-): Promise<any[]> {
+// Types for messages
+type DatabaseMessage = Tables<'messages'>;
+
+interface MessageFromDB extends Omit<DatabaseMessage, 'id' | 'created_at'> {
+  id: string;
+  created_at?: string;
+  createdAt?: Date;
+}
+
+interface MessageToInsert {
+  role: 'system' | 'user' | 'assistant' | 'data';
+  content: string;
+  parts?: unknown;
+  experimental_attachments?: Array<{
+    url?: string;
+    name?: string;
+    contentType?: string;
+  }>;
+  message_group_id?: string;
+  model?: string;
+}
+
+export async function getMessagesFromDb(chatId: string): Promise<MessageFromDB[]> {
   // fallback to local cache only
   if (!isSupabaseEnabled) {
-    const cached = await getCachedMessages(chatId)
-    return cached
+    const cached = await getCachedMessages(chatId);
+    return cached;
   }
 
-  const supabase = createClient()
-  if (!supabase) return []
+  const supabase = createClient();
+  if (!supabase) {
+    return [];
+  }
 
   const { data, error } = await supabase
-    .from("messages")
+    .from('messages')
     .select(
-      "id, content, role, experimental_attachments, created_at, parts, message_group_id, model"
+      'id, content, role, experimental_attachments, created_at, parts, message_group_id, model'
     )
-    .eq("chat_id", chatId)
-    .order("created_at", { ascending: true })
+    .eq('chat_id', chatId)
+    .order('created_at', { ascending: true });
 
   if (!data || error) {
-    console.error("Failed to fetch messages:", error)
-    return []
+    return [];
   }
 
-  return data.map((message: any) => ({
+  return data.map((message: DatabaseMessage): MessageFromDB => ({
     ...message,
     id: String(message.id),
-    content: message.content ?? "",
-    createdAt: new Date(message.created_at || ""),
-    parts: (message?.parts as any) || undefined,
+    content: message.content ?? '',
+    createdAt: new Date(message.created_at || ''),
+    parts: message.parts || undefined,
     message_group_id: message.message_group_id,
     model: message.model,
   }));
 }
 
-async function insertMessageToDb(chatId: string, message: any) {
-  const supabase = createClient()
-  if (!supabase) return
+async function insertMessageToDb(chatId: string, message: MessageToInsert) {
+  const supabase = createClient();
+  if (!supabase) {
+    return;
+  }
 
-  await supabase.from("messages").insert({
+  await supabase.from('messages').insert({
     chat_id: chatId,
     role: message.role,
     content: message.content,
     experimental_attachments: message.experimental_attachments,
     created_at: message.createdAt?.toISOString() || new Date().toISOString(),
-    message_group_id: (message as any).message_group_id || null,
-    model: (message as any).model || null,
-  })
+    message_group_id: message.message_group_id || null,
+    model: message.model || null,
+  });
 }
 
-async function insertMessagesToDb(chatId: string, messages: any[]) {
-  const supabase = createClient()
-  if (!supabase) return
+async function insertMessagesToDb(chatId: string, messages: MessageToInsert[]) {
+  const supabase = createClient();
+  if (!supabase) {
+    return;
+  }
 
   const payload = messages.map((message) => ({
     chat_id: chatId,
@@ -64,75 +90,73 @@ async function insertMessagesToDb(chatId: string, messages: any[]) {
     content: message.content,
     experimental_attachments: message.experimental_attachments,
     created_at: message.createdAt?.toISOString() || new Date().toISOString(),
-    message_group_id: (message as any).message_group_id || null,
-    model: (message as any).model || null,
-  }))
+    message_group_id: message.message_group_id || null,
+    model: message.model || null,
+  }));
 
-  await supabase.from("messages").insert(payload)
+  await supabase.from('messages').insert(payload);
 }
 
 async function deleteMessagesFromDb(chatId: string) {
-  const supabase = createClient()
-  if (!supabase) return
+  const supabase = createClient();
+  if (!supabase) {
+    return;
+  }
 
   const { error } = await supabase
-    .from("messages")
+    .from('messages')
     .delete()
-    .eq("chat_id", chatId)
+    .eq('chat_id', chatId);
 
   if (error) {
-    console.error("Failed to clear messages from database:", error)
   }
 }
 
 type ChatMessageEntry = {
-  id: string
-  messages: any[]
-}
+  id: string;
+  messages: MessageFromDB[];
+};
 
-export async function getCachedMessages(
-  chatId: string
-): Promise<any[]> {
-  const entry = await readFromIndexedDB<ChatMessageEntry>("messages", chatId)
+export async function getCachedMessages(chatId: string): Promise<MessageFromDB[]> {
+  const entry = await readFromIndexedDB<ChatMessageEntry>('messages', chatId);
 
-  if (!entry || Array.isArray(entry)) return []
+  if (!entry || Array.isArray(entry)) {
+    return [];
+  }
 
   return (entry.messages || []).sort(
     (a, b) => +new Date(a.createdAt || 0) - +new Date(b.createdAt || 0)
-  )
+  );
 }
 
 export async function cacheMessages(
   chatId: string,
-  messages: any[]
+  messages: MessageFromDB[]
 ): Promise<void> {
-  await writeToIndexedDB("messages", { id: chatId, messages })
+  await writeToIndexedDB('messages', { id: chatId, messages });
 }
 
-export async function addMessage(
-  chatId: string,
-  message: any
-): Promise<void> {
-  await insertMessageToDb(chatId, message)
-  const current = await getCachedMessages(chatId)
-  const updated = [...current, message]
+export async function addMessage(chatId: string, message: MessageToInsert): Promise<void> {
+  await insertMessageToDb(chatId, message);
+  const current = await getCachedMessages(chatId);
+  const updated = [...current, message];
 
-  await writeToIndexedDB("messages", { id: chatId, messages: updated })
+  await writeToIndexedDB('messages', { id: chatId, messages: updated });
 }
 
 export async function setMessages(
   chatId: string,
-  messages: any[]
+  messages: MessageToInsert[]
 ): Promise<void> {
-  await insertMessagesToDb(chatId, messages)
-  await writeToIndexedDB("messages", { id: chatId, messages })
+  await insertMessagesToDb(chatId, messages);
+  await writeToIndexedDB('messages', { id: chatId, messages });
 }
 
 export async function clearMessagesCache(chatId: string): Promise<void> {
-  await writeToIndexedDB("messages", { id: chatId, messages: [] })
+  await writeToIndexedDB('messages', { id: chatId, messages: [] });
 }
 
 export async function clearMessagesForChat(chatId: string): Promise<void> {
-  await deleteMessagesFromDb(chatId)
-  await clearMessagesCache(chatId)
+  await deleteMessagesFromDb(chatId);
+  await clearMessagesCache(chatId);
 }

@@ -1,7 +1,40 @@
-import { Client } from 'langsmith'
-import { traceable } from 'langsmith/traceable'
-import { wrapOpenAI } from 'langsmith/wrappers'
-import OpenAI from 'openai'
+import { Client } from 'langsmith';
+import { traceable } from 'langsmith/traceable';
+import { wrapOpenAI } from 'langsmith/wrappers';
+import OpenAI from 'openai';
+
+// Types for LangSmith parameters
+interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+interface ChatTool {
+  type: string;
+  function: {
+    name: string;
+    description?: string;
+    parameters?: Record<string, unknown>;
+  };
+}
+
+interface TraceChatParams {
+  model: string;
+  messages: ChatMessage[];
+  tools?: ChatTool[];
+  temperature?: number;
+  max_tokens?: number;
+  stream?: boolean;
+  metadata?: Record<string, unknown>;
+}
+
+interface ResponseMetadata {
+  runId?: string;
+  headers?: Record<string, string>;
+  metadata?: {
+    runId?: string;
+  };
+}
 
 // Initialize LangSmith client
 export const langsmithClient = process.env.LANGSMITH_API_KEY
@@ -9,45 +42,39 @@ export const langsmithClient = process.env.LANGSMITH_API_KEY
       apiKey: process.env.LANGSMITH_API_KEY,
       apiUrl: 'https://api.smith.langchain.com',
     })
-  : null
+  : null;
 
 // Check if LangSmith is enabled
 export const isLangSmithEnabled = () => {
   return !!(
-    process.env.LANGSMITH_API_KEY &&
-    process.env.LANGSMITH_TRACING === 'true'
-  )
-}
+    process.env.LANGSMITH_API_KEY && process.env.LANGSMITH_TRACING === 'true'
+  );
+};
 
 // Get the current project name
 export const getLangSmithProject = () => {
-  return process.env.LANGSMITH_PROJECT || 'zola-chat'
-}
+  return process.env.LANGSMITH_PROJECT || 'zola-chat';
+};
 
 // Wrap chat completion calls with tracing
 export const traceChat = traceable(
-  async (params: {
-    model: string
-    messages: any[]
-    tools?: any
-    temperature?: number
-    max_tokens?: number
-    stream?: boolean
-    metadata?: Record<string, any>
-  }) => {
-    return params
+  async (params: TraceChatParams) => {
+    return params;
   },
-  'chat-completion'
-)
+  {
+    name: 'chat-completion',
+    project_name: getLangSmithProject(),
+  }
+);
 
 // Wrap OpenAI client for automatic tracing
 export function createTracedOpenAI(apiKey: string) {
   if (!isLangSmithEnabled()) {
-    return new OpenAI({ apiKey })
+    return new OpenAI({ apiKey });
   }
 
-  const client = wrapOpenAI(new OpenAI({ apiKey }))
-  return client
+  const client = wrapOpenAI(new OpenAI({ apiKey }));
+  return client;
 }
 
 // Create a feedback entry
@@ -58,85 +85,79 @@ export async function createFeedback({
   comment,
   userId,
 }: {
-  runId: string
-  feedback: 'upvote' | 'downvote'
-  score?: number
-  comment?: string
-  userId?: string
+  runId: string;
+  feedback: 'upvote' | 'downvote';
+  score?: number;
+  comment?: string;
+  userId?: string;
 }) {
-  if (!langsmithClient || !isLangSmithEnabled()) {
-    console.log('LangSmith not enabled, skipping feedback')
-    return null
+  if (!(langsmithClient && isLangSmithEnabled())) {
+    return null;
   }
 
   try {
-    const feedbackScore = score ?? (feedback === 'upvote' ? 1 : 0)
+    const feedbackScore = score ?? (feedback === 'upvote' ? 1 : 0);
 
-    await langsmithClient.createFeedback({
-      runId,
-      key: 'user-feedback',
+    await langsmithClient.createFeedback(runId, 'user-feedback', {
       score: feedbackScore,
       value: feedback,
       comment,
-      feedbackId: `${runId}-${Date.now()}`,
-      feedbackConfig: {
-        type: 'user',
-      },
+      feedbackSourceType: 'api',
       sourceInfo: {
         userId,
       },
-    })
+    });
 
     return {
       success: true,
       runId,
       feedback,
       score: feedbackScore,
-    }
+    };
   } catch (error) {
-    console.error('Error creating LangSmith feedback:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-    }
+    };
   }
 }
 
 // Get run details
 export async function getRunDetails(runId: string) {
-  if (!langsmithClient || !isLangSmithEnabled()) {
-    return null
+  if (!(langsmithClient && isLangSmithEnabled())) {
+    return null;
   }
 
   try {
-    const run = await langsmithClient.readRun(runId)
-    return run
-  } catch (error) {
-    console.error('Error fetching run details:', error)
-    return null
+    const run = await langsmithClient.readRun(runId);
+    return run;
+  } catch {
+    return null;
   }
 }
 
 // Helper to extract run ID from response metadata
-export function extractRunId(response: any): string | null {
-  return response?.metadata?.runId || response?.headers?.['x-langsmith-run-id'] || null
+export function extractRunId(response: ResponseMetadata): string | null {
+  return (
+    response?.metadata?.runId ||
+    response?.headers?.['x-langsmith-run-id'] ||
+    null
+  );
 }
 
 // Create a traced function for any async operation
-export function createTracedFunction<T extends (...args: any[]) => Promise<any>>(
-  fn: T,
-  name: string,
-  metadata?: Record<string, any>
-): T {
+export function createTracedFunction<
+  T extends (...args: unknown[]) => Promise<unknown>,
+>(fn: T, name: string, metadata?: Record<string, unknown>): T {
   if (!isLangSmithEnabled()) {
-    return fn
+    return fn;
   }
 
   return traceable(fn, {
     name,
     project_name: getLangSmithProject(),
     metadata,
-  }) as T
+  }) as T;
 }
 
 // Log custom metrics
@@ -144,18 +165,16 @@ export async function logMetrics({
   runId,
   metrics,
 }: {
-  runId: string
-  metrics: Record<string, any>
+  runId: string;
+  metrics: Record<string, unknown>;
 }) {
-  if (!langsmithClient || !isLangSmithEnabled()) {
-    return
+  if (!(langsmithClient && isLangSmithEnabled())) {
+    return;
   }
 
   try {
-    await langsmithClient.updateRun(runId, { extra: { metrics } } as any)
-  } catch (error) {
-    console.error('Error logging metrics to LangSmith:', error)
-  }
+    await langsmithClient.updateRun(runId, { extra: { metrics } });
+  } catch {}
 }
 
 // Create a run for manual tracing
@@ -166,30 +185,29 @@ export async function createRun({
   metadata,
   parentRunId,
 }: {
-  name: string
-  inputs: Record<string, any>
-  runType?: 'chain' | 'llm' | 'tool' | 'retriever'
-  metadata?: Record<string, any>
-  parentRunId?: string
+  name: string;
+  inputs: Record<string, unknown>;
+  runType?: 'chain' | 'llm' | 'tool' | 'retriever';
+  metadata?: Record<string, unknown>;
+  parentRunId?: string;
 }) {
-  if (!langsmithClient || !isLangSmithEnabled()) {
-    return null
+  if (!(langsmithClient && isLangSmithEnabled())) {
+    return null;
   }
 
   try {
     const run = await langsmithClient.createRun({
       name,
       inputs,
-      run_type: runType as any,
+      run_type: runType,
       project_name: getLangSmithProject(),
       extra: metadata,
       parent_run_id: parentRunId,
-    } as any)
+    });
 
-    return run
-  } catch (error) {
-    console.error('Error creating LangSmith run:', error)
-    return null
+    return run;
+  } catch {
+    return null;
   }
 }
 
@@ -200,13 +218,13 @@ export async function updateRun({
   error,
   endTime,
 }: {
-  runId: string
-  outputs?: Record<string, any>
-  error?: string
-  endTime?: Date
+  runId: string;
+  outputs?: Record<string, unknown>;
+  error?: string;
+  endTime?: Date;
 }) {
-  if (!langsmithClient || !isLangSmithEnabled()) {
-    return
+  if (!(langsmithClient && isLangSmithEnabled())) {
+    return;
   }
 
   try {
@@ -214,8 +232,6 @@ export async function updateRun({
       outputs,
       error,
       end_time: (endTime || new Date()).toISOString(),
-    } as any)
-  } catch (error) {
-    console.error('Error updating LangSmith run:', error)
-  }
+    } as Record<string, unknown>);
+  } catch {}
 }

@@ -412,41 +412,58 @@ Replace your root page (`app/page.tsx`) with the following code.
 'use client';
 
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { useState } from 'react';
 
 export default function Chat() {
   const [input, setInput] = useState('');
-  const { messages, sendMessage } = useChat();
+
+  const { messages, sendMessage, status, error, stop, reload } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+    }),
+  });
+
   return (
     <div className="flex flex-col w-full max-w-md py-24 mx-auto stretch">
-      <div className="space-y-4">
-        {messages.map(m => (
-          <div key={m.id} className="whitespace-pre-wrap">
-            <div>
-              <div className="font-bold">{m.role}</div>
-              {m.parts.map(part => {
-                switch (part.type) {
-                  case 'text':
-                    return <p>{part.text}</p>;
-                }
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
+      {messages.map(m => (
+        <div key={m.id} className="whitespace-pre-wrap">
+          {m.role === 'user' ? 'User: ' : 'AI: '}
+          {m.parts.map((part, index) =>
+            part.type === 'text' ? <span key={`${m.id}-text-${index}`}>{part.text}</span> : null,
+          )}
+        </div>
+      ))}
+
+      {(status === 'submitted' || status === 'streaming') && (
+        <div>
+          {status === 'submitted' && <span>Submitting…</span>}
+          <button type="button" onClick={() => stop()}>Stop</button>
+        </div>
+      )}
+
+      {error && (
+        <>
+          <div>Something went wrong.</div>
+          <button type="button" onClick={() => reload()}>Retry</button>
+        </>
+      )}
 
       <form
-        onSubmit={e => {
+        onSubmit={async e => {
           e.preventDefault();
-          sendMessage({ text: input });
+          if (!input.trim()) return;
+          await sendMessage({ text: input });
           setInput('');
         }}
+        className="fixed bottom-0 w-full max-w-md mb-8 border border-gray-300 rounded shadow-xl"
       >
         <input
-          className="fixed bottom-0 w-full max-w-md p-2 mb-8 border border-gray-300 rounded shadow-xl"
+          className="w-full p-2"
           value={input}
           placeholder="Say something..."
           onChange={e => setInput(e.currentTarget.value)}
+          disabled={status !== 'ready'}
         />
       </form>
     </div>
@@ -844,6 +861,467 @@ If you're using the Vercel setup above, you can run the command directly by eith
 [More info](https://github.com/vercel/ai-sdk-rag-starter/issues/1).
 
 ---
+title: AI SDK v5 Migration Guide
+description: Complete guide for migrating from AI SDK v4 to v5 with examples and troubleshooting.
+tags: ['migration', 'v5', 'upgrade', 'breaking-changes', 'guide']
+---
+
+# AI SDK v5 Migration Guide
+
+This guide covers the complete migration process from AI SDK v4 to v5, highlighting key changes, breaking changes, and providing step-by-step examples to update your existing applications.
+
+## Overview
+
+AI SDK v5 introduces several significant improvements:
+
+- **New Message Structure**: Messages now use a `parts` array instead of a single `content` string
+- **Enhanced Transport System**: `DefaultChatTransport` replaces direct API configuration  
+- **Improved File Handling**: Files are now handled as `file` parts instead of `experimental_attachments`
+- **Better Tool Integration**: Enhanced tool handling with typed tool parts
+- **Performance Improvements**: Optimized streaming and message processing
+
+## Key Breaking Changes
+
+### 1. Message Structure
+
+**v4 Pattern (Old):**
+```typescript
+// v4 - Messages had content as string
+const message = {
+  id: 'msg-1',
+  role: 'user',
+  content: 'Hello world'
+};
+
+// Rendering v4 messages
+{messages.map(message => (
+  <div key={message.id}>
+    {message.content}
+  </div>
+))}
+```
+
+**v5 Pattern (New):**
+```typescript
+// v5 - Messages have parts array
+const message = {
+  id: 'msg-1', 
+  role: 'user',
+  parts: [
+    { type: 'text', text: 'Hello world' }
+  ]
+};
+
+// Rendering v5 messages
+{messages.map(message => (
+  <div key={message.id}>
+    {message.parts.map((part, index) => {
+      switch (part.type) {
+        case 'text':
+          return <span key={index}>{part.text}</span>;
+        case 'file':
+          return <img key={index} src={part.url} alt="File" />;
+        default:
+          return null;
+      }
+    })}
+  </div>
+))}
+```
+
+### 2. useChat Configuration
+
+**v4 Pattern (Old):**
+```typescript
+import { useChat } from '@ai-sdk/react';
+
+const { messages, input, handleSubmit } = useChat({
+  api: '/api/chat'
+});
+```
+
+**v5 Pattern (New):**
+```typescript
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
+
+const { messages, sendMessage } = useChat({
+  transport: new DefaultChatTransport({
+    api: '/api/chat'
+  })
+});
+```
+
+### 3. File Handling
+
+**v4 Pattern (Old):**
+```typescript
+// v4 - experimental_attachments
+const { messages, handleSubmit } = useChat({
+  api: '/api/chat',
+  experimental_attachments: true
+});
+
+// Sending files in v4
+handleSubmit(e, {
+  experimental_attachments: files
+});
+```
+
+**v5 Pattern (New):**
+```typescript
+// v5 - files as parts
+const { messages, sendMessage } = useChat({
+  transport: new DefaultChatTransport({ api: '/api/chat' })
+});
+
+// Convert files to data URLs
+async function convertFilesToDataURLs(files: FileList) {
+  return Promise.all(
+    Array.from(files).map(
+      file => new Promise<{
+        type: 'file';
+        mediaType: string;
+        url: string;
+      }>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({
+          type: 'file',
+          mediaType: file.type,
+          url: reader.result as string,
+        });
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      }),
+    ),
+  );
+}
+
+// Sending files in v5
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  const textParts = input ? [{ type: 'text' as const, text: input }] : [];
+  const fileParts = files ? await convertFilesToDataURLs(files) : [];
+  
+  sendMessage([...textParts, ...fileParts]);
+};
+```
+
+### 4. Tool Handling
+
+**v4 Pattern (Old):**
+```typescript
+// v4 - Basic tool results
+{message.toolInvocations?.map((tool, index) => (
+  <div key={index}>
+    Tool: {tool.toolName}
+    State: {tool.state}
+  </div>
+))}
+```
+
+**v5 Pattern (New):**
+```typescript
+// v5 - Typed tool parts
+{message.parts.map((part, index) => {
+  switch (part.type) {
+    case 'tool-askForConfirmation':
+      return (
+        <div key={index}>
+          {part.state === 'input-available' && (
+            <div>
+              {part.input.message}
+              <button onClick={() => addToolResult({
+                tool: 'askForConfirmation',
+                toolCallId: part.toolCallId,
+                output: 'Yes'
+              })}>
+                Confirm
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    default:
+      return null;
+  }
+})}
+```
+
+## Migration Steps
+
+### Step 1: Update Dependencies
+
+```bash
+npm install @ai-sdk/react@latest ai@latest
+```
+
+### Step 2: Update useChat Configuration
+
+Replace all `useChat` configurations to use `DefaultChatTransport`:
+
+```typescript
+// Before
+import { useChat } from '@ai-sdk/react';
+
+const chat = useChat({ api: '/api/chat' });
+
+// After  
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
+
+const chat = useChat({
+  transport: new DefaultChatTransport({ api: '/api/chat' })
+});
+```
+
+### Step 3: Update Message Rendering
+
+Replace all message rendering to use the `parts` array:
+
+```typescript
+// Before
+{messages.map(message => (
+  <div key={message.id}>
+    {message.content}
+  </div>
+))}
+
+// After
+{messages.map(message => (
+  <div key={message.id}>
+    {message.parts.map((part, index) => {
+      if (part.type === 'text') {
+        return <span key={index}>{part.text}</span>;
+      }
+      return null;
+    })}
+  </div>
+))}
+```
+
+### Step 4: Update File Handling
+
+Replace `experimental_attachments` with file parts:
+
+```typescript
+// Before
+handleSubmit(e, {
+  experimental_attachments: files
+});
+
+// After
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  const textParts = input ? [{ type: 'text' as const, text: input }] : [];
+  const fileParts = files ? await convertFilesToDataURLs(files) : [];
+  
+  sendMessage([...textParts, ...fileParts]);
+};
+```
+
+### Step 5: Update API Routes
+
+Ensure your API routes handle the new message structure:
+
+```typescript
+// API route should handle parts array
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  
+  // Messages now have parts array instead of content string
+  const result = await streamText({
+    model: openai('gpt-4o'),
+    messages: messages.map(message => ({
+      role: message.role,
+      content: message.parts.map(part => {
+        if (part.type === 'text') return { type: 'text', text: part.text };
+        if (part.type === 'file') return { type: 'image', image: part.url };
+        return part;
+      })
+    })),
+  });
+
+  return result.toDataStreamResponse();
+}
+```
+
+## Common Migration Issues and Solutions
+
+### Issue 1: `message.content is undefined`
+
+**Problem**: Trying to access `message.content` on v5 messages.
+
+**Solution**: Use `message.parts` array instead:
+```typescript
+// Instead of: message.content
+// Use: 
+const text = message.parts?.find(p => p.type === 'text')?.text || '';
+```
+
+### Issue 2: Files Not Displaying
+
+**Problem**: Files not showing up in messages after migration.
+
+**Solution**: Update file part rendering:
+```typescript
+{message.parts.map((part, index) => {
+  if (part.type === 'file' && part.mediaType?.startsWith('image/')) {
+    return <img key={index} src={part.url} alt="Uploaded image" />;
+  }
+  return null;
+})}
+```
+
+### Issue 3: Tool Results Not Working
+
+**Problem**: Tool interactions not working after migration.
+
+**Solution**: Update tool handling to use typed tool parts:
+```typescript
+{message.parts.map((part, index) => {
+  if (part.type?.startsWith('tool-')) {
+    const toolName = part.type.replace('tool-', '');
+    return <ToolComponent key={index} part={part} toolName={toolName} />;
+  }
+  return null;
+})}
+```
+
+### Issue 4: TypeScript Errors
+
+**Problem**: TypeScript errors with new message types.
+
+**Solution**: Import and use the correct types:
+```typescript
+import { type UIMessage } from '@ai-sdk/react';
+
+// Use UIMessage type for message parameters
+const renderMessage = (message: UIMessage) => {
+  return message.parts.map((part, index) => {
+    // Handle different part types
+  });
+};
+```
+
+## Best Practices for v5
+
+### 1. Message Part Handling
+
+Always check part types before rendering:
+```typescript
+{message.parts.map((part, index) => {
+  switch (part.type) {
+    case 'text':
+      return <span key={index}>{part.text}</span>;
+    case 'file':
+      return part.mediaType?.startsWith('image/') 
+        ? <img key={index} src={part.url} alt="File" />
+        : <a key={index} href={part.url}>Download File</a>;
+    default:
+      return null;
+  }
+})}
+```
+
+### 2. File Conversion
+
+Use proper error handling for file conversion:
+```typescript
+const convertFilesToDataURLs = async (files: FileList) => {
+  try {
+    return await Promise.all(
+      Array.from(files).map(file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({
+          type: 'file',
+          mediaType: file.type,
+          url: reader.result as string,
+        });
+        reader.onerror = () => reject(new Error('File read failed'));
+        reader.readAsDataURL(file);
+      }))
+    );
+  } catch (error) {
+    console.error('File conversion failed:', error);
+    return [];
+  }
+};
+```
+
+### 3. Transport Configuration
+
+Use transport configuration for advanced scenarios:
+```typescript
+const chat = useChat({
+  transport: new DefaultChatTransport({
+    api: '/api/chat',
+    headers: {
+      'Custom-Header': 'value'
+    }
+  }),
+  onError: (error) => {
+    console.error('Chat error:', error);
+  }
+});
+```
+
+## Backward Compatibility
+
+While v5 introduces breaking changes, you can gradually migrate by:
+
+1. **Incremental Migration**: Update one component at a time
+2. **Type Guards**: Use type checking to handle both v4 and v5 message formats temporarily
+3. **Wrapper Functions**: Create utility functions to abstract the differences
+
+```typescript
+// Utility function for backward compatibility
+const getMessageText = (message: any): string => {
+  // v5 format
+  if (message.parts) {
+    return message.parts
+      .filter((part: any) => part.type === 'text')
+      .map((part: any) => part.text)
+      .join('');
+  }
+  // v4 format fallback
+  return message.content || '';
+};
+```
+
+## Performance Considerations
+
+v5 offers several performance improvements:
+
+- **Optimized Streaming**: Better handling of large message streams
+- **Efficient File Processing**: Improved file part handling
+- **Memory Usage**: Better memory management with parts array
+- **Network Optimization**: More efficient data transfer with transport system
+
+## Testing Your Migration
+
+After migration, test these key areas:
+
+1. **Message Rendering**: Verify all message types render correctly
+2. **File Uploads**: Test image and document uploads
+3. **Tool Interactions**: Verify tool calls work as expected  
+4. **Streaming**: Check message streaming performance
+5. **Error Handling**: Test error scenarios and recovery
+
+## Getting Help
+
+If you encounter issues during migration:
+
+1. Check the [AI SDK documentation](https://sdk.vercel.ai/)
+2. Review this migration guide for common patterns
+3. Check GitHub issues for known problems
+4. Ask questions in the community forums
+
+The migration to v5 provides significant improvements in functionality and performance. While there are breaking changes, following this guide should make the transition smooth and straightforward.
+
+---
 title: Multi-Modal Agent
 description: Learn how to build a multi-modal agent that can process images and PDFs with the AI SDK.
 tags: ['multi-modal', 'agent', 'images', 'pdf', 'vision', 'next']
@@ -1021,6 +1499,33 @@ export default function Chat() {
           sendMessage({
             role: 'user',
             parts: [{ type: 'text', text: input }],
+
+### Status States
+
+The `useChat` hook exposes a `status` value that transitions through:
+
+- `submitted`: request sent, waiting for stream to start
+- `streaming`: actively receiving response chunks
+- `ready`: idle or finished; you can submit a new message
+- `error`: request failed
+
+Use these to disable inputs, show loaders, or offer a Stop/Retry action.
+
+### Request-level options with sendMessage
+
+You can pass headers/body/metadata per request via the second parameter to `sendMessage`:
+
+```tsx
+await sendMessage(
+  { text: input },
+  {
+    headers: { Authorization: 'Bearer token123' },
+    body: { model: 'openai/gpt-4o', webSearch: true },
+    metadata: { sessionId: 'abc-123' },
+  }
+);
+```
+
           });
           setInput('');
         }}
@@ -17206,14 +17711,14 @@ export async function POST(req: Request) {
   const result = streamObject({
     model: 'openai/gpt-4o',
     schema: citationSchema,
-    prompt: `Generate a well-researched paragraph about ${prompt} with proper citations. 
-    
+    prompt: `Generate a well-researched paragraph about ${prompt} with proper citations.
+
     Include:
     - A comprehensive paragraph with inline citations marked as [1], [2], etc.
     - 2-3 citations with realistic source information
     - Each citation should have a title, URL, and optional description/quote
     - Make the content informative and the sources credible
-    
+
     Format citations as numbered references within the text.`,
   });
 
@@ -19348,10 +19853,10 @@ const Example = () => {
 function formatWeatherResult(result: WeatherToolOutput): string {
   return `**Weather for ${result.location}**
 
-**Temperature:** ${result.temperature}  
-**Conditions:** ${result.conditions}  
-**Humidity:** ${result.humidity}  
-**Wind Speed:** ${result.windSpeed}  
+**Temperature:** ${result.temperature}
+**Conditions:** ${result.conditions}
+**Humidity:** ${result.humidity}
+**Wind Speed:** ${result.windSpeed}
 
 *Last updated: ${result.lastUpdated}*`;
 }
@@ -22704,13 +23209,13 @@ const model = azure.transcription('whisper-1');
 <Note>
   If you encounter a "DeploymentNotFound" error with transcription models,
   try enabling deployment-based URLs:
-  
+
   ```ts
   const azure = createAzure({
     useDeploymentBasedUrls: true,
   });
   ```
-  
+
   This uses the legacy endpoint format which may be required for certain Azure OpenAI deployments.
 </Note>
 
@@ -24215,10 +24720,10 @@ The following optional provider options are available for Amazon Nova Canvas:
 
 - **style** _string_
 
-  Predefined visual style for image generation.  
+  Predefined visual style for image generation.
   Accepts one of:
-  `3D_ANIMATED_FAMILY_FILM` · `DESIGN_SKETCH` · `FLAT_VECTOR_ILLUSTRATION` ·  
-  `GRAPHIC_NOVEL_ILLUSTRATION` · `MAXIMALISM` · `MIDCENTURY_RETRO` ·  
+  `3D_ANIMATED_FAMILY_FILM` · `DESIGN_SKETCH` · `FLAT_VECTOR_ILLUSTRATION` ·
+  `GRAPHIC_NOVEL_ILLUSTRATION` · `MAXIMALISM` · `MIDCENTURY_RETRO` ·
   `PHOTOREALISM` · `SOFT_DIGITAL_PAINTING`.
 
 Documentation for additional settings can be found within the [Amazon Bedrock

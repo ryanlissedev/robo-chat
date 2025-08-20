@@ -1,14 +1,16 @@
-import '@testing-library/jest-dom'
-import React from 'react'
+import '@testing-library/jest-dom';
+import React from 'react';
+import { vi } from 'vitest';
+
 // Make React available globally for components that assume it
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-;(global as any).React = React
+(global as any).React = React;
 
 // Mock next/navigation redirect as vi.fn()
 vi.mock('next/navigation', async (orig) => {
-  const actual = await (orig() as Promise<any>)
+  const actual = await (orig() as Promise<any>);
   return {
     ...actual,
     redirect: vi.fn(),
-  }
-})
+  };
+});

@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitest/config'
-import path from 'path'
+import path from 'node:path';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [],
@@ -8,16 +8,22 @@ export default defineConfig({
     globals: true,
     environment: 'happy-dom',
     setupFiles: ['./tests/setup.ts'],
+    // Add server configuration for better module resolution
+    server: {
+      deps: {
+        inline: ['@testing-library/react'],
+      },
+    },
     include: [
       'tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
-      '**/__tests__/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'
+      '**/__tests__/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
     ],
     exclude: [
       'node_modules',
       'dist',
       '.next',
       'tests/e2e/**',
-      'playwright-tests/**'
+      'playwright-tests/**',
     ],
     coverage: {
       provider: 'v8',
@@ -32,16 +38,16 @@ export default defineConfig({
         'dist/',
         'coverage/',
         '**/*.test.*',
-        '**/*.spec.*'
+        '**/*.spec.*',
       ],
       thresholds: {
         global: {
           branches: 80,
           functions: 80,
           lines: 80,
-          statements: 80
-        }
-      }
+          statements: 80,
+        },
+      },
     },
     // Pool configuration for better performance
     pool: 'threads',
@@ -50,17 +56,13 @@ export default defineConfig({
         singleThread: false,
         useAtomics: true,
         minThreads: 1,
-        maxThreads: 4
-      }
-    },
-    // Watch configuration
-    watch: {
-      clearScreen: false
+        maxThreads: 4,
+      },
     },
     // Mock configuration
     mockReset: true,
     clearMocks: true,
-    restoreMocks: true
+    restoreMocks: true,
   },
   resolve: {
     alias: {
@@ -69,13 +71,13 @@ export default defineConfig({
       'ai/react': '@ai-sdk/react',
       // Some environments mis-resolve ai/react; ensure explicit mapping.
       // Do NOT alias bare 'ai' here to avoid breaking non-react imports.
-    }
+    },
   },
   define: {
     // Define environment variables for tests
     'process.env.NODE_ENV': '"test"',
     'process.env.NEXT_PUBLIC_SUPABASE_URL': '"http://localhost:54321"',
     'process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY': '"test-anon-key"',
-    'process.env.ENCRYPTION_KEY': `"${Buffer.from('a'.repeat(32)).toString('base64')}"`
-  }
-})
+    'process.env.ENCRYPTION_KEY': `"${Buffer.from('a'.repeat(32)).toString('base64')}"`,
+  },
+});

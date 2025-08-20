@@ -1,10 +1,10 @@
-import type { Database } from "@/app/types/database.types"
-import { createServerClient } from "@supabase/ssr"
-import { isSupabaseEnabled } from "./config"
+import { createServerClient } from '@supabase/ssr';
+import type { Database } from '@/app/types/database.types';
+import { isSupabaseEnabled } from './config';
 
 export async function createGuestServerClient() {
   if (!isSupabaseEnabled) {
-    return null
+    return null;
   }
 
   return createServerClient<Database>(
@@ -16,5 +16,5 @@ export async function createGuestServerClient() {
         setAll: () => {},
       },
     }
-  )
+  );
 }

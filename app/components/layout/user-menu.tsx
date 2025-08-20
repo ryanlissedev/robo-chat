@@ -1,43 +1,45 @@
-"use client"
+'use client';
 
-import XIcon from "@/components/icons/x"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { GithubLogoIcon } from '@phosphor-icons/react';
+import { useState } from 'react';
+import XIcon from '@/components/icons/x';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from '@/components/ui/dropdown-menu';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { useUser } from "@/lib/user-store/provider"
-import { GithubLogoIcon } from "@phosphor-icons/react"
-import { useState } from "react"
-import { AppInfoTrigger } from "./app-info/app-info-trigger"
-import { FeedbackTrigger } from "./feedback/feedback-trigger"
-import { SettingsTrigger } from "./settings/settings-trigger"
+} from '@/components/ui/tooltip';
+import { useUser } from '@/lib/user-store/provider';
+import { AppInfoTrigger } from './app-info/app-info-trigger';
+import { FeedbackTrigger } from './feedback/feedback-trigger';
+import { SettingsTrigger } from './settings/settings-trigger';
 
 export function UserMenu() {
-  const { user } = useUser()
-  const [isMenuOpen, setMenuOpen] = useState(false)
-  const [isSettingsOpen, setSettingsOpen] = useState(false)
+  const { user } = useUser();
+  const [isMenuOpen, setMenuOpen] = useState(false);
+  const [isSettingsOpen, setSettingsOpen] = useState(false);
 
-  if (!user) return null
+  if (!user) {
+    return null;
+  }
 
   const handleSettingsOpenChange = (isOpen: boolean) => {
-    setSettingsOpen(isOpen)
+    setSettingsOpen(isOpen);
     if (!isOpen) {
-      setMenuOpen(false)
+      setMenuOpen(false);
     }
-  }
+  };
 
   return (
     // fix shadcn/ui / radix bug when dialog into dropdown menu
-    <DropdownMenu open={isMenuOpen} onOpenChange={setMenuOpen} modal={false}>
+    <DropdownMenu modal={false} onOpenChange={setMenuOpen} open={isMenuOpen}>
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger>
@@ -50,21 +52,21 @@ export function UserMenu() {
         <TooltipContent>Profile</TooltipContent>
       </Tooltip>
       <DropdownMenuContent
-        className="w-56"
         align="end"
+        className="w-56"
         forceMount
         onCloseAutoFocus={(e) => e.preventDefault()}
         onInteractOutside={(e) => {
           if (isSettingsOpen) {
-            e.preventDefault()
-            return
+            e.preventDefault();
+            return;
           }
-          setMenuOpen(false)
+          setMenuOpen(false);
         }}
       >
         <DropdownMenuItem className="flex flex-col items-start gap-0 no-underline hover:bg-transparent focus:bg-transparent">
           <span>{user?.display_name}</span>
-          <span className="text-muted-foreground max-w-full truncate">
+          <span className="max-w-full truncate text-muted-foreground">
             {user?.email}
           </span>
         </DropdownMenuItem>
@@ -75,10 +77,10 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <a
-            href="https://x.com/zoladotchat"
-            target="_blank"
-            rel="noopener noreferrer"
             className="flex items-center gap-2"
+            href="https://x.com/zoladotchat"
+            rel="noopener noreferrer"
+            target="_blank"
           >
             <XIcon className="size-4 p-0.5" />
             <span>@zoladotchat</span>
@@ -86,10 +88,10 @@ export function UserMenu() {
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <a
-            href="https://github.com/ibelick/zola"
-            target="_blank"
-            rel="noopener noreferrer"
             className="flex items-center gap-2"
+            href="https://github.com/ibelick/zola"
+            rel="noopener noreferrer"
+            target="_blank"
           >
             <GithubLogoIcon className="size-4" />
             <span>GitHub</span>
@@ -97,5 +99,5 @@ export function UserMenu() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

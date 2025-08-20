@@ -1,9 +1,18 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-const Collapsible = (props: any) => <div {...props} />
-const CollapsibleContent = (props: any) => <div {...props} />
-const CollapsibleTrigger = (props: any) => <button {...props} />
+
+type CollapsibleProps = React.HTMLAttributes<HTMLDivElement>;
+type CollapsibleContentProps = React.HTMLAttributes<HTMLDivElement>;
+type CollapsibleTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
+
+const Collapsible = (props: CollapsibleProps) => <div {...props} />;
+const CollapsibleContent = (props: CollapsibleContentProps) => <div {...props} />;
+const CollapsibleTrigger = (props: CollapsibleTriggerProps) => <button {...props} />;
+
+import { ChevronDownIcon } from 'lucide-react';
+import type { ComponentProps, ReactNode } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import {
   Tooltip,
@@ -12,9 +21,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { ChevronDownIcon } from 'lucide-react';
-import type { ComponentProps, ReactNode } from 'react';
-import { createContext, useContext, useState } from 'react';
 
 export type WebPreviewContextValue = {
   url: string;

@@ -1,59 +1,61 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import React from 'react'
-import { ModelProvider, useModel } from '@/lib/model-store/provider'
-import { 
-  mockApiEndpoints, 
-  mockModels, 
-  mockUserKeyStatus, 
-  mockUserConfig, 
+import { type QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import type React from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ModelProvider, useModel } from '@/lib/model-store/provider';
+import {
+  createTestQueryClient,
+  mockApiEndpoints,
   mockFavoriteModels,
-  createTestQueryClient 
-} from '../test-utils'
+  mockModels,
+  mockUserConfig,
+  mockUserKeyStatus,
+} from '../test-utils';
 
 // TDD London Style: Test behavior, not implementation
 describe('ModelProvider', () => {
-  let queryClient: QueryClient
-  let fetchSpy: ReturnType<typeof mockApiEndpoints>
+  let queryClient: QueryClient;
+  let fetchSpy: ReturnType<typeof mockApiEndpoints>;
 
   beforeEach(() => {
     // Mock document.cookie for CSRF token
     Object.defineProperty(document, 'cookie', {
       writable: true,
       value: 'csrf_token=test-csrf-token',
-    })
-    
-    queryClient = createTestQueryClient()
-    
-    fetchSpy = mockApiEndpoints()
-  })
+    });
+
+    queryClient = createTestQueryClient();
+
+    fetchSpy = mockApiEndpoints();
+  });
 
   afterEach(() => {
-    vi.clearAllMocks()
-    queryClient.clear()
+    vi.clearAllMocks();
+    queryClient.clear();
     // Reset document.cookie
     Object.defineProperty(document, 'cookie', {
       writable: true,
       value: '',
-    })
-  })
+    });
+  });
 
-  const createWrapper = () => ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      <ModelProvider>{children}</ModelProvider>
-    </QueryClientProvider>
-  )
+  const createWrapper =
+    () =>
+    ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <ModelProvider>{children}</ModelProvider>
+      </QueryClientProvider>
+    );
 
   describe('When the ModelProvider initializes', () => {
     it('should provide default values while loading', () => {
       const { result } = renderHook(() => useModel(), {
         wrapper: createWrapper(),
-      })
+      });
 
-      expect(result.current.isLoading).toBe(true)
-      expect(result.current.models).toEqual([])
-      expect(result.current.favoriteModels).toEqual([])
+      expect(result.current.isLoading).toBe(true);
+      expect(result.current.models).toEqual([]);
+      expect(result.current.favoriteModels).toEqual([]);
       expect(result.current.userKeyStatus).toEqual({
         openrouter: false,
         openai: false,
@@ -62,113 +64,125 @@ describe('ModelProvider', () => {
         perplexity: false,
         xai: false,
         anthropic: false,
-      })
-    })
+      });
+    });
 
     it('should throw error when useModel is used outside provider', () => {
       expect(() => {
-        renderHook(() => useModel())
-      }).toThrow('useModel must be used within a ModelProvider')
-    })
-  })
+        renderHook(() => useModel());
+      }).toThrow('useModel must be used within a ModelProvider');
+    });
+  });
 
   describe('When data is successfully fetched', () => {
     it('should load and provide all model-related data', async () => {
       const { result } = renderHook(() => useModel(), {
         wrapper: createWrapper(),
-      })
+      });
 
       // Force all queries to refetch by invalidating them
-      await queryClient.invalidateQueries()
-      
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
+      await queryClient.invalidateQueries();
 
-      expect(result.current.models).toEqual(mockModels)
-      expect(result.current.userKeyStatus).toEqual(mockUserKeyStatus)
-      expect(result.current.favoriteModels).toEqual(mockFavoriteModels)
-      expect(result.current.userConfig).toEqual(mockUserConfig)
-    })
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.models).toEqual(mockModels);
+      expect(result.current.userKeyStatus).toEqual(mockUserKeyStatus);
+      expect(result.current.favoriteModels).toEqual(mockFavoriteModels);
+      expect(result.current.userConfig).toEqual(mockUserConfig);
+    });
 
     it('should make correct API calls with proper parameters', async () => {
       renderHook(() => useModel(), {
         wrapper: createWrapper(),
-      })
+      });
 
       // Force all queries to refetch by invalidating them
-      await queryClient.invalidateQueries()
+      await queryClient.invalidateQueries();
 
       await waitFor(() => {
-        expect(fetchSpy).toHaveBeenCalledWith('/api/models', expect.objectContaining({
-          headers: expect.objectContaining({
-            'x-csrf-token': expect.any(String),
-            'Content-Type': 'application/json'
+        expect(fetchSpy).toHaveBeenCalledWith(
+          '/api/models',
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              'x-csrf-token': expect.any(String),
+              'Content-Type': 'application/json',
+            }),
           })
-        }))
-        expect(fetchSpy).toHaveBeenCalledWith('/api/user-key-status', expect.objectContaining({
-          headers: expect.objectContaining({
-            'x-csrf-token': expect.any(String),
-            'Content-Type': 'application/json'
+        );
+        expect(fetchSpy).toHaveBeenCalledWith(
+          '/api/user-key-status',
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              'x-csrf-token': expect.any(String),
+              'Content-Type': 'application/json',
+            }),
           })
-        }))
-        expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences/favorite-models', expect.objectContaining({
-          headers: expect.objectContaining({
-            'x-csrf-token': expect.any(String),
-            'Content-Type': 'application/json'
+        );
+        expect(fetchSpy).toHaveBeenCalledWith(
+          '/api/user-preferences/favorite-models',
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              'x-csrf-token': expect.any(String),
+              'Content-Type': 'application/json',
+            }),
           })
-        }))
-        expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences', expect.objectContaining({
-          headers: expect.objectContaining({
-            'x-csrf-token': expect.any(String),
-            'Content-Type': 'application/json'
+        );
+        expect(fetchSpy).toHaveBeenCalledWith(
+          '/api/user-preferences',
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              'x-csrf-token': expect.any(String),
+              'Content-Type': 'application/json',
+            }),
           })
-        }))
-      })
-    })
-  })
+        );
+      });
+    });
+  });
 
   describe('When API calls fail', () => {
     beforeEach(() => {
       // Mock failed responses - fetchClient calls fetch with headers
-      fetchSpy.mockImplementation((url, init) => {
+      fetchSpy.mockImplementation((url, _init) => {
         if (typeof url === 'string') {
           if (url.includes('/api/models')) {
             return Promise.resolve({
               ok: false,
               status: 500,
               json: () => Promise.resolve({}),
-            } as Response)
+            } as Response);
           }
-          
+
           if (url.includes('/api/user-key-status')) {
-            return Promise.reject(new Error('Network error'))
+            return Promise.reject(new Error('Network error'));
           }
-          
+
           if (url.includes('/api/user-preferences')) {
             return Promise.resolve({
               ok: false,
               status: 404,
               json: () => Promise.resolve({}),
-            } as Response)
+            } as Response);
           }
         }
-        
-        return Promise.reject(new Error(`Unmocked fetch request: ${url}`))
-      })
-    })
+
+        return Promise.reject(new Error(`Unmocked fetch request: ${url}`));
+      });
+    });
 
     it('should gracefully handle failed requests and provide fallback values', async () => {
       const { result } = renderHook(() => useModel(), {
         wrapper: createWrapper(),
-      })
+      });
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
+        expect(result.current.isLoading).toBe(false);
+      });
 
       // Should fall back to defaults when API fails
-      expect(result.current.models).toEqual([])
+      expect(result.current.models).toEqual([]);
       expect(result.current.userKeyStatus).toEqual({
         openrouter: false,
         openai: false,
@@ -177,7 +191,7 @@ describe('ModelProvider', () => {
         perplexity: false,
         xai: false,
         anthropic: false,
-      })
+      });
       expect(result.current.userConfig).toEqual({
         layout: 'fullscreen',
         prompt_suggestions: true,
@@ -185,199 +199,221 @@ describe('ModelProvider', () => {
         show_conversation_previews: true,
         multi_model_enabled: false,
         hidden_models: [],
-      })
-    })
-  })
+      });
+    });
+  });
 
   describe('When refresh functions are called', () => {
     it('should refresh models data', async () => {
       const { result } = renderHook(() => useModel(), {
         wrapper: createWrapper(),
-      })
+      });
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
+        expect(result.current.isLoading).toBe(false);
+      });
 
       // Clear mock call history
-      fetchSpy.mockClear()
+      fetchSpy.mockClear();
 
-      await result.current.refreshModels()
+      await result.current.refreshModels();
 
-      expect(fetchSpy).toHaveBeenCalledWith('/api/models', expect.objectContaining({
-        headers: expect.objectContaining({
-          'x-csrf-token': expect.any(String),
-          'Content-Type': 'application/json'
+      expect(fetchSpy).toHaveBeenCalledWith(
+        '/api/models',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-csrf-token': expect.any(String),
+            'Content-Type': 'application/json',
+          }),
         })
-      }))
-    })
+      );
+    });
 
     it('should refresh user key status', async () => {
       const { result } = renderHook(() => useModel(), {
         wrapper: createWrapper(),
-      })
+      });
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
+        expect(result.current.isLoading).toBe(false);
+      });
 
-      fetchSpy.mockClear()
+      fetchSpy.mockClear();
 
-      await result.current.refreshUserKeyStatus()
+      await result.current.refreshUserKeyStatus();
 
-      expect(fetchSpy).toHaveBeenCalledWith('/api/user-key-status', expect.objectContaining({
-        headers: expect.objectContaining({
-          'x-csrf-token': expect.any(String),
-          'Content-Type': 'application/json'
+      expect(fetchSpy).toHaveBeenCalledWith(
+        '/api/user-key-status',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-csrf-token': expect.any(String),
+            'Content-Type': 'application/json',
+          }),
         })
-      }))
-    })
+      );
+    });
 
     it('should refresh favorite models', async () => {
       const { result } = renderHook(() => useModel(), {
         wrapper: createWrapper(),
-      })
+      });
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
+        expect(result.current.isLoading).toBe(false);
+      });
 
-      fetchSpy.mockClear()
+      fetchSpy.mockClear();
 
-      await result.current.refreshFavoriteModels()
+      await result.current.refreshFavoriteModels();
 
-      expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences/favorite-models', expect.objectContaining({
-        headers: expect.objectContaining({
-          'x-csrf-token': expect.any(String),
-          'Content-Type': 'application/json'
+      expect(fetchSpy).toHaveBeenCalledWith(
+        '/api/user-preferences/favorite-models',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-csrf-token': expect.any(String),
+            'Content-Type': 'application/json',
+          }),
         })
-      }))
-    })
+      );
+    });
 
     it('should refresh user config', async () => {
       const { result } = renderHook(() => useModel(), {
         wrapper: createWrapper(),
-      })
+      });
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
+        expect(result.current.isLoading).toBe(false);
+      });
 
-      fetchSpy.mockClear()
+      fetchSpy.mockClear();
 
-      await result.current.refreshUserConfig()
+      await result.current.refreshUserConfig();
 
-      expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences', expect.objectContaining({
-        headers: expect.objectContaining({
-          'x-csrf-token': expect.any(String),
-          'Content-Type': 'application/json'
+      expect(fetchSpy).toHaveBeenCalledWith(
+        '/api/user-preferences',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-csrf-token': expect.any(String),
+            'Content-Type': 'application/json',
+          }),
         })
-      }))
-    })
+      );
+    });
 
     it('should refresh all data when refreshAll is called', async () => {
       const { result } = renderHook(() => useModel(), {
         wrapper: createWrapper(),
-      })
+      });
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
+        expect(result.current.isLoading).toBe(false);
+      });
 
-      fetchSpy.mockClear()
+      fetchSpy.mockClear();
 
-      await result.current.refreshAll()
+      await result.current.refreshAll();
 
-      expect(fetchSpy).toHaveBeenCalledWith('/api/models', expect.objectContaining({
-        headers: expect.objectContaining({
-          'x-csrf-token': expect.any(String),
-          'Content-Type': 'application/json'
+      expect(fetchSpy).toHaveBeenCalledWith(
+        '/api/models',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-csrf-token': expect.any(String),
+            'Content-Type': 'application/json',
+          }),
         })
-      }))
-      expect(fetchSpy).toHaveBeenCalledWith('/api/user-key-status', expect.objectContaining({
-        headers: expect.objectContaining({
-          'x-csrf-token': expect.any(String),
-          'Content-Type': 'application/json'
+      );
+      expect(fetchSpy).toHaveBeenCalledWith(
+        '/api/user-key-status',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-csrf-token': expect.any(String),
+            'Content-Type': 'application/json',
+          }),
         })
-      }))
-      expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences/favorite-models', expect.objectContaining({
-        headers: expect.objectContaining({
-          'x-csrf-token': expect.any(String),
-          'Content-Type': 'application/json'
+      );
+      expect(fetchSpy).toHaveBeenCalledWith(
+        '/api/user-preferences/favorite-models',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-csrf-token': expect.any(String),
+            'Content-Type': 'application/json',
+          }),
         })
-      }))
-      expect(fetchSpy).toHaveBeenCalledWith('/api/user-preferences', expect.objectContaining({
-        headers: expect.objectContaining({
-          'x-csrf-token': expect.any(String),
-          'Content-Type': 'application/json'
+      );
+      expect(fetchSpy).toHaveBeenCalledWith(
+        '/api/user-preferences',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'x-csrf-token': expect.any(String),
+            'Content-Type': 'application/json',
+          }),
         })
-      }))
-    })
+      );
+    });
 
     it('should handle refreshFavoriteModelsSilent errors gracefully', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      
       // Mock failed refresh
-      const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries')
-      invalidateQueriesSpy.mockRejectedValueOnce(new Error('Refresh failed'))
+      const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      invalidateQueriesSpy.mockRejectedValueOnce(new Error('Refresh failed'));
 
       const { result } = renderHook(() => useModel(), {
         wrapper: createWrapper(),
-      })
+      });
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
+        expect(result.current.isLoading).toBe(false);
+      });
 
-      await result.current.refreshFavoriteModelsSilent()
+      // Should not throw error even when invalidateQueries fails
+      await expect(
+        result.current.refreshFavoriteModelsSilent()
+      ).resolves.toBeUndefined();
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to silently refresh favorite models'),
-        expect.any(Error)
-      )
-
-      consoleSpy.mockRestore()
-    })
-  })
+      expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+        queryKey: ['favorite-models'],
+      });
+    });
+  });
 
   describe('Caching behavior', () => {
     it('should use proper cache settings for all queries', async () => {
       renderHook(() => useModel(), {
         wrapper: createWrapper(),
-      })
+      });
 
       await waitFor(() => {
-        const queries = queryClient.getQueryCache().getAll()
-        
-        queries.forEach(query => {
+        const queries = queryClient.getQueryCache().getAll();
+
+        queries.forEach((query) => {
           // All queries should have staleTime of 5 minutes
-          expect(query.options.staleTime).toBe(5 * 60 * 1000)
+          expect((query.options as any).staleTime).toBe(5 * 60 * 1000);
           // All queries should have gcTime of 10 minutes
-          expect(query.options.gcTime).toBe(10 * 60 * 1000)
+          expect(query.options.gcTime).toBe(10 * 60 * 1000);
           // All queries should not refetch on window focus
-          expect(query.options.refetchOnWindowFocus).toBe(false)
-        })
-      })
-    })
+          expect((query.options as any).refetchOnWindowFocus).toBe(false);
+        });
+      });
+    });
 
     it('should not refetch data when window regains focus', async () => {
       const { result } = renderHook(() => useModel(), {
         wrapper: createWrapper(),
-      })
+      });
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
+        expect(result.current.isLoading).toBe(false);
+      });
 
-      fetchSpy.mockClear()
+      fetchSpy.mockClear();
 
       // Simulate window focus
-      window.dispatchEvent(new Event('focus'))
+      window.dispatchEvent(new Event('focus'));
 
       // Wait a bit to ensure no refetch happens
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-      expect(fetchSpy).not.toHaveBeenCalled()
-    })
-  })
-})
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+  });
+});

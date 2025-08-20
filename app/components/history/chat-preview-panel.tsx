@@ -1,41 +1,40 @@
-import { MessageContent } from "@/components/prompt-kit/message"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { AlertCircle, Loader2, RefreshCw } from "lucide-react"
-import { useLayoutEffect, useRef, useState } from "react"
+import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { MessageContent } from '@/components/prompt-kit/message';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type ChatPreviewPanelProps = {
-  chatId: string | null
-  onHover?: (isHovering: boolean) => void
-  messages?: ChatMessage[]
-  isLoading?: boolean
-  error?: string | null
-  onFetchPreview?: (chatId: string) => Promise<void>
-}
+  chatId: string | null;
+  onHover?: (isHovering: boolean) => void;
+  messages?: ChatMessage[];
+  isLoading?: boolean;
+  error?: string | null;
+  onFetchPreview?: (chatId: string) => Promise<void>;
+};
 
 type ChatMessage = {
-  id: string
-  content: string
-  role: "user" | "assistant"
-  created_at: string
-}
+  id: string;
+  content: string;
+  role: 'user' | 'assistant';
+  created_at: string;
+};
 
 type MessageBubbleProps = {
-  content: string
-  role: "user" | "assistant"
-  timestamp: string
-}
+  content: string;
+  role: 'user' | 'assistant';
+  timestamp: string;
+};
 
 function MessageBubble({ content, role }: MessageBubbleProps) {
-  const isUser = role === "user"
+  const isUser = role === 'user';
 
   if (isUser) {
     return (
       <div className="flex justify-end">
         <div className="max-w-[70%]">
           <MessageContent
-            className="bg-accent relative rounded-3xl px-5 py-2.5"
-            markdown={true}
+            className="relative rounded-3xl bg-accent px-5 py-2.5"
             components={{
               code: ({ children }) => <>{children}</>,
               pre: ({ children }) => <>{children}</>,
@@ -50,100 +49,101 @@ function MessageBubble({ content, role }: MessageBubbleProps) {
               ul: ({ children }) => <>{children}</>,
               ol: ({ children }) => <>{children}</>,
             }}
+            markdown={true}
           >
             {content}
           </MessageContent>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="flex justify-start">
       <div className="max-w-[400px]">
         <MessageContent
-          className="text-foreground bg-transparent p-0 text-sm"
-          markdown={true}
+          className="bg-transparent p-0 text-foreground text-sm"
           components={{
             h1: ({ children }) => (
-              <div className="mb-1 text-base font-semibold">{children}</div>
+              <div className="mb-1 font-semibold text-base">{children}</div>
             ),
             h2: ({ children }) => (
-              <div className="mb-1 text-sm font-medium">{children}</div>
+              <div className="mb-1 font-medium text-sm">{children}</div>
             ),
             h3: ({ children }) => (
-              <div className="mb-1 text-sm font-medium">{children}</div>
+              <div className="mb-1 font-medium text-sm">{children}</div>
             ),
             h4: ({ children }) => (
-              <div className="text-sm font-medium">{children}</div>
+              <div className="font-medium text-sm">{children}</div>
             ),
             h5: ({ children }) => (
-              <div className="text-sm font-medium">{children}</div>
+              <div className="font-medium text-sm">{children}</div>
             ),
             h6: ({ children }) => (
-              <div className="text-sm font-medium">{children}</div>
+              <div className="font-medium text-sm">{children}</div>
             ),
             p: ({ children }) => <div className="mb-1">{children}</div>,
             li: ({ children }) => <div>• {children}</div>,
             ul: ({ children }) => <div className="space-y-0.5">{children}</div>,
             ol: ({ children }) => <div className="space-y-0.5">{children}</div>,
             code: ({ children }) => (
-              <code className="bg-muted rounded px-1 text-xs">{children}</code>
+              <code className="rounded bg-muted px-1 text-xs">{children}</code>
             ),
             pre: ({ children }) => (
-              <div className="bg-muted overflow-x-auto rounded p-2 text-xs">
+              <div className="overflow-x-auto rounded bg-muted p-2 text-xs">
                 {children}
               </div>
             ),
           }}
+          markdown={true}
         >
           {content}
         </MessageContent>
       </div>
     </div>
-  )
+  );
 }
 
 function LoadingState() {
   return (
     <div className="flex h-full items-center justify-center">
-      <div className="text-muted-foreground flex items-center gap-2">
+      <div className="flex items-center gap-2 text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
         <span className="text-sm">Loading messages...</span>
       </div>
     </div>
-  )
+  );
 }
 
 function ErrorState({
   error,
   onRetry,
 }: {
-  error: string
-  onRetry?: () => void
+  error: string;
+  onRetry?: () => void;
 }) {
   const isNetworkError =
-    error.includes("fetch") ||
-    error.includes("network") ||
-    error.includes("HTTP") ||
-    error.includes("Failed to fetch")
+    error.includes('fetch') ||
+    error.includes('network') ||
+    error.includes('HTTP') ||
+    error.includes('Failed to fetch');
 
   return (
     <div className="flex h-full items-center justify-center p-4">
-      <div className="text-muted-foreground max-w-[300px] space-y-3 text-center">
+      <div className="max-w-[300px] space-y-3 text-center text-muted-foreground">
         <div className="flex justify-center">
-          <AlertCircle className="text-muted-foreground/50 h-8 w-8" />
+          <AlertCircle className="h-8 w-8 text-muted-foreground/50" />
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-medium">Failed to load preview</p>
-          <p className="text-xs break-words opacity-70">{error}</p>
+          <p className="font-medium text-sm">Failed to load preview</p>
+          <p className="break-words text-xs opacity-70">{error}</p>
         </div>
         {isNetworkError && onRetry && (
           <Button
-            variant="outline"
-            size="sm"
-            onClick={onRetry}
             className="h-8 text-xs"
+            onClick={onRetry}
+            size="sm"
+            variant="outline"
           >
             <RefreshCw className="mr-1 h-3 w-3" />
             Try again
@@ -151,27 +151,27 @@ function ErrorState({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 function EmptyState() {
   return (
     <div className="flex h-32 items-center justify-center p-4">
-      <p className="text-muted-foreground text-center text-sm">
+      <p className="text-center text-muted-foreground text-sm">
         No messages in this conversation yet
       </p>
     </div>
-  )
+  );
 }
 
 function DefaultState() {
   return (
     <div className="flex h-full items-center justify-center p-4">
-      <div className="text-muted-foreground space-y-2 text-center">
+      <div className="space-y-2 text-center text-muted-foreground">
         <p className="text-sm opacity-60">Select a conversation to preview</p>
       </div>
     </div>
-  )
+  );
 }
 
 export function ChatPreviewPanel({
@@ -182,45 +182,45 @@ export function ChatPreviewPanel({
   error = null,
   onFetchPreview,
 }: ChatPreviewPanelProps) {
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
-  const [lastChatId, setLastChatId] = useState<string | null>(null)
-  const [retryCount, setRetryCount] = useState(0)
-  const maxRetries = 3
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [lastChatId, setLastChatId] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
 
-  const shouldFetch = chatId && chatId !== lastChatId
+  const shouldFetch = chatId && chatId !== lastChatId;
 
   if (shouldFetch && onFetchPreview) {
-    setLastChatId(chatId)
-    setRetryCount(0)
-    onFetchPreview(chatId)
+    setLastChatId(chatId);
+    setRetryCount(0);
+    onFetchPreview(chatId);
   }
 
   const handleRetry = () => {
     if (chatId && onFetchPreview && retryCount < maxRetries) {
-      setRetryCount((prev) => prev + 1)
-      onFetchPreview(chatId)
+      setRetryCount((prev) => prev + 1);
+      onFetchPreview(chatId);
     }
-  }
+  };
 
   // Immediately scroll to bottom when chatId changes or messages load
   useLayoutEffect(() => {
     if (chatId && messages.length > 0 && scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector(
-        "[data-radix-scroll-area-viewport]"
-      )
+        '[data-radix-scroll-area-viewport]'
+      );
       if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
     }
-  }, [chatId, messages.length])
+  }, [chatId, messages.length]);
 
   return (
     <div
-      className="bg-background col-span-3 border-l"
+      className="col-span-3 border-l bg-background"
+      key={chatId}
       onMouseEnter={() => onHover?.(true)}
       onMouseLeave={() => onHover?.(false)}
-      key={chatId}
     >
       <div className="h-[480px]">
         {!chatId && <DefaultState />}
@@ -235,17 +235,17 @@ export function ChatPreviewPanel({
           <EmptyState />
         )}
         {chatId && !isLoading && !error && messages.length > 0 && (
-          <ScrollArea ref={scrollAreaRef} className="h-full">
+          <ScrollArea className="h-full" ref={scrollAreaRef}>
             <div className="space-y-4 p-6">
               <div className="flex justify-center">
-                <div className="text-muted-foreground bg-muted/50 rounded-full px-2 py-1 text-xs">
+                <div className="rounded-full bg-muted/50 px-2 py-1 text-muted-foreground text-xs">
                   Last {messages.length} messages
                 </div>
               </div>
               {messages.map((message) => (
                 <MessageBubble
+                  content={message.content || ''}
                   key={message.id}
-                  content={message.content}
                   role={message.role}
                   timestamp={message.created_at}
                 />
@@ -256,5 +256,5 @@ export function ChatPreviewPanel({
         )}
       </div>
     </div>
-  )
+  );
 }
