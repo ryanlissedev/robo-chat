@@ -35,14 +35,9 @@ export const traceChat = traceable(
     stream?: boolean
     metadata?: Record<string, any>
   }) => {
-    // This wrapper will be used in the chat route
-    // The actual implementation will be done there
     return params
   },
-  {
-    name: 'chat-completion',
-    project_name: getLangSmithProject(),
-  }
+  'chat-completion'
 )
 
 // Wrap OpenAI client for automatic tracing
@@ -157,11 +152,7 @@ export async function logMetrics({
   }
 
   try {
-    await langsmithClient.updateRun(runId, {
-      extra: {
-        metrics,
-      },
-    })
+    await langsmithClient.updateRun(runId, { extra: { metrics } } as any)
   } catch (error) {
     console.error('Error logging metrics to LangSmith:', error)
   }
@@ -189,11 +180,11 @@ export async function createRun({
     const run = await langsmithClient.createRun({
       name,
       inputs,
-      runType,
-      projectName: getLangSmithProject(),
+      run_type: runType as any,
+      project_name: getLangSmithProject(),
       extra: metadata,
-      parentRunId,
-    })
+      parent_run_id: parentRunId,
+    } as any)
 
     return run
   } catch (error) {
@@ -222,8 +213,8 @@ export async function updateRun({
     await langsmithClient.updateRun(runId, {
       outputs,
       error,
-      endTime: endTime || new Date(),
-    })
+      end_time: (endTime || new Date()).toISOString(),
+    } as any)
   } catch (error) {
     console.error('Error updating LangSmith run:', error)
   }

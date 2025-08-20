@@ -1,5 +1,10 @@
 import type { Database, Json } from "@/app/types/database.types"
-import type { Attachment } from 'ai'
+// Align with AI SDK v5: Attachment type not exported; use a minimal shape
+export type Attachment = {
+  url?: string
+  name?: string
+  contentType?: string
+}
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { ReasoningEffort } from "@/lib/openproviders/types"
 

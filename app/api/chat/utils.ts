@@ -1,4 +1,4 @@
-import { UIMessage as MessageAISDK } from "ai"
+import type { UIMessage as MessageAISDK } from "ai"
 
 /**
  * Clean messages when switching between agents with different tool capabilities.
@@ -6,9 +6,9 @@ import { UIMessage as MessageAISDK } from "ai"
  * to prevent OpenAI API errors.
  */
 export function cleanMessagesForTools(
-  messages: undefined[],
+  messages: MessageAISDK[],
   hasTools: boolean
-): undefined[] {
+): MessageAISDK[] {
   if (hasTools) {
     return messages
   }

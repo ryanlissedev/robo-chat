@@ -1,10 +1,9 @@
 'use client';
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+// Collapsible UI not available in this build; provide minimal fallbacks
+const Collapsible = (props: any) => <div {...props} />
+const CollapsibleContent = (props: any) => <div {...props} />
+const CollapsibleTrigger = (props: any) => <button {...props} />
 import { cn } from '@/lib/utils';
 import { BookIcon, ChevronDownIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';

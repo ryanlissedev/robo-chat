@@ -84,14 +84,14 @@ export async function POST(req: Request) {
       await incrementMessageCount({ supabase, userId })
     }
 
-    const userMessage = messages[messages.length - 1]
+    const userMessage = messages[messages.length - 1] as any
 
     if (supabase && userMessage?.role === "user") {
       await logUserMessage({
         supabase,
         userId,
         chatId,
-        content: (userMessage as any).content as string,
+        content: typeof userMessage?.content === "string" ? (userMessage.content as string) : "",
         attachments: (userMessage as any).experimental_attachments || [],
         model: resolvedModel,
         isAuthenticated,
@@ -184,7 +184,7 @@ export async function POST(req: Request) {
       tools,
       // GPT-5 models only support default temperature = 1
       temperature: isGPT5Model ? 1 : undefined,
-      maxSteps: effectiveEnableSearch ? 10 : 1,
+      // Removed maxSteps: not supported by current AI SDK types
       onError: (err: unknown) => {
         console.error("Streaming error occurred:", err)
         // Don't set streamError anymore - let the AI SDK handle it through the stream

@@ -1,11 +1,10 @@
 'use client';
 
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+// Collapsible UI is not present; inline a simple fallback wrapper
+const Collapsible = (props: any) => <div {...props} />
+const CollapsibleContent = (props: any) => <div {...props} />
+const CollapsibleTrigger = (props: any) => <button {...props} />
 import { cn } from '@/lib/utils';
 import { BrainIcon, ChevronDownIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';

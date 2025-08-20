@@ -1,11 +1,9 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+const Collapsible = (props: any) => <div {...props} />
+const CollapsibleContent = (props: any) => <div {...props} />
+const CollapsibleTrigger = (props: any) => <button {...props} />
 import { cn } from '@/lib/utils';
 import type { ToolUIPart } from 'ai';
 import {

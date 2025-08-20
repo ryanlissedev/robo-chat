@@ -383,7 +383,22 @@
       "lastAccessed": "2025-08-20T11:59:15.702Z",
       "lastVerified": "2025-08-20T11:59:15.702Z",
       "status": "fresh"
+    },
+    {
+      "id": "mem_1755691316004_he1qrivk0",
+      "content": "Setting up Vitest and Playwright test infrastructure for Next.js app with TDD London style approach. Need to:\n1. Install Vitest for unit testing with React Testing Library\n2. Install Playwright for E2E testing\n3. Create proper configuration files\n4. Set up test folder structure\n5. Create example unit tests for React Query providers, Zustand store, and chat hooks\n6. Create E2E tests for critical user flows\n7. Follow TDD London style: tests first, behavior-focused, mocks for dependencies, outside-in testing",
+      "type": "config",
+      "tags": [
+        "config",
+        "react",
+        "testing"
+      ],
+      "timestamp": "2025-08-20T12:01:56.004Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-08-20T12:01:56.004Z",
+      "lastVerified": "2025-08-20T12:01:56.004Z",
+      "status": "fresh"
     }
   ],
-  "lastUpdated": "2025-08-20T11:59:15.702Z"
+  "lastUpdated": "2025-08-20T12:01:56.004Z"
 }

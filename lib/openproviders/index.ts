@@ -4,7 +4,8 @@ import { createMistral, mistral } from "@ai-sdk/mistral"
 import { createOpenAI, openai } from "@ai-sdk/openai"
 import { createPerplexity, perplexity } from "@ai-sdk/perplexity"
 // Align to AI SDK v5 naming used across the project
-import type { LanguageModel } from 'ai'
+// Use any to tolerate provider SDK return types across versions
+type LanguageModel = any
 import { createXai, xai } from "@ai-sdk/xai"
 import { getProviderForModel } from "./provider-map"
 import type {

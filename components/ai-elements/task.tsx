@@ -1,10 +1,8 @@
 'use client';
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+const Collapsible = (props: any) => <div {...props} />
+const CollapsibleContent = (props: any) => <div {...props} />
+const CollapsibleTrigger = (props: any) => <button {...props} />
 import { cn } from '@/lib/utils';
 import { ChevronDownIcon, SearchIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';

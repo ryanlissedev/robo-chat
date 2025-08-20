@@ -1,4 +1,9 @@
-import { Attachment } from 'ai'
+// Mirror minimal Attachment used in API types to avoid external dependency
+type Attachment = {
+  url?: string
+  name?: string
+  contentType?: string
+}
 
 export type Json =
   | string

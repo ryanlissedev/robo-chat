@@ -44,18 +44,18 @@
 
 ### Development
 ```bash
-npm run dev          # Start development server with Turbopack
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run type-check   # TypeScript type checking
+bun run dev          # Start development server with Turbopack
+bun run build        # Build for production
+bun run start        # Start production server
+bun run lint         # Run ESLint
+bun run type-check   # TypeScript type checking
 ```
 
 ### Database (Supabase)
 ```bash
-npx supabase migration up    # Run database migrations
-npx supabase start          # Start local Supabase
-npx supabase stop           # Stop local Supabase
+bunx supabase migration up    # Run database migrations
+bunx supabase start          # Start local Supabase
+bunx supabase stop           # Stop local Supabase
 ```
 
 ### Docker
@@ -67,8 +67,8 @@ docker-compose up                              # Run with docker-compose
 
 ### Analysis
 ```bash
-ANALYZE=true npm run build   # Bundle analysis
-npm audit                    # Security audit
+ANALYZE=true bun run build   # Bundle analysis
+bun audit                    # Security audit
 ```
 
 ## Environment Configuration

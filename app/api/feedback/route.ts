@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 
     // Store feedback in Supabase
     const { error: dbError } = await supabase
-      .from('message_feedback')
+      .from('feedback')
       .upsert({
         message_id: messageId,
         user_id: user.id,
@@ -124,7 +124,7 @@ export async function GET(req: Request) {
 
     // Get feedback from database
     const { data, error } = await supabase
-      .from('message_feedback')
+      .from('feedback')
       .select('feedback, comment, created_at')
       .eq('message_id', messageId)
       .eq('user_id', user.id)

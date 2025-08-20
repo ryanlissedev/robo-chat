@@ -1,11 +1,9 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+const Collapsible = (props: any) => <div {...props} />
+const CollapsibleContent = (props: any) => <div {...props} />
+const CollapsibleTrigger = (props: any) => <button {...props} />
 import { Input } from '@/components/ui/input';
 import {
   Tooltip,

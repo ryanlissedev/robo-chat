@@ -8,8 +8,8 @@ import { CaretLeft, SealCheck, Spinner } from "@phosphor-icons/react"
 import { AnimatePresence, motion } from "motion/react"
 import { useState } from "react"
 
-const TRANSITION_CONTENT = {
-  ease: "easeOut",
+const TRANSITION_CONTENT: any = {
+  ease: [0.16, 1, 0.3, 1],
   duration: 0.2,
 }
 
