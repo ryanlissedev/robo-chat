@@ -2,7 +2,6 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import dynamic from 'next/dynamic';
-import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import { Conversation } from '@/app/components/chat/conversation';
@@ -264,20 +263,6 @@ export function Chat() {
             }}
           >
             <div className="text-center">
-              {/* HGG Logo */}
-              <div className="mb-8 flex justify-center">
-                <div className="relative">
-                  <Image
-                    src="/hgg-logo.png"
-                    alt="HGG Profiling Equipment"
-                    width={80}
-                    height={80}
-                    className="rounded-lg shadow-md transition-all duration-300 hover:scale-105"
-                    priority
-                  />
-                </div>
-              </div>
-              
               <h1 className="mb-4 font-medium text-4xl tracking-tight hgg-brand-blue">
                 How can we help you today?
               </h1>
