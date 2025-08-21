@@ -1,6 +1,6 @@
 'use client';
 
-import { Mic, MicOff, AudioAudioWaveform } from 'lucide-react';
+import { Mic, MicOff, AudioWaveform } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -306,7 +306,7 @@ export function ChatGPTVoiceInput({
               {isProcessing ? (
                 <div className="animate-spin h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full" />
               ) : isListening ? (
-                <MicSlash className="h-5 w-5" />
+                <MicOff className="h-5 w-5" />
               ) : (
                 <Mic className="h-5 w-5" />
               )}
