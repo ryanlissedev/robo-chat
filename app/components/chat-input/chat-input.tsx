@@ -19,6 +19,8 @@ import { PromptSystem } from '../suggestions/prompt-system';
 import { ButtonFileUpload } from './button-file-upload';
 import { ButtonSearch } from './button-search';
 import { FileList } from './file-list';
+import { VoiceInput } from '../chat/voice-input';
+import { VoiceAgent } from '../chat/voice-agent';
 
 type ChatInputProps = {
   value: string;
@@ -41,6 +43,7 @@ type ChatInputProps = {
   quotedText?: { text: string; messageId: string } | null;
   reasoningEffort?: ReasoningEffort;
   onReasoningEffortChange?: (effort: ReasoningEffort) => void;
+  chatId?: string;
 };
 
 export function ChatInput({
@@ -63,6 +66,7 @@ export function ChatInput({
   quotedText,
   reasoningEffort,
   onReasoningEffortChange,
+  chatId,
 }: ChatInputProps) {
   const selectModelConfig = getModelInfo(selectedModel);
   const hasSearchSupport = Boolean(selectModelConfig?.webSearch);
@@ -253,6 +257,22 @@ export function ChatInput({
                   value={currentReasoningEffort}
                 />
               )}
+              <VoiceAgent
+                chatId={chatId}
+                onTranscription={(text) => {
+                  onValueChange(value ? `${value} ${text}` : text);
+                  // Auto-focus the textarea after voice input
+                  requestAnimationFrame(() => {
+                    textareaRef.current?.focus();
+                  });
+                }}
+                onResponse={(text) => {
+                  // Voice response is handled by the agent itself
+                  console.log('Voice response:', text);
+                }}
+                disabled={isSubmitting}
+                className="ml-1"
+              />
             </div>
             <PromptInputAction
               tooltip={status === 'streaming' ? 'Stop' : 'Send'}

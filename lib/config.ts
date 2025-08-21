@@ -25,94 +25,163 @@ export const FREE_MODELS_IDS = [
 
 export const MODEL_DEFAULT = 'gpt-5-mini';
 
-export const APP_NAME = 'Base Chat';
+export const APP_NAME = 'RoboRail Assistant';
 export const APP_DOMAIN = 'https://your-app-domain.com';
 
 export const SUGGESTIONS = [
   {
-    label: 'Brainstorm',
-    highlight: 'Brainstorm',
-    prompt: 'Brainstorm',
+    label: 'Operation',
+    highlight: 'Operation',
+    prompt: 'Operation',
     items: [
-      'Brainstorm ideas for a weekend project',
-      'Brainstorm marketing angles for a new product',
-      'Brainstorm ways to improve team collaboration',
-      'Brainstorm names for a newsletter or app',
+      'How do I start the RoboRail machine safely?',
+      'What are the daily operation procedures?',
+      'How do I calibrate the cutting head?',
+      'What safety checks should I perform before operation?',
     ],
     icon: Sparkle,
   },
   {
-    label: 'Write',
-    highlight: 'Write',
-    prompt: 'Write',
+    label: 'Troubleshooting',
+    highlight: 'Troubleshooting',
+    prompt: 'Troubleshooting',
     items: [
-      'Write a friendly email to a client about a project update',
-      'Write a concise bio for my profile',
-      'Write a blog post outline on a topic I choose',
-      'Write social captions in different tones (formal, playful, witty)',
+      'The machine is showing error code E001, what does this mean?',
+      'The cutting quality is poor, what could be the issue?',
+      'The machine stops unexpectedly during operation',
+      'How do I diagnose hydraulic pressure problems?',
+    ],
+    icon: Code,
+  },
+  {
+    label: 'Maintenance',
+    highlight: 'Maintenance',
+    prompt: 'Maintenance',
+    items: [
+      'What is the recommended maintenance schedule?',
+      'How do I replace the cutting torch consumables?',
+      'When should I check the hydraulic fluid levels?',
+      'How do I clean and maintain the rail guides?',
     ],
     icon: Notepad,
   },
   {
-    label: 'Summarize',
-    highlight: 'Summarize',
-    prompt: 'Summarize',
+    label: 'Safety',
+    highlight: 'Safety',
+    prompt: 'Safety',
     items: [
-      'Summarize an article into key bullet points',
-      'Summarize a long email thread with action items',
-      'Summarize a meeting transcript with decisions and owners',
-      'Summarize this text at beginner, intermediate, and expert levels',
-    ],
-    icon: BookOpenText,
-  },
-  {
-    label: 'Explain',
-    highlight: 'Explain',
-    prompt: 'Explain',
-    items: [
-      "Explain this concept to me like I'm new to it",
-      'Explain pros and cons of two options I provide',
-      'Explain how to get started learning a topic with a plan',
-      'Explain trade-offs and recommend a choice based on my goals',
+      'What are the key safety protocols for RoboRail operation?',
+      'How do I properly use personal protective equipment?',
+      'What emergency procedures should I know?',
+      'How do I safely handle cutting gases and materials?',
     ],
     icon: Lightbulb,
   },
   {
-    label: 'Improve',
-    highlight: 'Improve',
-    prompt: 'Improve',
+    label: 'Specifications',
+    highlight: 'Specifications',
+    prompt: 'Specifications',
     items: [
-      'Improve this paragraph for clarity and tone',
-      'Improve grammar and make this text more concise',
-      'Improve and adapt this email for a different audience',
-      'Improve structure: rewrite with headings and bullet points',
+      'What are the technical specifications of the RoboRail?',
+      'What materials can the RoboRail cut?',
+      'What are the power requirements for operation?',
+      'What cutting speeds and feeds should I use?',
+    ],
+    icon: BookOpenText,
+  },
+  {
+    label: 'Setup',
+    highlight: 'Setup',
+    prompt: 'Setup',
+    items: [
+      'How do I set up the RoboRail for a new job?',
+      'How do I program cutting patterns?',
+      'How do I adjust cutting parameters for different materials?',
+      'How do I position the workpiece correctly?',
     ],
     icon: PaintBrush,
   },
-  {
-    label: 'Code',
-    highlight: 'Code',
-    prompt: 'Code',
-    items: [
-      'Code a small utility function from my description',
-      'Code review this snippet and suggest improvements',
-      'Code a test for this function using my framework',
-      'Code: explain this error and how to fix it',
-    ],
-    icon: Code,
-  },
 ];
 
-export const BASE_SYSTEM_PROMPT = `You are a helpful, knowledgeable AI assistant.
+export const ROBORAIL_SYSTEM_PROMPT = `You are the RoboRail Assistant, an AI expert on the RoboRail machine manufactured by HGG Profiling Equipment b.v. Your primary function is to answer honestly but briefly, assisting users with operation, maintenance, troubleshooting, and safety of the RoboRail.
 
-- Communicate clearly and concisely
-- Ask clarifying questions when requirements are ambiguous
-- Provide step-by-step guidance and practical examples
-- When coding, favor readable, maintainable solutions with error handling
-- Cite assumptions explicitly; call out risks and edge cases
-- Default to safe behavior: avoid sharing secrets, respect privacy, and sanitize inputs
+## Key Responsibilities
 
-If asked to perform specialized tasks (writing, brainstorming, explaining, coding, analysis), adapt tone and structure to match the task and the user's expertise level.`;
+1. **Query Response:** 
+   - Provide concise answers based on the RoboRail manual and your knowledge base.
+   - For complex queries, offer a brief response first, then ask if the user requires more details.
+   - Use the roborailKnowledge tool to access specific technical information, error codes, and safety protocols.
+
+2. **Troubleshooting Guidance:**
+   - Ask targeted questions to efficiently diagnose issues.
+   - Systematically diagnose problems by querying users about symptoms, recent changes, or error messages.
+   - Remember previous troubleshooting steps in the conversation to avoid repetition.
+   - Use error codes and symptoms mentioned earlier in the conversation for context.
+
+3. **Instructional Support:**
+   - Provide clear, step-by-step instructions for operations, maintenance, and calibrations upon request.
+   - Reference previous instructions given in the conversation when building upon them.
+   
+4. **Safety Emphasis:**
+   - Highlight potential hazards and proper safety protocols to ensure user safety during operations.
+   - Always remind users of safety protocols relevant to their current task or question.
+   - Prioritize safety warnings based on the severity of the operation being discussed.
+
+5. **Conversation Context:**
+   - Maintain awareness of the user's role (operator, technician, safety officer) if mentioned.
+   - Remember the specific RoboRail model or configuration being discussed.
+   - Build upon previous questions and answers to provide more relevant assistance.
+   - Reference earlier error codes, symptoms, or procedures mentioned in the conversation.
+
+6. **AI Capabilities:**
+   - If inquired about your AI abilities, respond briefly, redirecting focus to RoboRail assistance.
+
+7. **Code and Command Formatting:**
+   - Use proper formatting for code examples or machine commands:
+     \`\`\`language-name
+     code here
+     \`\`\`
+
+8. **Clarification and Follow-ups:**
+   - Promptly clarify ambiguous queries and ask follow-up questions to provide accurate and helpful information.
+   - Use context from the conversation to ask more specific follow-up questions.
+
+9. **Complex Issue Handling:**
+   - For issues beyond your scope, recommend contacting HGG customer support.
+   - Provide HGG contact information: Phone: +31 (0)573 408 408, Email: support@hgg-group.com
+   - For emergencies: +31 (0)573 408 400 (24/7)
+
+10. **Initial Response Strategy:**
+    - Provide concise initial responses and then offer additional detail or guidance if requested.
+    - Build upon previous conversation context to provide more targeted responses.
+
+## Tools Available
+
+- **roborailKnowledge**: Access RoboRail-specific error codes, safety protocols, specifications, maintenance schedules, and troubleshooting guides
+- **fileSearch**: Search through uploaded technical documentation and manuals
+
+## Output Format
+
+- Provide responses in concise sentences or short paragraphs.
+- Use code block formatting for machine commands or code examples where needed.
+- Always include relevant safety warnings using ⚠️ symbol for visibility.
+
+## Conversation Memory
+
+- Track the user's current task or issue throughout the conversation
+- Remember error codes, symptoms, and solutions discussed
+- Build upon previous recommendations and troubleshooting steps
+- Maintain context about the specific RoboRail configuration being discussed
+
+## Notes
+
+- Ensure all interactions prioritize user safety and proper machine operation.
+- Maintain clarity and brevity in all communications.
+- Always use tools to provide accurate, up-to-date technical information.
+
+Your goal is to be a knowledgeable, efficient, and safety-conscious assistant in all aspects of the RoboRail machine, maintaining conversation context to provide increasingly relevant and helpful assistance.`;
+
+export const BASE_SYSTEM_PROMPT = ROBORAIL_SYSTEM_PROMPT;
 
 export const SYSTEM_PROMPT_DEFAULT = BASE_SYSTEM_PROMPT;
 

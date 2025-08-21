@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import { Conversation } from '@/app/components/chat/conversation';
@@ -189,6 +190,7 @@ export function Chat() {
       quotedText,
       reasoningEffort,
       onReasoningEffortChange: setReasoningEffort,
+      chatId,
     }),
     [
       input,
@@ -256,9 +258,41 @@ export function Chat() {
               },
             }}
           >
-            <h1 className="mb-6 font-medium text-3xl tracking-tight">
-              What&apos;s on your mind?
-            </h1>
+            <div className="text-center">
+              {/* HGG Logo */}
+              <div className="mb-6 flex justify-center">
+                <div className="relative">
+                  <Image
+                    src="/hgg-logo.png"
+                    alt="HGG Profiling Equipment"
+                    width={120}
+                    height={120}
+                    className="rounded-lg shadow-lg hgg-logo-glow transition-all duration-300 hover:scale-105"
+                    priority
+                  />
+                </div>
+              </div>
+              
+              <h1 className="mb-2 font-medium text-3xl tracking-tight hgg-brand-blue">
+                RoboRail Assistant
+              </h1>
+              <p className="mb-2 text-sm font-medium hgg-brand-blue">
+                Powered by HGG Profiling Equipment b.v.
+              </p>
+              <p className="mb-6 text-lg text-muted-foreground">
+                Expert support for RoboRail operation, maintenance, and safety
+              </p>
+              <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+                <p className="font-medium">⚠️ Safety First</p>
+                <p>Always follow proper safety protocols when operating the RoboRail machine. Consult your safety manual for complete guidelines.</p>
+              </div>
+              
+              {/* HGG Contact Information */}
+              <div className="mt-4 text-xs text-muted-foreground">
+                <p>For technical support: <span className="font-medium">+31 (0)573 408 408</span> | Emergency: <span className="font-medium">+31 (0)573 408 400</span></p>
+                <p>HGG Profiling Equipment b.v. | <span className="font-medium">support@hgg-group.com</span></p>
+              </div>
+            </div>
           </motion.div>
         ) : (
           <Conversation key="conversation" {...conversationProps} />

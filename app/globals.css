@@ -163,3 +163,31 @@ code {
 [data-sonner-toaster] > li {
   width: 100%;
 }
+
+/* HGG RoboRail Custom Styles */
+.hgg-brand-blue {
+  color: rgb(30, 64, 175); /* HGG brand blue similar to logo */
+}
+
+.hgg-brand-bg-blue {
+  background-color: rgb(30, 64, 175);
+}
+
+.hgg-accent-border {
+  border-color: rgb(59, 130, 246); /* Lighter blue for accents */
+}
+
+.hgg-logo-glow {
+  box-shadow: 0 0 20px rgba(30, 64, 175, 0.3);
+}
+
+/* Voice interaction indicator with HGG branding */
+.voice-hgg-indicator {
+  background: linear-gradient(45deg, rgb(30, 64, 175), rgb(59, 130, 246));
+}
+
+/* Safety warning with enhanced visibility */
+.hgg-safety-warning {
+  border-left: 4px solid rgb(234, 179, 8);
+  background: linear-gradient(to right, rgba(254, 249, 195, 0.8), rgba(254, 249, 195, 0.4));
+}
