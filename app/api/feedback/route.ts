@@ -68,9 +68,17 @@ export async function POST(req: Request) {
             feedback === 'upvote' ? 1 : feedback === 'downvote' ? 0 : undefined,
           comment,
           userId: user.id,
+          metadata: {
+            source: 'roborail_assistant',
+            messageId,
+            feedback_type: feedback,
+            industrial_context: 'manufacturing_equipment',
+            safety_critical: comment?.toLowerCase().includes('safety') || false,
+          },
         });
-      } catch {
-        // Silently handle LangSmith errors
+      } catch (error) {
+        console.error('LangSmith feedback error:', error);
+        // Continue with local storage even if LangSmith fails
       }
     }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { Info } from '@phosphor-icons/react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { HistoryTrigger } from '@/app/components/history/history-trigger';
 import { AppInfoTrigger } from '@/app/components/layout/app-info/app-info-trigger';
@@ -34,8 +35,19 @@ export function Header({ hasSidebar }: { hasSidebar: boolean }) {
                 className="pointer-events-auto inline-flex items-center font-medium text-xl tracking-tight"
                 href="/"
               >
-                <RoboRailIcon className="mr-1 size-5" />
-                {APP_NAME}
+                <div className="mr-2 flex items-center">
+                  <Image
+                    src="/hgg-logo.png"
+                    alt="HGG"
+                    width={32}
+                    height={32}
+                    className="rounded-md"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-lg font-semibold">{APP_NAME}</span>
+                  <span className="text-xs text-muted-foreground font-normal">by HGG</span>
+                </div>
               </Link>
               {hasSidebar && isMobile && <HeaderSidebarTrigger />}
             </div>

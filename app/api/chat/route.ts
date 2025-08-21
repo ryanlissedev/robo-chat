@@ -16,6 +16,7 @@ import { logger } from '@/lib/logger';
 import { getAllModels } from '@/lib/models';
 import { getProviderForModel } from '@/lib/openproviders/provider-map';
 import { fileSearchTool } from '@/lib/tools/file-search';
+import { roborailKnowledgeTool } from '@/lib/tools/roborail-knowledge';
 import type { ProviderWithoutOllama } from '@/lib/user-keys';
 import {
   incrementMessageCount,
@@ -232,10 +233,15 @@ export async function POST(req: Request) {
       langsmithRunId = run?.id || null;
     }
 
-    // Configure tools - always include file search tool when enabled (not just for GPT-5)
+    // Configure tools - always include RoboRail knowledge tool and file search when enabled
     const tools: ToolSet = effectiveEnableSearch
-      ? { fileSearch: fileSearchTool }
-      : ({} as ToolSet);
+      ? { 
+          fileSearch: fileSearchTool,
+          roborailKnowledge: roborailKnowledgeTool
+        }
+      : { 
+          roborailKnowledge: roborailKnowledgeTool
+        };
 
     // Configure model settings with reasoning effort
     const modelSettings = {

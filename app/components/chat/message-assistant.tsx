@@ -1,4 +1,5 @@
-import { ArrowClockwise, Check, Copy } from '@phosphor-icons/react';
+import { ArrowClockwise, Check, Copy, ThumbsUp, ThumbsDown } from '@phosphor-icons/react';
+import { Volume2 } from 'lucide-react';
 import type { UIMessage as MessageAISDK } from 'ai';
 import { useCallback, useRef } from 'react';
 import {
@@ -17,6 +18,7 @@ import { SearchImages } from './search-images';
 import { SourcesList } from './sources-list';
 import { ToolInvocation } from './tool-invocation';
 import { useAssistantMessageSelection } from './useAssistantMessageSelection';
+import { useVoiceOutput } from './voice-input';
 
 type MessageAssistantProps = {
   children: string;
@@ -103,12 +105,20 @@ export function MessageAssistant({
     messageRef,
     isQuoteEnabled
   );
+  const { speakMessage } = useVoiceOutput();
+  
   const handleQuoteBtnClick = useCallback(() => {
     if (selectionInfo && onQuote) {
       onQuote(selectionInfo.text, selectionInfo.messageId);
       clearSelection();
     }
   }, [selectionInfo, onQuote, clearSelection]);
+
+  const handleSpeakMessage = useCallback(() => {
+    if (children) {
+      speakMessage(children);
+    }
+  }, [children, speakMessage]);
 
   return (
     <Message
@@ -145,15 +155,31 @@ export function MessageAssistant({
         )}
 
         {contentNullOrEmpty ? null : (
-          <MessageContent
-            className={cn(
-              'prose dark:prose-invert relative min-w-full bg-transparent p-0',
-              'prose-h2:mt-8 prose-h2:mb-3 prose-table:block prose-h1:scroll-m-20 prose-h2:scroll-m-20 prose-h3:scroll-m-20 prose-h4:scroll-m-20 prose-h5:scroll-m-20 prose-h6:scroll-m-20 prose-table:overflow-y-auto prose-h1:font-semibold prose-h2:font-medium prose-h3:font-medium prose-strong:font-medium prose-h1:text-2xl prose-h2:text-xl prose-h3:text-base'
+          <>
+            {/* Safety warning detection */}
+            {(children.toLowerCase().includes('safety') || 
+              children.toLowerCase().includes('warning') || 
+              children.toLowerCase().includes('danger') || 
+              children.toLowerCase().includes('caution') ||
+              children.toLowerCase().includes('hazard')) && (
+              <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
+                <p className="font-medium flex items-center gap-2">
+                  ⚠️ Safety Information
+                </p>
+                <p className="text-xs mt-1">Always follow HGG safety protocols and consult your safety manual.</p>
+              </div>
             )}
-            markdown={true}
-          >
-            {children}
-          </MessageContent>
+            <MessageContent
+              className={cn(
+                'prose dark:prose-invert relative min-w-full bg-transparent p-0',
+                'prose-h2:mt-8 prose-h2:mb-3 prose-table:block prose-h1:scroll-m-20 prose-h2:scroll-m-20 prose-h3:scroll-m-20 prose-h4:scroll-m-20 prose-h5:scroll-m-20 prose-h6:scroll-m-20 prose-table:overflow-y-auto prose-h1:font-semibold prose-h2:font-medium prose-h3:font-medium prose-strong:font-medium prose-h1:text-2xl prose-h2:text-xl prose-h3:text-base',
+                'prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono'
+              )}
+              markdown={true}
+            >
+              {children}
+            </MessageContent>
+          </>
         )}
 
         {sources && sources.length > 0 && <SourcesList sources={sources} />}
@@ -197,6 +223,19 @@ export function MessageAssistant({
                 </button>
               </MessageAction>
             ) : null}
+            <MessageAction
+              side="bottom"
+              tooltip="Read aloud"
+            >
+              <button
+                aria-label="Read message aloud"
+                className="flex size-7.5 items-center justify-center rounded-full bg-transparent text-muted-foreground transition hover:bg-accent/60 hover:text-foreground"
+                onClick={handleSpeakMessage}
+                type="button"
+              >
+                <Volume2 className="size-4" />
+              </button>
+            </MessageAction>
             <MessageFeedback
               className="ml-1"
               langsmithRunId={langsmithRunId}

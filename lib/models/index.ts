@@ -61,24 +61,30 @@ export async function getAllModels(): Promise<ModelConfig[]> {
 export async function getModelsWithAccessFlags(): Promise<ModelConfig[]> {
   const models = await getAllModels();
 
-  const freeModels = models
-    .filter(
-      (model) =>
-        FREE_MODELS_IDS.includes(model.id) || model.providerId === 'ollama'
-    )
-    .map((model) => ({
-      ...model,
-      accessible: true,
-    }));
+  // Check which provider API keys are available
+  const availableProviders = new Set<string>();
+  
+  // Add providers that have API keys configured
+  if (process.env.OPENAI_API_KEY) availableProviders.add('openai');
+  if (process.env.MISTRAL_API_KEY) availableProviders.add('mistral');
+  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) availableProviders.add('google');
+  if (process.env.PERPLEXITY_API_KEY) availableProviders.add('perplexity');
+  if (process.env.ANTHROPIC_API_KEY) availableProviders.add('anthropic');
+  if (process.env.XAI_API_KEY) availableProviders.add('xai');
+  if (process.env.OPENROUTER_API_KEY) availableProviders.add('openrouter');
 
-  const proModels = models
-    .filter((model) => !freeModels.map((m) => m.id).includes(model.id))
-    .map((model) => ({
+  // Always include ollama and free models
+  const accessibleModels = models.map((model) => {
+    const isAlwaysFree = FREE_MODELS_IDS.includes(model.id) || model.providerId === 'ollama';
+    const hasProviderKey = availableProviders.has(model.providerId);
+    
+    return {
       ...model,
-      accessible: false,
-    }));
+      accessible: isAlwaysFree || hasProviderKey,
+    };
+  });
 
-  return [...freeModels, ...proModels];
+  return accessibleModels;
 }
 
 export async function getModelsForProvider(

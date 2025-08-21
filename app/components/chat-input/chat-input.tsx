@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowUpIcon, StopIcon } from '@phosphor-icons/react';
+import { AudioWaveform } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ModelSelector } from '@/components/common/model-selector/base';
 import {
@@ -19,6 +20,10 @@ import { PromptSystem } from '../suggestions/prompt-system';
 import { ButtonFileUpload } from './button-file-upload';
 import { ButtonSearch } from './button-search';
 import { FileList } from './file-list';
+import { VoiceInput } from '../chat/voice-input';
+import { VoiceAgent } from '../chat/voice-agent';
+import { RealtimeVoice, useRealtimeVoice } from '../chat/realtime-voice';
+import { ChatGPTVoiceInput } from '../chat/chatgpt-voice-input';
 
 type ChatInputProps = {
   value: string;
@@ -41,6 +46,9 @@ type ChatInputProps = {
   quotedText?: { text: string; messageId: string } | null;
   reasoningEffort?: ReasoningEffort;
   onReasoningEffortChange?: (effort: ReasoningEffort) => void;
+  chatId?: string;
+  onToggleVoice?: () => void;
+  useModernVoiceInput?: boolean;
 };
 
 export function ChatInput({
@@ -63,6 +71,9 @@ export function ChatInput({
   quotedText,
   reasoningEffort,
   onReasoningEffortChange,
+  chatId,
+  onToggleVoice,
+  useModernVoiceInput = false,
 }: ChatInputProps) {
   const selectModelConfig = getModelInfo(selectedModel);
   const hasSearchSupport = Boolean(selectModelConfig?.webSearch);
@@ -211,70 +222,153 @@ export function ChatInput({
         />
       )}
       <div className="relative order-2 px-2 pb-3 sm:pb-4 md:order-1">
-        <PromptInput
-          className="relative z-10 bg-popover p-0 pt-1 shadow-xs backdrop-blur-xl"
-          maxHeight={200}
-          onValueChange={onValueChange}
-          value={value}
-        >
-          <FileList files={files} onFileRemove={onFileRemove} />
-          <PromptInputTextarea
-            className="min-h-[44px] pt-3 pl-4 text-base leading-[1.3] sm:text-base md:text-base"
-            data-testid="chat-input"
-            onKeyDown={handleKeyDown}
-            onPaste={handlePaste}
-            placeholder="Ask anything…"
-            ref={textareaRef}
-          />
-          <PromptInputActions className="mt-3 w-full justify-between p-2">
-            <div className="flex gap-2">
-              <ButtonFileUpload
-                isUserAuthenticated={isUserAuthenticated}
-                model={selectedModel}
-                onFileUpload={onFileUpload}
-              />
-              <ModelSelector
-                className="rounded-full"
-                isUserAuthenticated={isUserAuthenticated}
-                selectedModelId={selectedModel}
-                setSelectedModelId={onSelectModel}
-              />
-              {hasSearchSupport ? (
-                <ButtonSearch
-                  isAuthenticated={isUserAuthenticated}
-                  isSelected={enableSearch}
-                  onToggle={setEnableSearch}
+        {useModernVoiceInput ? (
+          /* Modern ChatGPT-style Voice Input */
+          <div className="relative">
+            <ChatGPTVoiceInput
+              value={value}
+              onValueChange={onValueChange}
+              onSend={handleSend}
+              chatId={chatId}
+              disabled={isSubmitting}
+              placeholder="Ask about RoboRail..."
+              className="w-full"
+            />
+            
+            {/* Files display above input when present */}
+            {files.length > 0 && (
+              <div className="mb-3">
+                <FileList files={files} onFileRemove={onFileRemove} />
+              </div>
+            )}
+
+            {/* Traditional action buttons below for additional functionality */}
+            <div className="flex items-center justify-between mt-3 px-2">
+              <div className="flex gap-2">
+                <ButtonFileUpload
+                  isUserAuthenticated={isUserAuthenticated}
+                  model={selectedModel}
+                  onFileUpload={onFileUpload}
                 />
-              ) : null}
-              {isGPT5Model && (
-                <ReasoningEffortCompact
-                  className="ml-1"
-                  onChange={handleReasoningEffortChange}
-                  value={currentReasoningEffort}
+                <ModelSelector
+                  className="rounded-full"
+                  isUserAuthenticated={isUserAuthenticated}
+                  selectedModelId={selectedModel}
+                  setSelectedModelId={onSelectModel}
                 />
-              )}
-            </div>
-            <PromptInputAction
-              tooltip={status === 'streaming' ? 'Stop' : 'Send'}
-            >
+                {hasSearchSupport && (
+                  <ButtonSearch
+                    isAuthenticated={isUserAuthenticated}
+                    isSelected={enableSearch}
+                    onToggle={setEnableSearch}
+                  />
+                )}
+                {isGPT5Model && (
+                  <ReasoningEffortCompact
+                    className="ml-1"
+                    onChange={handleReasoningEffortChange}
+                    value={currentReasoningEffort}
+                  />
+                )}
+              </div>
+              
+              {/* Send Button */}
               <Button
                 aria-label={status === 'streaming' ? 'Stop' : 'Send message'}
-                className="size-9 rounded-full transition-all duration-300 ease-out"
+                className="h-8 px-4 rounded-full transition-all duration-300 ease-out bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium"
                 data-testid="send-button"
                 disabled={isDisabled}
                 onClick={handleSend}
                 size="sm"
                 type="button"
               >
-                {status === 'streaming' ? (
-                  <StopIcon className="size-4" />
-                ) : (
-                  <ArrowUpIcon className="size-4" />
-                )}
+                {status === 'streaming' ? 'Stop' : 'Send'}
               </Button>
-            </PromptInputAction>
-          </PromptInputActions>
-        </PromptInput>
+            </div>
+          </div>
+        ) : (
+          /* Traditional Input */
+          <PromptInput
+            className="relative z-10 bg-popover p-0 pt-1 shadow-xs backdrop-blur-xl"
+            maxHeight={200}
+            onValueChange={onValueChange}
+            value={value}
+          >
+            <FileList files={files} onFileRemove={onFileRemove} />
+            <PromptInputTextarea
+              className="min-h-[44px] pt-3 pl-4 text-base leading-[1.3] sm:text-base md:text-base"
+              data-testid="chat-input"
+              onKeyDown={handleKeyDown}
+              onPaste={handlePaste}
+              placeholder="Ask anything…"
+              ref={textareaRef}
+            />
+            <PromptInputActions className="mt-3 w-full justify-between p-2">
+              <div className="flex gap-2">
+                <ButtonFileUpload
+                  isUserAuthenticated={isUserAuthenticated}
+                  model={selectedModel}
+                  onFileUpload={onFileUpload}
+                />
+                <ModelSelector
+                  className="rounded-full"
+                  isUserAuthenticated={isUserAuthenticated}
+                  selectedModelId={selectedModel}
+                  setSelectedModelId={onSelectModel}
+                />
+                {hasSearchSupport ? (
+                  <ButtonSearch
+                    isAuthenticated={isUserAuthenticated}
+                    isSelected={enableSearch}
+                    onToggle={setEnableSearch}
+                  />
+                ) : null}
+                {isGPT5Model && (
+                  <ReasoningEffortCompact
+                    className="ml-1"
+                    onChange={handleReasoningEffortChange}
+                    value={currentReasoningEffort}
+                  />
+                )}
+              </div>
+              {/* Voice Button */}
+              {onToggleVoice && (
+                <PromptInputAction tooltip="Voice Assistant">
+                  <Button
+                    aria-label="Open voice assistant"
+                    className="size-9 rounded-full transition-all duration-300 ease-out bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-blue-200"
+                    onClick={onToggleVoice}
+                    size="sm"
+                    type="button"
+                  >
+                    <AudioWaveform className="size-4" />
+                  </Button>
+                </PromptInputAction>
+              )}
+              
+              {/* Send Button */}
+              <PromptInputAction
+                tooltip={status === 'streaming' ? 'Stop' : 'Send'}
+              >
+                <Button
+                  aria-label={status === 'streaming' ? 'Stop' : 'Send message'}
+                  className="size-9 rounded-full transition-all duration-300 ease-out"
+                  data-testid="send-button"
+                  disabled={isDisabled}
+                  onClick={handleSend}
+                  size="sm"
+                  type="button"
+                >
+                  {status === 'streaming' ? (
+                    <StopIcon className="size-4" />
+                  ) : (
+                    <ArrowUpIcon className="size-4" />
+                  )}
+                </Button>
+              </PromptInputAction>
+            </PromptInputActions>
+          </PromptInput>
+        )}
       </div>
     </div>
   );

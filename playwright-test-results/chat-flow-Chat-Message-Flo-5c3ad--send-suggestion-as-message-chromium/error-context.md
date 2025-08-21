@@ -78,7 +78,16 @@
                   - 'button "High: Deep, thorough analysis" [ref=e70]':
                     - img [ref=e71]
               - button "Send message" [disabled]: Send
-  - button "Open Next.js Dev Tools" [ref=e79] [cursor=pointer]:
-    - img [ref=e80] [cursor=pointer]
-  - alert [ref=e83]
+  - generic [ref=e78] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e79] [cursor=pointer]:
+      - img [ref=e80] [cursor=pointer]
+    - generic [ref=e83] [cursor=pointer]:
+      - button "Open issues overlay" [ref=e84] [cursor=pointer]:
+        - generic [ref=e85] [cursor=pointer]:
+          - generic [ref=e86] [cursor=pointer]: "0"
+          - generic [ref=e87] [cursor=pointer]: "1"
+        - generic [ref=e88] [cursor=pointer]: Issue
+      - button "Collapse issues badge" [ref=e89] [cursor=pointer]:
+        - img [ref=e90] [cursor=pointer]
+  - alert [ref=e92]
 ```
