@@ -1,7 +1,6 @@
 'use client';
 
-import { ArrowUpIcon, StopIcon } from '@phosphor-icons/react';
-import { AudioWaveform } from 'lucide-react';
+import { ArrowUpIcon, StopIcon, Plus, Mic } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ModelSelector } from '@/components/common/model-selector/base';
 import {
@@ -287,87 +286,117 @@ export function ChatInput({
             </div>
           </div>
         ) : (
-          /* Traditional Input */
-          <PromptInput
-            className="relative z-10 bg-popover p-0 pt-1 shadow-xs backdrop-blur-xl"
-            maxHeight={200}
-            onValueChange={onValueChange}
-            value={value}
-          >
-            <FileList files={files} onFileRemove={onFileRemove} />
-            <PromptInputTextarea
-              className="min-h-[44px] pt-3 pl-4 text-base leading-[1.3] sm:text-base md:text-base"
-              data-testid="chat-input"
-              onKeyDown={handleKeyDown}
-              onPaste={handlePaste}
-              placeholder="Ask anything…"
-              ref={textareaRef}
-            />
-            <PromptInputActions className="mt-3 w-full justify-between p-2">
-              <div className="flex gap-2">
-                <ButtonFileUpload
-                  isUserAuthenticated={isUserAuthenticated}
-                  model={selectedModel}
-                  onFileUpload={onFileUpload}
+          /* Clean Minimal Input */
+          <div className="relative">
+            {files.length > 0 && (
+              <div className="mb-3">
+                <FileList files={files} onFileRemove={onFileRemove} />
+              </div>
+            )}
+            <div className="flex items-center gap-3 px-6 py-3 bg-gray-50 dark:bg-gray-900 rounded-full border border-gray-200 dark:border-gray-800">
+              {/* Plus Icon - triggers file upload */}
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (files.length > 0) {
+                      onFileUpload(files);
+                    }
+                    e.target.value = '';
+                  }}
+                  className="hidden"
                 />
-                <ModelSelector
-                  className="rounded-full"
-                  isUserAuthenticated={isUserAuthenticated}
-                  selectedModelId={selectedModel}
-                  setSelectedModelId={onSelectModel}
-                />
-                {hasSearchSupport ? (
-                  <ButtonSearch
-                    isAuthenticated={isUserAuthenticated}
-                    isSelected={enableSearch}
-                    onToggle={setEnableSearch}
-                  />
-                ) : null}
-                {isGPT5Model && (
-                  <ReasoningEffortCompact
-                    className="ml-1"
-                    onChange={handleReasoningEffortChange}
-                    value={currentReasoningEffort}
-                  />
+                <Plus className="size-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" />
+              </label>
+              
+              {/* Input Field */}
+              <input
+                ref={textareaRef}
+                type="text"
+                value={value}
+                onChange={(e) => onValueChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onPaste={handlePaste}
+                placeholder="Ask anything"
+                className="flex-1 bg-transparent outline-none text-gray-700 dark:text-gray-200 placeholder-gray-400 text-base"
+                data-testid="chat-input"
+              />
+              
+              {/* Right Side Actions */}
+              <div className="flex items-center gap-2">
+                {/* Microphone Button */}
+                {onToggleVoice && (
+                  <button
+                    type="button"
+                    onClick={onToggleVoice}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    aria-label="Voice input"
+                  >
+                    <Mic className="size-5" />
+                  </button>
+                )}
+                
+                {/* Audio Waveform Icon - visible when no text */}
+                {!value && (
+                  <div className="text-gray-400">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 2v20M6 8v8M18 8v8M3 12v0M21 12v0M9 5v14M15 5v14" />
+                    </svg>
+                  </div>
+                )}
+                
+                {/* Send Button - visible when text is entered */}
+                {value && (
+                  <button
+                    type="button"
+                    onClick={handleSend}
+                    disabled={isDisabled}
+                    className="size-9 rounded-full bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label={status === 'streaming' ? 'Stop' : 'Send message'}
+                    data-testid="send-button"
+                  >
+                    {status === 'streaming' ? (
+                      <StopIcon className="size-4" />
+                    ) : (
+                      <ArrowUpIcon className="size-4" />
+                    )}
+                  </button>
                 )}
               </div>
-              {/* Voice Button */}
-              {onToggleVoice && (
-                <PromptInputAction tooltip="Voice Assistant">
-                  <Button
-                    aria-label="Open voice assistant"
-                    className="size-9 rounded-full transition-all duration-300 ease-out bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-blue-200"
-                    onClick={onToggleVoice}
-                    size="sm"
-                    type="button"
-                  >
-                    <AudioWaveform className="size-4" />
-                  </Button>
-                </PromptInputAction>
+            </div>
+            
+            {/* Hidden controls for advanced features */}
+            <div className="hidden">
+              <ButtonFileUpload
+                isUserAuthenticated={isUserAuthenticated}
+                model={selectedModel}
+                onFileUpload={onFileUpload}
+              />
+              <ModelSelector
+                className="rounded-full"
+                isUserAuthenticated={isUserAuthenticated}
+                selectedModelId={selectedModel}
+                setSelectedModelId={onSelectModel}
+              />
+              {hasSearchSupport && (
+                <ButtonSearch
+                  isAuthenticated={isUserAuthenticated}
+                  isSelected={enableSearch}
+                  onToggle={setEnableSearch}
+                />
               )}
-              
-              {/* Send Button */}
-              <PromptInputAction
-                tooltip={status === 'streaming' ? 'Stop' : 'Send'}
-              >
-                <Button
-                  aria-label={status === 'streaming' ? 'Stop' : 'Send message'}
-                  className="size-9 rounded-full transition-all duration-300 ease-out"
-                  data-testid="send-button"
-                  disabled={isDisabled}
-                  onClick={handleSend}
-                  size="sm"
-                  type="button"
-                >
-                  {status === 'streaming' ? (
-                    <StopIcon className="size-4" />
-                  ) : (
-                    <ArrowUpIcon className="size-4" />
-                  )}
-                </Button>
-              </PromptInputAction>
-            </PromptInputActions>
-          </PromptInput>
+              {isGPT5Model && (
+                <ReasoningEffortCompact
+                  className="ml-1"
+                  onChange={handleReasoningEffortChange}
+                  value={currentReasoningEffort}
+                />
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -22,7 +22,7 @@ const nextConfig: NextConfig = withBundleAnalyzer({
         protocol: 'https',
         hostname: 'www.google.com',
         port: '',
-        pathname: '/favicon.ico',
+        pathname: '/s2/favicons',
       },
     ],
   },
