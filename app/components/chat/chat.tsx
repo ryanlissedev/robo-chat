@@ -9,6 +9,7 @@ import { Conversation } from '@/app/components/chat/conversation';
 import { useModel } from '@/app/components/chat/use-model';
 import { ChatInput } from '@/app/components/chat-input/chat-input';
 import { useChatDraft } from '@/app/hooks/use-chat-draft';
+import { VoiceInputBar, useVoiceInputBar } from './voice-input-bar';
 import { useChats } from '@/lib/chat-store/chats/provider';
 import { useMessages } from '@/lib/chat-store/messages/provider';
 import { useChatSession } from '@/lib/chat-store/session/provider';
@@ -50,6 +51,7 @@ export function Chat() {
   const { user } = useUser();
   const { preferences } = useUserPreferences();
   const { draftValue, clearDraft } = useChatDraft(chatId);
+  const voiceInputBar = useVoiceInputBar();
 
   // File upload functionality
   const {
@@ -191,6 +193,8 @@ export function Chat() {
       reasoningEffort,
       onReasoningEffortChange: setReasoningEffort,
       chatId,
+      onToggleVoice: voiceInputBar.toggle,
+      useModernVoiceInput: true,
     }),
     [
       input,
@@ -214,6 +218,7 @@ export function Chat() {
       quotedText,
       reasoningEffort,
       setReasoningEffort,
+      voiceInputBar.toggle,
     ]
   );
 
@@ -315,6 +320,20 @@ export function Chat() {
       </motion.div>
 
       <FeedbackWidget authUserId={user?.id} />
+      
+      {/* Modern Voice Input Bar */}
+      <VoiceInputBar
+        chatId={chatId}
+        isOpen={voiceInputBar.isOpen}
+        onToggle={voiceInputBar.toggle}
+        onTranscription={(text) => {
+          handleInputChange(input ? `${input} ${text}` : text);
+        }}
+        onResponse={(text) => {
+          // Handle voice response
+          console.log('Voice response:', text);
+        }}
+      />
     </div>
   );
 }

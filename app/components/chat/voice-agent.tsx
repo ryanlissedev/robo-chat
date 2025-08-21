@@ -1,6 +1,6 @@
 'use client';
 
-import { Microphone, MicrophoneSlash, Volume2, VolumeX, Waveform, Stop, Pause } from '@phosphor-icons/react';
+import { Mic, MicOff, Volume2, VolumeX, AudioAudioWaveform, Square, Pause } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -129,7 +129,7 @@ export function VoiceAgent({
     }
   }, [isSupported, disabled, isRecording, updateAudioLevel]);
 
-  // Stop recording
+  // Square recording
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
@@ -227,7 +227,7 @@ export function VoiceAgent({
     }
   }, []);
 
-  // Stop audio playback
+  // Square audio playback
   const stopAudio = useCallback(() => {
     if (audioElementRef.current) {
       audioElementRef.current.pause();
@@ -285,14 +285,14 @@ export function VoiceAgent({
           isRecording && "bg-red-100 border-red-300 hover:bg-red-200 scale-110",
           isProcessing && "bg-blue-100 border-blue-300"
         )}
-        title={isRecording ? "Stop recording" : "Start voice interaction"}
+        title={isRecording ? "Square recording" : "Start voice interaction"}
       >
         {isProcessing ? (
-          <Waveform className="h-5 w-5 text-blue-600 animate-pulse" />
+          <AudioWaveform className="h-5 w-5 text-blue-600 animate-pulse" />
         ) : isRecording ? (
-          <MicrophoneSlash className="h-5 w-5 text-red-600" />
+          <MicSlash className="h-5 w-5 text-red-600" />
         ) : (
-          <Microphone className="h-5 w-5" />
+          <Mic className="h-5 w-5" />
         )}
       </Button>
 
@@ -311,7 +311,7 @@ export function VoiceAgent({
         </div>
       )}
 
-      {/* Stop Audio Button */}
+      {/* Square Audio Button */}
       {isPlaying && (
         <Button
           type="button"
@@ -319,9 +319,9 @@ export function VoiceAgent({
           size="sm"
           onClick={stopAudio}
           className="h-8 w-8 p-0 bg-blue-100 border-blue-300 hover:bg-blue-200"
-          title="Stop audio"
+          title="Square audio"
         >
-          <Stop className="h-4 w-4 text-blue-600" />
+          <Square className="h-4 w-4 text-blue-600" />
         </Button>
       )}
 

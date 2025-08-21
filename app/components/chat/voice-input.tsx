@@ -1,6 +1,6 @@
 'use client';
 
-import { Microphone, MicrophoneSlash, SpeakerHigh, SpeakerX } from '@phosphor-icons/react';
+import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -197,9 +197,9 @@ export function VoiceInput({ onTranscription, disabled, className }: VoiceInputP
         title={isListening ? "Stop listening" : "Start voice input"}
       >
         {isListening ? (
-          <MicrophoneSlash className="h-4 w-4 text-red-600" />
+          <MicSlash className="h-4 w-4 text-red-600" />
         ) : (
-          <Microphone className="h-4 w-4" />
+          <Mic className="h-4 w-4" />
         )}
       </Button>
 
@@ -217,9 +217,9 @@ export function VoiceInput({ onTranscription, disabled, className }: VoiceInputP
         title={isSpeaking ? "Stop speaking" : "Test voice output"}
       >
         {isSpeaking ? (
-          <SpeakerHigh className="h-4 w-4 text-blue-600" />
+          <Volume2 className="h-4 w-4 text-blue-600" />
         ) : (
-          <SpeakerX className="h-4 w-4" />
+          <VolumeX className="h-4 w-4" />
         )}
       </Button>
 

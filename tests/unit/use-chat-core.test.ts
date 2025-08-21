@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import type { UIMessage as Message } from 'ai';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatCore } from '@/app/components/chat/use-chat-core';
+import { SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
 import { createMockFile, mockUserProfile } from '../test-utils';
 
 // Mock modules with inline factories to avoid hoisting issues
@@ -137,16 +138,7 @@ describe('useChatCore', () => {
 
       expect(
         result.current.systemPrompt
-      ).toBe(`You are a helpful, knowledgeable AI assistant.
-
-- Communicate clearly and concisely
-- Ask clarifying questions when requirements are ambiguous
-- Provide step-by-step guidance and practical examples
-- When coding, favor readable, maintainable solutions with error handling
-- Cite assumptions explicitly; call out risks and edge cases
-- Default to safe behavior: avoid sharing secrets, respect privacy, and sanitize inputs
-
-If asked to perform specialized tasks (writing, brainstorming, explaining, coding, analysis), adapt tone and structure to match the task and the user's expertise level.`);
+      ).toBe(SYSTEM_PROMPT_DEFAULT);
     });
   });
 

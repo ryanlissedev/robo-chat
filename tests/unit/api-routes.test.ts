@@ -247,6 +247,13 @@ describe('API Routes', () => {
           score: 1,
           comment: 'Great response!',
           userId: 'test-user-id',
+          metadata: {
+            feedback_type: 'upvote',
+            messageId: 'test-message-id',
+            source: 'roborail_assistant',
+            industrial_context: 'manufacturing_equipment',
+            safety_critical: false,
+          },
         });
       });
 
