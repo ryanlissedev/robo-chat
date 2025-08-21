@@ -7,7 +7,18 @@ export function useChatDraft(chatId: string | null) {
     if (typeof window === 'undefined') {
       return '';
     }
-    return localStorage.getItem(storageKey) || '';
+    try {
+      const stored = localStorage.getItem(storageKey);
+      // Clear any single character drafts (likely stuck values)
+      if (stored && stored.length === 1 && stored !== ' ') {
+        localStorage.removeItem(storageKey);
+        return '';
+      }
+      return stored || '';
+    } catch (error) {
+      console.warn('Failed to read draft from localStorage:', error);
+      return '';
+    }
   });
 
   const setDraftValue = useCallback(
@@ -15,10 +26,14 @@ export function useChatDraft(chatId: string | null) {
       setDraftValueState(value);
 
       if (typeof window !== 'undefined') {
-        if (value) {
-          localStorage.setItem(storageKey, value);
-        } else {
-          localStorage.removeItem(storageKey);
+        try {
+          if (value) {
+            localStorage.setItem(storageKey, value);
+          } else {
+            localStorage.removeItem(storageKey);
+          }
+        } catch (error) {
+          console.warn('Failed to save draft to localStorage:', error);
         }
       }
     },
@@ -28,7 +43,11 @@ export function useChatDraft(chatId: string | null) {
   const clearDraft = useCallback(() => {
     setDraftValueState('');
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(storageKey);
+      try {
+        localStorage.removeItem(storageKey);
+      } catch (error) {
+        console.warn('Failed to clear draft from localStorage:', error);
+      }
     }
   }, [storageKey]);
 

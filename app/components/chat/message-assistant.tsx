@@ -1,5 +1,5 @@
 import { ArrowClockwise, Check, Copy, ThumbsUp, ThumbsDown } from '@phosphor-icons/react';
-import { Volume2, AudioAudioWaveform } from 'lucide-react';
+import { Volume2 } from 'lucide-react';
 import type { UIMessage as MessageAISDK } from 'ai';
 import { useCallback, useRef } from 'react';
 import {

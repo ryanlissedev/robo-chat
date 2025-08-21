@@ -193,7 +193,7 @@ export function Chat() {
       onReasoningEffortChange: setReasoningEffort,
       chatId,
       onToggleVoice: voiceInputBar.toggle,
-      useModernVoiceInput: true,
+      useModernVoiceInput: false,
     }),
     [
       input,

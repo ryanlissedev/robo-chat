@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowUpIcon, StopIcon } from '@phosphor-icons/react';
+import { AudioWaveform } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ModelSelector } from '@/components/common/model-selector/base';
 import {
@@ -22,7 +23,6 @@ import { FileList } from './file-list';
 import { VoiceInput } from '../chat/voice-input';
 import { VoiceAgent } from '../chat/voice-agent';
 import { RealtimeVoice, useRealtimeVoice } from '../chat/realtime-voice';
-import { Microphone } from '@phosphor-icons/react';
 import { ChatGPTVoiceInput } from '../chat/chatgpt-voice-input';
 
 type ChatInputProps = {
@@ -341,7 +341,7 @@ export function ChatInput({
                     size="sm"
                     type="button"
                   >
-                    <Microphone className="size-4" />
+                    <AudioWaveform className="size-4" />
                   </Button>
                 </PromptInputAction>
               )}

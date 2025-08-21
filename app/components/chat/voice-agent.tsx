@@ -1,6 +1,6 @@
 'use client';
 
-import { Mic, MicOff, Volume2, VolumeX, AudioAudioWaveform, Square, Pause } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, AudioWaveform, Square, Pause } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

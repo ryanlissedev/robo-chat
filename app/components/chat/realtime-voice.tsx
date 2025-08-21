@@ -1,6 +1,6 @@
 'use client';
 
-import { Mic, MicOff, Square, Pause, Play } from 'lucide-react';
+import { Mic, MicOff, Square, Pause, Play, AudioWaveform } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -398,6 +398,8 @@ export function RealtimeVoice({
           <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
         ) : isListening || isConnected ? (
           <Square className="h-5 w-5" />
+        ) : mode === 'realtime' ? (
+          <AudioWaveform className="h-5 w-5" />
         ) : (
           <Mic className="h-5 w-5" />
         )}
