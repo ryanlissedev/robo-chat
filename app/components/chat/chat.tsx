@@ -49,7 +49,7 @@ export function Chat() {
   const { messages: initialMessages, cacheAndAddMessage } = useMessages();
   const { user } = useUser();
   const { preferences } = useUserPreferences();
-  const { draftValue, clearDraft } = useChatDraft(chatId);
+  const { draftValue, setDraftValue, clearDraft } = useChatDraft(chatId);
   const voiceInputBar = useVoiceInputBar();
 
   // File upload functionality
@@ -145,6 +145,7 @@ export function Chat() {
     handleFileUploads,
     selectedModel,
     clearDraft,
+    setDraftValue,
     bumpChat,
   });
 

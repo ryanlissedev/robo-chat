@@ -1640,7 +1640,37 @@
       "lastAccessed": "2025-08-20T20:51:35.452Z",
       "lastVerified": "2025-08-20T20:51:35.452Z",
       "status": "fresh"
+    },
+    {
+      "id": "mem_1755764232697_3hhr82cae",
+      "content": "Latest changes pulled from GitHub include:\n- New voice features (voice-agent.tsx, voice-input.tsx, realtime-voice.tsx)\n- RoboRail knowledge tool integration in chat/route.ts\n- Chat API endpoint has tools configuration with fileSearchTool and roborailKnowledgeTool\n- TypeScript bypass still in place in next.config.ts\n- Authentication fix still active in use-chat-core.ts (line 75)\n- Need to test chat functionality to see what's broken",
+      "type": "config",
+      "tags": [
+        "config",
+        "typescript",
+        "api",
+        "authentication"
+      ],
+      "timestamp": "2025-08-21T08:17:12.696Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-08-21T08:17:12.696Z",
+      "lastVerified": "2025-08-21T08:17:12.696Z",
+      "status": "fresh"
+    },
+    {
+      "id": "mem_1755764612906_imy1po3pw",
+      "content": "Chat API is working correctly (tested with curl). The issue is with the frontend form submission not triggering when pressing Enter or clicking send button. The send button remains disabled even when text is entered in the input field. This suggests the submit handler or input state management is not working properly.",
+      "type": "troubleshooting",
+      "tags": [
+        "troubleshooting",
+        "api"
+      ],
+      "timestamp": "2025-08-21T08:23:32.905Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-08-21T08:23:32.905Z",
+      "lastVerified": "2025-08-21T08:23:32.905Z",
+      "status": "fresh"
     }
   ],
-  "lastUpdated": "2025-08-20T20:51:35.452Z"
+  "lastUpdated": "2025-08-21T08:23:32.905Z"
 }

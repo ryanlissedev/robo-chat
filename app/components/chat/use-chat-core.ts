@@ -4,7 +4,6 @@ import type { UIMessage as Message } from 'ai';
 import { DefaultChatTransport } from 'ai';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useChatDraft } from '@/app/hooks/use-chat-draft';
 import { toast } from '@/components/ui/toast';
 import { getOrCreateGuestUserId } from '@/lib/api';
 import { SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
@@ -40,6 +39,7 @@ type UseChatCoreProps = {
   ) => Promise<Attachment[] | null>;
   selectedModel: string;
   clearDraft: () => void;
+  setDraftValue: (value: string) => void;
   bumpChat: (chatId: string) => void;
 };
 
@@ -59,6 +59,7 @@ export function useChatCore(props: UseChatCoreProps) {
     handleFileUploads,
     selectedModel,
     clearDraft,
+    setDraftValue,
     bumpChat,
   } = props;
   // State management
@@ -102,9 +103,6 @@ export function useChatCore(props: UseChatCoreProps) {
 
     initializeUserId();
   }, [user]);
-
-  // Draft management
-  const { setDraftValue } = useChatDraft(chatId);
 
   // Search params handling
   const searchParams = useSearchParams();
