@@ -282,7 +282,7 @@ export function Chat() {
                 How can we help you today?
               </h1>
               <p className="mb-8 text-lg text-muted-foreground max-w-lg mx-auto">
-                Ask about RoboRail operation, maintenance, or safety
+                Ask about RoboRail
               </p>
             </div>
           </motion.div>

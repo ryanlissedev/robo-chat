@@ -22,7 +22,7 @@ export function ChatGPTVoiceInput({
   onSend,
   chatId,
   disabled,
-  placeholder = "Ask about RoboRail operation, maintenance, or safety...",
+  placeholder = "Ask about RoboRail...",
   className 
 }: ChatGPTVoiceInputProps) {
   const { user } = useUser();

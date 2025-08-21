@@ -231,7 +231,7 @@ export function ChatInput({
               onSend={handleSend}
               chatId={chatId}
               disabled={isSubmitting}
-              placeholder="Ask about RoboRail operation, maintenance, or safety..."
+              placeholder="Ask about RoboRail..."
               className="w-full"
             />
             
