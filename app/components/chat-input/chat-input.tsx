@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { getModelInfo } from "@/lib/models"
 import { ArrowUpIcon, StopIcon } from "@phosphor-icons/react"
+import { Mic, AudioWaveform } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ReasoningEffortSelector, type ReasoningEffort } from "../chat/reasoning-effort-selector"
 import { PromptSystem } from "../suggestions/prompt-system"
@@ -226,24 +227,44 @@ export function ChatInput({
                 />
               )}
             </div>
-            <PromptInputAction
-              tooltip={status === "streaming" ? "Stop" : "Send"}
-            >
+            <div className="flex items-center gap-2">
               <Button
                 size="sm"
-                className="size-9 rounded-full transition-all duration-300 ease-out"
-                disabled={!value || isSubmitting || isOnlyWhitespace(value)}
+                variant="ghost"
+                className="size-9 rounded-full hover:bg-accent"
                 type="button"
-                onClick={handleSend}
-                aria-label={status === "streaming" ? "Stop" : "Send message"}
+                aria-label="Voice input"
               >
-                {status === "streaming" ? (
-                  <StopIcon className="size-4" />
-                ) : (
-                  <ArrowUpIcon className="size-4" />
-                )}
+                <Mic className="size-4" />
               </Button>
-            </PromptInputAction>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="size-9 rounded-full hover:bg-accent"
+                type="button"
+                aria-label="Audio waveform"
+              >
+                <AudioWaveform className="size-4" />
+              </Button>
+              <PromptInputAction
+                tooltip={status === "streaming" ? "Stop" : "Send"}
+              >
+                <Button
+                  size="sm"
+                  className="size-9 rounded-full transition-all duration-300 ease-out"
+                  disabled={!value || isSubmitting || isOnlyWhitespace(value)}
+                  type="button"
+                  onClick={handleSend}
+                  aria-label={status === "streaming" ? "Stop" : "Send message"}
+                >
+                  {status === "streaming" ? (
+                    <StopIcon className="size-4" />
+                  ) : (
+                    <ArrowUpIcon className="size-4" />
+                  )}
+                </Button>
+              </PromptInputAction>
+            </div>
           </PromptInputActions>
         </PromptInput>
       </div>
