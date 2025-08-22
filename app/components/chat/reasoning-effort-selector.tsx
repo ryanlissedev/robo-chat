@@ -65,7 +65,7 @@ export function ReasoningEffortSelector({
     >
       <SelectTrigger
         className={cn(
-          'w-9 h-9 bg-background border-border p-0 flex items-center justify-center',
+          'w-12 h-9 bg-background border-border px-2 flex items-center justify-center',
           className
         )}
       >
