@@ -49,78 +49,30 @@ export const test = base.extend<{
         await input.click();
         await page.waitForTimeout(100);
         
-        // Try to directly call React's onChange handler using React's internal fiber system
-        await page.evaluate((text) => {
-          const inputElement = document.querySelector('[data-testid="chat-input"]') as HTMLTextAreaElement;
-          if (inputElement) {
-            // Find React fiber node
-            const reactFiberKey = Object.keys(inputElement).find(key => key.startsWith('__reactFiber'));
-            if (reactFiberKey) {
-              const fiber = (inputElement as any)[reactFiberKey];
-              
-              // Find the onChange handler in the fiber tree
-              let currentFiber = fiber;
-              let onChange = null;
-              
-              while (currentFiber && !onChange) {
-                if (currentFiber.memoizedProps?.onChange) {
-                  onChange = currentFiber.memoizedProps.onChange;
-                  break;
-                }
-                currentFiber = currentFiber.return;
-              }
-              
-              if (onChange) {
-                // Set the value directly first
-                const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
-                if (nativeInputValueSetter) {
-                  nativeInputValueSetter.call(inputElement, text);
-                }
-                
-                // Create a synthetic event that React expects
-                const syntheticEvent = {
-                  target: inputElement,
-                  currentTarget: inputElement,
-                  type: 'change',
-                  bubbles: true,
-                  cancelable: true,
-                  preventDefault: () => {},
-                  stopPropagation: () => {},
-                  nativeEvent: new Event('change', { bubbles: true }),
-                };
-                
-                // Call React's onChange handler directly
-                onChange(syntheticEvent);
-                console.log('Called React onChange handler directly');
-              } else {
-                console.log('Could not find React onChange handler');
-                
-                // Fallback: dispatch native events
-                inputElement.value = text;
-                const inputEvent = new Event('input', { bubbles: true });
-                const changeEvent = new Event('change', { bubbles: true });
-                inputElement.dispatchEvent(inputEvent);
-                inputElement.dispatchEvent(changeEvent);
-              }
-            } else {
-              console.log('Could not find React fiber node');
-              // Fallback: simple value set and events
-              inputElement.value = text;
-              const inputEvent = new Event('input', { bubbles: true });
-              const changeEvent = new Event('change', { bubbles: true });
-              inputElement.dispatchEvent(inputEvent);
-              inputElement.dispatchEvent(changeEvent);
-            }
-          }
-        }, message);
+        // Use Playwright's native methods to avoid DOM context issues
+        await input.fill(''); // Clear first
+        await input.fill(message);
+        
+        // Trigger additional events to ensure React state updates
+        await input.press('Space'); // Trigger any onChange handlers
+        await input.press('Backspace'); // Remove the space
+        
+        // Alternative approach: use keyboard to type character by character
+        // This is more reliable for React components
+        await input.fill(''); // Clear again
+        await input.type(message, { delay: 10 });
         
         // Wait for React state to update
         await page.waitForTimeout(300);
         
-        // Check if it worked
+        // Verify the input has the expected value
         const inputValue = await input.inputValue();
-        const buttonState = await page.locator('[data-testid="send-button"]').getAttribute('disabled');
-        console.log(`Fiber approach - Input value: "${inputValue}", Button disabled: ${buttonState}`);
+        if (inputValue !== message) {
+          console.log(`Warning: Input value "${inputValue}" doesn't match expected "${message}"`);
+          // Try one more time with direct fill
+          await input.fill(message);
+          await page.waitForTimeout(100);
+        }
         
         // Wait for the send button to become enabled
         await page.waitForSelector('[data-testid="send-button"]:not([disabled])', {

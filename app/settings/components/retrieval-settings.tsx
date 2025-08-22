@@ -1,64 +1,43 @@
-'use client';
+'use client'
 
-import {
-  ArrowsClockwise,
-  Brain,
-  Funnel,
-  MagnifyingGlass,
-} from '@phosphor-icons/react';
-import { useCallback, useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { createClient } from '@/lib/supabase/client';
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Slider } from '@/components/ui/slider'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { toast } from 'sonner'
+import { Brain, MagnifyingGlass, ArrowsClockwise, Funnel } from '@phosphor-icons/react'
+import { createClient } from '@/lib/supabase/client'
 
-type RetrievalConfig = {
+interface RetrievalConfig {
   // Query Rewriting
-  queryRewriting: boolean;
-  rewriteStrategy:
-    | 'expansion'
-    | 'refinement'
-    | 'decomposition'
-    | 'multi-perspective';
-
+  queryRewriting: boolean
+  rewriteStrategy: 'expansion' | 'refinement' | 'decomposition' | 'multi-perspective'
+  
   // Reranking
-  reranking: boolean;
-  rerankingMethod: 'semantic' | 'cross-encoder' | 'diversity';
-
+  reranking: boolean
+  rerankingMethod: 'semantic' | 'cross-encoder' | 'diversity'
+  
   // Search Parameters
-  topK: number;
-  temperature: number;
-  minScore: number;
-
+  topK: number
+  temperature: number
+  minScore: number
+  
   // Advanced
-  useHyDE: boolean; // Hypothetical Document Embedding
-  diversityLambda: number; // For MMR reranking
-  chunkSize: number;
-  chunkOverlap: number;
-};
+  useHyDE: boolean // Hypothetical Document Embedding
+  diversityLambda: number // For MMR reranking
+  chunkSize: number
+  chunkOverlap: number
+}
 
-type RetrievalSettingsProps = {
-  userId: string;
-};
+interface RetrievalSettingsProps {
+  userId: string
+}
 
-export function RetrievalSettings({}: RetrievalSettingsProps) {
+export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
   const [config, setConfig] = useState<RetrievalConfig>({
     queryRewriting: true,
     rewriteStrategy: 'expansion',
@@ -71,54 +50,60 @@ export function RetrievalSettings({}: RetrievalSettingsProps) {
     diversityLambda: 0.5,
     chunkSize: 1000,
     chunkOverlap: 200,
-  });
-  const [loading, setLoading] = useState(false);
-  const [saved, setSaved] = useState(true);
-  const supabase = createClient();
-
-  const loadSettings = useCallback(async () => {
-    if (!supabase) {
-      console.warn('Database connection not available');
-      return;
-    }
-    
-    try {
-      // Note: user_retrieval_settings table may not exist yet
-      // Since this table doesn't exist in the schema, we'll just use defaults
-      console.info('Using default retrieval settings - table not implemented yet');
-    } catch {
-      console.warn('Retrieval settings table not found, using defaults');
-    }
-  }, [supabase]);
+  })
+  const [loading, setLoading] = useState(false)
+  const [saved, setSaved] = useState(true)
+  const supabase = createClient()
 
   useEffect(() => {
-    loadSettings();
-  }, [loadSettings]);
+    loadSettings()
+  }, [])
+
+  const loadSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_retrieval_settings')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
+
+      if (data) {
+        setConfig(data.config)
+      }
+    } catch (error) {
+      console.error('Error loading retrieval settings:', error)
+    }
+  }
 
   const saveSettings = async () => {
-    if (!supabase) {
-      toast.error('Database connection not available');
-      return;
-    }
-
-    setLoading(true);
+    setLoading(true)
     try {
-      // Table doesn't exist yet - just show success for now
-      // TODO: Implement user_retrieval_settings table
-      toast.success('Retrieval settings saved (local only - table not implemented)');
-      setSaved(true);
-      console.info('Retrieval settings would be saved:', config);
-    } catch {
-      toast.error('Failed to save settings');
-    } finally {
-      setLoading(false);
-    }
-  };
+      const { error } = await supabase
+        .from('user_retrieval_settings')
+        .upsert({
+          user_id: userId,
+          config,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id'
+        })
 
-  const updateConfig = (key: keyof RetrievalConfig, value: RetrievalConfig[keyof RetrievalConfig]) => {
-    setConfig({ ...config, [key]: value });
-    setSaved(false);
-  };
+      if (error) throw error
+
+      toast.success('Retrieval settings saved')
+      setSaved(true)
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      toast.error('Failed to save settings')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateConfig = (key: keyof RetrievalConfig, value: any) => {
+    setConfig({ ...config, [key]: value })
+    setSaved(false)
+  }
 
   const resetToDefaults = () => {
     setConfig({
@@ -133,9 +118,9 @@ export function RetrievalSettings({}: RetrievalSettingsProps) {
       diversityLambda: 0.5,
       chunkSize: 1000,
       chunkOverlap: 200,
-    });
-    setSaved(false);
-  };
+    })
+    setSaved(false)
+  }
 
   return (
     <div className="space-y-4">
@@ -153,11 +138,9 @@ export function RetrievalSettings({}: RetrievalSettingsProps) {
           <div className="flex items-center justify-between">
             <Label htmlFor="query-rewriting">Enable Query Rewriting</Label>
             <Switch
-              checked={config.queryRewriting}
               id="query-rewriting"
-              onCheckedChange={(checked) =>
-                updateConfig('queryRewriting', checked)
-              }
+              checked={config.queryRewriting}
+              onCheckedChange={(checked) => updateConfig('queryRewriting', checked)}
             />
           </div>
 
@@ -165,10 +148,8 @@ export function RetrievalSettings({}: RetrievalSettingsProps) {
             <div className="space-y-2">
               <Label>Rewrite Strategy</Label>
               <Select
-                onValueChange={(value) =>
-                  updateConfig('rewriteStrategy', value)
-                }
                 value={config.rewriteStrategy}
+                onValueChange={(value) => updateConfig('rewriteStrategy', value)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -177,33 +158,25 @@ export function RetrievalSettings({}: RetrievalSettingsProps) {
                   <SelectItem value="expansion">
                     <div>
                       <div className="font-medium">Query Expansion</div>
-                      <div className="text-muted-foreground text-xs">
-                        Add synonyms and related terms
-                      </div>
+                      <div className="text-xs text-muted-foreground">Add synonyms and related terms</div>
                     </div>
                   </SelectItem>
                   <SelectItem value="refinement">
                     <div>
                       <div className="font-medium">Query Refinement</div>
-                      <div className="text-muted-foreground text-xs">
-                        Improve clarity and specificity
-                      </div>
+                      <div className="text-xs text-muted-foreground">Improve clarity and specificity</div>
                     </div>
                   </SelectItem>
                   <SelectItem value="decomposition">
                     <div>
                       <div className="font-medium">Query Decomposition</div>
-                      <div className="text-muted-foreground text-xs">
-                        Break into sub-queries
-                      </div>
+                      <div className="text-xs text-muted-foreground">Break into sub-queries</div>
                     </div>
                   </SelectItem>
                   <SelectItem value="multi-perspective">
                     <div>
                       <div className="font-medium">Multi-Perspective</div>
-                      <div className="text-muted-foreground text-xs">
-                        Generate different angles
-                      </div>
+                      <div className="text-xs text-muted-foreground">Generate different angles</div>
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -212,12 +185,10 @@ export function RetrievalSettings({}: RetrievalSettingsProps) {
           )}
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="use-hyde">
-              Use Hypothetical Document Embedding (HyDE)
-            </Label>
+            <Label htmlFor="use-hyde">Use Hypothetical Document Embedding (HyDE)</Label>
             <Switch
-              checked={config.useHyDE}
               id="use-hyde"
+              checked={config.useHyDE}
               onCheckedChange={(checked) => updateConfig('useHyDE', checked)}
             />
           </div>
@@ -238,8 +209,8 @@ export function RetrievalSettings({}: RetrievalSettingsProps) {
           <div className="flex items-center justify-between">
             <Label htmlFor="reranking">Enable Reranking</Label>
             <Switch
-              checked={config.reranking}
               id="reranking"
+              checked={config.reranking}
               onCheckedChange={(checked) => updateConfig('reranking', checked)}
             />
           </div>
@@ -249,10 +220,8 @@ export function RetrievalSettings({}: RetrievalSettingsProps) {
               <div className="space-y-2">
                 <Label>Reranking Method</Label>
                 <Select
-                  onValueChange={(value) =>
-                    updateConfig('rerankingMethod', value)
-                  }
                   value={config.rerankingMethod}
+                  onValueChange={(value) => updateConfig('rerankingMethod', value)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -261,25 +230,19 @@ export function RetrievalSettings({}: RetrievalSettingsProps) {
                     <SelectItem value="semantic">
                       <div>
                         <div className="font-medium">Semantic Reranking</div>
-                        <div className="text-muted-foreground text-xs">
-                          Fast, context-aware ranking
-                        </div>
+                        <div className="text-xs text-muted-foreground">Fast, context-aware ranking</div>
                       </div>
                     </SelectItem>
                     <SelectItem value="cross-encoder">
                       <div>
                         <div className="font-medium">Cross-Encoder</div>
-                        <div className="text-muted-foreground text-xs">
-                          High accuracy, slower
-                        </div>
+                        <div className="text-xs text-muted-foreground">High accuracy, slower</div>
                       </div>
                     </SelectItem>
                     <SelectItem value="diversity">
                       <div>
                         <div className="font-medium">Diversity (MMR)</div>
-                        <div className="text-muted-foreground text-xs">
-                          Balance relevance and variety
-                        </div>
+                        <div className="text-xs text-muted-foreground">Balance relevance and variety</div>
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -290,20 +253,16 @@ export function RetrievalSettings({}: RetrievalSettingsProps) {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>Diversity Lambda</Label>
-                    <span className="text-muted-foreground text-sm">
-                      {config.diversityLambda}
-                    </span>
+                    <span className="text-sm text-muted-foreground">{config.diversityLambda}</span>
                   </div>
                   <Slider
-                    max={1}
-                    min={0}
-                    onValueChange={([value]) =>
-                      updateConfig('diversityLambda', value)
-                    }
-                    step={0.1}
                     value={[config.diversityLambda]}
+                    onValueChange={([value]) => updateConfig('diversityLambda', value)}
+                    min={0}
+                    max={1}
+                    step={0.1}
                   />
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-xs text-muted-foreground">
                     0 = Maximum diversity, 1 = Maximum relevance
                   </p>
                 </div>
@@ -327,34 +286,30 @@ export function RetrievalSettings({}: RetrievalSettingsProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Top K Results</Label>
-              <span className="text-muted-foreground text-sm">
-                {config.topK}
-              </span>
+              <span className="text-sm text-muted-foreground">{config.topK}</span>
             </div>
             <Slider
-              max={20}
-              min={1}
-              onValueChange={([value]) => updateConfig('topK', value)}
-              step={1}
               value={[config.topK]}
+              onValueChange={([value]) => updateConfig('topK', value)}
+              min={1}
+              max={20}
+              step={1}
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Temperature</Label>
-              <span className="text-muted-foreground text-sm">
-                {config.temperature}
-              </span>
+              <span className="text-sm text-muted-foreground">{config.temperature}</span>
             </div>
             <Slider
-              max={1}
-              min={0}
-              onValueChange={([value]) => updateConfig('temperature', value)}
-              step={0.1}
               value={[config.temperature]}
+              onValueChange={([value]) => updateConfig('temperature', value)}
+              min={0}
+              max={1}
+              step={0.1}
             />
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Lower = More focused, Higher = More creative
             </p>
           </div>
@@ -362,18 +317,16 @@ export function RetrievalSettings({}: RetrievalSettingsProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Minimum Score Threshold</Label>
-              <span className="text-muted-foreground text-sm">
-                {config.minScore}
-              </span>
+              <span className="text-sm text-muted-foreground">{config.minScore}</span>
             </div>
             <Slider
-              max={1}
-              min={0}
-              onValueChange={([value]) => updateConfig('minScore', value)}
-              step={0.05}
               value={[config.minScore]}
+              onValueChange={([value]) => updateConfig('minScore', value)}
+              min={0}
+              max={1}
+              step={0.05}
             />
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Filter out results below this relevance score
             </p>
           </div>
@@ -394,51 +347,49 @@ export function RetrievalSettings({}: RetrievalSettingsProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Chunk Size (characters)</Label>
-              <span className="text-muted-foreground text-sm">
-                {config.chunkSize}
-              </span>
+              <span className="text-sm text-muted-foreground">{config.chunkSize}</span>
             </div>
             <Slider
-              max={4000}
-              min={200}
-              onValueChange={([value]) => updateConfig('chunkSize', value)}
-              step={100}
               value={[config.chunkSize]}
+              onValueChange={([value]) => updateConfig('chunkSize', value)}
+              min={200}
+              max={4000}
+              step={100}
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Chunk Overlap (characters)</Label>
-              <span className="text-muted-foreground text-sm">
-                {config.chunkOverlap}
-              </span>
+              <span className="text-sm text-muted-foreground">{config.chunkOverlap}</span>
             </div>
             <Slider
-              max={500}
-              min={0}
-              onValueChange={([value]) => updateConfig('chunkOverlap', value)}
-              step={50}
               value={[config.chunkOverlap]}
+              onValueChange={([value]) => updateConfig('chunkOverlap', value)}
+              min={0}
+              max={500}
+              step={50}
             />
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Overlap helps maintain context between chunks
             </p>
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex items-center justify-between">
-        <Button onClick={resetToDefaults} variant="outline">
+      <div className="flex justify-between items-center">
+        <Button variant="outline" onClick={resetToDefaults}>
           Reset to Defaults
         </Button>
         <div className="flex items-center gap-2">
-          {!saved && <Badge variant="secondary">Unsaved changes</Badge>}
-          <Button disabled={loading || saved} onClick={saveSettings}>
+          {!saved && (
+            <Badge variant="secondary">Unsaved changes</Badge>
+          )}
+          <Button onClick={saveSettings} disabled={loading || saved}>
             Save Settings
           </Button>
         </div>
       </div>
     </div>
-  );
+  )
 }

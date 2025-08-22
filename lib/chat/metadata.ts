@@ -142,14 +142,19 @@ export function extractMessageMetadata(message: UIMessage): MessageMetadata {
 
   // Extract experimental metadata if present
   if ('experimental_metadata' in message) {
-    const experimental = message.experimental_metadata as Record<string, unknown>;
+    const experimental = message.experimental_metadata as Record<
+      string,
+      unknown
+    >;
     if (experimental) {
-      metadata.model = experimental.model;
-      metadata.temperature = experimental.temperature;
-      metadata.maxTokens = experimental.maxTokens;
-      metadata.promptTokens = experimental.promptTokens;
-      metadata.completionTokens = experimental.completionTokens;
-      metadata.totalTokens = experimental.totalTokens;
+      metadata.model = experimental.model as string | undefined;
+      metadata.temperature = experimental.temperature as number | undefined;
+      metadata.maxTokens = experimental.maxTokens as number | undefined;
+      metadata.promptTokens = experimental.promptTokens as number | undefined;
+      metadata.completionTokens = experimental.completionTokens as
+        | number
+        | undefined;
+      metadata.totalTokens = experimental.totalTokens as number | undefined;
     }
   }
 

@@ -3,12 +3,9 @@ import { createGoogleGenerativeAI, google } from '@ai-sdk/google';
 import { createMistral, mistral } from '@ai-sdk/mistral';
 import { createOpenAI, openai } from '@ai-sdk/openai';
 import { createPerplexity, perplexity } from '@ai-sdk/perplexity';
-
-// Align to AI SDK v5 naming used across the project
-// Use unknown to tolerate provider SDK return types across versions
-type LanguageModel = unknown;
-
 import { createXai, xai } from '@ai-sdk/xai';
+// Import the actual LanguageModel type from AI SDK v5
+import type { LanguageModel } from 'ai';
 import { getProviderForModel } from './provider-map';
 import type {
   AnthropicModel,
@@ -21,8 +18,8 @@ import type {
   XaiModel,
 } from './types';
 
-// Keep options loosely typed to avoid coupling to provider signatures  
-export type OpenProvidersOptions = unknown;
+// Keep options loosely typed to avoid coupling to provider signatures
+export type OpenProvidersOptions<T = unknown> = unknown;
 
 // Get Ollama base URL from environment or use default
 const getOllamaBaseURL = () => {
@@ -59,22 +56,44 @@ export function openproviders<T extends SupportedModel>(
       enableSearch?: boolean;
       reasoningEffort?: 'low' | 'medium' | 'high';
       verbosity?: 'low' | 'medium' | 'high';
+      textVerbosity?: 'low' | 'medium' | 'high';
+      reasoningSummary?: 'auto' | 'none';
+      serviceTier?: 'auto' | 'flex' | 'priority';
       headers?: Record<string, string>;
     };
-    const merged = (settings ?? {}) as GPT5Extras &
-      Record<string, unknown>;
+    const merged = (settings ?? {}) as GPT5Extras & Record<string, unknown>;
     const {
       enableSearch: _,
       reasoningEffort,
       verbosity,
+      textVerbosity,
+      reasoningSummary,
+      serviceTier,
       headers,
       ...rest
     } = merged;
     void _; // Mark as intentionally unused
     const openaiSettings = rest as Record<string, unknown>;
 
-    // Configure headers for GPT-5 extras (reasoning + verbosity)
-    const customHeaders = modelId.startsWith('gpt-5')
+    // For GPT-5 models, use the Responses API format
+    // According to the cookbook, we should use openai.responses() for GPT-5
+    const isGPT5Model = modelId.startsWith('gpt-5');
+    
+    // Configure provider options for GPT-5 models
+    const providerOptions = isGPT5Model
+      ? {
+          ...openaiSettings,
+          openai: {
+            textVerbosity: textVerbosity || verbosity || 'medium',
+            reasoningSummary: reasoningSummary || 'auto',
+            serviceTier: serviceTier || 'auto',
+            ...(openaiSettings.openai || {}),
+          },
+        }
+      : openaiSettings;
+
+    // Configure headers (for backwards compatibility)
+    const customHeaders = isGPT5Model
       ? {
           ...headers,
           ...(reasoningEffort ? { 'X-Reasoning-Effort': reasoningEffort } : {}),
@@ -86,14 +105,26 @@ export function openproviders<T extends SupportedModel>(
       const openaiProvider = createOpenAI({
         apiKey,
         headers: customHeaders,
-        ...openaiSettings,
+        ...providerOptions,
+      });
+      // Use the actual GPT-5 model ID (no mapping needed in August 2025)
+      return openaiProvider(modelId as OpenAIModel);
+    }
+
+    // For default OpenAI provider, use environment variable
+    const envApiKey = process.env.OPENAI_API_KEY;
+    if (envApiKey) {
+      const openaiProvider = createOpenAI({
+        apiKey: envApiKey,
+        headers: customHeaders,
+        ...providerOptions,
       });
       return openaiProvider(modelId as OpenAIModel);
     }
 
-    // For default OpenAI provider, we need to pass headers through provider configuration
-    const enhancedOpenAI = customHeaders
-      ? createOpenAI({ headers: customHeaders, ...openaiSettings })
+    // Fallback to default provider
+    const enhancedOpenAI = customHeaders || Object.keys(providerOptions).length > 0
+      ? createOpenAI({ headers: customHeaders, ...providerOptions })
       : openai;
 
     return enhancedOpenAI(modelId as OpenAIModel);

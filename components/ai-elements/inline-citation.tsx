@@ -11,22 +11,27 @@ type CarouselApi = {
 
 type CarouselProps = {
   children: React.ReactNode;
+  className?: string;
+  setApi?: (api: CarouselApi | undefined) => void;
 };
 
 type CarouselContentProps = {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   [key: string]: unknown;
 };
 
 type CarouselItemProps = {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   [key: string]: unknown;
 };
 
-const Carousel: React.FC<CarouselProps> = ({ children }) => <div>{children}</div>;
-const CarouselContent: React.FC<CarouselContentProps> = ({ children, ...props }) => (
-  <div {...props}>{children}</div>
+const Carousel: React.FC<CarouselProps> = ({ children }) => (
+  <div>{children}</div>
 );
+const CarouselContent: React.FC<CarouselContentProps> = ({
+  children,
+  ...props
+}) => <div {...props}>{children}</div>;
 const CarouselItem: React.FC<CarouselItemProps> = ({ children, ...props }) => (
   <div {...props}>{children}</div>
 );

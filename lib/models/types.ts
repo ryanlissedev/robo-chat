@@ -1,9 +1,5 @@
 // Language model interface for AI SDK compatibility
-interface LanguageModel {
-  readonly provider: string;
-  readonly modelId: string;
-  [key: string]: unknown;
-}
+import type { LanguageModel } from 'ai';
 
 type ModelConfig = {
   id: string; // "gpt-4.1-nano" // same from AI SDKs
@@ -39,7 +35,7 @@ type ModelConfig = {
   icon?: string; // e.g. "gpt-4", "claude", "mistral", or custom string
 
   // apiSdk?: () => LanguageModel // "openai("gpt-4.1-nano")"
-  apiSdk?: (apiKey?: string, opts?: unknown) => LanguageModel;
+  apiSdk?: (apiKey?: string, opts?: unknown) => LanguageModel | unknown;
 
   accessible?: boolean; // true if the model is accessible to the user
 };

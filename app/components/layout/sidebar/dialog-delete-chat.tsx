@@ -1,4 +1,4 @@
-'use client';
+"use client"
 
 import {
   AlertDialog,
@@ -9,14 +9,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog"
 
 type DialogDeleteChatProps = {
-  isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
-  chatTitle: string;
-  onConfirmDelete: () => Promise<void>;
-};
+  isOpen: boolean
+  setIsOpen: (isOpen: boolean) => void
+  chatTitle: string
+  onConfirmDelete: () => Promise<void>
+}
 
 export function DialogDeleteChat({
   isOpen,
@@ -25,7 +25,7 @@ export function DialogDeleteChat({
   onConfirmDelete,
 }: DialogDeleteChatProps) {
   return (
-    <AlertDialog onOpenChange={setIsOpen} open={isOpen}>
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete chat?</AlertDialogTitle>
@@ -37,8 +37,8 @@ export function DialogDeleteChat({
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={async () => {
-              setIsOpen(false);
-              await onConfirmDelete();
+              setIsOpen(false)
+              await onConfirmDelete()
             }}
           >
             Delete
@@ -46,5 +46,5 @@ export function DialogDeleteChat({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  );
+  )
 }

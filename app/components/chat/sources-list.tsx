@@ -1,66 +1,67 @@
-'use client';
+"use client"
 
-import { cn } from '@/lib/utils';
-import { CaretDown, Link } from '@phosphor-icons/react';
-import { AnimatePresence, motion } from 'motion/react';
-import Image from 'next/image';
-import { useState } from 'react';
-import { addUTM, formatUrl, getFavicon } from './utils';
+import { cn } from "@/lib/utils"
+import type { SourceUIPart } from 'ai'
+import { CaretDown, Link } from "@phosphor-icons/react"
+import { AnimatePresence, motion } from "motion/react"
+import Image from "next/image"
+import { useState } from "react"
+import { addUTM, formatUrl, getFavicon } from "./utils"
 
 type SourcesListProps = {
-  sources: Array<{ id: string; title: string; url: string }>;
-  className?: string;
-};
+  sources: SourceUIPart["source"][]
+  className?: string
+}
 
 const TRANSITION = {
-  type: 'spring' as const,
+  type: "spring",
   duration: 0.2,
   bounce: 0,
-};
+}
 
 export function SourcesList({ sources, className }: SourcesListProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [failedFavicons, setFailedFavicons] = useState<Set<string>>(new Set());
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [failedFavicons, setFailedFavicons] = useState<Set<string>>(new Set())
 
   const handleFaviconError = (url: string) => {
-    setFailedFavicons((prev) => new Set(prev).add(url));
-  };
+    setFailedFavicons((prev) => new Set(prev).add(url))
+  }
 
   return (
-    <div className={cn('my-4', className)}>
-      <div className="flex flex-col gap-0 overflow-hidden rounded-md border border-border">
+    <div className={cn("my-4", className)}>
+      <div className="border-border flex flex-col gap-0 overflow-hidden rounded-md border">
         <button
-          className="flex w-full flex-row items-center rounded-t-md px-3 py-2 transition-colors hover:bg-accent"
           onClick={() => setIsExpanded(!isExpanded)}
           type="button"
+          className="hover:bg-accent flex w-full flex-row items-center rounded-t-md px-3 py-2 transition-colors"
         >
           <div className="flex flex-1 flex-row items-center gap-2 text-left text-sm">
             Sources
-            <div className="-space-x-1 flex">
+            <div className="flex -space-x-1">
               {sources?.map((source, index) => {
-                const faviconUrl = getFavicon(source.url);
+                const faviconUrl = getFavicon(source.url)
                 const showFallback =
-                  !faviconUrl || failedFavicons.has(source.url);
+                  !faviconUrl || failedFavicons.has(source.url)
 
                 return showFallback ? (
                   <div
-                    className="h-4 w-4 rounded-full border border-background bg-muted"
                     key={`${source.url}-${index}`}
+                    className="bg-muted border-background h-4 w-4 rounded-full border"
                   />
                 ) : (
                   <Image
-                    alt={`Favicon for ${source.title}`}
-                    className="h-4 w-4 rounded-sm border border-background"
-                    height={16}
                     key={`${source.url}-${index}`}
-                    onError={() => handleFaviconError(source.url)}
                     src={faviconUrl}
+                    alt={`Favicon for ${source.title}`}
                     width={16}
+                    height={16}
+                    className="border-background h-4 w-4 rounded-sm border"
+                    onError={() => handleFaviconError(source.url)}
                   />
-                );
+                )
               })}
               {sources.length > 3 && (
-                <span className="ml-1 text-muted-foreground text-xs">
+                <span className="text-muted-foreground ml-1 text-xs">
                   +{sources.length - 3}
                 </span>
               )}
@@ -68,8 +69,8 @@ export function SourcesList({ sources, className }: SourcesListProps) {
           </div>
           <CaretDown
             className={cn(
-              'h-4 w-4 transition-transform',
-              isExpanded ? 'rotate-180 transform' : ''
+              "h-4 w-4 transition-transform",
+              isExpanded ? "rotate-180 transform" : ""
             )}
           />
         </button>
@@ -77,48 +78,48 @@ export function SourcesList({ sources, className }: SourcesListProps) {
         <AnimatePresence initial={false}>
           {isExpanded && (
             <motion.div
-              animate={{ height: 'auto', opacity: 1 }}
-              className="overflow-hidden"
-              exit={{ height: 0, opacity: 0 }}
               initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
               transition={TRANSITION}
+              className="overflow-hidden"
             >
               <ul className="space-y-2 px-3 pt-3 pb-3">
                 {sources.map((source) => {
-                  const faviconUrl = getFavicon(source.url);
+                  const faviconUrl = getFavicon(source.url)
                   const showFallback =
-                    !faviconUrl || failedFavicons.has(source.url);
+                    !faviconUrl || failedFavicons.has(source.url)
 
                   return (
-                    <li className="flex items-center text-sm" key={source.id}>
+                    <li key={source.id} className="flex items-center text-sm">
                       <div className="min-w-0 flex-1 overflow-hidden">
                         <a
-                          className="group line-clamp-1 flex items-center gap-1 text-primary hover:underline"
                           href={addUTM(source.url)}
-                          rel="noopener noreferrer"
                           target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary group line-clamp-1 flex items-center gap-1 hover:underline"
                         >
                           {showFallback ? (
-                            <div className="h-4 w-4 flex-shrink-0 rounded-full bg-muted" />
+                            <div className="bg-muted h-4 w-4 flex-shrink-0 rounded-full" />
                           ) : (
                             <Image
-                              alt={`Favicon for ${source.title}`}
-                              className="h-4 w-4 flex-shrink-0 rounded-sm"
-                              height={16}
-                              onError={() => handleFaviconError(source.url)}
                               src={faviconUrl}
+                              alt={`Favicon for ${source.title}`}
                               width={16}
+                              height={16}
+                              className="h-4 w-4 flex-shrink-0 rounded-sm"
+                              onError={() => handleFaviconError(source.url)}
                             />
                           )}
                           <span className="truncate">{source.title}</span>
                           <Link className="inline h-3 w-3 flex-shrink-0 opacity-70 transition-opacity group-hover:opacity-100" />
                         </a>
-                        <div className="line-clamp-1 text-muted-foreground text-xs">
+                        <div className="text-muted-foreground line-clamp-1 text-xs">
                           {formatUrl(source.url)}
                         </div>
                       </div>
                     </li>
-                  );
+                  )
                 })}
               </ul>
             </motion.div>
@@ -126,5 +127,5 @@ export function SourcesList({ sources, className }: SourcesListProps) {
         </AnimatePresence>
       </div>
     </div>
-  );
+  )
 }

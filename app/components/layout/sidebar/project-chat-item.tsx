@@ -1,143 +1,143 @@
-'use client';
+"use client"
 
-import { ChatCircleIcon, Check, X } from '@phosphor-icons/react';
-import Link from 'next/link';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { useBreakpoint } from '@/app/hooks/use-breakpoint';
-import useClickOutside from '@/app/hooks/use-click-outside';
-import { useChats } from '@/lib/chat-store/chats/provider';
-import type { Chat } from '@/lib/chat-store/types';
-import { cn } from '@/lib/utils';
-import { SidebarItemMenu } from './sidebar-item-menu';
+import { useBreakpoint } from "@/app/hooks/use-breakpoint"
+import useClickOutside from "@/app/hooks/use-click-outside"
+import { useChats } from "@/lib/chat-store/chats/provider"
+import { Chat } from "@/lib/chat-store/types"
+import { cn } from "@/lib/utils"
+import { ChatCircleIcon, Check, X } from "@phosphor-icons/react"
+import Link from "next/link"
+import { useCallback, useMemo, useRef, useState } from "react"
+import { SidebarItemMenu } from "./sidebar-item-menu"
 
 type ProjectChatItemProps = {
-  chat: Chat;
-  formatDate: (dateString: string) => string;
-};
+  chat: Chat
+  formatDate: (dateString: string) => string
+}
 
 export function ProjectChatItem({ chat, formatDate }: ProjectChatItemProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(chat.title || '');
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const lastChatTitleRef = useRef(chat.title);
-  const { updateTitle } = useChats();
-  const isMobile = useBreakpoint(768);
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [isEditing, setIsEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState(chat.title || "")
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const lastChatTitleRef = useRef(chat.title)
+  const { updateTitle } = useChats()
+  const isMobile = useBreakpoint(768)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   if (!isEditing && lastChatTitleRef.current !== chat.title) {
-    lastChatTitleRef.current = chat.title;
-    setEditTitle(chat.title || '');
+    lastChatTitleRef.current = chat.title
+    setEditTitle(chat.title || "")
   }
 
   const handleStartEditing = useCallback(() => {
-    setIsEditing(true);
-    setEditTitle(chat.title || '');
+    setIsEditing(true)
+    setEditTitle(chat.title || "")
 
     requestAnimationFrame(() => {
       if (inputRef.current) {
-        inputRef.current.focus();
-        inputRef.current.select();
+        inputRef.current.focus()
+        inputRef.current.select()
       }
-    });
-  }, [chat.title]);
+    })
+  }, [chat.title])
 
   const handleSave = useCallback(async () => {
-    setIsEditing(false);
-    setIsMenuOpen(false);
-    await updateTitle(chat.id, editTitle);
-  }, [chat.id, editTitle, updateTitle]);
+    setIsEditing(false)
+    setIsMenuOpen(false)
+    await updateTitle(chat.id, editTitle)
+  }, [chat.id, editTitle, updateTitle])
 
   const handleCancel = useCallback(() => {
-    setEditTitle(chat.title || '');
-    setIsEditing(false);
-    setIsMenuOpen(false);
-  }, [chat.title]);
+    setEditTitle(chat.title || "")
+    setIsEditing(false)
+    setIsMenuOpen(false)
+  }, [chat.title])
 
   const handleMenuOpenChange = useCallback((open: boolean) => {
-    setIsMenuOpen(open);
-  }, []);
+    setIsMenuOpen(open)
+  }, [])
 
   const handleClickOutside = useCallback(() => {
     if (isEditing) {
-      handleSave();
+      handleSave()
     }
-  }, [isEditing, handleSave]);
+  }, [isEditing, handleSave])
 
-  useClickOutside(containerRef, handleClickOutside);
+  useClickOutside(containerRef, handleClickOutside)
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setEditTitle(e.target.value);
+      setEditTitle(e.target.value)
     },
     []
-  );
+  )
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleSave();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        handleCancel();
+      if (e.key === "Enter") {
+        e.preventDefault()
+        handleSave()
+      } else if (e.key === "Escape") {
+        e.preventDefault()
+        handleCancel()
       }
     },
     [handleSave, handleCancel]
-  );
+  )
 
   const handleContainerClick = useCallback(
     (e: React.MouseEvent) => {
       if (isEditing) {
-        e.stopPropagation();
+        e.stopPropagation()
       }
     },
     [isEditing]
-  );
+  )
 
   const handleSaveClick = useCallback(
     (e: React.MouseEvent) => {
-      e.stopPropagation();
-      handleSave();
+      e.stopPropagation()
+      handleSave()
     },
     [handleSave]
-  );
+  )
 
   const handleCancelClick = useCallback(
     (e: React.MouseEvent) => {
-      e.stopPropagation();
-      handleCancel();
+      e.stopPropagation()
+      handleCancel()
     },
     [handleCancel]
-  );
+  )
 
   const handleLinkClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-  }, []);
+    e.stopPropagation()
+  }, [])
 
   // Memoize computed values
   const displayTitle = useMemo(
-    () => chat.title || 'Untitled Chat',
+    () => chat.title || "Untitled Chat",
     [chat.title]
-  );
+  )
 
   const containerClassName = useMemo(
     () =>
       cn(
-        'group/chat relative rounded-lg border border-border transition-colors hover:bg-accent/50',
-        isEditing || isMenuOpen ? 'bg-accent/50' : ''
+        "border-border hover:bg-accent/50 group/chat relative rounded-lg border transition-colors",
+        isEditing || isMenuOpen ? "bg-accent/50" : ""
       ),
     [isEditing, isMenuOpen]
-  );
+  )
 
   const menuClassName = useMemo(
     () =>
       cn(
-        'absolute top-3 right-3 opacity-0 transition-opacity group-hover/chat:opacity-100',
-        isMobile && 'opacity-100 group-hover/chat:opacity-100'
+        "absolute top-3 right-3 opacity-0 transition-opacity group-hover/chat:opacity-100",
+        isMobile && "opacity-100 group-hover/chat:opacity-100"
       ),
     [isMobile]
-  );
+  )
 
   if (isEditing) {
     return (
@@ -148,28 +148,28 @@ export function ProjectChatItem({ chat, formatDate }: ProjectChatItemProps) {
       >
         <div className="flex items-center p-3">
           <ChatCircleIcon
-            className="mr-3 flex-shrink-0 text-muted-foreground"
             size={16}
+            className="text-muted-foreground mr-3 flex-shrink-0"
           />
           <input
-            autoFocus
-            className="flex-1 bg-transparent font-medium text-primary text-sm focus:outline-none"
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
             ref={inputRef}
             value={editTitle}
+            onChange={handleInputChange}
+            className="text-primary flex-1 bg-transparent text-sm font-medium focus:outline-none"
+            onKeyDown={handleKeyDown}
+            autoFocus
           />
           <div className="ml-2 flex gap-1">
             <button
-              className="flex size-6 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors duration-150 hover:bg-secondary hover:text-primary"
               onClick={handleSaveClick}
+              className="hover:bg-secondary text-muted-foreground hover:text-primary flex size-6 items-center justify-center rounded-md p-1 transition-colors duration-150"
               type="button"
             >
               <Check size={12} weight="bold" />
             </button>
             <button
-              className="flex size-6 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors duration-150 hover:bg-secondary hover:text-primary"
               onClick={handleCancelClick}
+              className="hover:bg-secondary text-muted-foreground hover:text-primary flex size-6 items-center justify-center rounded-md p-1 transition-colors duration-150"
               type="button"
             >
               <X size={12} weight="bold" />
@@ -177,7 +177,7 @@ export function ProjectChatItem({ chat, formatDate }: ProjectChatItemProps) {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -187,15 +187,15 @@ export function ProjectChatItem({ chat, formatDate }: ProjectChatItemProps) {
       ref={containerRef}
     >
       <Link
-        className="block p-3"
         href={`/c/${chat.id}`}
+        className="block p-3"
         onClick={handleLinkClick}
         prefetch
       >
         <div className="flex items-start justify-between">
           <div className="min-w-0 flex-1">
             <h3 className="truncate font-medium">{displayTitle}</h3>
-            <p className="mt-1 text-muted-foreground text-sm">
+            <p className="text-muted-foreground mt-1 text-sm">
               {chat.updated_at
                 ? formatDate(chat.updated_at)
                 : chat.created_at
@@ -209,10 +209,10 @@ export function ProjectChatItem({ chat, formatDate }: ProjectChatItemProps) {
       <div className={menuClassName} key={chat.id}>
         <SidebarItemMenu
           chat={chat}
-          onMenuOpenChange={handleMenuOpenChange}
           onStartEditing={handleStartEditing}
+          onMenuOpenChange={handleMenuOpenChange}
         />
       </div>
     </div>
-  );
+  )
 }

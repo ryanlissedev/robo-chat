@@ -189,12 +189,17 @@ code {
 /* Safety warning with enhanced visibility */
 .hgg-safety-warning {
   border-left: 4px solid rgb(234, 179, 8);
-  background: linear-gradient(to right, rgba(254, 249, 195, 0.8), rgba(254, 249, 195, 0.4));
+  background: linear-gradient(
+    to right,
+    rgba(254, 249, 195, 0.8),
+    rgba(254, 249, 195, 0.4)
+  );
 }
 
 /* Voice visualizer animations */
 @keyframes voice-wave {
-  0%, 100% {
+  0%,
+  100% {
     transform: scaleY(0.3);
   }
   50% {
@@ -206,15 +211,33 @@ code {
   animation: voice-wave 0.8s ease-in-out infinite;
 }
 
-.voice-wave-bar:nth-child(2) { animation-delay: 0.1s; }
-.voice-wave-bar:nth-child(3) { animation-delay: 0.2s; }
-.voice-wave-bar:nth-child(4) { animation-delay: 0.3s; }
-.voice-wave-bar:nth-child(5) { animation-delay: 0.4s; }
-.voice-wave-bar:nth-child(6) { animation-delay: 0.5s; }
-.voice-wave-bar:nth-child(7) { animation-delay: 0.4s; }
-.voice-wave-bar:nth-child(8) { animation-delay: 0.3s; }
-.voice-wave-bar:nth-child(9) { animation-delay: 0.2s; }
-.voice-wave-bar:nth-child(10) { animation-delay: 0.1s; }
+.voice-wave-bar:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.voice-wave-bar:nth-child(3) {
+  animation-delay: 0.2s;
+}
+.voice-wave-bar:nth-child(4) {
+  animation-delay: 0.3s;
+}
+.voice-wave-bar:nth-child(5) {
+  animation-delay: 0.4s;
+}
+.voice-wave-bar:nth-child(6) {
+  animation-delay: 0.5s;
+}
+.voice-wave-bar:nth-child(7) {
+  animation-delay: 0.4s;
+}
+.voice-wave-bar:nth-child(8) {
+  animation-delay: 0.3s;
+}
+.voice-wave-bar:nth-child(9) {
+  animation-delay: 0.2s;
+}
+.voice-wave-bar:nth-child(10) {
+  animation-delay: 0.1s;
+}
 
 /* Microphone button glow effect */
 .mic-glow {

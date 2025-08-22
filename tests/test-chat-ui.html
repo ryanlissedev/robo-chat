@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat UI Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        #messages {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .message {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .user-message { background: #e3f2fd; }
+        .assistant-message { background: #f3e5f5; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Chat UI Integration Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="testAPIConnection()">Test API</button>
+        <button onclick="testMessageSending()">Test Send Message</button>
+        <button onclick="testStreamingResponse()">Test Streaming</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Message Stream Monitor</h2>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api/chat';
+        const resultsDiv = document.getElementById('results');
+        const messagesDiv = document.getElementById('messages');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `${new Date().toLocaleTimeString()} - ${message}`;
+            resultsDiv.appendChild(div);
+        }
+
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+            messagesDiv.innerHTML = '';
+            log('Results cleared', 'info');
+        }
+
+        async function testAPIConnection() {
+            log('Testing API connection...', 'info');
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: [{ 
+                            id: 'test-1', 
+                            role: 'user', 
+                            content: 'ping',
+                            parts: [{ type: 'text', text: 'ping' }]
+                        }],
+                        chatId: 'test-' + Date.now(),
+                        userId: 'anonymous',
+                        model: 'gpt-5-mini',
+                        isAuthenticated: false
+                    })
+                });
+
+                if (response.ok) {
+                    log('✅ API connection successful', 'success');
+                    return true;
+                } else {
+                    log(`❌ API returned ${response.status}: ${await response.text()}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Connection failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testMessageSending() {
+            log('Testing message sending...', 'info');
+            
+            const testMessage = {
+                messages: [{
+                    id: 'msg-' + Date.now(),
+                    role: 'user',
+                    content: 'Hello, testing message display!',
+                    parts: [{ type: 'text', text: 'Hello, testing message display!' }]
+                }],
+                chatId: 'test-chat-' + Date.now(),
+                userId: 'test-user',
+                model: 'gpt-5-mini',
+                isAuthenticated: false,
+                enableSearch: false
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testMessage)
+                });
+
+                if (!response.ok) {
+                    log(`❌ Failed to send message: ${response.status}`, 'error');
+                    return false;
+                }
+
+                log('✅ Message sent successfully', 'success');
+                
+                // Display user message
+                const userDiv = document.createElement('div');
+                userDiv.className = 'message user-message';
+                userDiv.textContent = 'User: ' + testMessage.messages[0].content;
+                messagesDiv.appendChild(userDiv);
+
+                // Read streaming response
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let aiResponse = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value, { stream: true });
+                    
+                    // Parse AI SDK v5 format
+                    const lines = chunk.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('0:')) {
+                            // UI Message format
+                            try {
+                                const content = line.substring(2);
+                                const parsed = JSON.parse(content);
+                                
+                                if (parsed.content) {
+                                    aiResponse = parsed.content;
+                                } else if (parsed.parts) {
+                                    // Extract text from parts
+                                    const textParts = parsed.parts.filter(p => p.type === 'text');
+                                    aiResponse = textParts.map(p => p.text || '').join('');
+                                }
+                            } catch (e) {
+                                console.log('Parse error:', e, 'Line:', line);
+                            }
+                        } else if (line.startsWith('8:')) {
+                            // Text delta format
+                            const textMatch = line.match(/8:"(.+)"/);
+                            if (textMatch) {
+                                aiResponse += textMatch[1];
+                            }
+                        }
+                    }
+                }
+
+                // Display AI response
+                if (aiResponse) {
+                    const aiDiv = document.createElement('div');
+                    aiDiv.className = 'message assistant-message';
+                    aiDiv.textContent = 'AI: ' + aiResponse;
+                    messagesDiv.appendChild(aiDiv);
+                    log('✅ AI response received and displayed', 'success');
+                } else {
+                    log('⚠️ No AI response text extracted', 'warning');
+                }
+
+                return true;
+            } catch (error) {
+                log(`❌ Test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testStreamingResponse() {
+            log('Testing streaming response...', 'info');
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: [{
+                            id: 'stream-test',
+                            role: 'user',
+                            content: 'Count to 5 slowly',
+                            parts: [{ type: 'text', text: 'Count to 5 slowly' }]
+                        }],
+                        chatId: 'stream-test',
+                        userId: 'test',
+                        model: 'gpt-5-mini',
+                        isAuthenticated: false
+                    })
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let chunks = 0;
+                let fullText = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    chunks++;
+                    const chunk = decoder.decode(value, { stream: true });
+                    fullText += chunk;
+                    
+                    if (chunks === 1) {
+                        log(`📦 First chunk received (${chunk.length} bytes)`, 'info');
+                    }
+                }
+
+                log(`✅ Streaming complete: ${chunks} chunks, ${fullText.length} total bytes`, 'success');
+                return true;
+
+            } catch (error) {
+                log(`❌ Streaming test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function runAllTests() {
+            clearResults();
+            log('🚀 Starting comprehensive chat tests...', 'info');
+            
+            const tests = [
+                { name: 'API Connection', fn: testAPIConnection },
+                { name: 'Message Sending', fn: testMessageSending },
+                { name: 'Streaming Response', fn: testStreamingResponse }
+            ];
+            
+            let passed = 0;
+            let failed = 0;
+            
+            for (const test of tests) {
+                log(`Running: ${test.name}`, 'info');
+                const result = await test.fn();
+                if (result) passed++; else failed++;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            const summary = `Test Summary: ${passed} passed, ${failed} failed`;
+            log(summary, failed === 0 ? 'success' : 'error');
+        }
+
+        // Auto-run tests on load
+        window.addEventListener('load', () => {
+            log('Test suite loaded. Click "Run All Tests" to begin.', 'info');
+        });
+    </script>
+</body>
+</html>

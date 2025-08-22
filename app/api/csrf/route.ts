@@ -1,15 +1,15 @@
-import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
-import { generateCsrfToken } from '@/lib/csrf';
+import { generateCsrfToken } from "@/lib/csrf"
+import { cookies } from "next/headers"
+import { NextResponse } from "next/server"
 
 export async function GET() {
-  const token = generateCsrfToken();
-  const cookieStore = await cookies();
-  cookieStore.set('csrf_token', token, {
+  const token = generateCsrfToken()
+  const cookieStore = await cookies()
+  cookieStore.set("csrf_token", token, {
     httpOnly: false,
     secure: true,
-    path: '/',
-  });
+    path: "/",
+  })
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true })
 }

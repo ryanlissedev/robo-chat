@@ -70,7 +70,7 @@ export function useChatPreview(): UseChatPreviewReturn {
               .slice(-5) // Get last 5 messages
               .map((msg) => ({
                 id: msg.id,
-                content: msg.content,
+                content: msg.content || '',
                 role: msg.role as 'user' | 'assistant',
                 created_at:
                   msg.createdAt?.toISOString() || new Date().toISOString(),
@@ -94,7 +94,7 @@ export function useChatPreview(): UseChatPreviewReturn {
               .slice(-5) // Get last 5 messages
               .map((msg) => ({
                 id: msg.id,
-                content: msg.content,
+                content: msg.content || '',
                 role: msg.role as 'user' | 'assistant',
                 created_at:
                   msg.createdAt?.toISOString() || new Date().toISOString(),

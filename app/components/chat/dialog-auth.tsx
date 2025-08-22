@@ -1,8 +1,6 @@
-'use client';
+"use client"
 
-import { useState } from 'react';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -10,53 +8,56 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { signInWithGoogle } from '@/lib/api';
-import { createClient } from '@/lib/supabase/client';
-import { isSupabaseEnabled } from '@/lib/supabase/config';
+} from "@/components/ui/dialog"
+import { signInWithGoogle } from "@/lib/api"
+import { createClient } from "@/lib/supabase/client"
+import { isSupabaseEnabled } from "@/lib/supabase/config"
+import Image from "next/image"
+import { useState } from "react"
 
 type DialogAuthProps = {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-};
+  open: boolean
+  setOpen: (open: boolean) => void
+}
 
 export function DialogAuth({ open, setOpen }: DialogAuthProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   if (!isSupabaseEnabled) {
-    return null;
+    return null
   }
 
-  const supabase = createClient();
+  const supabase = createClient()
 
   if (!supabase) {
-    return null;
+    return null
   }
 
   const handleSignInWithGoogle = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
+      setIsLoading(true)
+      setError(null)
 
-      const data = await signInWithGoogle(supabase);
+      const data = await signInWithGoogle(supabase)
 
       // Redirect to the provider URL
       if (data?.url) {
-        window.location.href = data.url;
+        window.location.href = data.url
       }
     } catch (err: unknown) {
+      console.error("Error signing in with Google:", err)
       setError(
         (err as Error).message ||
-          'An unexpected error occurred. Please try again.'
-      );
+          "An unexpected error occurred. Please try again."
+      )
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
-    <Dialog onOpenChange={setOpen} open={open}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl">
@@ -67,29 +68,29 @@ export function DialogAuth({ open, setOpen }: DialogAuthProps) {
           </DialogDescription>
         </DialogHeader>
         {error && (
-          <div className="rounded-md bg-destructive/10 p-3 text-destructive text-sm">
+          <div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
             {error}
           </div>
         )}
         <DialogFooter className="mt-6 sm:justify-center">
           <Button
-            className="w-full text-base"
-            disabled={isLoading}
-            onClick={handleSignInWithGoogle}
-            size="lg"
             variant="secondary"
+            className="w-full text-base"
+            size="lg"
+            onClick={handleSignInWithGoogle}
+            disabled={isLoading}
           >
-            <Image
-              alt="Google logo"
-              className="mr-2 size-4"
-              height={20}
+            <img
               src="https://www.google.com/favicon.ico"
+              alt="Google logo"
               width={20}
+              height={20}
+              className="mr-2 size-4"
             />
-            <span>{isLoading ? 'Connecting...' : 'Continue with Google'}</span>
+            <span>{isLoading ? "Connecting..." : "Continue with Google"}</span>
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

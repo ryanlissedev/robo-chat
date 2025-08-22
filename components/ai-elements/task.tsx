@@ -1,12 +1,20 @@
 'use client';
 
-type CollapsibleProps = React.HTMLAttributes<HTMLDivElement>;
+type CollapsibleProps = React.HTMLAttributes<HTMLDivElement> & {
+  defaultOpen?: boolean;
+};
 type CollapsibleContentProps = React.HTMLAttributes<HTMLDivElement>;
-type CollapsibleTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
+type CollapsibleTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  asChild?: boolean;
+};
 
 const Collapsible = (props: CollapsibleProps) => <div {...props} />;
-const CollapsibleContent = (props: CollapsibleContentProps) => <div {...props} />;
-const CollapsibleTrigger = (props: CollapsibleTriggerProps) => <button {...props} />;
+const CollapsibleContent = (props: CollapsibleContentProps) => (
+  <div {...props} />
+);
+const CollapsibleTrigger = (props: CollapsibleTriggerProps) => (
+  <button {...props} />
+);
 
 import { ChevronDownIcon, SearchIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';

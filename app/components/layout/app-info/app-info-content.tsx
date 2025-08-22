@@ -11,17 +11,17 @@ export function AppInfoContent() {
         <br />
       </p>
       <p className="text-foreground leading-relaxed">
-        The code is available on{' '}
+        The code is available on{" "}
         <a
-          className="underline"
           href="https://github.com/ibelick/zola"
-          rel="noopener noreferrer"
           target="_blank"
+          rel="noopener noreferrer"
+          className="underline"
         >
           GitHub
         </a>
         .
       </p>
     </div>
-  );
+  )
 }

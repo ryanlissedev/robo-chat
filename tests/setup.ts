@@ -14,3 +14,12 @@ vi.mock('next/navigation', async (orig) => {
     redirect: vi.fn(),
   };
 });
+
+// Prevent creating real Supabase browser client during tests.
+// Many providers call `createClient()` from `lib/supabase/client`, which can
+// initialize Realtime/WebSocket connections that Happy DOM can't fully emulate.
+// We mock it to return `null` so feature flags that check for a client simply
+// no-op in tests.
+vi.mock('@/lib/supabase/client', () => ({
+  createClient: () => null,
+}));

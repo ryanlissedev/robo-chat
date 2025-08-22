@@ -1,24 +1,23 @@
-import type { UIMessage as MessageType } from 'ai';
-import { useState } from 'react';
-import { MessageAssistant } from './message-assistant';
-import { MessageUser } from './message-user';
+import { Message as MessageType } from "@ai-sdk/react"
+import React, { useState } from "react"
+import { MessageAssistant } from "./message-assistant"
+import { MessageUser } from "./message-user"
 
 type MessageProps = {
-  variant: MessageType['role'];
-  children: string;
-  id: string;
-  // attachments are represented as file parts in v5; keep prop for compatibility but unused
-  attachments?: never;
-  isLast?: boolean;
-  onDelete: (id: string) => void;
-  onEdit: (id: string, newText: string) => void;
-  onReload: () => void;
-  hasScrollAnchor?: boolean;
-  parts?: MessageType['parts'];
-  status?: 'streaming' | 'ready' | 'submitted' | 'error';
-  className?: string;
-  onQuote?: (text: string, messageId: string) => void;
-};
+  variant: MessageType["role"]
+  children: string
+  id: string
+  attachments?: MessageType["experimental_attachments"]
+  isLast?: boolean
+  onDelete: (id: string) => void
+  onEdit: (id: string, newText: string) => void
+  onReload: () => void
+  hasScrollAnchor?: boolean
+  parts?: MessageType["parts"]
+  status?: "streaming" | "ready" | "submitted" | "error"
+  className?: string
+  onQuote?: (text: string, messageId: string) => void
+}
 
 export function Message({
   variant,
@@ -35,51 +34,50 @@ export function Message({
   className,
   onQuote,
 }: MessageProps) {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false)
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(children);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 500);
-  };
+    navigator.clipboard.writeText(children)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 500)
+  }
 
-  if (variant === 'user') {
+  if (variant === "user") {
     return (
       <MessageUser
-        attachments={attachments}
-        className={className}
         copied={copied}
         copyToClipboard={copyToClipboard}
-        hasScrollAnchor={hasScrollAnchor}
-        id={id}
-        onDelete={onDelete}
-        onEdit={onEdit}
         onReload={onReload}
-        parts={parts}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        id={id}
+        hasScrollAnchor={hasScrollAnchor}
+        attachments={attachments}
+        className={className}
       >
         {children}
       </MessageUser>
-    );
+    )
   }
 
-  if (variant === 'assistant') {
+  if (variant === "assistant") {
     return (
       <MessageAssistant
-        className={className}
         copied={copied}
         copyToClipboard={copyToClipboard}
-        hasScrollAnchor={hasScrollAnchor}
-        isLast={isLast}
-        messageId={id}
-        onQuote={onQuote}
         onReload={onReload}
+        isLast={isLast}
+        hasScrollAnchor={hasScrollAnchor}
         parts={parts}
         status={status}
+        className={className}
+        messageId={id}
+        onQuote={onQuote}
       >
         {children}
       </MessageAssistant>
-    );
+    )
   }
 
-  return null;
+  return null
 }

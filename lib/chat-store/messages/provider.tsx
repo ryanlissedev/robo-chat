@@ -11,8 +11,46 @@ import {
   clearMessagesForChat,
   getCachedMessages,
   getMessagesFromDb,
+  type MessageFromDB,
   setMessages as saveMessages,
 } from './api';
+
+// Convert database message to AI SDK format
+function convertDbMessageToAISDK(dbMessage: MessageFromDB): MessageAISDK {
+  return {
+    id: dbMessage.id,
+    role: dbMessage.role as 'user' | 'assistant' | 'system',
+    parts: Array.isArray(dbMessage.parts)
+      ? (dbMessage.parts as MessageAISDK['parts'])
+      : [{ type: 'text', text: dbMessage.content || '' }],
+  };
+}
+
+// Convert AI SDK message to database format
+function convertAISDKMessageToDb(aiMessage: MessageAISDK): any {
+  // Extract text content from parts for legacy content field
+  const textContent =
+    aiMessage.parts
+      ?.map((part: any) => {
+        if (part?.type === 'text' && typeof part.text === 'string') {
+          return part.text as string;
+        }
+        if (
+          part?.type === 'text-delta' &&
+          typeof (part as any).textDelta === 'string'
+        ) {
+          return (part as any).textDelta as string;
+        }
+        return '';
+      })
+      ?.join('') || '';
+
+  return {
+    role: aiMessage.role,
+    content: textContent,
+    parts: aiMessage.parts,
+  };
+}
 
 type MessagesContextType = {
   messages: MessageAISDK[];
@@ -43,13 +81,14 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
     queryKey: ['messages', chatId],
     enabled: Boolean(chatId),
     queryFn: async () => {
-      const cached = await getCachedMessages(chatId!);
+      if (!chatId) return [];
+      const cached = await getCachedMessages(chatId);
       try {
-        const fresh = await getMessagesFromDb(chatId!);
-        await cacheMessages(chatId!, fresh);
-        return fresh;
+        const fresh = await getMessagesFromDb(chatId);
+        await cacheMessages(chatId, fresh);
+        return fresh.map(convertDbMessageToAISDK);
       } catch {
-        return cached;
+        return cached.map(convertDbMessageToAISDK);
       }
     },
     initialData: chatId ? undefined : [],
@@ -72,7 +111,7 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
     }
     try {
       queryClient.setQueryData<MessageAISDK[]>(['messages', chatId], (prev) => {
-        const updated = [...((prev as undefined[] | undefined) || []), message];
+        const updated = [...(prev || []), message];
         writeToIndexedDB('messages', { id: chatId, messages: updated });
         return updated;
       });
@@ -86,7 +125,8 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      await saveMessages(chatId, newMessages);
+      const dbMessages = newMessages.map(convertAISDKMessageToDb);
+      await saveMessages(chatId, dbMessages);
       queryClient.setQueryData(['messages', chatId], newMessages);
     } catch {
       toast({ title: 'Failed to save messages', status: 'error' });

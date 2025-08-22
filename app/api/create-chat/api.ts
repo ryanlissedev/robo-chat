@@ -1,13 +1,13 @@
-import { validateUserIdentity } from '@/lib/server/api';
-import { checkUsageByModel } from '@/lib/usage';
+import { validateUserIdentity } from "@/lib/server/api"
+import { checkUsageByModel } from "@/lib/usage"
 
 type CreateChatInput = {
-  userId: string;
-  title?: string;
-  model: string;
-  isAuthenticated: boolean;
-  projectId?: string;
-};
+  userId: string
+  title?: string
+  model: string
+  isAuthenticated: boolean
+  projectId?: string
+}
 
 export async function createChatInDb({
   userId,
@@ -16,60 +16,61 @@ export async function createChatInDb({
   isAuthenticated,
   projectId,
 }: CreateChatInput) {
-  // TEMPORARY: Bypass for guest users when rate limiting is disabled
-  const isRateLimitDisabled = process.env.DISABLE_RATE_LIMIT === 'true';
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  // Skip database operations for guest users when rate limiting is disabled
+  const isRateLimitDisabled = process.env.DISABLE_RATE_LIMIT === 'true'
+  const isDevelopment = process.env.NODE_ENV === 'development'
+  const isGuestUser = userId.startsWith('guest-') || userId.startsWith('temp-guest-')
 
-  if (!isAuthenticated && (isRateLimitDisabled || isDevelopment)) {
-    // For guest users with rate limiting disabled, return a mock chat object
+  if (isGuestUser && (isRateLimitDisabled || isDevelopment)) {
     return {
       id: crypto.randomUUID(),
       user_id: userId,
-      title: title || 'New Chat',
+      title: title || "New Chat",
       model,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    };
+    }
   }
 
-  const supabase = await validateUserIdentity(userId, isAuthenticated);
+  const supabase = await validateUserIdentity(userId, isAuthenticated)
   if (!supabase) {
     return {
       id: crypto.randomUUID(),
       user_id: userId,
-      title: title || 'New Chat',
+      title,
       model,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    };
+    }
   }
 
-  await checkUsageByModel(supabase, userId, model, isAuthenticated);
+  await checkUsageByModel(supabase, userId, model, isAuthenticated)
 
   const insertData: {
-    user_id: string;
-    title: string;
-    model: string;
-    project_id?: string;
+    user_id: string
+    title: string
+    model: string
+    project_id?: string
   } = {
     user_id: userId,
-    title: title || 'New Chat',
+    title: title || "New Chat",
     model,
-  };
+  }
 
   if (projectId) {
-    insertData.project_id = projectId;
+    insertData.project_id = projectId
   }
 
   const { data, error } = await supabase
-    .from('chats')
+    .from("chats")
     .insert(insertData)
-    .select('*')
-    .single();
+    .select("*")
+    .single()
 
   if (error || !data) {
-    return null;
+    console.error("Error creating chat:", error)
+    return null
   }
 
-  return data;
+  return data
 }

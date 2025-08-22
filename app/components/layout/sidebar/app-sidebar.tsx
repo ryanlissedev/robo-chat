@@ -1,56 +1,56 @@
-'use client';
+"use client"
 
-import {
-  ChatTeardropText,
-  GithubLogo,
-  MagnifyingGlass,
-  NotePencilIcon,
-  X,
-} from '@phosphor-icons/react';
-import { useParams, useRouter } from 'next/navigation';
-import { useMemo } from 'react';
-import { groupChatsByDate } from '@/app/components/history/utils';
-import { useBreakpoint } from '@/app/hooks/use-breakpoint';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { groupChatsByDate } from "@/app/components/history/utils"
+import { useBreakpoint } from "@/app/hooks/use-breakpoint"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   useSidebar,
-} from '@/components/ui/sidebar';
-import { useChats } from '@/lib/chat-store/chats/provider';
-import { HistoryTrigger } from '../../history/history-trigger';
-import { SidebarList } from './sidebar-list';
-import { SidebarProject } from './sidebar-project';
+} from "@/components/ui/sidebar"
+import { useChats } from "@/lib/chat-store/chats/provider"
+import {
+  ChatTeardropText,
+  GithubLogo,
+  MagnifyingGlass,
+  NotePencilIcon,
+  X,
+} from "@phosphor-icons/react"
+import { useParams, useRouter } from "next/navigation"
+import { useMemo } from "react"
+import { HistoryTrigger } from "../../history/history-trigger"
+import { SidebarList } from "./sidebar-list"
+import { SidebarProject } from "./sidebar-project"
 
 export function AppSidebar() {
-  const isMobile = useBreakpoint(768);
-  const { setOpenMobile } = useSidebar();
-  const { chats, isLoading } = useChats();
-  const params = useParams<{ chatId: string }>();
-  const currentChatId = params.chatId;
+  const isMobile = useBreakpoint(768)
+  const { setOpenMobile } = useSidebar()
+  const { chats, isLoading } = useChats()
+  const params = useParams<{ chatId: string }>()
+  const currentChatId = params.chatId
 
   const groupedChats = useMemo(() => {
-    const result = groupChatsByDate(chats, '');
-    return result;
-  }, [chats]);
-  const hasChats = chats.length > 0;
-  const router = useRouter();
+    const result = groupChatsByDate(chats, "")
+    return result
+  }, [chats])
+  const hasChats = chats.length > 0
+  const router = useRouter()
 
   return (
     <Sidebar
-      className="border-border/40 border-r bg-transparent"
       collapsible="offcanvas"
       variant="sidebar"
+      className="border-border/40 border-r bg-transparent"
     >
       <SidebarHeader className="h-14 pl-3">
         <div className="flex justify-between">
           {isMobile ? (
             <button
-              className="inline-flex size-9 items-center justify-center rounded-md bg-transparent text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-              onClick={() => setOpenMobile(false)}
               type="button"
+              onClick={() => setOpenMobile(false)}
+              className="text-muted-foreground hover:text-foreground hover:bg-muted inline-flex size-9 items-center justify-center rounded-md bg-transparent transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <X size={24} />
             </button>
@@ -60,34 +60,34 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent className="border-border/40 border-t">
-        <ScrollArea className="[&>div>div]:!block flex h-full px-3">
+        <ScrollArea className="flex h-full px-3 [&>div>div]:!block">
           <div className="mt-3 mb-5 flex w-full flex-col items-start gap-0">
             <button
-              className="group/new-chat relative inline-flex w-full items-center rounded-md bg-transparent px-2 py-2 text-primary text-sm transition-colors hover:bg-accent/80 hover:text-foreground"
-              onClick={() => router.push('/')}
+              className="hover:bg-accent/80 hover:text-foreground text-primary group/new-chat relative inline-flex w-full items-center rounded-md bg-transparent px-2 py-2 text-sm transition-colors"
               type="button"
+              onClick={() => router.push("/")}
             >
               <div className="flex items-center gap-2">
                 <NotePencilIcon size={20} />
                 New Chat
               </div>
-              <div className="ml-auto text-muted-foreground text-xs opacity-0 duration-150 group-hover/new-chat:opacity-100">
+              <div className="text-muted-foreground ml-auto text-xs opacity-0 duration-150 group-hover/new-chat:opacity-100">
                 ⌘⇧U
               </div>
             </button>
             <HistoryTrigger
-              classNameTrigger="bg-transparent hover:bg-accent/80 hover:text-foreground text-primary relative inline-flex w-full items-center rounded-md px-2 py-2 text-sm transition-colors group/search"
-              hasPopover={false}
               hasSidebar={false}
-              icon={<MagnifyingGlass className="mr-2" size={24} />}
+              classNameTrigger="bg-transparent hover:bg-accent/80 hover:text-foreground text-primary relative inline-flex w-full items-center rounded-md px-2 py-2 text-sm transition-colors group/search"
+              icon={<MagnifyingGlass size={24} className="mr-2" />}
               label={
                 <div className="flex w-full items-center gap-2">
                   <span>Search</span>
-                  <div className="ml-auto text-muted-foreground text-xs opacity-0 duration-150 group-hover/search:opacity-100">
+                  <div className="text-muted-foreground ml-auto text-xs opacity-0 duration-150 group-hover/search:opacity-100">
                     ⌘+K
                   </div>
                 </div>
               }
+              hasPopover={false}
             />
           </div>
           <SidebarProject />
@@ -97,40 +97,39 @@ export function AppSidebar() {
             <div className="space-y-5">
               {groupedChats?.map((group) => (
                 <SidebarList
-                  currentChatId={currentChatId}
-                  items={group.chats}
                   key={group.name}
                   title={group.name}
+                  items={group.chats}
+                  currentChatId={currentChatId}
                 />
               ))}
             </div>
           ) : (
             <div className="flex h-[calc(100vh-160px)] flex-col items-center justify-center">
               <ChatTeardropText
-                className="mb-1 text-muted-foreground opacity-40"
                 size={24}
+                className="text-muted-foreground mb-1 opacity-40"
               />
-              <div className="text-center text-muted-foreground">
-                <p className="mb-1 font-medium text-base">No chats yet</p>
+              <div className="text-muted-foreground text-center">
+                <p className="mb-1 text-base font-medium">No chats yet</p>
                 <p className="text-sm opacity-70">Start a new conversation</p>
               </div>
             </div>
           )}
         </ScrollArea>
       </SidebarContent>
-      <SidebarFooter className="mb-2 border-border/40 border-t p-3">
+      <SidebarFooter className="border-border/40 mb-2 border-t p-3">
         <a
-          aria-label="Star the repo on GitHub"
-          className="flex items-center gap-2 rounded-md p-2 hover:bg-muted"
           href="https://github.com/ibelick/zola"
-          rel="noopener"
+          className="hover:bg-muted flex items-center gap-2 rounded-md p-2"
           target="_blank"
+          aria-label="Star the repo on GitHub"
         >
           <div className="rounded-full border p-1">
             <GithubLogo className="size-4" />
           </div>
           <div className="flex flex-col">
-            <div className="font-medium text-sidebar-foreground text-sm">
+            <div className="text-sidebar-foreground text-sm font-medium">
               Zola is open source
             </div>
             <div className="text-sidebar-foreground/70 text-xs">
@@ -140,5 +139,5 @@ export function AppSidebar() {
         </a>
       </SidebarFooter>
     </Sidebar>
-  );
+  )
 }

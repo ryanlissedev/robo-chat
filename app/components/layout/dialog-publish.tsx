@@ -1,110 +1,112 @@
-'use client';
+"use client"
 
-import { Check, Copy, Globe, Spinner } from '@phosphor-icons/react';
-import { useState } from 'react';
-import { useBreakpoint } from '@/app/hooks/use-breakpoint';
-import XIcon from '@/components/icons/x';
-import { Button } from '@/components/ui/button';
+import { useBreakpoint } from "@/app/hooks/use-breakpoint"
+import XIcon from "@/components/icons/x"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog"
 import {
   Drawer,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
-} from '@/components/ui/drawer';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/drawer"
+import { Input } from "@/components/ui/input"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useChatSession } from '@/lib/chat-store/session/provider';
-import { APP_DOMAIN } from '@/lib/config';
-import { createClient } from '@/lib/supabase/client';
-import { isSupabaseEnabled } from '@/lib/supabase/config';
+} from "@/components/ui/tooltip"
+import { useChatSession } from "@/lib/chat-store/session/provider"
+import { APP_DOMAIN } from "@/lib/config"
+import { createClient } from "@/lib/supabase/client"
+import { isSupabaseEnabled } from "@/lib/supabase/config"
+import { Check, Copy, Globe, Spinner } from "@phosphor-icons/react"
+import type React from "react"
+import { useState } from "react"
 
 export function DialogPublish() {
-  const [openDialog, setOpenDialog] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const { chatId } = useChatSession();
-  const isMobile = useBreakpoint(768);
-  const [copied, setCopied] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const { chatId } = useChatSession()
+  const isMobile = useBreakpoint(768)
+  const [copied, setCopied] = useState(false)
 
   if (!isSupabaseEnabled) {
-    return null;
+    return null
   }
 
   if (!chatId) {
-    return null;
+    return null
   }
 
-  const publicLink = `${APP_DOMAIN}/share/${chatId}`;
+  const publicLink = `${APP_DOMAIN}/share/${chatId}`
 
   const openPage = () => {
-    setOpenDialog(false);
+    setOpenDialog(false)
 
-    window.open(publicLink, '_blank');
-  };
+    window.open(publicLink, "_blank")
+  }
 
   const shareOnX = () => {
-    setOpenDialog(false);
+    setOpenDialog(false)
 
-    const X_TEXT = `Check out this public page I created with Zola! ${publicLink}`;
-    window.open(`https://x.com/intent/tweet?text=${X_TEXT}`, '_blank');
-  };
+    const X_TEXT = `Check out this public page I created with Zola! ${publicLink}`
+    window.open(`https://x.com/intent/tweet?text=${X_TEXT}`, "_blank")
+  }
 
   const handlePublish = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
 
-    const supabase = createClient();
+    const supabase = createClient()
 
     if (!supabase) {
-      throw new Error('Supabase is not configured');
+      throw new Error("Supabase is not configured")
     }
 
     const { data, error } = await supabase
-      .from('chats')
+      .from("chats")
       .update({ public: true })
-      .eq('id', chatId)
+      .eq("id", chatId)
       .select()
-      .single();
+      .single()
 
     if (error) {
+      console.error(error)
     }
 
     if (data) {
-      setIsLoading(false);
-      setOpenDialog(true);
+      setIsLoading(false)
+      setOpenDialog(true)
     }
-  };
+  }
 
   const copyLink = () => {
-    navigator.clipboard.writeText(publicLink);
+    navigator.clipboard.writeText(publicLink)
 
-    setCopied(true);
+    setCopied(true)
     setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  };
+      setCopied(false)
+    }, 2000)
+  }
 
   const trigger = (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            className="rounded-full bg-background p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            disabled={isLoading}
-            onClick={handlePublish}
-            size="icon"
             variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted bg-background rounded-full p-1.5 transition-colors"
+            onClick={handlePublish}
+            disabled={isLoading}
           >
             {isLoading ? (
               <Spinner className="size-5 animate-spin" />
@@ -119,7 +121,7 @@ export function DialogPublish() {
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  );
+  )
 
   const content = (
     <>
@@ -127,11 +129,11 @@ export function DialogPublish() {
         <div className="grid gap-2">
           <div className="flex items-center gap-1">
             <div className="relative flex-1">
-              <Input className="flex-1" id="slug" readOnly value={publicLink} />
+              <Input id="slug" value={publicLink} readOnly className="flex-1" />
               <Button
-                className="absolute top-0 right-0 rounded-l-none bg-background transition-colors hover:bg-background"
-                onClick={copyLink}
                 variant="outline"
+                onClick={copyLink}
+                className="bg-background hover:bg-background absolute top-0 right-0 rounded-l-none transition-colors"
               >
                 {copied ? (
                   <Check className="size-4" />
@@ -144,22 +146,22 @@ export function DialogPublish() {
         </div>
       </div>
       <div className="flex gap-2">
-        <Button className="flex-1" onClick={openPage} variant="outline">
+        <Button variant="outline" onClick={openPage} className="flex-1">
           View Page
         </Button>
-        <Button className="flex-1" onClick={shareOnX}>
-          Share on <XIcon className="size-4 text-primary-foreground" />
+        <Button onClick={shareOnX} className="flex-1">
+          Share on <XIcon className="text-primary-foreground size-4" />
         </Button>
       </div>
     </>
-  );
+  )
 
   if (isMobile) {
     return (
       <>
         {trigger}
-        <Drawer onOpenChange={setOpenDialog} open={openDialog}>
-          <DrawerContent className="border-border bg-background">
+        <Drawer open={openDialog} onOpenChange={setOpenDialog}>
+          <DrawerContent className="bg-background border-border">
             <DrawerHeader>
               <DrawerTitle>Your conversation is now public!</DrawerTitle>
               <DrawerDescription>
@@ -172,13 +174,13 @@ export function DialogPublish() {
           </DrawerContent>
         </Drawer>
       </>
-    );
+    )
   }
 
   return (
     <>
       {trigger}
-      <Dialog onOpenChange={setOpenDialog} open={openDialog}>
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Your conversation is now public!</DialogTitle>
@@ -192,5 +194,5 @@ export function DialogPublish() {
         </DialogContent>
       </Dialog>
     </>
-  );
+  )
 }

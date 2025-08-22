@@ -20,7 +20,7 @@ export const FREE_MODELS_IDS = [
   'openrouter:meta-llama/llama-3.3-8b-instruct:free',
   'pixtral-large-latest',
   'mistral-large-latest',
-  'gpt-5-mini',
+  'gpt-4o-mini',
 ];
 
 export const MODEL_DEFAULT = 'gpt-5-mini';

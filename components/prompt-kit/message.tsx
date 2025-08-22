@@ -1,4 +1,3 @@
-import dynamic from 'next/dynamic';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Tooltip,
@@ -6,10 +5,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-
-const Markdown = dynamic(() =>
-  import('./markdown').then((mod) => mod.Markdown)
-);
+import { Markdown } from './markdown';
 
 export type MessageProps = {
   children: React.ReactNode;

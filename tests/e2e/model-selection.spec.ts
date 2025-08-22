@@ -237,7 +237,7 @@ test.describe('Model Selection', () => {
           start(controller) {
             controller.enqueue(
               encoder.encode(
-                'data: {"content":"Response from Claude 3 Sonnet"}\n\n'
+                'data: {"type":"content.delta","delta":{"type":"text-delta","textDelta":"Response from Claude 3 Sonnet"}}\n\n'
               )
             );
             controller.close();

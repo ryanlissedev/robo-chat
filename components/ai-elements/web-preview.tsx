@@ -2,13 +2,22 @@
 
 import { Button } from '@/components/ui/button';
 
-type CollapsibleProps = React.HTMLAttributes<HTMLDivElement>;
+type CollapsibleProps = React.HTMLAttributes<HTMLDivElement> & {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+};
 type CollapsibleContentProps = React.HTMLAttributes<HTMLDivElement>;
-type CollapsibleTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
+type CollapsibleTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  asChild?: boolean;
+};
 
 const Collapsible = (props: CollapsibleProps) => <div {...props} />;
-const CollapsibleContent = (props: CollapsibleContentProps) => <div {...props} />;
-const CollapsibleTrigger = (props: CollapsibleTriggerProps) => <button {...props} />;
+const CollapsibleContent = (props: CollapsibleContentProps) => (
+  <div {...props} />
+);
+const CollapsibleTrigger = (props: CollapsibleTriggerProps) => (
+  <button {...props} />
+);
 
 import { ChevronDownIcon } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';

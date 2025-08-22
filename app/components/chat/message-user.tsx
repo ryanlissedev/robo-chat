@@ -1,8 +1,5 @@
-'use client';
+"use client"
 
-import { Check, Copy, Trash } from '@phosphor-icons/react';
-import Image from 'next/image';
-import { useRef, useState } from 'react';
 import {
   MorphingDialog,
   MorphingDialogClose,
@@ -10,42 +7,41 @@ import {
   MorphingDialogContent,
   MorphingDialogImage,
   MorphingDialogTrigger,
-} from '@/components/motion-primitives/morphing-dialog';
+} from "@/components/motion-primitives/morphing-dialog"
 import {
   MessageAction,
   MessageActions,
   Message as MessageContainer,
   MessageContent,
-} from '@/components/prompt-kit/message';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+} from "@/components/prompt-kit/message"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { Message as MessageType } from "@ai-sdk/react"
+import { Check, Copy, Trash } from "@phosphor-icons/react"
+import Image from "next/image"
+import { useRef, useState } from "react"
 
 const getTextFromDataUrl = (dataUrl: string) => {
-  const base64 = dataUrl.split(',')[1];
-  return base64;
-};
+  const base64 = dataUrl.split(",")[1]
+  return base64
+}
 
 export type MessageUserProps = {
-  hasScrollAnchor?: boolean;
-  children: string;
-  copied: boolean;
-  copyToClipboard: () => void;
-  onEdit: (id: string, newText: string) => void;
-  onReload: () => void;
-  onDelete: (id: string) => void;
-  id: string;
-  className?: string;
-  parts?: Array<{ 
-    type: string; 
-    name?: string; 
-    mediaType?: string; 
-    data?: string; 
-    url?: string; 
-  }>;
-};
+  hasScrollAnchor?: boolean
+  attachments?: MessageType["experimental_attachments"]
+  children: string
+  copied: boolean
+  copyToClipboard: () => void
+  onEdit: (id: string, newText: string) => void
+  onReload: () => void
+  onDelete: (id: string) => void
+  id: string
+  className?: string
+}
 
 export function MessageUser({
   hasScrollAnchor,
+  attachments,
   children,
   copied,
   copyToClipboard,
@@ -54,47 +50,45 @@ export function MessageUser({
   onDelete,
   id,
   className,
-  parts,
 }: MessageUserProps) {
-  const [editInput, setEditInput] = useState(children);
-  const [isEditing, setIsEditing] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const [editInput, setEditInput] = useState(children)
+  const [isEditing, setIsEditing] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
 
   const handleEditCancel = () => {
-    setIsEditing(false);
-    setEditInput(children);
-  };
+    setIsEditing(false)
+    setEditInput(children)
+  }
 
   const handleSave = () => {
     if (onEdit) {
-      onEdit(id, editInput);
+      onEdit(id, editInput)
     }
-    onReload();
-    setIsEditing(false);
-  };
+    onReload()
+    setIsEditing(false)
+  }
 
   const handleDelete = () => {
-    onDelete(id);
-  };
-
-  // Extract file parts from v5 message parts structure
-  const fileParts = parts?.filter((part) => part.type === 'file') || [];
+    onDelete(id)
+  }
 
   return (
     <MessageContainer
       className={cn(
-        'group flex w-full max-w-3xl flex-col items-end gap-0.5 px-6 pb-2',
-        hasScrollAnchor && 'min-h-scroll-anchor',
+        "group flex w-full max-w-3xl flex-col items-end gap-0.5 px-6 pb-2",
+        hasScrollAnchor && "min-h-scroll-anchor",
         className
       )}
-      data-testid="chat-message"
     >
-      {fileParts.map((filePart, index) => (
-        <div className="flex flex-row gap-2" key={`file-${index}`}>
-          {filePart.mediaType?.startsWith('image/') ? (
+      {attachments?.map((attachment, index) => (
+        <div
+          className="flex flex-row gap-2"
+          key={`${attachment.name}-${index}`}
+        >
+          {attachment.contentType?.startsWith("image") ? (
             <MorphingDialog
               transition={{
-                type: 'spring',
+                type: "spring",
                 stiffness: 280,
                 damping: 18,
                 mass: 0.3,
@@ -102,75 +96,68 @@ export function MessageUser({
             >
               <MorphingDialogTrigger className="z-10">
                 <Image
-                  alt={filePart.name || 'File attachment'}
                   className="mb-1 w-40 rounded-md"
-                  height={120}
-                  key={`image-${index}`}
-                  src={filePart.data || filePart.url}
+                  key={attachment.name}
+                  src={attachment.url}
+                  alt={attachment.name || "Attachment"}
                   width={160}
+                  height={120}
                 />
               </MorphingDialogTrigger>
               <MorphingDialogContainer>
                 <MorphingDialogContent className="relative rounded-lg">
                   <MorphingDialogImage
-                    alt={filePart.name || ''}
+                    src={attachment.url}
+                    alt={attachment.name || ""}
                     className="max-h-[90vh] max-w-[90vw] object-contain"
-                    src={filePart.data || filePart.url}
                   />
                 </MorphingDialogContent>
                 <MorphingDialogClose className="text-primary" />
               </MorphingDialogContainer>
             </MorphingDialog>
-          ) : filePart.mediaType?.startsWith('text/') ? (
-            <div className="mb-3 h-24 w-40 overflow-hidden rounded-md border p-2 text-primary text-xs">
-              {getTextFromDataUrl(filePart.data || filePart.url)}
-            </div>
-          ) : filePart.mediaType === 'application/pdf' ? (
-            <div className="mb-3 flex h-24 w-40 items-center justify-center rounded-md border bg-muted p-2">
-              <div className="text-center">
-                <div className="font-medium text-sm">PDF</div>
-                <div className="text-muted-foreground text-xs">
-                  {filePart.name || 'Document'}
-                </div>
-              </div>
+          ) : attachment.contentType?.startsWith("text") ? (
+            <div className="text-primary mb-3 h-24 w-40 overflow-hidden rounded-md border p-2 text-xs">
+              {getTextFromDataUrl(attachment.url)}
             </div>
           ) : null}
         </div>
       ))}
       {isEditing ? (
         <div
-          className="relative flex min-w-[180px] flex-col gap-2 rounded-3xl bg-accent px-5 py-2.5"
+          className="bg-accent relative flex min-w-[180px] flex-col gap-2 rounded-3xl px-5 py-2.5"
           style={{
             width: contentRef.current?.offsetWidth,
           }}
         >
           <textarea
-            autoFocus
             className="w-full resize-none bg-transparent outline-none"
+            value={editInput}
             onChange={(e) => setEditInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSave();
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault()
+                handleSave()
               }
-              if (e.key === 'Escape') {
-                handleEditCancel();
+              if (e.key === "Escape") {
+                handleEditCancel()
               }
             }}
-            value={editInput}
+            autoFocus
           />
           <div className="flex justify-end gap-2">
-            <Button onClick={handleEditCancel} size="sm" variant="ghost">
+            <Button size="sm" variant="ghost" onClick={handleEditCancel}>
               Cancel
             </Button>
-            <Button onClick={handleSave} size="sm">
+            <Button size="sm" onClick={handleSave}>
               Save
             </Button>
           </div>
         </div>
       ) : (
         <MessageContent
-          className="prose dark:prose-invert relative max-w-[70%] rounded-3xl bg-accent px-5 py-2.5"
+          className="bg-accent prose dark:prose-invert relative max-w-[70%] rounded-3xl px-5 py-2.5"
+          markdown={true}
+          ref={contentRef}
           components={{
             code: ({ children }) => <>{children}</>,
             pre: ({ children }) => <>{children}</>,
@@ -185,17 +172,15 @@ export function MessageUser({
             ul: ({ children }) => <>{children}</>,
             ol: ({ children }) => <>{children}</>,
           }}
-          markdown={true}
-          ref={contentRef}
         >
           {children}
         </MessageContent>
       )}
       <MessageActions className="flex gap-0 opacity-0 transition-opacity duration-0 group-hover:opacity-100">
-        <MessageAction side="bottom" tooltip={copied ? 'Copied!' : 'Copy text'}>
+        <MessageAction tooltip={copied ? "Copied!" : "Copy text"} side="bottom">
           <button
+            className="hover:bg-accent/60 text-muted-foreground hover:text-foreground flex size-7.5 items-center justify-center rounded-full bg-transparent transition"
             aria-label="Copy text"
-            className="flex size-7.5 items-center justify-center rounded-full bg-transparent text-muted-foreground transition hover:bg-accent/60 hover:text-foreground"
             onClick={copyToClipboard}
             type="button"
           >
@@ -221,10 +206,10 @@ export function MessageUser({
             <PencilSimple className="size-4" />
           </button>
         </MessageAction> */}
-        <MessageAction side="bottom" tooltip="Delete">
+        <MessageAction tooltip="Delete" side="bottom">
           <button
+            className="hover:bg-accent/60 text-muted-foreground hover:text-foreground flex size-7.5 items-center justify-center rounded-full bg-transparent transition"
             aria-label="Delete"
-            className="flex size-7.5 items-center justify-center rounded-full bg-transparent text-muted-foreground transition hover:bg-accent/60 hover:text-foreground"
             onClick={handleDelete}
             type="button"
           >
@@ -233,5 +218,5 @@ export function MessageUser({
         </MessageAction>
       </MessageActions>
     </MessageContainer>
-  );
+  )
 }

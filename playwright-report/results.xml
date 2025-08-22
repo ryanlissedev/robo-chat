@@ -1,2 +1,42 @@
-<testsuites id="" name="" tests="0" failures="0" skipped="0" errors="0" time="44.460962">
+<testsuites id="" name="" tests="1" failures="1" skipped="0" errors="0" time="64.91128800000001">
+<testsuite name="chat-flow.spec.ts" timestamp="2025-08-22T05:27:53.158Z" hostname="chromium" tests="1" failures="1" skipped="0" time="30.182" errors="0">
+<testcase name="Chat Message Flow › When user sends a message › should display the message and show loading indicator" classname="chat-flow.spec.ts" time="30.182">
+<failure message="chat-flow.spec.ts:61:9 should display the message and show loading indicator" type="FAILURE">
+<![CDATA[  [chromium] › chat-flow.spec.ts:61:9 › Chat Message Flow › When user sends a message › should display the message and show loading indicator 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: expect.toHaveCount: Target page, context or browser has been closed
+
+      106 |
+      107 |       // Then the response should appear
+    > 108 |       await expect(page.locator('[data-testid="chat-message"]')).toHaveCount(2);
+          |                                                                  ^
+      109 |     });
+      110 |
+      111 |     test('should handle empty messages gracefully', async ({
+        at /Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/chat-flow.spec.ts:108:66
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|../playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-chromium/video.webm]]
+
+[[ATTACHMENT|../playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
 </testsuites>

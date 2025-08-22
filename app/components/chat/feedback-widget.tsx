@@ -1,57 +1,57 @@
-'use client';
+"use client"
 
-import { QuestionMark } from '@phosphor-icons/react';
-import { motion } from 'motion/react';
-import { useState } from 'react';
-import { useBreakpoint } from '@/app/hooks/use-breakpoint';
-import { FeedbackForm } from '@/components/common/feedback-form';
+import { useBreakpoint } from "@/app/hooks/use-breakpoint"
+import { FeedbackForm } from "@/components/common/feedback-form"
 import {
   MorphingPopover,
   MorphingPopoverContent,
   MorphingPopoverTrigger,
-} from '@/components/motion-primitives/morphing-popover';
-import { isSupabaseEnabled } from '@/lib/supabase/config';
+} from "@/components/motion-primitives/morphing-popover"
+import { isSupabaseEnabled } from "@/lib/supabase/config"
+import { QuestionMark } from "@phosphor-icons/react"
+import { motion } from "motion/react"
+import { useState } from "react"
 
 const TRANSITION_POPOVER = {
-  type: 'spring' as const,
+  type: "spring",
   bounce: 0.1,
   duration: 0.3,
-};
+}
 
 type FeedbackWidgetProps = {
-  authUserId?: string;
-};
+  authUserId?: string
+}
 
 export function FeedbackWidget({ authUserId }: FeedbackWidgetProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const isMobileOrTablet = useBreakpoint(896);
+  const [isOpen, setIsOpen] = useState(false)
+  const isMobileOrTablet = useBreakpoint(896)
 
   if (!isSupabaseEnabled) {
-    return null;
+    return null
   }
 
   const closeMenu = () => {
-    setIsOpen(false);
-  };
+    setIsOpen(false)
+  }
 
   if (isMobileOrTablet || !authUserId) {
-    return null;
+    return null
   }
 
   return (
     <div className="fixed right-1 bottom-1 z-50">
       <MorphingPopover
-        className="relative flex flex-col items-end justify-end"
-        onOpenChange={setIsOpen}
-        open={isOpen}
         transition={TRANSITION_POPOVER}
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        className="relative flex flex-col items-end justify-end"
       >
         <MorphingPopoverTrigger
-          className="flex size-6 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-md hover:bg-secondary"
+          className="border-border bg-background text-foreground hover:bg-secondary flex size-6 items-center justify-center rounded-full border shadow-md"
           style={{
-            transformOrigin: 'bottom right',
-            originX: 'right',
-            originY: 'bottom',
+            transformOrigin: "bottom right",
+            originX: "right",
+            originY: "bottom",
             scaleX: 1,
             scaleY: 1,
           }}
@@ -66,18 +66,18 @@ export function FeedbackWidget({ authUserId }: FeedbackWidgetProps) {
               delay: isOpen ? 0 : TRANSITION_POPOVER.duration / 2,
             }}
           >
-            <QuestionMark className="size-4 text-foreground" />
+            <QuestionMark className="text-foreground size-4" />
           </motion.span>
         </MorphingPopoverTrigger>
         <MorphingPopoverContent
-          className="fixed right-1 bottom-1 min-w-[320px] rounded-xl border border-border bg-popover p-0 shadow-[0_9px_9px_0px_rgba(0,0,0,0.01),_0_2px_5px_0px_rgba(0,0,0,0.06)]"
+          className="border-border bg-popover fixed right-1 bottom-1 min-w-[320px] rounded-xl border p-0 shadow-[0_9px_9px_0px_rgba(0,0,0,0.01),_0_2px_5px_0px_rgba(0,0,0,0.06)]"
           style={{
-            transformOrigin: 'bottom right',
+            transformOrigin: "bottom right",
           }}
         >
           <FeedbackForm authUserId={authUserId} onClose={closeMenu} />
         </MorphingPopoverContent>
       </MorphingPopover>
     </div>
-  );
+  )
 }

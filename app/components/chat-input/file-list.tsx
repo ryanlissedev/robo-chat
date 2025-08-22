@@ -1,43 +1,43 @@
-import { AnimatePresence, motion } from 'motion/react';
-import { FileItem } from './file-items';
+import { AnimatePresence, motion } from "motion/react"
+import { FileItem } from "./file-items"
 
 type FileListProps = {
-  files: File[];
-  onFileRemove: (file: File) => void;
-};
+  files: File[]
+  onFileRemove: (file: File) => void
+}
 
 const TRANSITION = {
-  type: 'spring' as const,
+  type: "spring",
   duration: 0.2,
   bounce: 0,
-};
+}
 
 export function FileList({ files, onFileRemove }: FileListProps) {
   return (
     <AnimatePresence initial={false}>
       {files.length > 0 && (
         <motion.div
-          animate={{ height: 'auto' }}
-          className="overflow-hidden"
-          exit={{ height: 0 }}
-          initial={{ height: 0 }}
           key="files-list"
+          initial={{ height: 0 }}
+          animate={{ height: "auto" }}
+          exit={{ height: 0 }}
           transition={TRANSITION}
+          className="overflow-hidden"
         >
           <div className="flex flex-row overflow-x-auto pl-3">
             <AnimatePresence initial={false}>
               {files.map((file) => (
                 <motion.div
-                  animate={{ width: 180 }}
-                  className="relative shrink-0 overflow-hidden pt-2"
-                  exit={{ width: 0 }}
-                  initial={{ width: 0 }}
                   key={file.name}
+                  initial={{ width: 0 }}
+                  animate={{ width: 180 }}
+                  exit={{ width: 0 }}
                   transition={TRANSITION}
+                  className="relative shrink-0 overflow-hidden pt-2"
                 >
                   <FileItem
-                    file={file}
                     key={file.name}
+                    file={file}
                     onRemove={onFileRemove}
                   />
                 </motion.div>
@@ -47,5 +47,5 @@ export function FileList({ files, onFileRemove }: FileListProps) {
         </motion.div>
       )}
     </AnimatePresence>
-  );
+  )
 }

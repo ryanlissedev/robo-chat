@@ -3,7 +3,7 @@
  */
 
 import { render, screen } from '@testing-library/react';
-import { vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VoiceAgent } from '@/app/components/chat/voice-agent';
 import { UserProvider } from '@/lib/user-store/provider';
 import { renderWithProviders, mockUserProfile } from '@/tests/test-utils';

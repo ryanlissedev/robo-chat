@@ -156,6 +156,16 @@ export async function incrementUsage(
   supabase: SupabaseClient,
   userId: string
 ): Promise<void> {
+  // Check if rate limiting is disabled for guest users
+  const isRateLimitDisabled = process.env.DISABLE_RATE_LIMIT === 'true';
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isGuestUser = userId.startsWith('guest-') || userId.startsWith('temp-guest-');
+
+  if (isGuestUser && (isRateLimitDisabled || isDevelopment)) {
+    // Skip database operations for guest users when rate limiting is disabled
+    return;
+  }
+
   const { data: userData, error: userDataError } = await supabase
     .from('users')
     .select('message_count, daily_message_count')

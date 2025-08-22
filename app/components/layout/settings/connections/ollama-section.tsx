@@ -1,57 +1,53 @@
-'use client';
+"use client"
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { toast } from '@/components/ui/toast';
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { toast } from "@/components/ui/toast"
+import { useState } from "react"
 
 export function OllamaSection() {
-  const [ollamaEndpoint, setOllamaEndpoint] = useState(
-    'http://localhost:11434'
-  );
-  const [enableOllama, setEnableOllama] = useState(true); // Default enabled in dev
-  const [isLoading, setIsLoading] = useState(false);
+  const [ollamaEndpoint, setOllamaEndpoint] = useState("http://localhost:11434")
+  const [enableOllama, setEnableOllama] = useState(true) // Default enabled in dev
+  const [isLoading, setIsLoading] = useState(false)
 
   // In client-side, we assume development mode (Ollama enabled) unless it's a production build
   const isLocked =
-    typeof window !== 'undefined' && window.location.hostname !== 'localhost';
+    typeof window !== "undefined" && window.location.hostname !== "localhost"
 
   const testConnection = async () => {
-    if (!ollamaEndpoint) {
-      return;
-    }
+    if (!ollamaEndpoint) return
 
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const response = await fetch(`${ollamaEndpoint}/api/tags`);
+      const response = await fetch(`${ollamaEndpoint}/api/tags`)
       if (response.ok) {
         toast({
-          title: 'Ollama connection successful',
-          description: 'You can now use Ollama to run models locally.',
-        });
+          title: "Ollama connection successful",
+          description: "You can now use Ollama to run models locally.",
+        })
       } else {
         toast({
-          title: 'Ollama connection failed',
-          description: 'Please check your Ollama endpoint and try again.',
-        });
+          title: "Ollama connection failed",
+          description: "Please check your Ollama endpoint and try again.",
+        })
       }
     } catch {
       toast({
-        title: 'Ollama connection failed',
-        description: 'Please check your Ollama endpoint and try again.',
-      });
+        title: "Ollama connection failed",
+        description: "Please check your Ollama endpoint and try again.",
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="mb-2 font-medium text-lg">Local Model Settings</h3>
+        <h3 className="mb-2 text-lg font-medium">Local Model Settings</h3>
         <p className="text-muted-foreground text-sm">
           Configure your local Ollama instance for running models locally.
           {isLocked && (
@@ -68,8 +64,8 @@ export function OllamaSection() {
             <span>Ollama</span>
             <Switch
               checked={enableOllama && !isLocked}
-              disabled={isLocked}
               onCheckedChange={setEnableOllama}
+              disabled={isLocked}
             />
           </CardTitle>
         </CardHeader>
@@ -77,36 +73,36 @@ export function OllamaSection() {
           <div>
             <Label htmlFor="ollama-endpoint">Endpoint</Label>
             <Input
-              disabled={!enableOllama || isLocked}
               id="ollama-endpoint"
-              onChange={(e) => setOllamaEndpoint(e.target.value)}
-              placeholder="http://localhost:11434"
               type="url"
+              placeholder="http://localhost:11434"
               value={ollamaEndpoint}
+              onChange={(e) => setOllamaEndpoint(e.target.value)}
+              disabled={!enableOllama || isLocked}
             />
-            <p className="mt-1 text-muted-foreground text-xs">
+            <p className="text-muted-foreground mt-1 text-xs">
               {isLocked
-                ? 'Endpoint is read-only in production mode.'
-                : 'Default Ollama endpoint. Make sure Ollama is running locally.'}
+                ? "Endpoint is read-only in production mode."
+                : "Default Ollama endpoint. Make sure Ollama is running locally."}
             </p>
           </div>
 
           {enableOllama && !isLocked && (
             <div className="flex gap-2">
               <Button
-                disabled={isLoading || !ollamaEndpoint}
-                onClick={testConnection}
-                size="sm"
                 variant="outline"
+                size="sm"
+                onClick={testConnection}
+                disabled={isLoading || !ollamaEndpoint}
               >
-                {isLoading ? 'Testing...' : 'Test Connection'}
+                {isLoading ? "Testing..." : "Test Connection"}
               </Button>
             </div>
           )}
 
           {isLocked && (
             <div className="rounded-md bg-orange-50 p-3 dark:bg-orange-950/20">
-              <p className="text-orange-800 text-sm dark:text-orange-200">
+              <p className="text-sm text-orange-800 dark:text-orange-200">
                 Ollama is disabled in production deployments for performance and
                 security.
               </p>
@@ -115,5 +111,5 @@ export function OllamaSection() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

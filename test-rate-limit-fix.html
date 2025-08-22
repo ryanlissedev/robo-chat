@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Rate Limit Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffe6e6; }
+        .success { background: #e6ffe6; }
+    </style>
+</head>
+<body>
+    <h1>Test Rate Limit Fix</h1>
+    <button onclick="testRateLimits()">Test Rate Limits API</button>
+    <button onclick="testChatAPI()">Test Chat API</button>
+    <div id="logs"></div>
+
+    <script>
+        const logs = document.getElementById('logs');
+        
+        function log(message, type = 'log') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            logs.appendChild(div);
+            console.log(message);
+        }
+
+        async function testRateLimits() {
+            logs.innerHTML = '';
+            log('Testing rate limits API...');
+            
+            try {
+                const response = await fetch('/api/rate-limits?userId=test-user&isAuthenticated=false');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`Rate limits response: ${JSON.stringify(data, null, 2)}`, 'success');
+                    log(`Remaining messages: ${data.remaining}/${data.dailyLimit}`, 'success');
+                } else {
+                    log(`Rate limits error: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                log(`Rate limits test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testChatAPI() {
+            log('Testing chat API...');
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            { role: 'user', content: 'Hello, test message for rate limit fix verification.' }
+                        ],
+                        model: 'gpt-5-mini',
+                        chatId: 'rate-limit-test',
+                        userId: 'test-user',
+                        isAuthenticated: false,
+                        enableSearch: false,
+                        reasoningEffort: 'low'
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    log(`Chat API error: ${JSON.stringify(errorData)}`, 'error');
+                    return;
+                }
+
+                log('Chat API response received, reading stream...', 'success');
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let assistantText = '';
+                let chunkCount = 0;
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) {
+                        log(`Stream completed. Chunks: ${chunkCount}`, 'success');
+                        break;
+                    }
+                    
+                    chunkCount++;
+                    const chunk = decoder.decode(value, { stream: true });
+                    
+                    // Process SSE data
+                    const lines = chunk.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data: ') && line.length > 6) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                if (data.type === 'text-delta' && data.delta) {
+                                    assistantText += data.delta;
+                                }
+                            } catch (e) {
+                                // Skip invalid JSON lines
+                            }
+                        }
+                    }
+                }
+                
+                log(`Assistant response: "${assistantText}"`, assistantText ? 'success' : 'error');
+                
+            } catch (error) {
+                log(`Chat API test failed: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

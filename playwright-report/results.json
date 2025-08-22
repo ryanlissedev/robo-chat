@@ -1,16 +1,18 @@
 {
   "config": {
-    "configFile": "/root/repo/playwright.config.ts",
-    "rootDir": "/root/repo/tests/e2e",
+    "configFile": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright.config.ts",
+    "rootDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
     "forbidOnly": false,
     "fullyParallel": true,
-    "globalSetup": "/root/repo/tests/e2e/global-setup.ts",
-    "globalTeardown": "/root/repo/tests/e2e/global-teardown.ts",
+    "globalSetup": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/global-setup.ts",
+    "globalTeardown": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/global-teardown.ts",
     "globalTimeout": 0,
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {},
+    "metadata": {
+      "actualWorkers": 1
+    },
     "preserveOutput": "always",
     "reporter": [
       [
@@ -37,109 +39,123 @@
     "quiet": false,
     "projects": [
       {
-        "outputDir": "/root/repo/playwright-test-results",
+        "outputDir": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 1
+        },
         "id": "chromium",
         "name": "chromium",
-        "testDir": "/root/repo/tests/e2e",
+        "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 60000
+        "timeout": 30000
       },
       {
-        "outputDir": "/root/repo/playwright-test-results",
+        "outputDir": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 1
+        },
         "id": "firefox",
         "name": "firefox",
-        "testDir": "/root/repo/tests/e2e",
+        "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 60000
+        "timeout": 30000
       },
       {
-        "outputDir": "/root/repo/playwright-test-results",
+        "outputDir": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 1
+        },
         "id": "webkit",
         "name": "webkit",
-        "testDir": "/root/repo/tests/e2e",
+        "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 60000
+        "timeout": 30000
       },
       {
-        "outputDir": "/root/repo/playwright-test-results",
+        "outputDir": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 1
+        },
         "id": "Mobile Chrome",
         "name": "Mobile Chrome",
-        "testDir": "/root/repo/tests/e2e",
+        "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 60000
+        "timeout": 30000
       },
       {
-        "outputDir": "/root/repo/playwright-test-results",
+        "outputDir": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 1
+        },
         "id": "Mobile Safari",
         "name": "Mobile Safari",
-        "testDir": "/root/repo/tests/e2e",
+        "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 60000
+        "timeout": 30000
       },
       {
-        "outputDir": "/root/repo/playwright-test-results",
+        "outputDir": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 1
+        },
         "id": "Microsoft Edge",
         "name": "Microsoft Edge",
-        "testDir": "/root/repo/tests/e2e",
+        "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 60000
+        "timeout": 30000
       },
       {
-        "outputDir": "/root/repo/playwright-test-results",
+        "outputDir": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 1
+        },
         "id": "Google Chrome",
         "name": "Google Chrome",
-        "testDir": "/root/repo/tests/e2e",
+        "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 60000
+        "timeout": 30000
       }
     ],
     "shard": null,
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
     "version": "1.55.0",
-    "workers": 1,
+    "workers": 4,
     "webServer": {
       "command": "npm run dev",
       "url": "http://localhost:3000",
@@ -147,25 +163,107 @@
       "timeout": 120000
     }
   },
-  "suites": [],
-  "errors": [
+  "suites": [
     {
-      "message": "Error: browserType.launch: Executable doesn't exist at /root/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
-      "stack": "Error: browserType.launch: Executable doesn't exist at /root/.cache/ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝\n    at globalSetup (/root/repo/tests/e2e/global-setup.ts:5:34)",
-      "location": {
-        "file": "/root/repo/tests/e2e/global-setup.ts",
-        "column": 34,
-        "line": 5
-      },
-      "snippet": "   at global-setup.ts:5\n\n  3 | async function globalSetup(_config: FullConfig) {\n  4 |   // Launch browser for authentication setup if needed\n> 5 |   const browser = await chromium.launch();\n    |                                  ^\n  6 |   const context = await browser.newContext();\n  7 |   const page = await context.newPage();\n  8 |"
+      "title": "chat-flow.spec.ts",
+      "file": "chat-flow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Chat Message Flow",
+          "file": "chat-flow.spec.ts",
+          "line": 4,
+          "column": 6,
+          "specs": [],
+          "suites": [
+            {
+              "title": "When user sends a message",
+              "file": "chat-flow.spec.ts",
+              "line": 60,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should display the message and show loading indicator",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "timedOut",
+                          "duration": 30182,
+                          "error": {
+                            "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                            "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                          },
+                          "errors": [
+                            {
+                              "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                            },
+                            {
+                              "location": {
+                                "file": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/chat-flow.spec.ts",
+                                "column": 66,
+                                "line": 108
+                              },
+                              "message": "Error: expect.toHaveCount: Target page, context or browser has been closed\n\n  106 |\n  107 |       // Then the response should appear\n> 108 |       await expect(page.locator('[data-testid=\"chat-message\"]')).toHaveCount(2);\n      |                                                                  ^\n  109 |     });\n  110 |\n  111 |     test('should handle empty messages gracefully', async ({\n    at /Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e/chat-flow.spec.ts:108:66"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-22T05:27:53.892Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-chromium/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-chromium/video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "/Users/neo/Developer/experiments/HGG/robo-chat/playwright-test-results/chat-flow-Chat-Message-Flo-dad4f--and-show-loading-indicator-chromium/error-context.md"
+                            }
+                          ]
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "57d300a4d5b28e5bd677-f0d1b5c0e0ae35c147be",
+                  "file": "chat-flow.spec.ts",
+                  "line": 61,
+                  "column": 9
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
+  "errors": [],
   "stats": {
-    "startTime": "2025-08-21T05:36:17.966Z",
-    "duration": 44460.962,
+    "startTime": "2025-08-22T05:27:19.784Z",
+    "duration": 64911.28800000001,
     "expected": 0,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 1,
     "flaky": 0
   }
 }

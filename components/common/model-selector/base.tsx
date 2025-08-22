@@ -137,13 +137,15 @@ export function ModelSelector({
   const trigger = (
     <Button
       className={cn('justify-between dark:bg-secondary', className)}
+      data-testid="model-selector-trigger"
       disabled={isLoadingModels}
       variant="outline"
-      data-testid="model-selector-trigger"
     >
       <div className="flex items-center gap-2">
         {currentProvider?.icon && <currentProvider.icon className="size-5" />}
-        <span data-testid="selected-model-name">{currentModel?.name || 'Select model'}</span>
+        <span data-testid="selected-model-name">
+          {currentModel?.name || 'Select model'}
+        </span>
       </div>
       <CaretDownIcon className="size-4 opacity-50" />
     </Button>
@@ -157,7 +159,7 @@ export function ModelSelector({
 
   // INTERNAL USE: Always allow model selection for guest users
   // If user is not authenticated, show the auth popover (disabled for internal use)
-  if (false && !isUserAuthenticated) {
+  if (false) {
     return (
       <Popover>
         <Tooltip>
@@ -172,9 +174,15 @@ export function ModelSelector({
                 type="button"
                 variant="secondary"
               >
-                {currentProvider?.icon && (
-                  <currentProvider.icon className="size-5" />
-                )}
+                {(() => {
+                  const IconComponent =
+                    currentProvider?.icon as React.ComponentType<{
+                      className?: string;
+                    }>;
+                  return IconComponent ? (
+                    <IconComponent className="size-5" />
+                  ) : null;
+                })()}
                 {currentModel?.name}
                 <CaretDownIcon className="size-4" />
               </Button>
@@ -274,10 +282,10 @@ export function ModelSelector({
           <DropdownMenuContent
             align="start"
             className="flex h-[320px] w-[300px] flex-col space-y-0.5 overflow-visible p-0"
+            data-testid="model-selector-content"
             forceMount
             side="top"
             sideOffset={4}
-            data-testid="model-selector-content"
           >
             <div className="sticky top-0 z-10 rounded-t-md border-b bg-background px-0 pt-0 pb-0">
               <div className="relative">
@@ -314,8 +322,8 @@ export function ModelSelector({
                         'flex w-full items-center justify-between px-3 py-2',
                         selectedModelId === model.id && 'bg-accent'
                       )}
-                      key={model.id}
                       data-testid={`model-option-${model.id}`}
+                      key={model.id}
                       onFocus={() => {
                         if (isDropdownOpen) {
                           setHoveredModel(model.id);

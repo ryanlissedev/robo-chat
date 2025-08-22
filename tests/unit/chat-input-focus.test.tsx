@@ -49,8 +49,8 @@ describe('ChatInput focus resilience with suggestions', () => {
     );
 
     const textarea = screen.getByPlaceholderText(
-      'Ask anything…'
-    ) as HTMLTextAreaElement;
+      'Ask anything'
+    ) as HTMLInputElement;
     await user.type(textarea, 'h');
     expect(textarea.value).toBe('h');
 

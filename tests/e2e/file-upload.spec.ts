@@ -454,7 +454,7 @@ test.describe('File Upload', () => {
           start(controller) {
             controller.enqueue(
               encoder.encode(
-                'data: {"content":"I can see you uploaded a document. Let me analyze it for you."}\\n\\n'
+                'data: {"type":"content.delta","delta":{"type":"text-delta","textDelta":"I can see you uploaded a document. Let me analyze it for you."}}\\n\\n'
               )
             );
             controller.close();
@@ -527,7 +527,7 @@ test.describe('File Upload', () => {
           start(controller) {
             controller.enqueue(
               encoder.encode(
-                'data: {"content":"Message received with file."}\\n\\n'
+                'data: {"type":"content.delta","delta":{"type":"text-delta","textDelta":"Message received with file."}}\\n\\n'
               )
             );
             controller.close();

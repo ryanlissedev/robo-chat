@@ -131,7 +131,7 @@ export const roborailKnowledgeTool = tool({
   execute: async ({ query_type, specific_query, safety_level }) => {
     try {
       const query = specific_query.toLowerCase();
-      let response: any = {};
+      let response: Record<string, unknown> = {};
 
       switch (query_type) {
         case 'error_code':

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Response</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; }
+        button { padding: 10px 20px; margin: 10px; cursor: pointer; }
+        #output { margin-top: 20px; border: 1px solid #ccc; padding: 20px; min-height: 200px; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Chat Response</h1>
+    <button onclick="testChat()">Send Test Message</button>
+    <div id="output"></div>
+
+    <script>
+        async function testChat() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<p>Sending request...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:3002/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            {
+                                id: 'msg-1',
+                                role: 'user',
+                                parts: [{ type: 'text', text: 'What is the power requirement for RoboRail?' }]
+                            }
+                        ],
+                        chatId: 'test-chat-' + Date.now(),
+                        userId: 'guest-' + Date.now(),
+                        model: 'gpt-5-mini',
+                        isAuthenticated: false,
+                        systemPrompt: 'You are a helpful assistant.',
+                        enableSearch: true,
+                        reasoningEffort: 'medium'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let result = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    result += chunk;
+                    
+                    // Parse SSE chunks
+                    const lines = chunk.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') continue;
+                            
+                            try {
+                                const parsed = JSON.parse(data);
+                                console.log('Received:', parsed);
+                            } catch (e) {
+                                console.log('Raw line:', line);
+                            }
+                        }
+                    }
+                }
+
+                output.innerHTML = `
+                    <h3>Response Received</h3>
+                    <pre>${result}</pre>
+                `;
+
+            } catch (error) {
+                output.innerHTML = `
+                    <h3>Error</h3>
+                    <p style="color: red;">${error.message}</p>
+                `;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

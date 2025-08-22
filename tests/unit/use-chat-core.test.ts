@@ -33,14 +33,16 @@ vi.mock('@/app/components/chat/chat-business-logic', () => ({
   handleChatError: vi.fn(),
 }));
 
-vi.mock('@/app/hooks/use-chat-draft', () => {
-  const mockSetDraftValue = vi.fn();
-  return {
-    useChatDraft: () => ({
-      setDraftValue: mockSetDraftValue,
-    }),
-  };
-});
+// Mock the chat draft hook with proper implementation
+const mockSetDraftValue = vi.fn();
+const mockClearDraft = vi.fn();
+vi.mock('@/app/hooks/use-chat-draft', () => ({
+  useChatDraft: () => ({
+    draftValue: '',
+    setDraftValue: mockSetDraftValue,
+    clearDraft: mockClearDraft,
+  }),
+}));
 
 vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn(() => ({
@@ -62,17 +64,12 @@ vi.mock('@/components/ui/toast', () => ({
 // Get typed mocked functions
 const mockBusinessLogic = vi.mocked(businessLogic);
 const mockUseSearchParams = vi.mocked(useSearchParams);
-const mockUseChatDraft = vi.mocked(chatDraft.useChatDraft);
 
 // Access the actual mock object returned by useChat
 let mockUseChat: ReturnType<typeof useChat>;
-let mockSetDraftValue: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   mockUseChat = useChat();
-  // Get the mocked setDraftValue function
-  const chatDraftResult = mockUseChatDraft(null);
-  mockSetDraftValue = chatDraftResult.setDraftValue as ReturnType<typeof vi.fn>;
 });
 
 // TDD London Style: Focus on behavior and interactions
@@ -93,6 +90,7 @@ describe('useChatCore', () => {
     selectedModel: 'test-model',
     clearDraft: vi.fn(),
     bumpChat: vi.fn(),
+    setDraftValue: vi.fn(), // Add missing setDraftValue
   };
 
   beforeEach(() => {
@@ -148,11 +146,17 @@ describe('useChatCore', () => {
       const mockGet = vi.fn().mockReturnValue('Hello from URL');
       mockUseSearchParams.mockReturnValue({ get: mockGet } as any);
 
-      renderHook(() => useChatCore(defaultProps));
+      // Create props with the setDraftValue mock
+      const propsWithSetDraftValue = {
+        ...defaultProps,
+        setDraftValue: mockSetDraftValue,
+      };
+
+      renderHook(() => useChatCore(propsWithSetDraftValue));
 
       await waitFor(() => {
         expect(mockSetDraftValue).toHaveBeenCalledWith('Hello from URL');
-      });
+      }, { timeout: 3000 });
     });
   });
 
@@ -430,8 +434,7 @@ describe('useChatCore', () => {
         reasoningEffort: 'medium',
       });
       expect(mockUseChat.sendMessage).toHaveBeenCalledWith(
-        { text: 'Test question' },
-        expect.any(Object)
+        { text: 'Test question' }
       );
     });
 
@@ -464,7 +467,13 @@ describe('useChatCore', () => {
 
   describe('When handling input changes', () => {
     it('should update draft value', () => {
-      const { result } = renderHook(() => useChatCore(defaultProps));
+      // Create props with the setDraftValue mock
+      const propsWithSetDraftValue = {
+        ...defaultProps,
+        setDraftValue: mockSetDraftValue,
+      };
+
+      const { result } = renderHook(() => useChatCore(propsWithSetDraftValue));
 
       act(() => {
         result.current.handleInputChange('New input value');

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect } from "react"
 
 export function useKeyShortcut(
   keyCombo: (e: KeyboardEvent) => boolean,
@@ -7,12 +7,12 @@ export function useKeyShortcut(
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (keyCombo(e)) {
-        e.preventDefault();
-        action();
+        e.preventDefault()
+        action()
       }
-    };
+    }
 
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [keyCombo, action]);
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [keyCombo, action])
 }
