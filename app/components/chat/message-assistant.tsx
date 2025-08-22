@@ -12,11 +12,34 @@ import { useCallback, useRef } from "react"
 import { getSources } from "./get-sources"
 import { MessageFeedback } from "./message-feedback"
 import { QuoteButton } from "./quote-button"
-import { Reasoning } from "./reasoning"
 import { SearchImages } from "./search-images"
 import { SourcesList } from "./sources-list"
 import { ToolInvocation } from "./tool-invocation"
 import { useAssistantMessageSelection } from "./useAssistantMessageSelection"
+// AI SDK Elements
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from "@/components/ai-elements/reasoning"
+import { Response } from "@/components/ai-elements/response"
+import {
+  Sources,
+  SourcesContent,
+  SourcesTrigger,
+  Source,
+} from "@/components/ai-elements/source"
+import {
+  InlineCitation,
+  InlineCitationText,
+  InlineCitationCard,
+  InlineCitationCardTrigger,
+  InlineCitationCardBody,
+  InlineCitationCarousel,
+  InlineCitationCarouselContent,
+  InlineCitationCarouselItem,
+  InlineCitationSource,
+} from "@/components/ai-elements/inline-citation"
 
 type MessageAssistantProps = {
   children: string
@@ -104,9 +127,12 @@ export function MessageAssistant({
       >
         {reasoningParts && reasoningParts.reasoningText && (
           <Reasoning
-            reasoning={reasoningParts.reasoningText}
             isStreaming={status === "streaming"}
-          />
+            defaultOpen={false}
+          >
+            <ReasoningTrigger />
+            <ReasoningContent>{reasoningParts.reasoningText}</ReasoningContent>
+          </Reasoning>
         )}
 
         {toolInvocationParts &&
@@ -120,18 +146,28 @@ export function MessageAssistant({
         )}
 
         {contentNullOrEmpty ? null : (
-          <MessageContent
-            className={cn(
-              "prose dark:prose-invert relative min-w-full bg-transparent p-0",
-              "prose-h1:scroll-m-20 prose-h1:text-2xl prose-h1:font-semibold prose-h2:mt-8 prose-h2:scroll-m-20 prose-h2:text-xl prose-h2:mb-3 prose-h2:font-medium prose-h3:scroll-m-20 prose-h3:text-base prose-h3:font-medium prose-h4:scroll-m-20 prose-h5:scroll-m-20 prose-h6:scroll-m-20 prose-strong:font-medium prose-table:block prose-table:overflow-y-auto"
-            )}
-            markdown={true}
-          >
+          <Response className={cn(
+            "prose dark:prose-invert relative min-w-full bg-transparent p-0",
+            "prose-h1:scroll-m-20 prose-h1:text-2xl prose-h1:font-semibold prose-h2:mt-8 prose-h2:scroll-m-20 prose-h2:text-xl prose-h2:mb-3 prose-h2:font-medium prose-h3:scroll-m-20 prose-h3:text-base prose-h3:font-medium prose-h4:scroll-m-20 prose-h5:scroll-m-20 prose-h6:scroll-m-20 prose-strong:font-medium prose-table:block prose-table:overflow-y-auto"
+          )}>
             {children}
-          </MessageContent>
+          </Response>
         )}
 
-        {sources && sources.length > 0 && <SourcesList sources={sources} />}
+        {sources && sources.length > 0 && (
+          <Sources>
+            <SourcesTrigger count={sources.length} />
+            <SourcesContent>
+              {sources.map((source, index) => (
+                <Source
+                  key={index}
+                  href={source.url}
+                  title={source.title || source.url}
+                />
+              ))}
+            </SourcesContent>
+          </Sources>
+        )}
 
         {Boolean(isLastStreaming || contentNullOrEmpty) ? null : (
           <MessageActions

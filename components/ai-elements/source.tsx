@@ -1,14 +1,10 @@
 'use client';
 
-// Collapsible UI not available in this build; provide minimal fallbacks
-type CollapsibleProps = React.HTMLAttributes<HTMLDivElement>;
-type CollapsibleContentProps = React.HTMLAttributes<HTMLDivElement>;
-type CollapsibleTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
-
-const Collapsible = (props: CollapsibleProps) => <div {...props} />;
-const CollapsibleContent = (props: CollapsibleContentProps) => <div {...props} />;
-const CollapsibleTrigger = (props: CollapsibleTriggerProps) => <button {...props} />;
-
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { BookIcon, ChevronDownIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { cn } from '@/lib/utils';

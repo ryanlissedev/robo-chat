@@ -1,40 +1,12 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-
-// Remove Carousel dependency to avoid missing component types
-type CarouselApi = {
-  scrollSnapList: () => number[];
-  selectedScrollSnap: () => number;
-  on: (event: string, cb: () => void) => void;
-};
-
-type CarouselProps = {
-  children: React.ReactNode;
-  className?: string;
-  setApi?: (api: CarouselApi | undefined) => void;
-};
-
-type CarouselContentProps = {
-  children?: React.ReactNode;
-  [key: string]: unknown;
-};
-
-type CarouselItemProps = {
-  children?: React.ReactNode;
-  [key: string]: unknown;
-};
-
-const Carousel: React.FC<CarouselProps> = ({ children }) => (
-  <div>{children}</div>
-);
-const CarouselContent: React.FC<CarouselContentProps> = ({
-  children,
-  ...props
-}) => <div {...props}>{children}</div>;
-const CarouselItem: React.FC<CarouselItemProps> = ({ children, ...props }) => (
-  <div {...props}>{children}</div>
-);
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from '@/components/ui/carousel';
 
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
 import {
