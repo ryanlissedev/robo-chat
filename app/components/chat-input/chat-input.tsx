@@ -196,7 +196,7 @@ export function ChatInput({
             placeholder="Ask anything…"
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
-            className="min-h-[44px] pt-3 pl-4 text-base leading-[1.3] sm:text-base md:text-base"
+            className="min-h-[48px] pt-3 pl-4 text-lg leading-[1.4] sm:text-lg md:text-lg"
           />
           <PromptInputActions className="mt-3 w-full justify-between p-2">
             <div className="flex gap-2">
@@ -228,29 +228,29 @@ export function ChatInput({
               <Button
                 size="sm"
                 variant="ghost"
-                className="size-9 rounded-full hover:bg-accent"
+                className="size-10 rounded-full hover:bg-accent"
                 type="button"
                 aria-label="Voice input"
               >
-                <Mic className="size-4" />
+                <Mic className="size-5" />
               </Button>
               <PromptInputAction
                 tooltip={status === "streaming" ? "Stop" : value ? "Send" : "Audio"}
               >
                 <Button
                   size="sm"
-                  className="size-9 rounded-full transition-all duration-300 ease-out"
+                  className="size-10 rounded-full transition-all duration-300 ease-out"
                   disabled={status !== "streaming" && value && (isSubmitting || isOnlyWhitespace(value))}
                   type="button"
                   onClick={handleSend}
                   aria-label={status === "streaming" ? "Stop" : value ? "Send message" : "Audio input"}
                 >
                   {status === "streaming" ? (
-                    <StopIcon className="size-4" />
+                    <StopIcon className="size-5" />
                   ) : value && !isOnlyWhitespace(value) ? (
-                    <ArrowUpIcon className="size-4" />
+                    <ArrowUpIcon className="size-5" />
                   ) : (
-                    <AudioWaveform className="size-4" />
+                    <AudioWaveform className="size-5" />
                   )}
                 </Button>
               </PromptInputAction>

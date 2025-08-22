@@ -65,16 +65,19 @@ export function ReasoningEffortSelector({
     >
       <SelectTrigger
         className={cn(
-          'w-12 h-9 bg-background border-border px-2 flex items-center justify-center',
+          'w-auto h-10 bg-background border-border px-3 flex items-center gap-2',
           className
         )}
       >
         <SelectValue>
           {selectedOption && (
-            <selectedOption.icon
-              className={cn('h-4 w-4', selectedOption.color)}
-              weight="duotone"
-            />
+            <div className="flex items-center gap-2">
+              <selectedOption.icon
+                className={cn('h-5 w-5', selectedOption.color)}
+                weight="duotone"
+              />
+              <span className="text-sm font-medium">{selectedOption.label}</span>
+            </div>
           )}
         </SelectValue>
       </SelectTrigger>
@@ -88,12 +91,12 @@ export function ReasoningEffortSelector({
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <option.icon
-                  className={cn('h-4 w-4', option.color)}
+                  className={cn('h-5 w-5', option.color)}
                   weight="duotone"
                 />
-                <span className="font-medium">{option.label}</span>
+                <span className="font-medium text-base">{option.label}</span>
               </div>
-              <span className="text-xs text-muted-foreground pl-6">
+              <span className="text-sm text-muted-foreground pl-7">
                 {option.description}
               </span>
             </div>
