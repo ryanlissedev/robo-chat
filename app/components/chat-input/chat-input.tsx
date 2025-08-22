@@ -67,8 +67,7 @@ export function ChatInput({
   const isOnlyWhitespace = (text: string) => !/[^\s]/.test(text)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   
-  // Show reasoning effort selector only for GPT-5 models
-  const isGPT5Model = selectedModel.startsWith('gpt-5')
+  // Always show reasoning effort selector
   const [localReasoningEffort, setLocalReasoningEffort] = useState<ReasoningEffort>('medium')
   const currentReasoningEffort = reasoningEffort || localReasoningEffort
   
@@ -219,13 +218,11 @@ export function ChatInput({
                   isAuthenticated={isUserAuthenticated}
                 />
               ) : null}
-              {isGPT5Model && (
-                <ReasoningEffortSelector
-                  value={currentReasoningEffort}
-                  onChange={handleReasoningEffortChange}
-                  className="h-9 rounded-full"
-                />
-              )}
+              <ReasoningEffortSelector
+                value={currentReasoningEffort}
+                onChange={handleReasoningEffortChange}
+                className="rounded-full"
+              />
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -237,30 +234,23 @@ export function ChatInput({
               >
                 <Mic className="size-4" />
               </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="size-9 rounded-full hover:bg-accent"
-                type="button"
-                aria-label="Audio waveform"
-              >
-                <AudioWaveform className="size-4" />
-              </Button>
               <PromptInputAction
-                tooltip={status === "streaming" ? "Stop" : "Send"}
+                tooltip={status === "streaming" ? "Stop" : value ? "Send" : "Audio"}
               >
                 <Button
                   size="sm"
                   className="size-9 rounded-full transition-all duration-300 ease-out"
-                  disabled={!value || isSubmitting || isOnlyWhitespace(value)}
+                  disabled={status !== "streaming" && value && (isSubmitting || isOnlyWhitespace(value))}
                   type="button"
                   onClick={handleSend}
-                  aria-label={status === "streaming" ? "Stop" : "Send message"}
+                  aria-label={status === "streaming" ? "Stop" : value ? "Send message" : "Audio input"}
                 >
                   {status === "streaming" ? (
                     <StopIcon className="size-4" />
-                  ) : (
+                  ) : value && !isOnlyWhitespace(value) ? (
                     <ArrowUpIcon className="size-4" />
+                  ) : (
+                    <AudioWaveform className="size-4" />
                   )}
                 </Button>
               </PromptInputAction>

@@ -65,21 +65,16 @@ export function ReasoningEffortSelector({
     >
       <SelectTrigger
         className={cn(
-          'w-[180px] h-9 bg-background border-border',
+          'w-9 h-9 bg-background border-border p-0 flex items-center justify-center',
           className
         )}
       >
         <SelectValue>
           {selectedOption && (
-            <div className="flex items-center gap-2">
-              <selectedOption.icon
-                className={cn('h-4 w-4', selectedOption.color)}
-                weight="duotone"
-              />
-              <span className="text-sm font-medium">
-                {selectedOption.label} Reasoning
-              </span>
-            </div>
+            <selectedOption.icon
+              className={cn('h-4 w-4', selectedOption.color)}
+              weight="duotone"
+            />
           )}
         </SelectValue>
       </SelectTrigger>
