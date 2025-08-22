@@ -27,6 +27,7 @@
     "@ai-sdk/perplexity": "^2.0.4",
     "@ai-sdk/react": "2.0.19",
     "@ai-sdk/xai": "^2.0.10",
+    "@anthropic-ai/sdk": "^0.60.0",
     "@langchain/core": "^0.3.72",
     "@openrouter/ai-sdk-provider": "1.1.2",
     "@phosphor-icons/react": "^2.1.10",
