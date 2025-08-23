@@ -1,0 +1,78 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications alt+T":
+      - list:
+        - listitem [ref=e3]:
+          - generic [ref=e7]:
+            - img [ref=e8]
+            - paragraph [ref=e11]: "{\"error\":\"Internal server error\"}"
+    - main [ref=e13]:
+      - generic:
+        - generic:
+          - generic:
+            - link "HGG Logo RoboRail Assistant" [ref=e14] [cursor=pointer]:
+              - /url: /
+              - img "HGG Logo" [ref=e15] [cursor=pointer]
+              - text: RoboRail Assistant
+            - generic [ref=e16]:
+              - button "Search" [ref=e17]:
+                - img [ref=e18]
+              - generic [ref=e20]:
+                - heading "Chat History" [level=2] [ref=e21]
+                - paragraph [ref=e22]: Search through your past conversations
+              - button "G" [ref=e23]:
+                - generic [ref=e25]: G
+      - generic [ref=e26]:
+        - log [ref=e28]:
+          - generic [ref=e30]:
+            - generic [ref=e31]:
+              - paragraph [ref=e33]: Test message that will fail
+              - generic [ref=e34]:
+                - button "Copy text" [ref=e35]:
+                  - img [ref=e36]
+                - button "Delete" [ref=e38]:
+                  - img [ref=e39]
+            - generic [ref=e41]:
+              - button:
+                - img
+        - generic [ref=e45]:
+          - textbox "Ask anything…" [ref=e46]
+          - generic [ref=e47]:
+            - generic [ref=e48]:
+              - button "Add files" [ref=e49]:
+                - img
+              - button "Select model" [ref=e51]:
+                - generic [ref=e53]: Select model
+                - img
+              - combobox [ref=e54]:
+                - generic:
+                  - generic:
+                    - img
+                    - generic: Medium
+                - img
+            - generic [ref=e55]:
+              - button "Voice input" [ref=e56]:
+                - img
+              - button "Audio input" [active] [ref=e57]:
+                - img
+        - button "Help" [ref=e61]:
+          - generic [ref=e62]: Help
+          - img [ref=e64]
+  - generic [ref=e70] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e71] [cursor=pointer]:
+      - img [ref=e72] [cursor=pointer]
+    - generic [ref=e75] [cursor=pointer]:
+      - button "Open issues overlay" [ref=e76] [cursor=pointer]:
+        - generic [ref=e77] [cursor=pointer]:
+          - generic [ref=e78] [cursor=pointer]: "1"
+          - generic [ref=e79] [cursor=pointer]: "2"
+        - generic [ref=e80] [cursor=pointer]:
+          - text: Issue
+          - generic [ref=e81] [cursor=pointer]: s
+      - button "Collapse issues badge" [ref=e82] [cursor=pointer]:
+        - img [ref=e83] [cursor=pointer]
+  - alert [ref=e85]
+```

@@ -6,7 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { ModelProvider } from '@/lib/model-store/provider';
 import { UserProvider } from '@/lib/user-store/provider';
 import { UserPreferencesProvider } from '@/lib/user-preference-store/provider';
-import { renderWithProviders, screen, mockUserProfile } from '@/tests/test-utils';
+import { renderWithProviders, screen, mockUserProfile, actAsync } from '@/tests/test-utils';
 
 function ChatInputHarness({ hasSuggestions }: { hasSuggestions: boolean }) {
   const [val, setVal] = useState('');
@@ -51,24 +51,31 @@ describe('ChatInput focus resilience with suggestions', () => {
     const textarea = screen.getByPlaceholderText(
       'Ask anything'
     ) as HTMLInputElement;
-    await user.type(textarea, 'h');
+    
+    await actAsync(async () => {
+      await user.type(textarea, 'h');
+    });
     expect(textarea.value).toBe('h');
 
-    // Simulate suggestions mounting
-    rerender(
-      <UserProvider initialUser={mockUserProfile}>
-        <ModelProvider>
-          <UserPreferencesProvider>
-            <TooltipProvider>
-              <ChatInputHarness hasSuggestions={true} />
-            </TooltipProvider>
-          </UserPreferencesProvider>
-        </ModelProvider>
-      </UserProvider>
-    );
+    // Simulate suggestions mounting with act wrapper
+    await actAsync(async () => {
+      rerender(
+        <UserProvider initialUser={mockUserProfile}>
+          <ModelProvider>
+            <UserPreferencesProvider>
+              <TooltipProvider>
+                <ChatInputHarness hasSuggestions={true} />
+              </TooltipProvider>
+            </UserPreferencesProvider>
+          </ModelProvider>
+        </UserProvider>
+      );
+    });
 
     // Should still be able to type
-    await user.type(textarea, 'i');
+    await actAsync(async () => {
+      await user.type(textarea, 'i');
+    });
     expect(textarea.value).toBe('hi');
   });
 });

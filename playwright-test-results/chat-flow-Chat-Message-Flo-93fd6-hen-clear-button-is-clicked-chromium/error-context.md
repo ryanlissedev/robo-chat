@@ -1,0 +1,62 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications alt+T"
+    - main [ref=e4]:
+      - generic:
+        - generic:
+          - generic:
+            - link "HGG Logo RoboRail Assistant" [ref=e5] [cursor=pointer]:
+              - /url: /
+              - img "HGG Logo" [ref=e6] [cursor=pointer]
+              - text: RoboRail Assistant
+            - generic [ref=e7]:
+              - button "Search" [ref=e8]:
+                - img [ref=e9]
+              - generic [ref=e11]:
+                - heading "Chat History" [level=2] [ref=e12]
+                - paragraph [ref=e13]: Search through your past conversations
+              - button "G" [ref=e14]:
+                - generic [ref=e16]: G
+      - generic [ref=e17]:
+        - log [ref=e19]:
+          - generic [ref=e21]:
+            - generic [ref=e22]:
+              - paragraph [ref=e24]: Test message
+              - generic [ref=e25]:
+                - button "Copy text" [ref=e26]:
+                  - img [ref=e27]
+                - button "Delete" [ref=e29]:
+                  - img [ref=e30]
+            - generic [ref=e37]:
+              - button:
+                - img
+        - generic [ref=e41]:
+          - textbox "Ask anything…" [ref=e42]
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - button "Add files" [ref=e45]:
+                - img
+              - button "Select model" [ref=e47]:
+                - generic [ref=e49]: Select model
+                - img
+              - combobox [ref=e50]:
+                - generic:
+                  - generic:
+                    - img
+                    - generic: Medium
+                - img
+            - generic [ref=e51]:
+              - button "Voice input" [ref=e52]:
+                - img
+              - button "Audio input" [active] [ref=e53]:
+                - img
+        - button "Help" [ref=e57]:
+          - generic [ref=e58]: Help
+          - img [ref=e60]
+  - button "Open Next.js Dev Tools" [ref=e67] [cursor=pointer]:
+    - img [ref=e68] [cursor=pointer]
+  - alert [ref=e71]
+```

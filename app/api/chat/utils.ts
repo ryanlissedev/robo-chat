@@ -1,4 +1,4 @@
-import { UIMessage as MessageAISDK } from "ai"
+import { UIMessage as MessageAISDK } from "@ai-sdk/react"
 
 /**
  * Clean messages when switching between agents with different tool capabilities.
@@ -30,9 +30,7 @@ export function cleanMessagesForTools(
         }
 
         if (Array.isArray((message as any).content)) {
-          const filteredContent = (
-            (message as any).content as Array<{ type?: string; text?: string }>
-          ).filter((part: { type?: string }) => {
+          const filteredContent = ((message as any).content as Array<any>).filter((part: any) => {
             if (part && typeof part === "object" && part.type) {
               // Remove tool-call, tool-result, and tool-invocation parts
               const isToolPart =
@@ -46,14 +44,13 @@ export function cleanMessagesForTools(
 
           // Extract text content
           const textParts = filteredContent.filter(
-            (part: { type?: string }) =>
-              part && typeof part === "object" && part.type === "text"
+            (part: any) => part && typeof part === "object" && part.type === "text"
           )
 
           if (textParts.length > 0) {
             // Combine text parts into a single string
             const textContent = textParts
-              .map((part: { text?: string }) => part.text || "")
+              .map((part: any) => part.text || "")
               .join("\n")
               .trim()
             cleanedMessage.content = textContent || "[Assistant response]"
@@ -80,9 +77,7 @@ export function cleanMessagesForTools(
 
       // For user messages, clean any tool-related content from array content
       if (message.role === "user" && Array.isArray((message as any).content)) {
-        const filteredContent = (
-          (message as any).content as Array<{ type?: string }>
-        ).filter((part: { type?: string }) => {
+        const filteredContent = ((message as any).content as Array<any>).filter((part: any) => {
           if (part && typeof part === "object" && part.type) {
             const isToolPart =
               part.type === "tool-call" ||
@@ -93,9 +88,7 @@ export function cleanMessagesForTools(
           return true
         })
 
-        if (
-          filteredContent.length !== ((message as any).content as Array<unknown>).length
-        ) {
+        if (filteredContent.length !== ((message as any).content as Array<any>).length) {
           return {
             ...message,
             content:

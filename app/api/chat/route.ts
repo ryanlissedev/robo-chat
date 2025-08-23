@@ -5,8 +5,10 @@ import { getProviderForModel } from "@/lib/openproviders/provider-map"
 import type { ProviderWithoutOllama } from "@/lib/user-keys"
 import type { LanguageModelUsage } from 'ai'
 import { streamText, convertToModelMessages } from "ai"
-import type { UIMessage as MessageAISDK, ToolSet } from "ai"
+import type { ToolSet } from "ai"
+import type { UIMessage } from "@ai-sdk/react"
 import { fileSearchTool } from "@/lib/tools/file-search"
+import { roborailKnowledgeTool } from "@/lib/tools/roborail-knowledge"
 import {
   isLangSmithEnabled,
   createRun,
@@ -37,7 +39,7 @@ type ResponseWithUsage = {
 }
 
 type ChatRequest = {
-  messages: MessageAISDK[]
+  messages: UIMessage[]
   chatId: string
   userId: string
   model: string
@@ -88,16 +90,21 @@ export async function POST(req: Request) {
     const userMessage = messages[messages.length - 1]
 
     if (supabase && userMessage?.role === "user") {
-      // Extract text content - v5 UIMessage has content as string
-      const textContent = (userMessage as any).content || ''
-      const attachments = (userMessage as any).attachments || []
+      // Extract text content from parts array in v5 UIMessage
+      const textContent = userMessage.parts
+        ?.filter(part => part.type === 'text')
+        .map(part => (part as { text: string }).text)
+        .join(' ') || ''
+      const attachments = userMessage.parts
+        ?.filter(part => part.type === 'file')
+        .map(part => part as any) || []
       
       await logUserMessage({
         supabase,
         userId,
         chatId,
         content: textContent,
-        attachments: attachments as any[],
+        attachments,
         model: resolvedModel,
         isAuthenticated,
         message_group_id,
@@ -147,7 +154,10 @@ export async function POST(req: Request) {
         name: 'chat-completion',
         inputs: {
           model: resolvedModel,
-          messages: messages.map((m: MessageAISDK) => ({ role: m.role, content: (m as any).content || '' })),
+          messages: messages.map((m: UIMessage) => ({
+            role: m.role,
+            content: m.parts?.filter(p => p.type === 'text').map(p => (p as { text: string }).text).join(' ') || ''
+          })),
           reasoningEffort,
           enableSearch,
         },
@@ -165,7 +175,10 @@ export async function POST(req: Request) {
 
     // Configure tools based on file search enablement
     const tools: ToolSet = enableSearch && isGPT5Model 
-      ? { fileSearch: fileSearchTool } 
+      ? { 
+          fileSearch: fileSearchTool,
+          roborailKnowledge: roborailKnowledgeTool
+        } 
       : ({} as ToolSet)
 
     // Configure model settings with reasoning effort
@@ -180,101 +193,13 @@ export async function POST(req: Request) {
     }
 
     // Convert UIMessages to ModelMessages for v5
-    // v5 expects messages with 'parts' array, not 'content' string
-    // Transform messages to the expected format
-    const messagesArray = Array.isArray(messages) ? messages : []
-    
-    const transformedMessages = messagesArray.map((msg: any) => {
-      // Ensure msg has proper structure
-      if (!msg || typeof msg !== 'object') {
-        console.warn('Invalid message format:', msg)
-        return {
-          role: 'user',
-          parts: [{ type: 'text', text: String(msg || '[Invalid message]') }]
-        }
-      }
-      
-      // If message already has parts array, use it as-is
-      if (msg.parts && Array.isArray(msg.parts)) {
-        return msg
-      }
-      
-      // Convert content to parts array format for v5
-      let parts: any[] = []
-      
-      // Handle string content
-      if (typeof msg.content === 'string') {
-        parts = [{ type: 'text', text: msg.content }]
-      }
-      // Handle array content (tool messages, etc.)
-      else if (Array.isArray(msg.content)) {
-        // Convert content array to parts
-        parts = msg.content.map((part: any) => {
-          if (typeof part === 'string') {
-            return { type: 'text', text: part }
-          } else if (part && typeof part === 'object') {
-            // Already structured part
-            return part
-          }
-          return { type: 'text', text: String(part || '') }
-        })
-      }
-      // Handle object content
-      else if (typeof msg.content === 'object' && msg.content !== null) {
-        const textContent = (msg.content as any).text || (msg.content as any).content || ''
-        parts = [{ type: 'text', text: String(textContent) }]
-      }
-      // Fallback
-      else {
-        parts = [{ 
-          type: 'text', 
-          text: String(msg.content || (msg.role === 'assistant' ? '[Assistant response]' : '[User message]'))
-        }]
-      }
-      
-      // Return message in v5 format with parts array
-      return {
-        role: msg.role || 'user',
-        parts,
-        ...(msg.id && { id: msg.id })
-      }
-    })
-    
-    // Add null check for transformedMessages
-    if (!transformedMessages || !Array.isArray(transformedMessages)) {
-      console.error('transformedMessages is not an array:', transformedMessages)
-      return new Response(
-        JSON.stringify({ error: "Failed to transform messages" }),
-        { status: 500 }
-      )
-    }
-    
-    // Ensure all messages have valid parts before conversion
-    const validatedMessages = transformedMessages.filter((msg: any) => 
-      msg && msg.role && msg.parts && Array.isArray(msg.parts) && msg.parts.length > 0
-    )
-    
-    if (validatedMessages.length === 0) {
-      console.error('No valid messages after filtering:', { original: messages, transformed: transformedMessages })
-      return new Response(
-        JSON.stringify({ error: "No valid messages to process" }),
-        { status: 400 }
-      )
-    }
-    
-    // Log before conversion
-    console.log('Before convertToModelMessages:', {
-      validatedMessages: JSON.stringify(validatedMessages),
-      isArray: Array.isArray(validatedMessages),
-      length: validatedMessages.length
-    })
-    
-    let modelMessages;
+    // UIMessage already has the correct content format
+    let modelMessages: ReturnType<typeof convertToModelMessages>;
     try {
-      modelMessages = convertToModelMessages(validatedMessages)
+      modelMessages = convertToModelMessages(messages)
     } catch (conversionError) {
       console.error('Error in convertToModelMessages:', conversionError)
-      console.error('validatedMessages that caused error:', validatedMessages)
+      console.error('messages that caused error:', messages)
       return new Response(
         JSON.stringify({ error: "Failed to convert messages to model format" }),
         { status: 500 }

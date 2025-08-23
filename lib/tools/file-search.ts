@@ -62,7 +62,7 @@ export const fileSearchTool = tool({
       enable_reranking = true,
       reranking_method = 'semantic',
     },
-    context: { apiKey?: string }
+    context
   ) => {
     try {
       const apiKey: string | undefined = context?.apiKey;

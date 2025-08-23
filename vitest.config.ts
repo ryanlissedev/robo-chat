@@ -1,9 +1,14 @@
 import path from 'node:path';
+import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  plugins: [],
-  css: {},
+  plugins: [react()],
+  css: {
+    modules: {
+      classNameStrategy: 'non-scoped'
+    }
+  },
   test: {
     globals: true,
     environment: 'happy-dom',
@@ -73,6 +78,8 @@ export default defineConfig({
       // Do NOT alias bare 'ai' here to avoid breaking non-react imports.
     },
   },
+  // Handle CSS and static assets in tests
+  assetsInclude: ['**/*.css', '**/*.scss', '**/*.sass', '**/*.less'],
   define: {
     // Define environment variables for tests
     'process.env.NODE_ENV': '"test"',

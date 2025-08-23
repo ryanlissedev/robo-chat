@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     const timestamp = new Date().toISOString()
 
     // Backup the old key (store in audit log with encrypted value)
-    await logSecurityEvent(supabase, user.id, 'key_rotation_backup', {
+    await logSecurityEvent(supabase as any, user.id, 'key_rotation_backup', {
       provider,
       old_encrypted: currentKey.encrypted_key,
       old_iv: currentKey.iv,
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
       // Try to restore if update fails
       console.error('Failed to rotate API key:', updateError)
       
-      await logSecurityEvent(supabase, user.id, 'key_rotation_failed', {
+      await logSecurityEvent(supabase as any, user.id, 'key_rotation_failed', {
         provider,
         error: updateError.message
       })
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Log successful rotation
-    await logSecurityEvent(supabase, user.id, 'key_rotated', {
+    await logSecurityEvent(supabase as any, user.id, 'key_rotated', {
       provider,
       masked_key: masked,
       auto_generated: autoGenerate
@@ -202,12 +202,12 @@ export async function GET(req: NextRequest) {
       .eq('user_id', user.id)
       .single()
 
-    const rotationConfig = securitySettings?.config || {}
+    const rotationConfig = securitySettings?.config as any || {}
     const requireRotation = rotationConfig.requireApiKeyRotation ?? false
     const rotationDays = rotationConfig.rotationDays ?? 90
 
     // Calculate if rotation is needed
-    const lastRotated = new Date(keyData.last_rotated || keyData.created_at)
+    const lastRotated = new Date(keyData.last_rotated || keyData.created_at || Date.now())
     const daysSinceRotation = Math.floor(
       (Date.now() - lastRotated.getTime()) / (1000 * 60 * 60 * 24)
     )

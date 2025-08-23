@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       apiKey = decryptApiKey(
         keyData.encrypted_key,
         keyData.iv,
-        keyData.auth_tag,
+        keyData.auth_tag || '',
         user.id
       )
     } catch (decryptError) {
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
     }
 
     // Test the API key based on provider
-    let testResult = { success: false, error: 'Unknown provider' }
+    let testResult: { success: boolean; error: string | null } = { success: false, error: 'Unknown provider' }
 
     switch (provider) {
       case 'openai':

@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     const body = await req.json()
     const { messageId, feedback, comment, runId, userId } = body
 
-    if (!messageId || !feedback) {
+    if (!messageId || (feedback === undefined)) {
       return NextResponse.json(
         { error: 'Message ID and feedback are required' },
         { status: 400 }
@@ -47,8 +47,8 @@ export async function POST(req: Request) {
         message_id: messageId,
         user_id: user.id,
         feedback,
-        comment,
-        langsmith_run_id: runId,
+        comment: comment || null,
+        langsmith_run_id: runId || null,
       }, {
         onConflict: 'message_id,user_id',
       })

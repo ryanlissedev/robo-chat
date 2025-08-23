@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { type RenderOptions, render } from '@testing-library/react';
+import { type RenderOptions, render, act } from '@testing-library/react';
 import type React from 'react';
 import type { ReactElement } from 'react';
 import { expect, vi } from 'vitest';
@@ -94,9 +94,17 @@ export function renderWithProviders(
     );
   }
 
+  const result = render(ui, { wrapper: Wrapper, ...renderOptions });
+  
   return {
-    ...render(ui, { wrapper: Wrapper, ...renderOptions }),
+    ...result,
     queryClient,
+    // Add helper method for re-rendering with act()
+    rerenderWithAct: (newUi: ReactElement) => {
+      return act(() => {
+        result.rerender(newUi);
+      });
+    },
   };
 }
 
@@ -165,19 +173,37 @@ export function mockApiEndpoints() {
 
 // Test helpers for async operations
 export function waitForNextTick() {
-  return new Promise((resolve) => setTimeout(resolve, 0));
+  return act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 }
 
 export async function waitForQueryToSettle(queryClient: QueryClient) {
-  await queryClient
-    .getQueryCache()
-    .findAll()
-    .forEach((query) => {
-      if (query.state.fetchStatus !== 'idle') {
-        query.cancel();
-      }
-    });
-  await waitForNextTick();
+  await act(async () => {
+    await queryClient
+      .getQueryCache()
+      .findAll()
+      .forEach((query) => {
+        if (query.state.fetchStatus !== 'idle') {
+          query.cancel();
+        }
+      });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+}
+
+// Helper to wrap async operations in act()
+export async function actAsync(fn: () => Promise<void> | void) {
+  await act(async () => {
+    await fn();
+  });
+}
+
+// Helper for handling user interactions with proper act() wrapping
+export async function userInteraction(fn: () => Promise<void>) {
+  await act(async () => {
+    await fn();
+  });
 }
 
 // Mock file for file upload tests
@@ -187,7 +213,7 @@ export function createMockFile(
   type = 'text/plain'
 ): File {
   const blob = new Blob([content], { type });
-  return new File([blob], name, { type });
+  return new File([blob], name, { type, lastModified: Date.now() });
 }
 
 // Mock URL.createObjectURL
@@ -202,17 +228,8 @@ export function mockObjectURL() {
 }
 
 // Custom matchers for testing
-export const customMatchers = {
-  // Cast to any to avoid TypeScript issues with jest-dom matcher typings
-  toBeInTheDocument: (expect as any).toBeInTheDocument,
-  toHaveClass: (expect as any).toHaveClass,
-  toHaveTextContent: (expect as any).toHaveTextContent,
-  toBeVisible: (expect as any).toBeVisible,
-  toBeDisabled: (expect as any).toBeDisabled,
-  toBeEnabled: (expect as any).toBeEnabled,
-  toHaveAttribute: (expect as any).toHaveAttribute,
-  toHaveValue: (expect as any).toHaveValue,
-};
+// Custom matchers are automatically available via jest-dom setup
+// No need to re-export them
 
 // Re-export everything from testing library
 export * from '@testing-library/react';

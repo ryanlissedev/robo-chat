@@ -126,9 +126,9 @@ export const roborailKnowledgeTool = tool({
       'general'
     ]).describe('Type of information requested'),
     specific_query: z.string().describe('Specific question or error code'),
-    safety_level: z.enum(['basic', 'detailed']).optional().default('basic').describe('Level of safety information detail'),
+    safety_level: z.enum(['basic', 'detailed']).optional().describe('Level of safety information detail'),
   }),
-  execute: async ({ query_type, specific_query, safety_level }) => {
+  execute: async ({ query_type, specific_query, safety_level = 'basic' }) => {
     try {
       const query = specific_query.toLowerCase();
       let response: Record<string, unknown> = {};
