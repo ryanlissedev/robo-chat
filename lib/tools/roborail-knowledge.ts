@@ -4,11 +4,11 @@ import { z } from 'zod';
 // RoboRail-specific knowledge base and technical information
 const ROBORAIL_KNOWLEDGE_BASE = {
   errorCodes: {
-    'E001': 'Emergency stop activated. Check all safety systems and clear any obstructions before resetting.',
-    'E002': 'Hydraulic pressure too low. Check hydraulic fluid levels and pump operation.',
-    'E003': 'Cutting torch ignition failure. Check gas supply and torch tip condition.',
-    'E004': 'Rail position sensor error. Verify sensor connections and calibration.',
-    'E005': 'Temperature overload. Allow system to cool before resuming operation.',
+    E001: 'Emergency stop activated. Check all safety systems and clear any obstructions before resetting.',
+    E002: 'Hydraulic pressure too low. Check hydraulic fluid levels and pump operation.',
+    E003: 'Cutting torch ignition failure. Check gas supply and torch tip condition.',
+    E004: 'Rail position sensor error. Verify sensor connections and calibration.',
+    E005: 'Temperature overload. Allow system to cool before resuming operation.',
   },
   safetyProtocols: {
     preOperation: [
@@ -114,19 +114,26 @@ const ROBORAIL_KNOWLEDGE_BASE = {
 };
 
 export const roborailKnowledgeTool = tool({
-  description: 'Access RoboRail-specific technical knowledge, error codes, safety protocols, and troubleshooting information',
+  description:
+    'Access RoboRail-specific technical knowledge, error codes, safety protocols, and troubleshooting information',
   inputSchema: z.object({
-    query_type: z.enum([
-      'error_code',
-      'safety_protocol',
-      'specification',
-      'maintenance',
-      'troubleshooting',
-      'contact_info',
-      'general'
-    ]).describe('Type of information requested'),
+    query_type: z
+      .enum([
+        'error_code',
+        'safety_protocol',
+        'specification',
+        'maintenance',
+        'troubleshooting',
+        'contact_info',
+        'general',
+      ])
+      .describe('Type of information requested'),
     specific_query: z.string().describe('Specific question or error code'),
-    safety_level: z.enum(['basic', 'detailed']).optional().default('basic').describe('Level of safety information detail'),
+    safety_level: z
+      .enum(['basic', 'detailed'])
+      .optional()
+      .default('basic')
+      .describe('Level of safety information detail'),
   }),
   execute: async ({ query_type, specific_query, safety_level }) => {
     try {
@@ -134,97 +141,122 @@ export const roborailKnowledgeTool = tool({
       let response: Record<string, unknown> = {};
 
       switch (query_type) {
-        case 'error_code':
+        case 'error_code': {
           const errorCode = query.match(/[eE]\d{3}/)?.[0]?.toUpperCase();
-          if (errorCode && ROBORAIL_KNOWLEDGE_BASE.errorCodes[errorCode as keyof typeof ROBORAIL_KNOWLEDGE_BASE.errorCodes]) {
+          if (
+            errorCode &&
+            ROBORAIL_KNOWLEDGE_BASE.errorCodes[
+              errorCode as keyof typeof ROBORAIL_KNOWLEDGE_BASE.errorCodes
+            ]
+          ) {
             response = {
               error_code: errorCode,
-              description: ROBORAIL_KNOWLEDGE_BASE.errorCodes[errorCode as keyof typeof ROBORAIL_KNOWLEDGE_BASE.errorCodes],
-              safety_note: "⚠️ Always follow safety protocols when addressing error conditions.",
+              description:
+                ROBORAIL_KNOWLEDGE_BASE.errorCodes[
+                  errorCode as keyof typeof ROBORAIL_KNOWLEDGE_BASE.errorCodes
+                ],
+              safety_note:
+                '⚠️ Always follow safety protocols when addressing error conditions.',
               next_steps: [
-                "Review the error description carefully",
-                "Ensure machine is in safe state before troubleshooting",
-                "Contact HGG support if error persists"
-              ]
+                'Review the error description carefully',
+                'Ensure machine is in safe state before troubleshooting',
+                'Contact HGG support if error persists',
+              ],
             };
           } else {
             response = {
-              message: "Error code not found in knowledge base",
+              message: 'Error code not found in knowledge base',
               available_codes: Object.keys(ROBORAIL_KNOWLEDGE_BASE.errorCodes),
-              recommendation: "Please verify the error code or contact HGG support"
+              recommendation:
+                'Please verify the error code or contact HGG support',
             };
           }
           break;
+        }
 
-        case 'safety_protocol':
+        case 'safety_protocol': {
           const safetyInfo = ROBORAIL_KNOWLEDGE_BASE.safetyProtocols;
           response = {
             safety_protocols: safetyInfo,
-            critical_warning: "⚠️ SAFETY FIRST: Never operate the RoboRail without following all safety protocols",
-            ppe_requirements: "Safety glasses, steel-toed boots, heat-resistant gloves, flame-resistant clothing",
-            emergency_contact: ROBORAIL_KNOWLEDGE_BASE.contacts.emergency
+            critical_warning:
+              '⚠️ SAFETY FIRST: Never operate the RoboRail without following all safety protocols',
+            ppe_requirements:
+              'Safety glasses, steel-toed boots, heat-resistant gloves, flame-resistant clothing',
+            emergency_contact: ROBORAIL_KNOWLEDGE_BASE.contacts.emergency,
           };
           break;
+        }
 
         case 'specification':
           response = {
             specifications: ROBORAIL_KNOWLEDGE_BASE.specifications,
-            note: "Specifications may vary by model. Consult your specific manual for exact values."
+            note: 'Specifications may vary by model. Consult your specific manual for exact values.',
           };
           break;
 
         case 'maintenance':
           response = {
             maintenance_schedule: ROBORAIL_KNOWLEDGE_BASE.maintenance,
-            important_note: "⚠️ Regular maintenance is critical for safe operation and optimal performance",
-            recommendation: "Keep a maintenance log and follow the schedule strictly"
+            important_note:
+              '⚠️ Regular maintenance is critical for safe operation and optimal performance',
+            recommendation:
+              'Keep a maintenance log and follow the schedule strictly',
           };
           break;
 
-        case 'troubleshooting':
+        case 'troubleshooting': {
           let troubleshootingInfo = null;
           if (query.includes('cut') || query.includes('quality')) {
-            troubleshootingInfo = ROBORAIL_KNOWLEDGE_BASE.troubleshooting.poorCutQuality;
+            troubleshootingInfo =
+              ROBORAIL_KNOWLEDGE_BASE.troubleshooting.poorCutQuality;
           } else if (query.includes('stop') || query.includes('halt')) {
-            troubleshootingInfo = ROBORAIL_KNOWLEDGE_BASE.troubleshooting.machineStops;
+            troubleshootingInfo =
+              ROBORAIL_KNOWLEDGE_BASE.troubleshooting.machineStops;
           }
-          
-          response = troubleshootingInfo ? {
-            issue: query,
-            troubleshooting: troubleshootingInfo,
-            safety_reminder: "⚠️ Always ensure machine is in safe state before troubleshooting",
-            escalation: "If issue persists, contact HGG support immediately"
-          } : {
-            message: "Specific troubleshooting information not found",
-            general_steps: [
-              "Check error display for codes",
-              "Review recent operational changes",
-              "Verify all safety systems",
-              "Consult operation manual",
-              "Contact HGG support if needed"
-            ]
-          };
+
+          response = troubleshootingInfo
+            ? {
+                issue: query,
+                troubleshooting: troubleshootingInfo,
+                safety_reminder:
+                  '⚠️ Always ensure machine is in safe state before troubleshooting',
+                escalation:
+                  'If issue persists, contact HGG support immediately',
+              }
+            : {
+                message: 'Specific troubleshooting information not found',
+                general_steps: [
+                  'Check error display for codes',
+                  'Review recent operational changes',
+                  'Verify all safety systems',
+                  'Consult operation manual',
+                  'Contact HGG support if needed',
+                ],
+              };
           break;
+        }
 
         case 'contact_info':
           response = {
             support_contacts: ROBORAIL_KNOWLEDGE_BASE.contacts,
-            recommendation: "For technical issues, have your machine serial number and error codes ready when calling"
+            recommendation:
+              'For technical issues, have your machine serial number and error codes ready when calling',
           };
           break;
 
         default:
           response = {
-            message: "General RoboRail information available",
+            message: 'General RoboRail information available',
             available_topics: [
-              "Error codes (E001-E005)",
-              "Safety protocols",
-              "Technical specifications", 
-              "Maintenance schedules",
-              "Troubleshooting guides",
-              "Contact information"
+              'Error codes (E001-E005)',
+              'Safety protocols',
+              'Technical specifications',
+              'Maintenance schedules',
+              'Troubleshooting guides',
+              'Contact information',
             ],
-            suggestion: "Please specify what type of information you need about the RoboRail"
+            suggestion:
+              'Please specify what type of information you need about the RoboRail',
           };
       }
 
@@ -234,19 +266,22 @@ export const roborailKnowledgeTool = tool({
         specific_query,
         safety_level,
         data: response,
-        safety_notice: safety_level === 'detailed' ? 
-          "⚠️ CRITICAL: Always prioritize safety. If uncertain about any procedure, stop and contact HGG support." :
-          "⚠️ Follow all safety protocols",
-        support_info: ROBORAIL_KNOWLEDGE_BASE.contacts.support
+        safety_notice:
+          safety_level === 'detailed'
+            ? '⚠️ CRITICAL: Always prioritize safety. If uncertain about any procedure, stop and contact HGG support.'
+            : '⚠️ Follow all safety protocols',
+        support_info: ROBORAIL_KNOWLEDGE_BASE.contacts.support,
       };
-
     } catch (error) {
       return {
         success: false,
         query_type,
         specific_query,
-        error: error instanceof Error ? error.message : 'Failed to access RoboRail knowledge base',
-        fallback: "Contact HGG support for immediate assistance"
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to access RoboRail knowledge base',
+        fallback: 'Contact HGG support for immediate assistance',
       };
     }
   },
@@ -255,18 +290,29 @@ export const roborailKnowledgeTool = tool({
 // Enhanced error code lookup function
 export function lookupErrorCode(code: string): string | null {
   const normalizedCode = code.toUpperCase().match(/E\d{3}/)?.[0];
-  if (normalizedCode && ROBORAIL_KNOWLEDGE_BASE.errorCodes[normalizedCode as keyof typeof ROBORAIL_KNOWLEDGE_BASE.errorCodes]) {
-    return ROBORAIL_KNOWLEDGE_BASE.errorCodes[normalizedCode as keyof typeof ROBORAIL_KNOWLEDGE_BASE.errorCodes];
+  if (
+    normalizedCode &&
+    ROBORAIL_KNOWLEDGE_BASE.errorCodes[
+      normalizedCode as keyof typeof ROBORAIL_KNOWLEDGE_BASE.errorCodes
+    ]
+  ) {
+    return ROBORAIL_KNOWLEDGE_BASE.errorCodes[
+      normalizedCode as keyof typeof ROBORAIL_KNOWLEDGE_BASE.errorCodes
+    ];
   }
   return null;
 }
 
 // Safety protocol checker
-export function getSafetyProtocols(phase: 'preOperation' | 'operation' | 'postOperation'): string[] {
+export function getSafetyProtocols(
+  phase: 'preOperation' | 'operation' | 'postOperation'
+): string[] {
   return ROBORAIL_KNOWLEDGE_BASE.safetyProtocols[phase] || [];
 }
 
 // Quick specification lookup
-export function getSpecification(spec: keyof typeof ROBORAIL_KNOWLEDGE_BASE.specifications): string | undefined {
+export function getSpecification(
+  spec: keyof typeof ROBORAIL_KNOWLEDGE_BASE.specifications
+): string | undefined {
   return ROBORAIL_KNOWLEDGE_BASE.specifications[spec];
 }

@@ -26,7 +26,7 @@ const openaiModels: ModelConfig[] = [
     apiDocs: 'https://platform.openai.com/docs/models/gpt-5',
     modelPage: 'https://platform.openai.com/docs/models/gpt-5-nano',
     icon: 'openai',
-    apiSdk: (apiKey, settings) =>
+    apiSdk: (apiKey?: string, settings?: any) =>
       openproviders(
         'gpt-5-nano',
         settings as OpenProvidersOptions<'gpt-5-nano'>,
@@ -55,7 +55,7 @@ const openaiModels: ModelConfig[] = [
     apiDocs: 'https://platform.openai.com/docs/models/gpt-5',
     modelPage: 'https://platform.openai.com/docs/models/gpt-5-mini',
     icon: 'openai',
-    apiSdk: (apiKey, settings) =>
+    apiSdk: (apiKey?: string, settings?: any) =>
       openproviders(
         'gpt-5-mini',
         settings as OpenProvidersOptions<'gpt-5-mini'>,
@@ -69,7 +69,8 @@ const openaiModels: ModelConfig[] = [
     providerId: 'openai',
     modelFamily: 'GPT-5',
     baseProviderId: 'openai',
-    description: 'Standard GPT-5 model with balanced performance and file search',
+    description:
+      'Standard GPT-5 model with balanced performance and file search',
     tags: ['balanced', 'file-search', 'reasoning'],
     contextWindow: 2_097_152,
     inputCost: 2.5,
@@ -84,7 +85,7 @@ const openaiModels: ModelConfig[] = [
     apiDocs: 'https://platform.openai.com/docs/models/gpt-5',
     modelPage: 'https://platform.openai.com/docs/models/gpt-5',
     icon: 'openai',
-    apiSdk: (apiKey, settings) =>
+    apiSdk: (apiKey?: string, settings?: any) =>
       openproviders('gpt-5', settings as OpenProvidersOptions<'gpt-5'>, apiKey),
   },
   // Legacy GPT-4 models for compatibility
@@ -110,7 +111,7 @@ const openaiModels: ModelConfig[] = [
     apiDocs: 'https://platform.openai.com/docs/models/gpt-4o-mini',
     modelPage: 'https://platform.openai.com/docs/models/gpt-4o-mini',
     icon: 'openai',
-    apiSdk: (apiKey, settings) =>
+    apiSdk: (apiKey?: string, settings?: any) =>
       openproviders(
         'gpt-4o-mini',
         settings as OpenProvidersOptions<'gpt-4o-mini'>,
@@ -139,8 +140,12 @@ const openaiModels: ModelConfig[] = [
     apiDocs: 'https://platform.openai.com/docs/models/gpt-4o',
     modelPage: 'https://platform.openai.com/docs/models/gpt-4o',
     icon: 'openai',
-    apiSdk: (apiKey, settings) =>
-      openproviders('gpt-4o', settings as OpenProvidersOptions<'gpt-4o'>, apiKey),
+    apiSdk: (apiKey?: string, settings?: any) =>
+      openproviders(
+        'gpt-4o',
+        settings as OpenProvidersOptions<'gpt-4o'>,
+        apiKey
+      ),
   },
 ];
 

@@ -137,7 +137,7 @@ describe('API Routes', () => {
             }),
           },
           from: vi.fn().mockReturnValue({
-            insert: vi.fn().mockResolvedValue({
+            upsert: vi.fn().mockResolvedValue({
               error: new Error('Database error'),
             }),
           }),
@@ -169,7 +169,7 @@ describe('API Routes', () => {
             }),
           },
           from: vi.fn().mockReturnValue({
-            insert: vi.fn().mockResolvedValue({
+            upsert: vi.fn().mockResolvedValue({
               error: null,
             }),
           }),
@@ -206,7 +206,7 @@ describe('API Routes', () => {
             }),
           },
           from: vi.fn().mockReturnValue({
-            insert: vi.fn().mockResolvedValue({
+            upsert: vi.fn().mockResolvedValue({
               error: null,
             }),
           }),
@@ -262,7 +262,7 @@ describe('API Routes', () => {
             }),
           },
           from: vi.fn().mockReturnValue({
-            insert: vi.fn().mockResolvedValue({
+            upsert: vi.fn().mockResolvedValue({
               error: null,
             }),
           }),
@@ -427,7 +427,7 @@ describe('API Routes', () => {
 
   describe('/api/user-key-status', () => {
     describe('GET', () => {
-      it('should return all providers as false when Supabase is not configured', async () => {
+      it('should return 500 when Supabase is not configured', async () => {
         const { createClient } = await import('@/lib/supabase/server');
 
         vi.mocked(createClient).mockResolvedValue(null);
@@ -435,14 +435,11 @@ describe('API Routes', () => {
         const response = await userKeyStatusGET();
         const json = await response.json();
 
-        expect(response.status).toBe(200);
-        expect(json).toEqual({
-          openai: false,
-          anthropic: false,
-        });
+        expect(response.status).toBe(500);
+        expect(json.error).toBe('Supabase not available');
       });
 
-      it('should return all providers as false when user is not authenticated', async () => {
+      it('should return 401 when user is not authenticated', async () => {
         const { createClient } = await import('@/lib/supabase/server');
 
         const mockSupabase = {
@@ -458,11 +455,8 @@ describe('API Routes', () => {
         const response = await userKeyStatusGET();
         const json = await response.json();
 
-        expect(response.status).toBe(200);
-        expect(json).toEqual({
-          openai: false,
-          anthropic: false,
-        });
+        expect(response.status).toBe(401);
+        expect(json.error).toBe('Unauthorized');
       });
 
       it('should return provider status based on user keys', async () => {
@@ -541,21 +535,18 @@ describe('API Routes', () => {
 
   describe('/api/user-preferences/favorite-models', () => {
     describe('GET', () => {
-      it('should return empty favorites when Supabase is not configured', async () => {
+      it('should return 500 when Supabase is not configured', async () => {
         const { createClient } = await import('@/lib/supabase/server');
         vi.mocked(createClient).mockResolvedValue(null);
 
         const response = await favoriteModelsGet();
         const json = await response.json();
 
-        expect(response.status).toBe(200);
-        expect(json).toEqual({
-          favorite_models: [],
-          message: 'Database not configured - using default models',
-        });
+        expect(response.status).toBe(500);
+        expect(json.error).toBe('Database connection failed');
       });
 
-      it('should return empty favorites when user is not authenticated', async () => {
+      it('should return 401 when user is not authenticated', async () => {
         const { createClient } = await import('@/lib/supabase/server');
         const mockSupabase = {
           auth: {
@@ -570,11 +561,8 @@ describe('API Routes', () => {
         const response = await favoriteModelsGet();
         const json = await response.json();
 
-        expect(response.status).toBe(200);
-        expect(json).toEqual({
-          favorite_models: [],
-          message: 'User not authenticated - using default models',
-        });
+        expect(response.status).toBe(401);
+        expect(json.error).toBe('Unauthorized');
       });
 
       it('should return user favorite models', async () => {
@@ -639,7 +627,7 @@ describe('API Routes', () => {
     });
 
     describe('POST', () => {
-      it('should return empty favorites when Supabase is not configured', async () => {
+      it('should return 500 when Supabase is not configured', async () => {
         const { createClient } = await import('@/lib/supabase/server');
         vi.mocked(createClient).mockResolvedValue(null);
 
@@ -652,12 +640,8 @@ describe('API Routes', () => {
         const response = await favoriteModelsPost(mockRequest);
         const json = await response.json();
 
-        expect(response.status).toBe(200);
-        expect(json).toEqual({
-          success: true,
-          favorite_models: [],
-          message: 'Database not configured - using default models',
-        });
+        expect(response.status).toBe(500);
+        expect(json.error).toBe('Database connection failed');
       });
 
       it('should return 400 if favorite_models is not an array', async () => {

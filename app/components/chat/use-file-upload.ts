@@ -1,64 +1,73 @@
-import { toast } from "@/components/ui/toast"
+import { useCallback, useState } from 'react';
+import { toast } from '@/components/ui/toast';
 import {
-  Attachment,
+  type Attachment,
   checkFileUploadLimit,
   processFiles,
-} from "@/lib/file-handling"
-import { useCallback, useState } from "react"
+} from '@/lib/file-handling';
 
 export const useFileUpload = () => {
-  const [files, setFiles] = useState<File[]>([])
+  const [files, setFiles] = useState<File[]>([]);
 
   const handleFileUploads = async (
     uid: string,
     chatId: string
   ): Promise<Attachment[] | null> => {
-    if (files.length === 0) return []
+    if (files.length === 0) {
+      return [];
+    }
 
     try {
-      await checkFileUploadLimit(uid)
+      await checkFileUploadLimit(uid);
     } catch (err: unknown) {
-      const error = err as { code?: string; message?: string }
-      if (error.code === "DAILY_FILE_LIMIT_REACHED") {
-        toast({ title: error.message || "Daily file limit reached", status: "error" })
-        return null
+      const error = err as { code?: string; message?: string };
+      if (error.code === 'DAILY_FILE_LIMIT_REACHED') {
+        toast({
+          title: error.message || 'Daily file limit reached',
+          status: 'error',
+        });
+        return null;
       }
     }
 
     try {
-      const processed = await processFiles(files, chatId, uid)
-      setFiles([])
-      return processed
+      const processed = await processFiles(files, chatId, uid);
+      setFiles([]);
+      return processed;
     } catch {
-      toast({ title: "Failed to process files", status: "error" })
-      return null
+      toast({ title: 'Failed to process files', status: 'error' });
+      return null;
     }
-  }
+  };
 
   const createOptimisticAttachments = (files: File[]) => {
     return files.map((file) => ({
       name: file.name,
       contentType: file.type,
-      url: file.type.startsWith("image/") ? URL.createObjectURL(file) : "",
-    }))
-  }
+      url: file.type.startsWith('image/') ? URL.createObjectURL(file) : '',
+    }));
+  };
 
-  const cleanupOptimisticAttachments = (attachments?: Array<{ url?: string }>) => {
-    if (!attachments) return
+  const cleanupOptimisticAttachments = (
+    attachments?: Array<{ url?: string }>
+  ) => {
+    if (!attachments) {
+      return;
+    }
     attachments.forEach((attachment) => {
-      if (attachment.url?.startsWith("blob:")) {
-        URL.revokeObjectURL(attachment.url)
+      if (attachment.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(attachment.url);
       }
-    })
-  }
+    });
+  };
 
   const handleFileUpload = useCallback((newFiles: File[]) => {
-    setFiles((prev) => [...prev, ...newFiles])
-  }, [])
+    setFiles((prev) => [...prev, ...newFiles]);
+  }, []);
 
   const handleFileRemove = useCallback((file: File) => {
-    setFiles((prev) => prev.filter((f) => f !== file))
-  }, [])
+    setFiles((prev) => prev.filter((f) => f !== file));
+  }, []);
 
   return {
     files,
@@ -68,5 +77,5 @@ export const useFileUpload = () => {
     cleanupOptimisticAttachments,
     handleFileUpload,
     handleFileRemove,
-  }
-}
+  };
+};

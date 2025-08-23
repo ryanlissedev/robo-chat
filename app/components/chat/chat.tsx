@@ -1,53 +1,53 @@
-"use client"
+'use client';
 
-import { ChatInput } from "@/app/components/chat-input/chat-input"
-import { Conversation } from "@/app/components/chat/conversation"
-import { useModel } from "@/app/components/chat/use-model"
-import { useChatDraft } from "@/app/hooks/use-chat-draft"
-import { useChats } from "@/lib/chat-store/chats/provider"
-import { useMessages } from "@/lib/chat-store/messages/provider"
-import { useChatSession } from "@/lib/chat-store/session/provider"
-import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config"
-import { useUserPreferences } from "@/lib/user-preference-store/provider"
-import { useUser } from "@/lib/user-store/provider"
-import { cn } from "@/lib/utils"
-import { AnimatePresence, motion } from "motion/react"
-import dynamic from "next/dynamic"
-import { redirect } from "next/navigation"
-import { useCallback, useMemo, useState } from "react"
-import { useChatCore } from "./use-chat-core"
-import { useChatOperations } from "./use-chat-operations"
-import { useFileUpload } from "./use-file-upload"
+import { AnimatePresence, motion } from 'motion/react';
+import dynamic from 'next/dynamic';
+import { redirect } from 'next/navigation';
+import { useCallback, useMemo, useState } from 'react';
+import { Conversation } from '@/app/components/chat/conversation';
+import { useModel } from '@/app/components/chat/use-model';
+import { ChatInput } from '@/app/components/chat-input/chat-input';
+import { useChatDraft } from '@/app/hooks/use-chat-draft';
+import { useChats } from '@/lib/chat-store/chats/provider';
+import { useMessages } from '@/lib/chat-store/messages/provider';
+import { useChatSession } from '@/lib/chat-store/session/provider';
+import { SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
+import { useUserPreferences } from '@/lib/user-preference-store/provider';
+import { useUser } from '@/lib/user-store/provider';
+import { cn } from '@/lib/utils';
+import { useChatCore } from './use-chat-core';
+import { useChatOperations } from './use-chat-operations';
+import { useFileUpload } from './use-file-upload';
 
 const FeedbackWidget = dynamic(
-  () => import("./feedback-widget").then((mod) => mod.FeedbackWidget),
+  () => import('./feedback-widget').then((mod) => mod.FeedbackWidget),
   { ssr: false }
-)
+);
 
 const DialogAuth = dynamic(
-  () => import("./dialog-auth").then((mod) => mod.DialogAuth),
+  () => import('./dialog-auth').then((mod) => mod.DialogAuth),
   { ssr: false }
-)
+);
 
 export function Chat() {
-  const { chatId } = useChatSession()
+  const { chatId } = useChatSession();
   const {
     createNewChat,
     getChatById,
     updateChatModel,
     bumpChat,
     isLoading: isChatsLoading,
-  } = useChats()
+  } = useChats();
 
   const currentChat = useMemo(
     () => (chatId ? getChatById(chatId) : null),
     [chatId, getChatById]
-  )
+  );
 
-  const { messages: initialMessages, cacheAndAddMessage } = useMessages()
-  const { user } = useUser()
-  const { preferences } = useUserPreferences()
-  const { draftValue, clearDraft } = useChatDraft(chatId)
+  const { messages: initialMessages, cacheAndAddMessage } = useMessages();
+  const { user } = useUser();
+  const { preferences } = useUserPreferences();
+  const { draftValue, clearDraft } = useChatDraft(chatId);
 
   // File upload functionality
   const {
@@ -58,7 +58,7 @@ export function Chat() {
     cleanupOptimisticAttachments,
     handleFileUpload,
     handleFileRemove,
-  } = useFileUpload()
+  } = useFileUpload();
 
   // Model selection
   const { selectedModel, handleModelChange } = useModel({
@@ -66,27 +66,30 @@ export function Chat() {
     user,
     updateChatModel,
     chatId,
-  })
+  });
 
   // State to pass between hooks
-  const [hasDialogAuth, setHasDialogAuth] = useState(false)
-  const isAuthenticated = useMemo(() => !!user?.id && !user?.anonymous, [user?.id, user?.anonymous])
+  const [hasDialogAuth, setHasDialogAuth] = useState(false);
+  const isAuthenticated = useMemo(
+    () => !!user?.id && !user?.anonymous,
+    [user?.id, user?.anonymous]
+  );
   const systemPrompt = useMemo(
     () => user?.system_prompt || SYSTEM_PROMPT_DEFAULT,
     [user?.system_prompt]
-  )
+  );
 
   // New state for quoted text
   const [quotedText, setQuotedText] = useState<{
-    text: string
-    messageId: string
-  }>()
+    text: string;
+    messageId: string;
+  }>();
   const handleQuotedSelected = useCallback(
     (text: string, messageId: string) => {
-      setQuotedText({ text, messageId })
+      setQuotedText({ text, messageId });
     },
     []
-  )
+  );
 
   // Chat operations (utils + handlers) - created first
   const { checkLimitsAndNotify, ensureChatExists, handleDelete, handleEdit } =
@@ -100,7 +103,7 @@ export function Chat() {
       setHasDialogAuth,
       setMessages: () => {},
       setInput: () => {},
-    })
+    });
 
   // Core chat functionality (initialization + state + actions)
   const {
@@ -134,7 +137,7 @@ export function Chat() {
     selectedModel,
     clearDraft,
     bumpChat,
-  })
+  });
 
   // Memoize the conversation props to prevent unnecessary rerenders
   const conversationProps = useMemo(
@@ -154,7 +157,7 @@ export function Chat() {
       handleReload,
       handleQuotedSelected,
     ]
-  )
+  );
 
   // Memoize the chat input props
   const chatInputProps = useMemo(
@@ -203,7 +206,7 @@ export function Chat() {
       reasoningEffort,
       setReasoningEffort,
     ]
-  )
+  );
 
   // Handle redirect for invalid chatId - only redirect if we're certain the chat doesn't exist
   // and we're not in a transient state during chat creation
@@ -212,19 +215,19 @@ export function Chat() {
     !isChatsLoading &&
     !currentChat &&
     !isSubmitting &&
-    status === "ready" &&
+    status === 'ready' &&
     messages.length === 0 &&
     !hasSentFirstMessageRef.current // Don't redirect if we've already sent a message in this session
   ) {
-    return redirect("/")
+    return redirect('/');
   }
 
-  const showOnboarding = !chatId && messages.length === 0
+  const showOnboarding = !chatId && messages.length === 0;
 
   return (
     <div
       className={cn(
-        "@container/main relative flex h-full flex-col items-center justify-end md:justify-center"
+        '@container/main relative flex h-full flex-col items-center justify-end md:justify-center'
       )}
     >
       <DialogAuth open={hasDialogAuth} setOpen={setHasDialogAuth} />
@@ -232,11 +235,11 @@ export function Chat() {
       <AnimatePresence initial={false} mode="popLayout">
         {showOnboarding ? (
           <motion.div
-            key="onboarding"
-            className="absolute bottom-[60%] mx-auto max-w-[50rem] md:relative md:bottom-auto"
-            initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            className="absolute bottom-[60%] mx-auto max-w-[50rem] md:relative md:bottom-auto"
             exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            key="onboarding"
             layout="position"
             layoutId="onboarding"
             transition={{
@@ -245,7 +248,7 @@ export function Chat() {
               },
             }}
           >
-            <h1 className="mb-6 text-5xl font-semibold tracking-tight text-blue-600">
+            <h1 className="mb-6 font-semibold text-5xl text-blue-600 tracking-tight">
               How can we help you today?
             </h1>
           </motion.div>
@@ -256,7 +259,7 @@ export function Chat() {
 
       <motion.div
         className={cn(
-          "relative inset-x-0 bottom-0 z-50 mx-auto w-full max-w-3xl"
+          'relative inset-x-0 bottom-0 z-50 mx-auto w-full max-w-3xl'
         )}
         layout="position"
         layoutId="chat-input-container"
@@ -271,5 +274,5 @@ export function Chat() {
 
       <FeedbackWidget authUserId={user?.id} />
     </div>
-  )
+  );
 }

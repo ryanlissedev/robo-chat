@@ -63,21 +63,36 @@ export async function getModelsWithAccessFlags(): Promise<ModelConfig[]> {
 
   // Check which provider API keys are available
   const availableProviders = new Set<string>();
-  
+
   // Add providers that have API keys configured
-  if (process.env.OPENAI_API_KEY) availableProviders.add('openai');
-  if (process.env.MISTRAL_API_KEY) availableProviders.add('mistral');
-  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) availableProviders.add('google');
-  if (process.env.PERPLEXITY_API_KEY) availableProviders.add('perplexity');
-  if (process.env.ANTHROPIC_API_KEY) availableProviders.add('anthropic');
-  if (process.env.XAI_API_KEY) availableProviders.add('xai');
-  if (process.env.OPENROUTER_API_KEY) availableProviders.add('openrouter');
+  if (process.env.OPENAI_API_KEY) {
+    availableProviders.add('openai');
+  }
+  if (process.env.MISTRAL_API_KEY) {
+    availableProviders.add('mistral');
+  }
+  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    availableProviders.add('google');
+  }
+  if (process.env.PERPLEXITY_API_KEY) {
+    availableProviders.add('perplexity');
+  }
+  if (process.env.ANTHROPIC_API_KEY) {
+    availableProviders.add('anthropic');
+  }
+  if (process.env.XAI_API_KEY) {
+    availableProviders.add('xai');
+  }
+  if (process.env.OPENROUTER_API_KEY) {
+    availableProviders.add('openrouter');
+  }
 
   // Always include ollama and free models
   const accessibleModels = models.map((model) => {
-    const isAlwaysFree = FREE_MODELS_IDS.includes(model.id) || model.providerId === 'ollama';
+    const isAlwaysFree =
+      FREE_MODELS_IDS.includes(model.id) || model.providerId === 'ollama';
     const hasProviderKey = availableProviders.has(model.providerId);
-    
+
     return {
       ...model,
       accessible: isAlwaysFree || hasProviderKey,

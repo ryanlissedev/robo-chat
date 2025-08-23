@@ -81,7 +81,9 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
     queryKey: ['messages', chatId],
     enabled: Boolean(chatId),
     queryFn: async () => {
-      if (!chatId) return [];
+      if (!chatId) {
+        return [];
+      }
       const cached = await getCachedMessages(chatId);
       try {
         const fresh = await getMessagesFromDb(chatId);

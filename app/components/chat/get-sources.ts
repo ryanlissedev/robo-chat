@@ -1,41 +1,41 @@
-import type { Message as MessageAISDK } from "@ai-sdk/react"
-
-export function getSources(parts: MessageAISDK["parts"]) {
+export function getSources(parts: any) {
   const sources = parts
     ?.filter(
-      (part) => part.type === "source" || part.type === "tool-invocation"
+      (part: any) => part.type === 'source' || part.type === 'tool-invocation'
     )
-    .map((part) => {
-      if (part.type === "source") {
-        return part.source
+    .map((part: any) => {
+      if (part.type === 'source') {
+        return part.source;
       }
 
       if (
-        part.type === "tool-invocation" &&
-        part.toolInvocation.state === "result"
+        part.type === 'tool-invocation' &&
+        part.toolInvocation.state === 'result'
       ) {
-        const result = part.toolInvocation.result
+        const result = part.toolInvocation.result;
 
         if (
-          part.toolInvocation.toolName === "summarizeSources" &&
+          part.toolInvocation.toolName === 'summarizeSources' &&
           result?.result?.[0]?.citations
         ) {
-          return result.result.flatMap((item: { citations?: unknown[] }) => item.citations || [])
+          return result.result.flatMap(
+            (item: { citations?: unknown[] }) => item.citations || []
+          );
         }
 
-        return Array.isArray(result) ? result.flat() : result
+        return Array.isArray(result) ? result.flat() : result;
       }
 
-      return null
+      return null;
     })
     .filter(Boolean)
-    .flat()
+    .flat();
 
   const validSources =
     sources?.filter(
-      (source) =>
-        source && typeof source === "object" && source.url && source.url !== ""
-    ) || []
+      (source: any) =>
+        source && typeof source === 'object' && source.url && source.url !== ''
+    ) || [];
 
-  return validSources
+  return validSources;
 }

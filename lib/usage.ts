@@ -43,7 +43,10 @@ export async function checkUsage(supabase: SupabaseClient, userId: string) {
     userDataError = result.error;
   } catch (error: unknown) {
     // If daily_reset column doesn't exist, try without it
-    if (error instanceof Error && error.message?.includes('daily_reset does not exist')) {
+    if (
+      error instanceof Error &&
+      error.message?.includes('daily_reset does not exist')
+    ) {
       const result = await supabase
         .from('users')
         .select('message_count, daily_message_count, anonymous, premium')
@@ -115,7 +118,10 @@ export async function checkUsage(supabase: SupabaseClient, userId: string) {
         throw new Error(`Failed to reset daily count: ${resetError.message}`);
       }
     } catch (error: unknown) {
-      if (error instanceof Error && error.message?.includes('daily_reset does not exist')) {
+      if (
+        error instanceof Error &&
+        error.message?.includes('daily_reset does not exist')
+      ) {
         // Fall back to updating without daily_reset column
         const { error: resetError } = await supabase
           .from('users')
@@ -159,7 +165,8 @@ export async function incrementUsage(
   // Check if rate limiting is disabled for guest users
   const isRateLimitDisabled = process.env.DISABLE_RATE_LIMIT === 'true';
   const isDevelopment = process.env.NODE_ENV === 'development';
-  const isGuestUser = userId.startsWith('guest-') || userId.startsWith('temp-guest-');
+  const isGuestUser =
+    userId.startsWith('guest-') || userId.startsWith('temp-guest-');
 
   if (isGuestUser && (isRateLimitDisabled || isDevelopment)) {
     // Skip database operations for guest users when rate limiting is disabled

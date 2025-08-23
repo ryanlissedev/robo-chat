@@ -14,4 +14,7 @@ const prettyStream = isProd
       singleLine: true,
     });
 
-export const logger = pino({ level }, prettyStream as pino.DestinationStream | undefined);
+export const logger = pino(
+  { level },
+  prettyStream as pino.DestinationStream | undefined
+);

@@ -1,25 +1,25 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
+import { Brain, Gauge, Lightning } from '@phosphor-icons/react';
+import { useState } from 'react';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Brain, Lightning, Gauge } from '@phosphor-icons/react'
-import { cn } from '@/lib/utils'
-import type { ReasoningEffort } from '@/lib/openproviders/types'
+} from '@/components/ui/select';
+import type { ReasoningEffort } from '@/lib/openproviders/types';
+import { cn } from '@/lib/utils';
 
-export type { ReasoningEffort }
+export type { ReasoningEffort };
 
-interface ReasoningEffortSelectorProps {
-  value: ReasoningEffort
-  onChange: (value: ReasoningEffort) => void
-  className?: string
-  disabled?: boolean
-}
+type ReasoningEffortSelectorProps = {
+  value: ReasoningEffort;
+  onChange: (value: ReasoningEffort) => void;
+  className?: string;
+  disabled?: boolean;
+};
 
 const reasoningOptions = [
   {
@@ -43,7 +43,7 @@ const reasoningOptions = [
     icon: Brain,
     color: 'text-purple-500',
   },
-]
+];
 
 export function ReasoningEffortSelector({
   value,
@@ -51,21 +51,21 @@ export function ReasoningEffortSelector({
   className,
   disabled = false,
 }: ReasoningEffortSelectorProps) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
-  const selectedOption = reasoningOptions.find((opt) => opt.value === value)
+  const selectedOption = reasoningOptions.find((opt) => opt.value === value);
 
   return (
     <Select
-      value={value}
+      disabled={disabled}
+      onOpenChange={setOpen}
       onValueChange={(val) => onChange(val as ReasoningEffort)}
       open={open}
-      onOpenChange={setOpen}
-      disabled={disabled}
+      value={value}
     >
       <SelectTrigger
         className={cn(
-          'w-auto h-10 bg-background border-border px-3 flex items-center gap-2',
+          'flex h-10 w-auto items-center gap-2 border-border bg-background px-3',
           className
         )}
       >
@@ -76,7 +76,9 @@ export function ReasoningEffortSelector({
                 className={cn('h-5 w-5', selectedOption.color)}
                 weight="duotone"
               />
-              <span className="text-sm font-medium">{selectedOption.label}</span>
+              <span className="font-medium text-sm">
+                {selectedOption.label}
+              </span>
             </div>
           )}
         </SelectValue>
@@ -84,9 +86,9 @@ export function ReasoningEffortSelector({
       <SelectContent className="w-[280px]">
         {reasoningOptions.map((option) => (
           <SelectItem
+            className="cursor-pointer"
             key={option.value}
             value={option.value}
-            className="cursor-pointer"
           >
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
@@ -96,7 +98,7 @@ export function ReasoningEffortSelector({
                 />
                 <span className="font-medium text-base">{option.label}</span>
               </div>
-              <span className="text-sm text-muted-foreground pl-7">
+              <span className="pl-7 text-muted-foreground text-sm">
                 {option.description}
               </span>
             </div>
@@ -104,7 +106,7 @@ export function ReasoningEffortSelector({
         ))}
       </SelectContent>
     </Select>
-  )
+  );
 }
 
 // Compact version for mobile or limited space
@@ -114,28 +116,28 @@ export function ReasoningEffortCompact({
   className,
   disabled = false,
 }: ReasoningEffortSelectorProps) {
-  const selectedOption = reasoningOptions.find((opt) => opt.value === value)
+  const _selectedOption = reasoningOptions.find((opt) => opt.value === value);
 
   return (
     <div className={cn('flex items-center gap-1', className)}>
       {reasoningOptions.map((option) => {
-        const isSelected = option.value === value
-        const Icon = option.icon
+        const isSelected = option.value === value;
+        const Icon = option.icon;
 
         return (
           <button
-            key={option.value}
-            onClick={() => !disabled && onChange(option.value)}
-            disabled={disabled}
-            type="button"
             aria-pressed={isSelected}
             className={cn(
-              'p-1.5 rounded-md transition-all',
+              'rounded-md p-1.5 transition-all',
               'hover:bg-accent/50',
               isSelected && 'bg-accent',
-              disabled && 'opacity-50 cursor-not-allowed'
+              disabled && 'cursor-not-allowed opacity-50'
             )}
+            disabled={disabled}
+            key={option.value}
+            onClick={() => !disabled && onChange(option.value)}
             title={`${option.label}: ${option.description}`}
+            type="button"
           >
             <Icon
               className={cn(
@@ -145,8 +147,8 @@ export function ReasoningEffortCompact({
               weight={isSelected ? 'fill' : 'duotone'}
             />
           </button>
-        )
+        );
       })}
     </div>
-  )
+  );
 }

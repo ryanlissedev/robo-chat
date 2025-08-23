@@ -4,21 +4,21 @@ import { wrapOpenAI } from 'langsmith/wrappers';
 import OpenAI from 'openai';
 
 // Types for LangSmith parameters
-interface ChatMessage {
+type ChatMessage = {
   role: 'system' | 'user' | 'assistant';
   content: string;
-}
+};
 
-interface ChatTool {
+type ChatTool = {
   type: string;
   function: {
     name: string;
     description?: string;
     parameters?: Record<string, unknown>;
   };
-}
+};
 
-interface TraceChatParams {
+type TraceChatParams = {
   model: string;
   messages: ChatMessage[];
   tools?: ChatTool[];
@@ -26,15 +26,15 @@ interface TraceChatParams {
   max_tokens?: number;
   stream?: boolean;
   metadata?: Record<string, unknown>;
-}
+};
 
-interface ResponseMetadata {
+type ResponseMetadata = {
   runId?: string;
   headers?: Record<string, string>;
   metadata?: {
     runId?: string;
   };
-}
+};
 
 // Initialize LangSmith client
 export const langsmithClient = process.env.LANGSMITH_API_KEY

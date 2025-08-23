@@ -418,24 +418,26 @@ export function applyMetadataFilters(
   // Apply filters
   if (filters.fileTypes && filters.fileTypes.length > 0) {
     filtered = filtered.filter((r) =>
-      filters.fileTypes?.includes(r.metadata?.fileType)
+      filters.fileTypes?.includes(r.metadata?.fileType as string)
     );
   }
 
-  if (filters.dateRange && filters.dateRange.start && filters.dateRange.end) {
+  if (filters.dateRange?.start && filters.dateRange.end) {
     const { start, end } = filters.dateRange;
     filtered = filtered.filter((r) => {
       const createdAt = r.metadata?.createdAt;
-      if (!createdAt) return false;
-      const date = new Date(createdAt);
-      return !isNaN(date.getTime()) && date >= start && date <= end;
+      if (!createdAt) {
+        return false;
+      }
+      const date = new Date(createdAt as string | number | Date);
+      return !Number.isNaN(date.getTime()) && date >= start && date <= end;
     });
   }
 
   if (filters.tags && filters.tags.length > 0) {
     filtered = filtered.filter((r) => {
       const docTags = r.metadata?.tags || [];
-      return filters.tags?.some((tag) => docTags.includes(tag));
+      return filters.tags?.some((tag) => (docTags as string[]).includes(tag));
     });
   }
 

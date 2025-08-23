@@ -186,7 +186,7 @@ function MorphingDialogContent({
       );
       if (focusableElements && focusableElements.length > 0) {
         setFirstFocusableElement(focusableElements[0] as HTMLElement);
-        const last = focusableElements[focusableElements.length - 1] as HTMLElement;
+        const last = focusableElements.at(-1) as HTMLElement;
         setLastFocusableElement(last);
         (focusableElements[0] as HTMLElement).focus();
       }

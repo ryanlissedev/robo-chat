@@ -28,7 +28,7 @@ export function convertFromApiFormat(apiData: {
   hidden_models?: string[];
 }): UserPreferences {
   return {
-    layout: apiData.layout || 'fullscreen',
+    layout: (apiData.layout as LayoutType) || 'fullscreen',
     promptSuggestions: apiData.prompt_suggestions ?? true,
     showToolInvocations: apiData.show_tool_invocations ?? true,
     showConversationPreviews: apiData.show_conversation_previews ?? true,

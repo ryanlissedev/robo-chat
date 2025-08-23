@@ -1,92 +1,157 @@
-import type { ContentPart, Message } from "@/app/types/api.types"
-import type { Database, Json } from "@/app/types/database.types"
-import type { SupabaseClient } from "@supabase/supabase-js"
+import type {
+  ContentPart,
+  Message,
+  StoreAssistantMessageParams,
+} from '@/app/types/api.types';
+import type { Json } from '@/app/types/database.types';
 
-const DEFAULT_STEP = 0
+const DEFAULT_STEP = 0;
 
-export async function saveFinalAssistantMessage(
-  supabase: SupabaseClient<Database>,
-  chatId: string,
-  messages: Message[],
-  message_group_id?: string,
-  model?: string
-) {
-  const parts: ContentPart[] = []
-  const toolMap = new Map<string, ContentPart>()
-  const textParts: string[] = []
+type ProcessedMessage = {
+  parts: ContentPart[];
+  textParts: string[];
+  toolMap: Map<string, ContentPart>;
+};
+
+function processTextPart(part: ContentPart, processed: ProcessedMessage): void {
+  if (part.text) {
+    processed.textParts.push(part.text);
+  }
+  processed.parts.push(part);
+}
+
+function processToolInvocation(
+  part: ContentPart,
+  processed: ProcessedMessage
+): void {
+  const { toolInvocation } = part;
+  if (!toolInvocation?.toolCallId) {
+    return;
+  }
+
+  const { toolCallId, state } = toolInvocation;
+  const existing = processed.toolMap.get(toolCallId);
+
+  if (state === 'result' || !existing) {
+    processed.toolMap.set(toolCallId, {
+      ...part,
+      toolInvocation: {
+        ...toolInvocation,
+        args: toolInvocation.args || {},
+      },
+    });
+  }
+}
+
+function processReasoningPart(
+  part: ContentPart,
+  processed: ProcessedMessage
+): void {
+  const reasoningText = part.text || '';
+  processed.parts.push({
+    type: 'reasoning',
+    reasoningText,
+    details: [{ type: 'text', text: reasoningText }],
+  });
+}
+
+function processToolResult(
+  part: ContentPart,
+  processed: ProcessedMessage
+): void {
+  const toolCallId = part.toolCallId || '';
+  processed.toolMap.set(toolCallId, {
+    type: 'tool-invocation',
+    toolInvocation: {
+      state: 'result',
+      step: DEFAULT_STEP,
+      toolCallId,
+      toolName: part.toolName || '',
+      result: part.result,
+    },
+  });
+}
+
+function processAssistantContent(
+  content: ContentPart[],
+  processed: ProcessedMessage
+): void {
+  for (const part of content) {
+    switch (part.type) {
+      case 'text':
+        processTextPart(part, processed);
+        break;
+      case 'tool-invocation':
+        processToolInvocation(part, processed);
+        break;
+      case 'reasoning':
+        processReasoningPart(part, processed);
+        break;
+      case 'step-start':
+        processed.parts.push(part);
+        break;
+      default:
+        // Ignore unknown part types
+        break;
+    }
+  }
+}
+
+function processToolContent(
+  content: ContentPart[],
+  processed: ProcessedMessage
+): void {
+  for (const part of content) {
+    if (part.type === 'tool-result') {
+      processToolResult(part, processed);
+    }
+  }
+}
+
+function processMessages(messages: Message[]): ProcessedMessage {
+  const processed: ProcessedMessage = {
+    parts: [],
+    textParts: [],
+    toolMap: new Map(),
+  };
 
   for (const msg of messages) {
-    if (msg.role === "assistant" && Array.isArray(msg.content)) {
-      for (const part of msg.content) {
-        if (part.type === "text") {
-          textParts.push(part.text || "")
-          parts.push(part)
-        } else if (part.type === "tool-invocation" && part.toolInvocation) {
-          const { toolCallId, state } = part.toolInvocation
-          if (!toolCallId) continue
+    if (!Array.isArray(msg.content)) {
+      continue;
+    }
 
-          const existing = toolMap.get(toolCallId)
-          if (state === "result" || !existing) {
-            toolMap.set(toolCallId, {
-              ...part,
-              toolInvocation: {
-                ...part.toolInvocation,
-                args: part.toolInvocation?.args || {},
-              },
-            })
-          }
-        } else if (part.type === "reasoning") {
-          parts.push({
-            type: "reasoning",
-            reasoningText: part.text || "",
-            details: [
-              {
-                type: "text",
-                text: part.text || "",
-              },
-            ],
-          })
-        } else if (part.type === "step-start") {
-          parts.push(part)
-        }
-      }
-    } else if (msg.role === "tool" && Array.isArray(msg.content)) {
-      for (const part of msg.content) {
-        if (part.type === "tool-result") {
-          const toolCallId = part.toolCallId || ""
-          toolMap.set(toolCallId, {
-            type: "tool-invocation",
-            toolInvocation: {
-              state: "result",
-              step: DEFAULT_STEP,
-              toolCallId,
-              toolName: part.toolName || "",
-              result: part.result,
-            },
-          })
-        }
-      }
+    if (msg.role === 'assistant') {
+      processAssistantContent(msg.content, processed);
+    } else if (msg.role === 'tool') {
+      processToolContent(msg.content, processed);
     }
   }
 
+  return processed;
+}
+
+// Main function using options pattern (preferred)
+export async function storeAssistantMessage(
+  params: StoreAssistantMessageParams
+): Promise<void> {
+  const { supabase, chatId, messages, message_group_id, model } = params;
+  const processed = processMessages(messages);
+
   // Merge tool parts at the end
-  parts.push(...toolMap.values())
+  processed.parts.push(...processed.toolMap.values());
 
-  const finalPlainText = textParts.join("\n\n")
+  const finalPlainText = processed.textParts.join('\n\n');
 
-  const { error } = await supabase.from("messages").insert({
+  const { error } = await supabase.from('messages').insert({
     chat_id: chatId,
-    role: "assistant",
-    content: finalPlainText || "",
-    parts: parts as unknown as Json,
+    role: 'assistant',
+    content: finalPlainText || '',
+    parts: processed.parts as unknown as Json,
     message_group_id,
     model,
-  })
+  });
 
   if (error) {
-    console.error("Error saving final assistant message:", error)
-    throw new Error(`Failed to save assistant message: ${error.message}`)
-  } else {
-    console.log("Assistant message saved successfully (merged).")
+    throw new Error(`Failed to save assistant message: ${error.message}`);
   }
 }
