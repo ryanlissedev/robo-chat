@@ -71,6 +71,43 @@ export async function incrementMessageCount({
   }
 }
 
+/**
+ * Ensures a chat exists in the database before saving user messages
+ * Creates the chat if it doesn't exist
+ */
+async function ensureChatExistsForUser(
+  supabase: SupabaseClientType,
+  chatId: string,
+  userId: string
+): Promise<boolean> {
+  try {
+    // First check if chat exists
+    const { data: existingChat, error: checkError } = await supabase
+      .from('chats')
+      .select('id')
+      .eq('id', chatId)
+      .single();
+
+    if (existingChat && !checkError) {
+      return true; // Chat exists
+    }
+
+    // Chat doesn't exist, create it
+    const { error: insertError } = await supabase.from('chats').insert({
+      id: chatId,
+      user_id: userId,
+      title: 'New Chat',
+      model: 'gpt-4o-mini', // Default model
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    return !insertError;
+  } catch {
+    return false;
+  }
+}
+
 export async function logUserMessage({
   supabase,
   userId,
@@ -93,6 +130,14 @@ export async function logUserMessage({
     return;
   }
 
+  // Ensure chat exists before inserting message
+  const chatExists = await ensureChatExistsForUser(supabase, chatId, userId);
+  if (!chatExists) {
+    // If we can't ensure chat exists, skip saving to avoid foreign key constraint
+    console.warn(`Chat ${chatId} does not exist and cannot be created for user ${userId}. Skipping user message save.`);
+    return;
+  }
+
   const { error } = await supabase.from('messages').insert({
     chat_id: chatId,
     role: 'user',
@@ -104,6 +149,7 @@ export async function logUserMessage({
 
   if (error) {
     // Silently handle error to avoid breaking chat flow
+    console.warn(`Failed to save user message: ${error.message}`);
   }
 }
 
@@ -111,6 +157,7 @@ export async function storeAssistantMessage({
   supabase,
   chatId,
   messages,
+  userId,
   message_group_id,
   model,
 }: StoreAssistantMessageParams): Promise<void> {
@@ -134,6 +181,7 @@ export async function storeAssistantMessage({
       supabase,
       chatId,
       messages,
+      userId,
       message_group_id,
       model,
     });

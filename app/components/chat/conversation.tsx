@@ -7,6 +7,7 @@ import {
 import { Loader } from '@/components/prompt-kit/loader';
 import { ScrollButton } from '@/components/prompt-kit/scroll-button';
 import { Message } from './message';
+import { ExtendedUIMessage, hasAttachments, getMessageContent } from '@/app/types/ai-extended';
 
 type ConversationProps = {
   messages: MessageType[];
@@ -51,9 +52,11 @@ export function Conversation({
             const hasScrollAnchor =
               isLast && messages.length > initialMessageCount.current;
 
+            const extendedMessage = message as ExtendedUIMessage;
+            
             return (
               <Message
-                attachments={(message as any).experimental_attachments}
+                attachments={hasAttachments(extendedMessage) ? extendedMessage.experimental_attachments : undefined}
                 hasScrollAnchor={hasScrollAnchor}
                 id={message.id}
                 isLast={isLast}
@@ -62,16 +65,11 @@ export function Conversation({
                 onEdit={onEdit}
                 onQuote={onQuote}
                 onReload={onReload}
-                parts={(message as any).parts}
+                parts={extendedMessage.parts}
                 status={status}
                 variant={message.role}
               >
-                {/* In v5, content may be in parts array instead of content field */}
-                {(message as any).content ||
-                  (message as any).parts?.find(
-                    (part: any) => part.type === 'text'
-                  )?.text ||
-                  ''}
+                {getMessageContent(extendedMessage)}
               </Message>
             );
           })}

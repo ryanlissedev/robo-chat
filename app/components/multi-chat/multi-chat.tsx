@@ -5,6 +5,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useMemo, useState } from 'react';
 import { MultiModelConversation } from '@/app/components/multi-chat/multi-conversation';
 import { toast } from '@/components/ui/toast';
+import type { ExtendedUIMessage } from '@/app/types/ai-extended';
+import { getMessageContent } from '@/app/types/ai-extended';
 import { getOrCreateGuestUserId } from '@/lib/api';
 import { useChats } from '@/lib/chat-store/chats/provider';
 import { useMessages } from '@/lib/chat-store/messages/provider';
@@ -17,10 +19,10 @@ import { MultiChatInput } from './multi-chat-input';
 import { useMultiChat } from './use-multi-chat';
 
 type GroupedMessage = {
-  userMessage: MessageType;
+  userMessage: ExtendedUIMessage;
   responses: {
     model: string;
-    message: MessageType;
+    message: ExtendedUIMessage;
     isLoading?: boolean;
     provider: string;
   }[];
@@ -184,11 +186,12 @@ export function MultiChat() {
         const assistantMsg = chat.messages[i + 1];
 
         if (userMsg?.role === 'user') {
-          const groupKey = (userMsg as any).content;
+          const extendedUserMsg = userMsg as ExtendedUIMessage;
+          const groupKey = getMessageContent(extendedUserMsg);
 
           if (!liveGroups[groupKey]) {
             liveGroups[groupKey] = {
-              userMessage: userMsg,
+              userMessage: extendedUserMsg,
               responses: [],
               onDelete: () => {},
               onEdit: () => {},
@@ -197,6 +200,7 @@ export function MultiChat() {
           }
 
           if (assistantMsg?.role === 'assistant') {
+            const extendedAssistantMsg = assistantMsg as ExtendedUIMessage;
             const existingResponse = liveGroups[groupKey].responses.find(
               (r) => r.model === chat.model.id
             );
@@ -204,20 +208,21 @@ export function MultiChat() {
             if (!existingResponse) {
               liveGroups[groupKey].responses.push({
                 model: chat.model.id,
-                message: assistantMsg,
+                message: extendedAssistantMsg,
                 isLoading: false,
                 provider: chat.model.provider,
               });
             }
           } else if (
             chat.isLoading &&
-            (userMsg as any).content === prompt &&
+            getMessageContent(extendedUserMsg) === prompt &&
             selectedModelIds.includes(chat.model.id)
           ) {
-            const placeholderMessage: MessageType = {
+            const placeholderMessage: ExtendedUIMessage = {
               id: `loading-${chat.model.id}`,
               role: 'assistant',
               content: '',
+              parts: [],
             };
             liveGroups[groupKey].responses.push({
               model: chat.model.id,

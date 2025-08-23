@@ -66,7 +66,7 @@ export async function getUserProfile(): Promise<UserProfile | null> {
   // Format user preferences if they exist
   const formattedPreferences = userProfileData?.user_preferences
     ? convertFromApiFormat({
-        layout: userProfileData.user_preferences.layout || undefined,
+        layout: userProfileData.user_preferences.layout ?? undefined,
         prompt_suggestions:
           userProfileData.user_preferences.prompt_suggestions ?? undefined,
         show_tool_invocations:
@@ -77,7 +77,7 @@ export async function getUserProfile(): Promise<UserProfile | null> {
         multi_model_enabled:
           userProfileData.user_preferences.multi_model_enabled ?? undefined,
         hidden_models:
-          userProfileData.user_preferences.hidden_models || undefined,
+          userProfileData.user_preferences.hidden_models ?? undefined,
       })
     : undefined;
 
@@ -85,6 +85,6 @@ export async function getUserProfile(): Promise<UserProfile | null> {
     ...userProfileData,
     profile_image: user.user_metadata?.avatar_url ?? '',
     display_name: user.user_metadata?.name ?? '',
-    preferences: formattedPreferences,
+    preferences: formattedPreferences ?? defaultPreferences,
   } as UserProfile;
 }

@@ -17,7 +17,7 @@ type FileSearchResult = {
 export const fileSearchTool = tool({
   description:
     'Advanced search through uploaded documents using OpenAI vector stores with query rewriting and reranking',
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe('Search query to find relevant information'),
     max_results: z
       .number()
@@ -51,32 +51,21 @@ export const fileSearchTool = tool({
       .optional()
       .default('semantic'),
   }),
-  execute: async (
-    {
-      query,
-      max_results = 5,
-      file_types,
-      vector_store_id,
-      enable_rewriting = true,
-      rewrite_strategy = 'expansion',
-      enable_reranking = true,
-      reranking_method = 'semantic',
-    }: {
-      query: string;
-      max_results?: number;
-      file_types: string[];
-      vector_store_id: string;
-      enable_rewriting?: boolean;
-      rewrite_strategy?: string;
-      enable_reranking?: boolean;
-      reranking_method?: string;
-    },
-    context: { apiKey?: string }
-  ) => {
+  execute: async ({
+    query,
+    max_results = 5,
+    file_types,
+    vector_store_id,
+    enable_rewriting = true,
+    rewrite_strategy = 'expansion',
+    enable_reranking = true,
+    reranking_method = 'semantic',
+  }) => {
     try {
-      const apiKey: string | undefined = context?.apiKey;
+      // Get API key from environment
+      const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) {
-        throw new Error('OpenAI API key is required for file search');
+        throw new Error('OpenAI API key is required for file search. Set OPENAI_API_KEY environment variable.');
       }
 
       const openai = new OpenAI({ apiKey });

@@ -75,6 +75,8 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
   }, [loadSettings]);
 
   const loadSettings = async () => {
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from('user_security_settings')
@@ -82,13 +84,34 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         .eq('user_id', userId)
         .single();
 
-      if (data) {
-        setConfig(data.config);
+      if (error) {
+        // Handle case where table doesn't exist yet or no data found
+        if (error.code === '42P01' || error.message.includes('does not exist')) {
+          console.warn('user_security_settings table does not exist yet');
+          return;
+        }
+        if (error.code === 'PGRST116') {
+          // No rows found - this is expected for first time users
+          return;
+        }
+        console.error('Error loading security settings:', error);
+        return;
       }
-    } catch (_error) {}
+
+      if (data && data.config) {
+        setConfig(data.config as SecurityConfig);
+      }
+    } catch (error: any) {
+      console.error('Failed to load security settings:', error);
+    }
   };
 
   const saveSettings = async () => {
+    if (!supabase) {
+      toast.error('Database not available');
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.from('user_security_settings').upsert(
@@ -103,11 +126,17 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
       );
 
       if (error) {
+        // Handle case where table doesn't exist yet
+        if (error.code === '42P01' || error.message.includes('does not exist')) {
+          toast.error('Security settings storage not yet configured. Please contact support.');
+          return;
+        }
         throw error;
       }
 
       toast.success('Security settings saved');
-    } catch (_error) {
+    } catch (error: any) {
+      console.error('Failed to save security settings:', error);
       toast.error('Failed to save settings');
     } finally {
       setLoading(false);

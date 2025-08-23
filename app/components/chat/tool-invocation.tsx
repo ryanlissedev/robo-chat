@@ -9,7 +9,7 @@ import {
   Spinner,
   Wrench,
 } from '@phosphor-icons/react';
-import type { ToolInvocationUIPart } from 'ai';
+import type { ToolInvocationUIPart } from '@/app/types/ai-extended';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -21,7 +21,7 @@ type ToolInvocationProps = {
 };
 
 const TRANSITION = {
-  type: 'spring',
+  type: 'spring' as const,
   duration: 0.2,
   bounce: 0,
 };
@@ -233,9 +233,9 @@ function SingleToolCard({
         result !== null &&
         'content' in result
       ) {
-        const textContent = result.content?.find(
-          (item: { type: string }) => item.type === 'text'
-        );
+        const textContent = Array.isArray(result.content) 
+          ? result.content.find((item: { type: string }) => item.type === 'text')
+          : null;
         if (!textContent?.text) {
           return { parsedResult: null, parseError: null };
         }

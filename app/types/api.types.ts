@@ -51,6 +51,7 @@ export type StoreAssistantMessageParams = {
   supabase: SupabaseClientType;
   chatId: string;
   messages: Message[];
+  userId?: string;
   message_group_id?: string;
   model?: string;
   langsmithRunId?: string | null;

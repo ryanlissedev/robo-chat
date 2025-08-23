@@ -81,6 +81,8 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
   }, [loadSettings]);
 
   const loadSettings = async () => {
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from('user_retrieval_settings')
@@ -88,13 +90,34 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
         .eq('user_id', userId)
         .single();
 
-      if (data) {
-        setConfig(data.config);
+      if (error) {
+        // Handle case where table doesn't exist yet or no data found
+        if (error.code === '42P01' || error.message.includes('does not exist')) {
+          console.warn('user_retrieval_settings table does not exist yet');
+          return;
+        }
+        if (error.code === 'PGRST116') {
+          // No rows found - this is expected for first time users
+          return;
+        }
+        console.error('Error loading retrieval settings:', error);
+        return;
       }
-    } catch (_error) {}
+
+      if (data && data.config) {
+        setConfig(data.config as RetrievalConfig);
+      }
+    } catch (error: any) {
+      console.error('Failed to load retrieval settings:', error);
+    }
   };
 
   const saveSettings = async () => {
+    if (!supabase) {
+      toast.error('Database not available');
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.from('user_retrieval_settings').upsert(
@@ -109,12 +132,18 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
       );
 
       if (error) {
+        // Handle case where table doesn't exist yet
+        if (error.code === '42P01' || error.message.includes('does not exist')) {
+          toast.error('Retrieval settings storage not yet configured. Please contact support.');
+          return;
+        }
         throw error;
       }
 
       toast.success('Retrieval settings saved');
       setSaved(true);
-    } catch (_error) {
+    } catch (error: any) {
+      console.error('Failed to save retrieval settings:', error);
       toast.error('Failed to save settings');
     } finally {
       setLoading(false);

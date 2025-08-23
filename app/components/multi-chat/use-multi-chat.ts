@@ -28,7 +28,6 @@ export function useMultiChat(models: ModelConfig[]): ModelChat[] {
     // todo: fix this
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useChat({
-      api: '/api/chat',
       onError: (error) => {
         const model = models[index];
         if (model) {
@@ -50,7 +49,7 @@ export function useMultiChat(models: ModelConfig[]): ModelChat[] {
       return {
         model,
         messages: chatHook.messages,
-        isLoading: chatHook.isLoading,
+        isLoading: 'isLoading' in chatHook ? Boolean(chatHook.isLoading) : false,
         sendMessage: (message: any, options?: any) => {
           // v5 uses sendMessage instead of append
           return chatHook.sendMessage(message, options);
@@ -64,8 +63,7 @@ export function useMultiChat(models: ModelConfig[]): ModelChat[] {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     models,
-    ...chatHooks.flatMap((chat) => [chat.messages, chat.isLoading]),
-    chatHooks[index],
+    ...chatHooks.flatMap((chat) => [chat.messages, 'isLoading' in chat ? chat.isLoading : false]),
   ]);
 
   return activeChatInstances;

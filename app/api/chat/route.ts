@@ -2,6 +2,8 @@ import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
 import type { LanguageModelUsage, ToolSet, UIMessagePart } from 'ai';
 import type { Attachment } from '@ai-sdk/ui-utils';
 import { convertToModelMessages, streamText } from 'ai';
+import type { ExtendedUIMessage } from '@/app/types/ai-extended';
+import { getMessageContent, hasContent, hasParts, hasAttachments } from '@/app/types/ai-extended';
 import type { SupabaseClientType } from '@/app/types/api.types';
 import { FILE_SEARCH_SYSTEM_PROMPT, SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
 import {
@@ -47,7 +49,7 @@ type TransformedMessage = {
 };
 
 type ChatRequest = {
-  messages: MessageAISDK[];
+  messages: ExtendedUIMessage[];
   chatId: string;
   userId: string;
   model: string;
@@ -204,7 +206,7 @@ async function handleUserMessageLogging({
   supabase: SupabaseClientType | null;
   userId: string;
   chatId: string;
-  messages: MessageAISDK[];
+  messages: ExtendedUIMessage[];
   message_group_id?: string;
 }) {
   if (!supabase) {
@@ -216,9 +218,8 @@ async function handleUserMessageLogging({
 
   const userMessage = messages.at(-1);
   if (userMessage?.role === 'user') {
-    const userMessageContent = userMessage as unknown as UIMessageContent;
-    const textContent = userMessageContent.content || '';
-    const attachments = userMessageContent.attachments || [];
+    const textContent = getMessageContent(userMessage);
+    const attachments = userMessage.experimental_attachments || [];
 
     await logUserMessage({
       supabase,
@@ -313,7 +314,7 @@ async function createLangSmithRun({
   chatId,
 }: {
   resolvedModel: string;
-  messages: MessageAISDK[];
+  messages: ExtendedUIMessage[];
   reasoningEffort: string;
   enableSearch: boolean;
   userId: string;
@@ -328,12 +329,9 @@ async function createLangSmithRun({
       name: 'chat-completion',
       inputs: {
         model: resolvedModel,
-        messages: messages.map((m: MessageAISDK) => ({
+        messages: messages.map((m: ExtendedUIMessage) => ({
           role: m.role,
-          content:
-            m.parts && m.parts.length > 0
-              ? m.parts.map((p) => (p.type === 'text' ? p.text : '')).join('')
-              : '',
+          content: getMessageContent(m),
         })),
         reasoningEffort,
         enableSearch,
@@ -465,19 +463,28 @@ export async function POST(req: Request) {
       );
     }
 
-    // Convert TransformedMessage[] to UIMessage[] for convertToModelMessages
-    const uiMessages: MessageAISDK[] = validatedMessages.map(
+    // Convert TransformedMessage[] to ExtendedUIMessage[] for convertToModelMessages
+    const uiMessages: ExtendedUIMessage[] = validatedMessages.map(
       (msg: TransformedMessage) => ({
         id: msg.id || Math.random().toString(36),
         role: msg.role,
-        parts: msg.parts,
+        parts: msg.parts as any, // Type assertion needed due to MessagePart vs custom part types
         createdAt: new Date(),
+        content: (() => {
+          const textPart = msg.parts.find(p => (p as any).type === 'text');
+          return textPart ? (textPart as any).text || '' : '';
+        })(), // v4 compatibility
       })
     );
 
     let modelMessages: any[];
     try {
-      modelMessages = convertToModelMessages(uiMessages) as any[];
+      // Remove undefined parts before conversion and ensure compatibility
+      const compatibleMessages = uiMessages.map(msg => ({
+        ...msg,
+        parts: msg.parts?.filter(Boolean) || []
+      }));
+      modelMessages = convertToModelMessages(compatibleMessages as any) as any[];
     } catch (_conversionError) {
       return new Response(
         JSON.stringify({ error: 'Failed to convert messages to model format' }),
@@ -486,7 +493,7 @@ export async function POST(req: Request) {
     }
 
     const result = streamText({
-      model: modelConfig.apiSdk(apiKey, modelSettings) as any,
+      model: modelConfig?.apiSdk ? modelConfig.apiSdk(apiKey, modelSettings) as any : undefined,
       system: effectiveSystemPrompt,
       messages: modelMessages,
       tools,
@@ -507,6 +514,7 @@ export async function POST(req: Request) {
             chatId,
             messages:
               response.messages as unknown as import('@/app/types/api.types').Message[],
+            userId,
             message_group_id,
             model,
             langsmithRunId: actualRunId,

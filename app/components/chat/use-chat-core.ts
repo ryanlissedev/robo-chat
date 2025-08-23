@@ -97,12 +97,16 @@ export function useChatCore({
     setMessages,
     sendMessage,
   } = useChat({
-    fetch: async (url: string, options: RequestInit) => 
-      fetch(API_ROUTE_CHAT, options),
-    initialMessages,
     onFinish: ({ message }) => cacheAndAddMessage(message),
     onError: handleError,
   });
+
+  // Set initial messages after useChat initialization
+  useEffect(() => {
+    if (initialMessages.length > 0 && messages.length === 0) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages, messages.length, setMessages]);
 
   // Handle search params on mount
   useEffect(() => {

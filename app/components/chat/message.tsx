@@ -2,18 +2,19 @@ import type { UIMessage as MessageType } from '@ai-sdk/react';
 import { useState } from 'react';
 import { MessageAssistant } from './message-assistant';
 import { MessageUser } from './message-user';
+import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 
 type MessageProps = {
   variant: MessageType['role'];
   children: string;
   id: string;
-  attachments?: any[];
+  attachments?: ExtendedUIMessage['experimental_attachments'];
   isLast?: boolean;
   onDelete: (id: string) => void;
   onEdit: (id: string, newText: string) => void;
   onReload: () => void;
   hasScrollAnchor?: boolean;
-  parts?: MessageType['parts'];
+  parts?: ExtendedUIMessage['parts'];
   status?: 'streaming' | 'ready' | 'submitted' | 'error';
   className?: string;
   onQuote?: (text: string, messageId: string) => void;
@@ -71,7 +72,7 @@ export function Message({
         messageId={id}
         onQuote={onQuote}
         onReload={onReload}
-        parts={parts}
+        parts={parts as any}
         status={status}
       >
         {children}

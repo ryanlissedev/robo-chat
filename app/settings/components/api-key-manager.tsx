@@ -73,6 +73,8 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
   }, [loadApiKeys]);
 
   const loadApiKeys = async () => {
+    if (!supabase) return;
+    
     try {
       const { data, error } = await supabase
         .from('user_api_keys')
@@ -80,6 +82,11 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
         .eq('user_id', userId);
 
       if (error) {
+        // Handle case where table doesn't exist yet
+        if (error.code === '42P01' || error.message.includes('does not exist')) {
+          console.warn('user_api_keys table does not exist yet');
+          return;
+        }
         throw error;
       }
 
@@ -88,12 +95,18 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
         keysMap[key.provider] = key;
       });
       setApiKeys(keysMap);
-    } catch (_error) {
+    } catch (error: any) {
+      console.error('Failed to load API keys:', error);
       toast.error('Failed to load API keys');
     }
   };
 
   const saveApiKey = async (provider: string) => {
+    if (!supabase) {
+      toast.error('Database not available');
+      return;
+    }
+
     const key = newKeys[provider];
     if (!key) {
       toast.error('Please enter an API key');
@@ -125,6 +138,11 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
       );
 
       if (error) {
+        // Handle case where table doesn't exist yet
+        if (error.code === '42P01' || error.message.includes('does not exist')) {
+          toast.error('API key storage not yet configured. Please contact support.');
+          return;
+        }
         throw error;
       }
 
@@ -143,6 +161,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
       setNewKeys({ ...newKeys, [provider]: '' });
       toast.success(`${provider} API key saved successfully`);
     } catch (error: any) {
+      console.error('Failed to save API key:', error);
       toast.error(error.message || 'Failed to save API key');
     } finally {
       setLoading({ ...loading, [provider]: false });
@@ -150,6 +169,11 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
   };
 
   const deleteApiKey = async (provider: string) => {
+    if (!supabase) {
+      toast.error('Database not available');
+      return;
+    }
+
     setLoading({ ...loading, [provider]: true });
 
     try {
@@ -160,6 +184,11 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
         .eq('provider', provider);
 
       if (error) {
+        // Handle case where table doesn't exist yet
+        if (error.code === '42P01' || error.message.includes('does not exist')) {
+          console.warn('user_api_keys table does not exist yet');
+          return;
+        }
         throw error;
       }
 
@@ -168,7 +197,8 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
       setApiKeys(newApiKeys);
 
       toast.success(`${provider} API key deleted`);
-    } catch (_error) {
+    } catch (error: any) {
+      console.error('Failed to delete API key:', error);
       toast.error('Failed to delete API key');
     } finally {
       setLoading({ ...loading, [provider]: false });

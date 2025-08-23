@@ -1,4 +1,6 @@
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
+import type { ExtendedUIMessage } from '@/app/types/ai-extended';
+import { getMessageContent, hasParts } from '@/app/types/ai-extended';
 
 // Constants
 const DEFAULT_ERROR_STATUS_CODE = 500;
@@ -85,9 +87,9 @@ function _cleanAssistantMessage(
  * to prevent OpenAI API errors.
  */
 export function cleanMessagesForTools(
-  messages: MessageAISDK[],
+  messages: ExtendedUIMessage[],
   hasTools: boolean
-): MessageAISDK[] {
+): ExtendedUIMessage[] {
   if (hasTools) {
     return messages;
   }
@@ -101,20 +103,20 @@ export function cleanMessagesForTools(
       }
 
       if (message.role === 'assistant') {
-        // Convert MessageWithContent to UIMessage for assistant messages
-        const contentText =
-          message.parts?.find((p) => p.type === 'text')?.text || '';
+        // Use type-safe content extraction
+        const contentText = getMessageContent(message);
         return {
           id: message.id,
           role: message.role,
           parts: [{ type: 'text', text: contentText }],
-          createdAt: (message as any).createdAt || new Date(),
-        } as MessageAISDK;
+          content: contentText, // v4 compatibility
+          createdAt: message.createdAt || new Date(),
+        } as ExtendedUIMessage;
       }
 
       return message;
     })
-    .filter((msg): msg is MessageAISDK => msg !== null);
+    .filter((msg): msg is ExtendedUIMessage => msg !== null);
 
   // Ensure we have at least one message
   if (cleanedMessages.length === 0) {
@@ -123,8 +125,9 @@ export function cleanMessagesForTools(
         id: 'fallback-1',
         role: 'user',
         parts: [{ type: 'text', text: 'Hello' }],
+        content: 'Hello', // v4 compatibility
         createdAt: new Date(),
-      } as MessageAISDK,
+      } as ExtendedUIMessage,
     ];
   }
 
@@ -136,8 +139,9 @@ export function cleanMessagesForTools(
       id: `user-fallback-${Date.now()}`,
       role: 'user',
       parts: [{ type: 'text', text: 'Continue' }],
+      content: 'Continue', // v4 compatibility
       createdAt: new Date(),
-    } as MessageAISDK);
+    } as ExtendedUIMessage);
   }
 
   return cleanedMessages;

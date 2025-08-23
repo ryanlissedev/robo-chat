@@ -13,6 +13,7 @@ import { useModel } from '@/app/components/chat/use-model';
 import { ChatInput } from '@/app/components/chat-input/chat-input';
 import { ProjectChatItem } from '@/app/components/layout/sidebar/project-chat-item';
 import { toast } from '@/components/ui/toast';
+import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import { useChats } from '@/lib/chat-store/chats/provider';
 import { useMessages } from '@/lib/chat-store/messages/provider';
 import { MESSAGE_MAX_LENGTH, SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
@@ -36,6 +37,7 @@ export function ProjectView({ projectId }: ProjectViewProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [enableSearch, setEnableSearch] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [input, setInput] = useState('');
   const { user } = useUser();
   const { createNewChat, bumpChat } = useChats();
   const { cacheAndAddMessage } = useMessages();
@@ -87,18 +89,13 @@ export function ProjectView({ projectId }: ProjectViewProps) {
 
   const {
     messages,
-    input,
-    handleSubmit,
     status,
-    reload,
     stop,
     setMessages,
-    setInput,
+    sendMessage,
   } = useChat({
     id: `project-${projectId}-${currentChatId}`,
-    api: API_ROUTE_CHAT,
-    initialMessages: [],
-    onFinish: cacheAndAddMessage,
+    onFinish: ({ message }) => cacheAndAddMessage(message),
     onError: handleError,
   });
 
@@ -201,16 +198,17 @@ export function ProjectView({ projectId }: ProjectViewProps) {
     const optimisticAttachments =
       files.length > 0 ? createOptimisticAttachments(files) : [];
 
-    const optimisticMessage = {
+    const optimisticMessage: ExtendedUIMessage = {
       id: optimisticId,
-      content: input,
       role: 'user' as const,
       createdAt: new Date(),
+      parts: [{ type: 'text', text: input }],
+      content: input, // v4 compatibility
       experimental_attachments:
         optimisticAttachments.length > 0 ? optimisticAttachments : undefined,
     };
 
-    setMessages((prev) => [...prev, optimisticMessage]);
+    setMessages((prev) => [...prev, optimisticMessage as any]);
     setInput('');
 
     const submittedFiles = [...files];
@@ -262,10 +260,10 @@ export function ProjectView({ projectId }: ProjectViewProps) {
         experimental_attachments: attachments || undefined,
       };
 
-      handleSubmit(undefined, options);
+      // v5 uses sendMessage with text property
+      await sendMessage({ text: input }, options);
       setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
       cleanupOptimisticAttachments(optimisticMessage.experimental_attachments);
-      cacheAndAddMessage(optimisticMessage);
 
       // Bump existing chats to top (non-blocking, after submit)
       if (messages.length > 0) {
@@ -290,7 +288,7 @@ export function ProjectView({ projectId }: ProjectViewProps) {
     ensureChatExists,
     handleFileUploads,
     selectedModel,
-    handleSubmit,
+    sendMessage,
     cacheAndAddMessage,
     messages.length,
     bumpChat,
@@ -302,18 +300,9 @@ export function ProjectView({ projectId }: ProjectViewProps) {
       return;
     }
 
-    const options = {
-      body: {
-        chatId: null,
-        userId: user.id,
-        model: selectedModel,
-        isAuthenticated: true,
-        systemPrompt: SYSTEM_PROMPT_DEFAULT,
-      },
-    };
-
-    reload(options);
-  }, [user, selectedModel, reload]);
+    // v5 doesn't have reload - use setMessages to remove last message
+    setMessages(messages.slice(0, -1));
+  }, [user, selectedModel, setMessages, messages]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

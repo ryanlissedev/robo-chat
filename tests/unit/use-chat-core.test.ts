@@ -9,10 +9,12 @@ import { createMockFile, mockUserProfile } from '../test-utils';
 vi.mock('@ai-sdk/react', () => {
   const mockSendMessage = vi.fn() as any;
   const mockSetMessages = vi.fn() as any;
-  const mockStop = vi.fn() as any;
-
-  // Create a mock for AI SDK v5 - no setInput, append, reload, handleSubmit
-  const mockReload = vi.fn() as any;
+  const mockStop = vi.fn();
+  
+  // Add mock methods to the functions
+  mockSendMessage.mockClear = vi.fn();
+  mockSendMessage.mockResolvedValue = vi.fn();
+  mockSetMessages.mockClear = vi.fn();
   
   const mockUseChat = {
     messages: [],
@@ -21,7 +23,6 @@ vi.mock('@ai-sdk/react', () => {
     stop: mockStop,
     setMessages: mockSetMessages,
     sendMessage: mockSendMessage,
-    reload: mockReload,
   };
 
   return {
@@ -288,14 +289,14 @@ describe('useChatCore', () => {
       ]);
 
       // Clear previous mocks
-      mockUseChat.setMessages.mockClear();
-      mockUseChat.sendMessage.mockClear();
+      (mockUseChat.setMessages as any).mockClear();
+      (mockUseChat.sendMessage as any).mockClear();
       props.cleanupOptimisticAttachments.mockClear();
       props.cacheAndAddMessage.mockClear();
       props.clearDraft.mockClear();
 
       // Mock sendMessage to resolve successfully
-      mockUseChat.sendMessage.mockResolvedValue(undefined);
+      (mockUseChat.sendMessage as any).mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useChatCore(props));
 
@@ -459,18 +460,12 @@ describe('useChatCore', () => {
       mockBusinessLogic.prepareReloadScenario.mockResolvedValue({
         success: true,
         data: {
-          chatId: 'test-chat-id',
-          requestOptions: {},
-          optimisticMessage: {
-            id: 'optimistic-1',
-            role: 'assistant',
-            content: 'Reloading...',
-            createdAt: new Date(),
+          requestOptions: {
+            chatId: 'test-chat-id'
           },
         },
       });
-      (mockUseChat.reload as any).mockClear();
-      (mockUseChat.reload as any).mockResolvedValue(undefined);
+      // AI SDK v5 doesn't have reload - handleReload uses setMessages instead
 
       const { result } = renderHook(() => useChatCore(props));
 

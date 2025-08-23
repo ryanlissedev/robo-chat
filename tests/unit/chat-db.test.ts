@@ -8,11 +8,28 @@ describe('storeAssistantMessage - TDD London School', () => {
   let mockSupabase: SupabaseClient<Database>;
   let mockFrom: ReturnType<typeof vi.fn>;
   let mockInsert: ReturnType<typeof vi.fn>;
+  let mockSelect: ReturnType<typeof vi.fn>;
+  let mockEq: ReturnType<typeof vi.fn>;
+  let mockSingle: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     // Mock Supabase client using London School approach
     mockInsert = vi.fn().mockResolvedValue({ error: null });
-    mockFrom = vi.fn().mockReturnValue({ insert: mockInsert });
+    mockSingle = vi.fn().mockResolvedValue({ data: { id: 'test-chat-id' }, error: null });
+    mockEq = vi.fn().mockReturnValue({ single: mockSingle });
+    mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    
+    // Mock the from method to return different objects based on table name
+    mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'chats') {
+        return { select: mockSelect };
+      }
+      if (table === 'messages') {
+        return { insert: mockInsert };
+      }
+      return { insert: mockInsert, select: mockSelect };
+    });
+    
     mockSupabase = { from: mockFrom } as unknown as SupabaseClient<Database>;
   });
 
@@ -38,6 +55,7 @@ describe('storeAssistantMessage - TDD London School', () => {
       });
 
       // Assert - Verify behavior (interactions)
+      expect(mockFrom).toHaveBeenCalledWith('chats');
       expect(mockFrom).toHaveBeenCalledWith('messages');
       expect(mockInsert).toHaveBeenCalledWith({
         chat_id: chatId,
@@ -164,6 +182,22 @@ describe('storeAssistantMessage - TDD London School', () => {
       ).rejects.toThrow(
         'Failed to save assistant message: Database connection failed'
       );
+    });
+
+    it('should skip saving when chat does not exist and cannot be created', async () => {
+      // Arrange - Mock chat not existing
+      mockSingle.mockResolvedValue({ data: null, error: { message: 'No rows returned' } });
+      
+      // Act
+      await storeAssistantMessage({
+        supabase: mockSupabase,
+        chatId: 'non-existent-chat-id',
+        messages: [{ role: 'assistant', content: [{ type: 'text', text: 'Hello' }] }],
+      });
+
+      // Assert - Should not attempt to insert message
+      expect(mockFrom).toHaveBeenCalledWith('chats');
+      expect(mockInsert).not.toHaveBeenCalled();
     });
   });
 

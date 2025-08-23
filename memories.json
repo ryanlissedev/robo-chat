@@ -2795,7 +2795,25 @@
       "lastAccessed": "2025-08-22T23:15:24.086Z",
       "lastVerified": "2025-08-22T23:15:24.086Z",
       "status": "fresh"
+    },
+    {
+      "id": "mem_1755981381151_qm81hkpch",
+      "content": "App performance issues identified:\n1. Slow compilation (26s Fast Refresh)  \n2. WebSocket errors from placeholder Supabase URLs\n3. 401 Unauthorized errors from invalid Supabase config\n\nNeed to fix Supabase configuration and optimize dev performance.",
+      "type": "config",
+      "tags": [
+        "config",
+        "performance",
+        "supabase",
+        "websocket",
+        "dev-issues",
+        "robo-chat"
+      ],
+      "timestamp": "2025-08-23T20:36:21.151Z",
+      "accessCount": 0,
+      "lastAccessed": "2025-08-23T20:36:21.151Z",
+      "lastVerified": "2025-08-23T20:36:21.151Z",
+      "status": "fresh"
     }
   ],
-  "lastUpdated": "2025-08-22T23:15:24.086Z"
+  "lastUpdated": "2025-08-23T20:36:21.151Z"
 }

@@ -2,6 +2,7 @@ import type {
   ContentPart,
   Message,
   StoreAssistantMessageParams,
+  SupabaseClientType,
 } from '@/app/types/api.types';
 import type { Json } from '@/app/types/database.types';
 
@@ -130,17 +131,66 @@ function processMessages(messages: Message[]): ProcessedMessage {
   return processed;
 }
 
+/**
+ * Ensures a chat exists in the database before saving messages
+ * Creates the chat if it doesn't exist
+ */
+async function ensureChatExistsInDatabase(
+  supabase: SupabaseClientType,
+  chatId: string,
+  userId?: string
+): Promise<boolean> {
+  try {
+    // First check if chat exists
+    const { data: existingChat, error: checkError } = await supabase
+      .from('chats')
+      .select('id')
+      .eq('id', chatId)
+      .single();
+
+    if (existingChat && !checkError) {
+      return true; // Chat exists
+    }
+
+    // Chat doesn't exist, try to create it if we have userId
+    if (userId) {
+      const { error: insertError } = await supabase.from('chats').insert({
+        id: chatId,
+        user_id: userId,
+        title: 'New Chat',
+        model: 'gpt-4o-mini', // Default model
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+      return !insertError;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 // Main function using options pattern (preferred)
 export async function storeAssistantMessage(
   params: StoreAssistantMessageParams
 ): Promise<void> {
-  const { supabase, chatId, messages, message_group_id, model } = params;
+  const { supabase, chatId, messages, userId, message_group_id, model } = params;
   const processed = processMessages(messages);
 
   // Merge tool parts at the end
   processed.parts.push(...processed.toolMap.values());
 
   const finalPlainText = processed.textParts.join('\n\n');
+
+  // Ensure chat exists before inserting message
+  const chatExists = await ensureChatExistsInDatabase(supabase, chatId, userId);
+  if (!chatExists) {
+    // If we can't ensure chat exists, skip saving to avoid foreign key constraint
+    console.warn(`Chat ${chatId} does not exist and cannot be created. Skipping message save.`);
+    return;
+  }
 
   const { error } = await supabase.from('messages').insert({
     chat_id: chatId,

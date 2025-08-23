@@ -1,7 +1,7 @@
 'use client';
 
 import { CaretDown, Link } from '@phosphor-icons/react';
-import type { SourceUrlUIPart } from 'ai';
+import type { SourceUrlUIPart } from '@/app/types/ai-extended';
 import { AnimatePresence, motion } from 'motion/react';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -9,7 +9,11 @@ import { cn } from '@/lib/utils';
 import { addUTM, formatUrl, getFavicon } from './utils';
 
 type SourcesListProps = {
-  sources: SourceUrlUIPart['source'][];
+  sources: Array<{
+    id: string;
+    url: string;
+    title: string;
+  }>;
   className?: string;
 };
 
@@ -39,9 +43,9 @@ export function SourcesList({ sources, className }: SourcesListProps) {
             Sources
             <div className="-space-x-1 flex">
               {sources?.map((source, index) => {
-                const faviconUrl = getFavicon(source.url);
+                const faviconUrl = getFavicon(source?.url || '');
                 const showFallback =
-                  !faviconUrl || failedFavicons.has(source.url);
+                  !faviconUrl || failedFavicons.has(source?.url || '');
 
                 return showFallback ? (
                   <div

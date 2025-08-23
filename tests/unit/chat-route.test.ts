@@ -4,7 +4,7 @@ import { POST } from '@/app/api/chat/route';
 
 // Mock all external dependencies
 vi.mock('ai', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<typeof import('ai')>();
   return {
     ...actual,
     convertToModelMessages: vi.fn(),
@@ -59,11 +59,37 @@ vi.mock('@/app/api/chat/utils', () => ({
   createErrorResponse: vi.fn(),
 }));
 
+// Mock the ai-extended module functions
+vi.mock('@/app/types/ai-extended', () => {
+  const actualModule = vi.importActual('@/app/types/ai-extended');
+  return {
+    ...actualModule,
+    getMessageContent: vi.fn((message: any) => {
+      if (typeof message?.content === 'string') return message.content;
+      if (Array.isArray(message?.content)) {
+        return message.content
+          .map((part: any) => (part.type === 'text' ? part.text : ''))
+          .join('');
+      }
+      if (message?.parts) {
+        return message.parts
+          .map((part: any) => (part.type === 'text' ? part.text : ''))
+          .join('');
+      }
+      return 'test message content';
+    }),
+    hasContent: vi.fn(() => true),
+    hasParts: vi.fn(() => true),
+    hasAttachments: vi.fn(() => false),
+  };
+});
+
 // Import the actual modules for type checking
 import { validateAndTrackUsage } from '@/app/api/chat/api';
 import { getAllModels } from '@/lib/models';
 import { convertToModelMessages, streamText } from 'ai';
 import { createErrorResponse } from '@/app/api/chat/utils';
+import { getMessageContent, hasContent, hasParts, hasAttachments } from '@/app/types/ai-extended';
 
 describe('POST /api/chat - TDD London School', () => {
   let mockValidateAndTrackUsage: Mock;
@@ -71,6 +97,10 @@ describe('POST /api/chat - TDD London School', () => {
   let mockConvertToModelMessages: Mock;
   let mockStreamText: Mock;
   let mockCreateErrorResponse: Mock;
+  let mockGetMessageContent: Mock;
+  let mockHasContent: Mock;
+  let mockHasParts: Mock;
+  let mockHasAttachments: Mock;
 
   beforeEach(() => {
     // Cast the imported functions as mocks
@@ -79,6 +109,10 @@ describe('POST /api/chat - TDD London School', () => {
     mockConvertToModelMessages = convertToModelMessages as Mock;
     mockStreamText = streamText as Mock;
     mockCreateErrorResponse = createErrorResponse as Mock;
+    mockGetMessageContent = getMessageContent as Mock;
+    mockHasContent = hasContent as any;
+    mockHasParts = hasParts as any;
+    mockHasAttachments = hasAttachments as any;
 
     // Setup default mocks
     mockValidateAndTrackUsage.mockResolvedValue({ from: vi.fn() });
@@ -94,6 +128,20 @@ describe('POST /api/chat - TDD London School', () => {
       onFinish: vi.fn(),
     });
     mockCreateErrorResponse.mockReturnValue(new Response());
+    mockGetMessageContent.mockImplementation((message) => {
+      if (typeof message?.content === 'string') return message.content;
+      if (Array.isArray(message?.content)) {
+        return message.content
+          .map((part: any) => (part.type === 'text' ? part.text : ''))
+          .join('');
+      }
+      if (message?.parts) {
+        return message.parts
+          .map((part: any) => (part.type === 'text' ? part.text : ''))
+          .join('');
+      }
+      return 'test message content';
+    });
   });
 
   describe('request validation', () => {

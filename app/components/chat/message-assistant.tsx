@@ -1,6 +1,7 @@
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
 import { ArrowClockwise, Check, Copy } from '@phosphor-icons/react';
 import { useCallback, useRef } from 'react';
+import type { ToolInvocationUIPart } from '@/app/types/ai-extended';
 // AI SDK Elements
 import {
   Reasoning,
@@ -61,7 +62,7 @@ export function MessageAssistant({
   const sources = getSources(parts);
   const toolInvocationParts = parts?.filter(
     (part) => part.type === 'tool-invocation'
-  );
+  ) as ToolInvocationUIPart[] | undefined;
   const reasoningParts = parts?.find((part) => part.type === 'reasoning');
   const contentNullOrEmpty = children === null || children === '';
   const isLastStreaming = status === 'streaming' && isLast;
@@ -70,16 +71,16 @@ export function MessageAssistant({
       ?.filter(
         (part: any) =>
           part.type === 'tool-invocation' &&
-          part.state === 'result' &&
-          part.toolName === 'imageSearch' &&
-          part.result?.content?.[0]?.type === 'images'
+          part.state === 'output-available' &&
+          (part as any).toolName === 'imageSearch' &&
+          (part as any).result?.content?.[0]?.type === 'images'
       )
       .flatMap((part) =>
         part.type === 'tool-invocation' &&
-        part.state === 'result' &&
-        part.toolName === 'imageSearch' &&
-        part.result?.content?.[0]?.type === 'images'
-          ? (part.result?.content?.[0]?.results ?? [])
+        part.state === 'output-available' &&
+        (part as any).toolName === 'imageSearch' &&
+        (part as any).result?.content?.[0]?.type === 'images'
+          ? ((part as any).result?.content?.[0]?.results ?? [])
           : []
       ) ?? [];
 
@@ -144,7 +145,7 @@ export function MessageAssistant({
           <Sources>
             <SourcesTrigger count={sources.length} />
             <SourcesContent>
-              {sources.map((source, index) => (
+              {sources.map((source: any, index: number) => (
                 <Source
                   href={source.url}
                   key={index}
