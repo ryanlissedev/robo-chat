@@ -7,8 +7,12 @@ type CollapsibleContentProps = React.HTMLAttributes<HTMLDivElement>;
 type CollapsibleTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 const Collapsible = (props: CollapsibleProps) => <div {...props} />;
-const CollapsibleContent = (props: CollapsibleContentProps) => <div {...props} />;
-const CollapsibleTrigger = (props: CollapsibleTriggerProps) => <button {...props} />;
+const CollapsibleContent = (props: CollapsibleContentProps) => (
+  <div {...props} />
+);
+const CollapsibleTrigger = (props: CollapsibleTriggerProps) => (
+  <button {...props} />
+);
 
 import type { ToolUIPart } from 'ai';
 import {

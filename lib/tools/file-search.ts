@@ -51,23 +51,21 @@ export const fileSearchTool = tool({
       .optional()
       .default('semantic'),
   }),
-  execute: async (
-    {
-      query,
-      max_results = 5,
-      file_types,
-      vector_store_id,
-      enable_rewriting = true,
-      rewrite_strategy = 'expansion',
-      enable_reranking = true,
-      reranking_method = 'semantic',
-    },
-    context: { apiKey?: string }
-  ) => {
+  execute: async ({
+    query,
+    max_results = 5,
+    file_types,
+    vector_store_id,
+    enable_rewriting = true,
+    rewrite_strategy = 'expansion',
+    enable_reranking = true,
+    reranking_method = 'semantic',
+  }) => {
     try {
-      const apiKey: string | undefined = context?.apiKey;
+      // Get API key from environment
+      const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) {
-        throw new Error('OpenAI API key is required for file search');
+        throw new Error('OpenAI API key is required for file search. Set OPENAI_API_KEY environment variable.');
       }
 
       const openai = new OpenAI({ apiKey });
@@ -95,9 +93,16 @@ export const fileSearchTool = tool({
       // Configure retrieval pipeline
       const retrievalConfig: RetrievalPipelineConfig = {
         queryRewriting: enable_rewriting,
-        rewriteStrategy: rewrite_strategy,
+        rewriteStrategy: rewrite_strategy as
+          | 'expansion'
+          | 'refinement'
+          | 'decomposition'
+          | 'multi-perspective',
         reranking: enable_reranking,
-        rerankingMethod: reranking_method,
+        rerankingMethod: reranking_method as
+          | 'semantic'
+          | 'cross-encoder'
+          | 'diversity',
         topK: max_results,
         metadataFilters: file_types ? { fileTypes: file_types } : undefined,
       };
@@ -196,14 +201,13 @@ export async function createVectorStore(
 export async function uploadFileForSearch(
   apiKey: string,
   file: File | Buffer,
-  fileName: string,
+  _fileName: string,
   purpose: 'assistants' = 'assistants',
   metadata?: Record<string, unknown>
 ): Promise<string> {
   const openai = new OpenAI({ apiKey });
 
   try {
-
     const uploadedFile = await openai.files.create({
       file: file as File,
       purpose,
@@ -310,17 +314,18 @@ export async function searchMultipleStores(
 
     // Re-rank combined results
     const mapped = uniqueResults.map((r, i) => {
-      const result = r as { 
-        file_id?: string; 
-        file_name?: string; 
-        content?: string; 
-        id?: string; 
-        score: number; 
-        metadata?: { title?: string; [key: string]: unknown } 
+      const result = r as {
+        file_id?: string;
+        file_name?: string;
+        content?: string;
+        id?: string;
+        score: number;
+        metadata?: { title?: string; [key: string]: unknown };
       };
       return {
         file_id: result.file_id || result.id || `doc-${i}`,
-        file_name: result.file_name || result.metadata?.title || `Document ${i + 1}`,
+        file_name:
+          result.file_name || result.metadata?.title || `Document ${i + 1}`,
         content: result.content || '',
         score: result.score,
         metadata: result.metadata as Record<string, unknown> | undefined,
@@ -328,7 +333,9 @@ export async function searchMultipleStores(
     });
 
     if (config?.reranking) {
-      return mapped.sort((a, b) => b.score - a.score).slice(0, config.topK || 5);
+      return mapped
+        .sort((a, b) => b.score - a.score)
+        .slice(0, config.topK || 5);
     }
 
     return mapped;

@@ -159,9 +159,9 @@ test.describe('Chat Message Flow', () => {
           const stream = new ReadableStream({
             start(controller) {
               controller.enqueue(
-              encoder.encode(
-                'data: {"type":"content.delta","delta":{"type":"text-delta","textDelta":"Great suggestion! Let me help you with that."}}\n\n'
-              )
+                encoder.encode(
+                  'data: {"type":"content.delta","delta":{"type":"text-delta","textDelta":"Great suggestion! Let me help you with that."}}\n\n'
+                )
               );
               controller.close();
             },
@@ -241,7 +241,9 @@ test.describe('Chat Message Flow', () => {
         const stream = new ReadableStream({
           start(controller) {
             controller.enqueue(
-              encoder.encode('data: {"type":"content.delta","delta":{"type":"text-delta","textDelta":"Test response"}}\n\n')
+              encoder.encode(
+                'data: {"type":"content.delta","delta":{"type":"text-delta","textDelta":"Test response"}}\n\n'
+              )
             );
             controller.close();
           },
@@ -282,7 +284,9 @@ test.describe('Chat Message Flow', () => {
           const stream = new ReadableStream({
             start(controller) {
               controller.enqueue(
-              encoder.encode(`data: {"type":"content.delta","delta":{"type":"text-delta","textDelta":"Response ${i}"}}\n\n`)
+                encoder.encode(
+                  `data: {"type":"content.delta","delta":{"type":"text-delta","textDelta":"Response ${i}"}}\n\n`
+                )
               );
               controller.close();
             },

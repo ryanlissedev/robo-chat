@@ -4,9 +4,13 @@ import { describe, expect, it } from 'vitest';
 import { ChatInput } from '@/app/components/chat-input/chat-input';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ModelProvider } from '@/lib/model-store/provider';
-import { UserProvider } from '@/lib/user-store/provider';
 import { UserPreferencesProvider } from '@/lib/user-preference-store/provider';
-import { renderWithProviders, screen, mockUserProfile } from '@/tests/test-utils';
+import { UserProvider } from '@/lib/user-store/provider';
+import {
+  mockUserProfile,
+  renderWithProviders,
+  screen,
+} from '@/tests/test-utils';
 
 function ChatInputHarness({ hasSuggestions }: { hasSuggestions: boolean }) {
   const [val, setVal] = useState('');
@@ -49,7 +53,7 @@ describe('ChatInput focus resilience with suggestions', () => {
     );
 
     const textarea = screen.getByPlaceholderText(
-      'Ask anything'
+      'Ask anything…'
     ) as HTMLInputElement;
     await user.type(textarea, 'h');
     expect(textarea.value).toBe('h');
@@ -67,8 +71,9 @@ describe('ChatInput focus resilience with suggestions', () => {
       </UserProvider>
     );
 
-    // Should still be able to type
-    await user.type(textarea, 'i');
+    // Should still be able to type - need to get the element again after rerender
+    const textareaAfterRerender = screen.getByPlaceholderText('Ask anything…') as HTMLInputElement;
+    await user.type(textareaAfterRerender, 'i');
     expect(textarea.value).toBe('hi');
   });
 });

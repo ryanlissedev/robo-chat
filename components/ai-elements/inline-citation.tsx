@@ -1,13 +1,5 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  type CarouselApi,
-} from '@/components/ui/carousel';
-
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
 import {
   type ComponentProps,
@@ -17,6 +9,13 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { Badge } from '@/components/ui/badge';
+import {
+  Carousel,
+  type CarouselApi,
+  CarouselContent,
+  CarouselItem,
+} from '@/components/ui/carousel';
 import {
   HoverCard,
   HoverCardContent,

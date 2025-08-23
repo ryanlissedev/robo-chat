@@ -44,41 +44,43 @@ export const test = base.extend<{
 
       sendMessage: async (message: string) => {
         const input = page.locator('[data-testid="chat-input"]');
-        
+
         // Focus the input first
         await input.click();
         await page.waitForTimeout(100);
-        
+
         // Use Playwright's native methods to avoid DOM context issues
         await input.fill(''); // Clear first
         await input.fill(message);
-        
+
         // Trigger additional events to ensure React state updates
         await input.press('Space'); // Trigger any onChange handlers
         await input.press('Backspace'); // Remove the space
-        
+
         // Alternative approach: use keyboard to type character by character
         // This is more reliable for React components
         await input.fill(''); // Clear again
         await input.type(message, { delay: 10 });
-        
+
         // Wait for React state to update
         await page.waitForTimeout(300);
-        
+
         // Verify the input has the expected value
         const inputValue = await input.inputValue();
         if (inputValue !== message) {
-          console.log(`Warning: Input value "${inputValue}" doesn't match expected "${message}"`);
           // Try one more time with direct fill
           await input.fill(message);
           await page.waitForTimeout(100);
         }
-        
+
         // Wait for the send button to become enabled
-        await page.waitForSelector('[data-testid="send-button"]:not([disabled])', {
-          timeout: 5000,
-        });
-        
+        await page.waitForSelector(
+          '[data-testid="send-button"]:not([disabled])',
+          {
+            timeout: 5000,
+          }
+        );
+
         await page.click('[data-testid="send-button"]');
       },
 

@@ -27,8 +27,13 @@ export function convertFromApiFormat(apiData: {
   multi_model_enabled?: boolean;
   hidden_models?: string[];
 }): UserPreferences {
+  // Validate layout type with fallback
+  const isValidLayoutType = (layout: string): layout is LayoutType => {
+    return layout === 'sidebar' || layout === 'fullscreen';
+  };
+  
   return {
-    layout: apiData.layout || 'fullscreen',
+    layout: apiData.layout && isValidLayoutType(apiData.layout) ? apiData.layout : 'fullscreen',
     promptSuggestions: apiData.prompt_suggestions ?? true,
     showToolInvocations: apiData.show_tool_invocations ?? true,
     showConversationPreviews: apiData.show_conversation_previews ?? true,

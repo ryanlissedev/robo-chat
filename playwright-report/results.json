@@ -15,10 +15,7 @@
     },
     "preserveOutput": "always",
     "reporter": [
-      [
-        "html",
-        null
-      ],
+      ["html", null],
       [
         "json",
         {
@@ -49,9 +46,7 @@
         "name": "chromium",
         "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
         "testIgnore": [],
-        "testMatch": [
-          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
-        ],
+        "testMatch": ["**/*.@(spec|test).?(c|m)[jt]s?(x)"],
         "timeout": 30000
       },
       {
@@ -65,9 +60,7 @@
         "name": "firefox",
         "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
         "testIgnore": [],
-        "testMatch": [
-          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
-        ],
+        "testMatch": ["**/*.@(spec|test).?(c|m)[jt]s?(x)"],
         "timeout": 30000
       },
       {
@@ -81,9 +74,7 @@
         "name": "webkit",
         "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
         "testIgnore": [],
-        "testMatch": [
-          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
-        ],
+        "testMatch": ["**/*.@(spec|test).?(c|m)[jt]s?(x)"],
         "timeout": 30000
       },
       {
@@ -97,9 +88,7 @@
         "name": "Mobile Chrome",
         "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
         "testIgnore": [],
-        "testMatch": [
-          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
-        ],
+        "testMatch": ["**/*.@(spec|test).?(c|m)[jt]s?(x)"],
         "timeout": 30000
       },
       {
@@ -113,9 +102,7 @@
         "name": "Mobile Safari",
         "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
         "testIgnore": [],
-        "testMatch": [
-          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
-        ],
+        "testMatch": ["**/*.@(spec|test).?(c|m)[jt]s?(x)"],
         "timeout": 30000
       },
       {
@@ -129,9 +116,7 @@
         "name": "Microsoft Edge",
         "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
         "testIgnore": [],
-        "testMatch": [
-          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
-        ],
+        "testMatch": ["**/*.@(spec|test).?(c|m)[jt]s?(x)"],
         "timeout": 30000
       },
       {
@@ -145,9 +130,7 @@
         "name": "Google Chrome",
         "testDir": "/Users/neo/Developer/experiments/HGG/robo-chat/tests/e2e",
         "testIgnore": [],
-        "testMatch": [
-          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
-        ],
+        "testMatch": ["**/*.@(spec|test).?(c|m)[jt]s?(x)"],
         "timeout": 30000
       }
     ],

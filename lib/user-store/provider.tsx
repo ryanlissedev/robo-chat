@@ -4,6 +4,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useEffect } from 'react';
 import type { UserProfile } from '@/lib/user/types';
+import { isSupabaseEnabled } from '@/lib/supabase/config';
 import {
   fetchUserProfile,
   signOutUser,
@@ -90,9 +91,9 @@ export function UserProvider({
     await signOutMutation.mutateAsync();
   };
 
-  // Set up realtime subscription for user data changes
+  // Set up realtime subscription for user data changes (only if Supabase is enabled)
   useEffect(() => {
-    if (!user?.id) {
+    if (!user?.id || !isSupabaseEnabled) {
       return;
     }
     const unsubscribe = subscribeToUserUpdates(user.id, (newData) => {

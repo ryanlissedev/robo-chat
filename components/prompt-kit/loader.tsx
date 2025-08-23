@@ -29,7 +29,10 @@ const TRANSITION = {
 
 export function Loader() {
   return (
-    <div className={`flex items-center justify-center ${DOT_SPACING}`} data-testid="message-loading">
+    <div
+      className={`flex items-center justify-center ${DOT_SPACING}`}
+      data-testid="message-loading"
+    >
       <Dot delay={DELAY_DOT_1} />
       <Dot delay={DELAY_DOT_2} />
       <Dot delay={DELAY_DOT_3} />

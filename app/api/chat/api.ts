@@ -1,72 +1,110 @@
-import { saveFinalAssistantMessage } from "@/app/api/chat/db"
+import { storeAssistantMessage as storeAssistantMessageToDb } from '@/app/api/chat/db';
 import type {
   ChatApiParams,
   LogUserMessageParams,
   StoreAssistantMessageParams,
   SupabaseClientType,
-} from "@/app/types/api.types"
-import { FREE_MODELS_IDS, NON_AUTH_ALLOWED_MODELS } from "@/lib/config"
-import { getProviderForModel } from "@/lib/openproviders/provider-map"
-import { sanitizeUserInput } from "@/lib/sanitize"
-import { validateUserIdentity } from "@/lib/server/api"
-import { checkUsageByModel, incrementUsage } from "@/lib/usage"
-import { getUserKey, type ProviderWithoutOllama } from "@/lib/user-keys"
+} from '@/app/types/api.types';
+import { FREE_MODELS_IDS, NON_AUTH_ALLOWED_MODELS } from '@/lib/config';
+import { getProviderForModel } from '@/lib/openproviders/provider-map';
+import { sanitizeUserInput } from '@/lib/sanitize';
+import { validateUserIdentity } from '@/lib/server/api';
+import { checkUsageByModel, incrementUsage } from '@/lib/usage';
+import { getUserKey, type ProviderWithoutOllama } from '@/lib/user-keys';
 
 export async function validateAndTrackUsage({
   userId,
   model,
   isAuthenticated,
 }: ChatApiParams): Promise<SupabaseClientType | null> {
-  const supabase = await validateUserIdentity(userId, isAuthenticated)
-  if (!supabase) return null
+  const supabase = await validateUserIdentity(userId, isAuthenticated);
+  if (!supabase) {
+    return null;
+  }
 
   // Check if user is authenticated
-  if (!isAuthenticated) {
-    // For unauthenticated users, only allow specific models
-    if (!NON_AUTH_ALLOWED_MODELS.includes(model)) {
-      throw new Error(
-        "This model requires authentication. Please sign in to access more models."
-      )
-    }
-  } else {
+  if (isAuthenticated) {
     // For authenticated users, check API key requirements
-    const provider = getProviderForModel(model)
+    const provider = getProviderForModel(model);
 
-    if (provider !== "ollama") {
+    if (provider !== 'ollama') {
       const userApiKey = await getUserKey(
         userId,
         provider as ProviderWithoutOllama
-      )
+      );
 
       // If no API key and model is not in free list, deny access
-      if (!userApiKey && !FREE_MODELS_IDS.includes(model)) {
+      if (!(userApiKey || FREE_MODELS_IDS.includes(model))) {
         throw new Error(
           `This model requires an API key for ${provider}. Please add your API key in settings or use a free model.`
-        )
+        );
       }
     }
+  } else if (!NON_AUTH_ALLOWED_MODELS.includes(model)) {
+    // For unauthenticated users, only allow specific models
+    throw new Error(
+      'This model requires authentication. Please sign in to access more models.'
+    );
   }
 
   // Check usage limits for the model
-  await checkUsageByModel(supabase, userId, model, isAuthenticated)
+  await checkUsageByModel(supabase, userId, model, isAuthenticated);
 
-  return supabase
+  return supabase;
 }
 
 export async function incrementMessageCount({
   supabase,
   userId,
 }: {
-  supabase: SupabaseClientType
-  userId: string
+  supabase: SupabaseClientType;
+  userId: string;
 }): Promise<void> {
-  if (!supabase) return
+  if (!supabase) {
+    return;
+  }
 
   try {
-    await incrementUsage(supabase, userId)
-  } catch (err) {
-    console.error("Failed to increment message count:", err)
+    await incrementUsage(supabase, userId);
+  } catch (_err) {
     // Don't throw error as this shouldn't block the chat
+  }
+}
+
+/**
+ * Ensures a chat exists in the database before saving user messages
+ * Creates the chat if it doesn't exist
+ */
+async function ensureChatExistsForUser(
+  supabase: SupabaseClientType,
+  chatId: string,
+  userId: string
+): Promise<boolean> {
+  try {
+    // First check if chat exists
+    const { data: existingChat, error: checkError } = await supabase
+      .from('chats')
+      .select('id')
+      .eq('id', chatId)
+      .single();
+
+    if (existingChat && !checkError) {
+      return true; // Chat exists
+    }
+
+    // Chat doesn't exist, create it
+    const { error: insertError } = await supabase.from('chats').insert({
+      id: chatId,
+      user_id: userId,
+      title: 'New Chat',
+      model: 'gpt-4o-mini', // Default model
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    return !insertError;
+  } catch {
+    return false;
   }
 }
 
@@ -76,32 +114,42 @@ export async function logUserMessage({
   chatId,
   content,
   attachments,
-  model,
-  isAuthenticated,
   message_group_id,
-}: LogUserMessageParams): Promise<void> {
-  if (!supabase) return
-
-  // Skip database operations for guest users when rate limiting is disabled
-  const isRateLimitDisabled = process.env.DISABLE_RATE_LIMIT === 'true'
-  const isDevelopment = process.env.NODE_ENV === 'development'
-  const isGuestUser = userId.startsWith('guest-') || userId.startsWith('temp-guest-')
-
-  if (isGuestUser && (isRateLimitDisabled || isDevelopment)) {
-    return
+}: Omit<LogUserMessageParams, 'model' | 'isAuthenticated'>): Promise<void> {
+  if (!supabase) {
+    return;
   }
 
-  const { error } = await supabase.from("messages").insert({
+  // Skip database operations for guest users when rate limiting is disabled
+  const isRateLimitDisabled = process.env.DISABLE_RATE_LIMIT === 'true';
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isGuestUser =
+    userId.startsWith('guest-') || userId.startsWith('temp-guest-');
+
+  if (isGuestUser && (isRateLimitDisabled || isDevelopment)) {
+    return;
+  }
+
+  // Ensure chat exists before inserting message
+  const chatExists = await ensureChatExistsForUser(supabase, chatId, userId);
+  if (!chatExists) {
+    // If we can't ensure chat exists, skip saving to avoid foreign key constraint
+    console.warn(`Chat ${chatId} does not exist and cannot be created for user ${userId}. Skipping user message save.`);
+    return;
+  }
+
+  const { error } = await supabase.from('messages').insert({
     chat_id: chatId,
-    role: "user",
+    role: 'user',
     content: sanitizeUserInput(content),
     experimental_attachments: attachments,
     user_id: userId,
     message_group_id,
-  })
+  });
 
   if (error) {
-    console.error("Error saving user message:", error)
+    // Silently handle error to avoid breaking chat flow
+    console.warn(`Failed to save user message: ${error.message}`);
   }
 }
 
@@ -109,30 +157,35 @@ export async function storeAssistantMessage({
   supabase,
   chatId,
   messages,
+  userId,
   message_group_id,
   model,
 }: StoreAssistantMessageParams): Promise<void> {
-  if (!supabase) return
+  if (!supabase) {
+    return;
+  }
 
   // For guest users, we need to extract userId from the messages or chatId context
   // Since we don't have userId directly, we'll check if any message content suggests guest user
-  const hasGuestContext = chatId && (chatId.includes('guest-') || chatId.includes('temp-guest-'))
-  const isRateLimitDisabled = process.env.DISABLE_RATE_LIMIT === 'true'
-  const isDevelopment = process.env.NODE_ENV === 'development'
+  const hasGuestContext =
+    chatId && (chatId.includes('guest-') || chatId.includes('temp-guest-'));
+  const isRateLimitDisabled = process.env.DISABLE_RATE_LIMIT === 'true';
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   if (hasGuestContext && (isRateLimitDisabled || isDevelopment)) {
-    return
+    return;
   }
 
   try {
-    await saveFinalAssistantMessage(
+    await storeAssistantMessageToDb({
       supabase,
       chatId,
       messages,
+      userId,
       message_group_id,
-      model
-    )
-  } catch (err) {
-    console.error("Failed to save assistant messages:", err)
+      model,
+    });
+  } catch (_error) {
+    // Silently handle error to avoid breaking chat flow
   }
 }

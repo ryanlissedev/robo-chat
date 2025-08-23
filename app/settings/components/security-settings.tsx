@@ -1,43 +1,54 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Textarea } from '@/components/ui/textarea'
-import { toast } from 'sonner'
-import { Shield, Lock, Warning, CheckCircle, Key, Eye } from '@phosphor-icons/react'
-import { createClient } from '@/lib/supabase/client'
+import {
+  CheckCircle,
+  Eye,
+  Key,
+  Lock,
+  Shield,
+  Warning,
+} from '@phosphor-icons/react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { createClient } from '@/lib/supabase/client';
 
-interface SecurityConfig {
+type SecurityConfig = {
   // Content Filtering
-  enableContentFiltering: boolean
-  blockPromptInjection: boolean
-  sanitizeOutputs: boolean
-  
-  // Rate Limiting
-  enableRateLimiting: boolean
-  maxRequestsPerMinute: number
-  maxTokensPerDay: number
-  
-  // Data Protection
-  encryptApiKeys: boolean
-  logQueries: boolean
-  retentionDays: number
-  
-  // Advanced Security
-  enableJailbreakDetection: boolean
-  requireApiKeyRotation: boolean
-  rotationDays: number
-  allowedDomains: string[]
-}
+  enableContentFiltering: boolean;
+  blockPromptInjection: boolean;
+  sanitizeOutputs: boolean;
 
-interface SecuritySettingsProps {
-  userId: string
-}
+  // Rate Limiting
+  enableRateLimiting: boolean;
+  maxRequestsPerMinute: number;
+  maxTokensPerDay: number;
+
+  // Data Protection
+  encryptApiKeys: boolean;
+  logQueries: boolean;
+  retentionDays: number;
+
+  // Advanced Security
+  enableJailbreakDetection: boolean;
+  requireApiKeyRotation: boolean;
+  rotationDays: number;
+  allowedDomains: string[];
+};
+
+type SecuritySettingsProps = {
+  userId: string;
+};
 
 export function SecuritySettings({ userId }: SecuritySettingsProps) {
   const [config, setConfig] = useState<SecurityConfig>({
@@ -46,7 +57,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
     sanitizeOutputs: true,
     enableRateLimiting: true,
     maxRequestsPerMinute: 60,
-    maxTokensPerDay: 100000,
+    maxTokensPerDay: 100_000,
     encryptApiKeys: true,
     logQueries: false,
     retentionDays: 30,
@@ -54,104 +65,138 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
     requireApiKeyRotation: false,
     rotationDays: 90,
     allowedDomains: [],
-  })
-  const [loading, setLoading] = useState(false)
-  const [newDomain, setNewDomain] = useState('')
-  const supabase = createClient()
+  });
+  const [loading, setLoading] = useState(false);
+  const [newDomain, setNewDomain] = useState('');
+  const supabase = createClient();
 
   useEffect(() => {
-    loadSettings()
-  }, [])
+    loadSettings();
+  }, [loadSettings]);
 
   const loadSettings = async () => {
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from('user_security_settings')
         .select('*')
         .eq('user_id', userId)
-        .single()
+        .single();
 
-      if (data) {
-        setConfig(data.config)
+      if (error) {
+        // Handle case where table doesn't exist yet or no data found
+        if (error.code === '42P01' || error.message.includes('does not exist')) {
+          console.warn('user_security_settings table does not exist yet');
+          return;
+        }
+        if (error.code === 'PGRST116') {
+          // No rows found - this is expected for first time users
+          return;
+        }
+        console.error('Error loading security settings:', error);
+        return;
       }
-    } catch (error) {
-      console.error('Error loading security settings:', error)
+
+      if (data && data.config) {
+        setConfig(data.config as SecurityConfig);
+      }
+    } catch (error: any) {
+      console.error('Failed to load security settings:', error);
     }
-  }
+  };
 
   const saveSettings = async () => {
-    setLoading(true)
+    if (!supabase) {
+      toast.error('Database not available');
+      return;
+    }
+
+    setLoading(true);
     try {
-      const { error } = await supabase
-        .from('user_security_settings')
-        .upsert({
+      const { error } = await supabase.from('user_security_settings').upsert(
+        {
           user_id: userId,
           config,
           updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id'
-        })
+        },
+        {
+          onConflict: 'user_id',
+        }
+      );
 
-      if (error) throw error
+      if (error) {
+        // Handle case where table doesn't exist yet
+        if (error.code === '42P01' || error.message.includes('does not exist')) {
+          toast.error('Security settings storage not yet configured. Please contact support.');
+          return;
+        }
+        throw error;
+      }
 
-      toast.success('Security settings saved')
-    } catch (error) {
-      console.error('Error saving settings:', error)
-      toast.error('Failed to save settings')
+      toast.success('Security settings saved');
+    } catch (error: any) {
+      console.error('Failed to save security settings:', error);
+      toast.error('Failed to save settings');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const updateConfig = (key: keyof SecurityConfig, value: any) => {
-    setConfig({ ...config, [key]: value })
-  }
+    setConfig({ ...config, [key]: value });
+  };
 
   const addDomain = () => {
-    if (!newDomain) return
-    
-    // Validate domain format
-    const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/i
-    if (!domainRegex.test(newDomain)) {
-      toast.error('Invalid domain format')
-      return
+    if (!newDomain) {
+      return;
     }
 
-    if (!config.allowedDomains.includes(newDomain)) {
-      updateConfig('allowedDomains', [...config.allowedDomains, newDomain])
-      setNewDomain('')
-      toast.success('Domain added to allowlist')
-    } else {
-      toast.error('Domain already in allowlist')
+    // Validate domain format
+    const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/i;
+    if (!domainRegex.test(newDomain)) {
+      toast.error('Invalid domain format');
+      return;
     }
-  }
+
+    if (config.allowedDomains.includes(newDomain)) {
+      toast.error('Domain already in allowlist');
+    } else {
+      updateConfig('allowedDomains', [...config.allowedDomains, newDomain]);
+      setNewDomain('');
+      toast.success('Domain added to allowlist');
+    }
+  };
 
   const removeDomain = (domain: string) => {
-    updateConfig('allowedDomains', config.allowedDomains.filter(d => d !== domain))
-  }
+    updateConfig(
+      'allowedDomains',
+      config.allowedDomains.filter((d) => d !== domain)
+    );
+  };
 
   const testSecuritySettings = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const response = await fetch('/api/settings/test-security', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ config })
-      })
+        body: JSON.stringify({ config }),
+      });
 
-      const result = await response.json()
-      
+      const result = await response.json();
+
       if (result.success) {
-        toast.success('Security configuration is valid')
+        toast.success('Security configuration is valid');
       } else {
-        toast.error('Security test failed: ' + result.error)
+        toast.error(`Security test failed: ${result.error}`);
       }
-    } catch (error) {
-      toast.error('Failed to test security settings')
+    } catch (_error) {
+      toast.error('Failed to test security settings');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
@@ -169,56 +214,64 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="content-filtering">Content Filtering</Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Block harmful or inappropriate content
               </p>
             </div>
             <Switch
-              id="content-filtering"
               checked={config.enableContentFiltering}
-              onCheckedChange={(checked) => updateConfig('enableContentFiltering', checked)}
+              id="content-filtering"
+              onCheckedChange={(checked) =>
+                updateConfig('enableContentFiltering', checked)
+              }
             />
           </div>
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="prompt-injection">Block Prompt Injection</Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Detect and prevent prompt injection attacks
               </p>
             </div>
             <Switch
-              id="prompt-injection"
               checked={config.blockPromptInjection}
-              onCheckedChange={(checked) => updateConfig('blockPromptInjection', checked)}
+              id="prompt-injection"
+              onCheckedChange={(checked) =>
+                updateConfig('blockPromptInjection', checked)
+              }
             />
           </div>
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="sanitize-outputs">Sanitize Outputs</Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Remove potentially dangerous content from responses
               </p>
             </div>
             <Switch
-              id="sanitize-outputs"
               checked={config.sanitizeOutputs}
-              onCheckedChange={(checked) => updateConfig('sanitizeOutputs', checked)}
+              id="sanitize-outputs"
+              onCheckedChange={(checked) =>
+                updateConfig('sanitizeOutputs', checked)
+              }
             />
           </div>
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="jailbreak-detection">Jailbreak Detection</Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Identify attempts to bypass safety measures
               </p>
             </div>
             <Switch
-              id="jailbreak-detection"
               checked={config.enableJailbreakDetection}
-              onCheckedChange={(checked) => updateConfig('enableJailbreakDetection', checked)}
+              id="jailbreak-detection"
+              onCheckedChange={(checked) =>
+                updateConfig('enableJailbreakDetection', checked)
+              }
             />
           </div>
         </CardContent>
@@ -230,17 +283,17 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
             <Lock className="h-5 w-5" />
             Rate Limiting
           </CardTitle>
-          <CardDescription>
-            Control API usage and prevent abuse
-          </CardDescription>
+          <CardDescription>Control API usage and prevent abuse</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <Label htmlFor="rate-limiting">Enable Rate Limiting</Label>
             <Switch
-              id="rate-limiting"
               checked={config.enableRateLimiting}
-              onCheckedChange={(checked) => updateConfig('enableRateLimiting', checked)}
+              id="rate-limiting"
+              onCheckedChange={(checked) =>
+                updateConfig('enableRateLimiting', checked)
+              }
             />
           </div>
 
@@ -249,22 +302,32 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
               <div className="space-y-2">
                 <Label>Max Requests per Minute</Label>
                 <Input
+                  max={1000}
+                  min={1}
+                  onChange={(e) =>
+                    updateConfig(
+                      'maxRequestsPerMinute',
+                      Number.parseInt(e.target.value, 10)
+                    )
+                  }
                   type="number"
                   value={config.maxRequestsPerMinute}
-                  onChange={(e) => updateConfig('maxRequestsPerMinute', parseInt(e.target.value))}
-                  min={1}
-                  max={1000}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label>Max Tokens per Day</Label>
                 <Input
+                  max={10_000_000}
+                  min={1000}
+                  onChange={(e) =>
+                    updateConfig(
+                      'maxTokensPerDay',
+                      Number.parseInt(e.target.value, 10)
+                    )
+                  }
                   type="number"
                   value={config.maxTokensPerDay}
-                  onChange={(e) => updateConfig('maxTokensPerDay', parseInt(e.target.value))}
-                  min={1000}
-                  max={10000000}
                 />
               </div>
             </>
@@ -286,28 +349,32 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="encrypt-keys">Encrypt API Keys</Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Store API keys with encryption at rest
               </p>
             </div>
             <Switch
-              id="encrypt-keys"
               checked={config.encryptApiKeys}
-              onCheckedChange={(checked) => updateConfig('encryptApiKeys', checked)}
+              id="encrypt-keys"
+              onCheckedChange={(checked) =>
+                updateConfig('encryptApiKeys', checked)
+              }
             />
           </div>
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="key-rotation">Require Key Rotation</Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Enforce periodic API key rotation
               </p>
             </div>
             <Switch
-              id="key-rotation"
               checked={config.requireApiKeyRotation}
-              onCheckedChange={(checked) => updateConfig('requireApiKeyRotation', checked)}
+              id="key-rotation"
+              onCheckedChange={(checked) =>
+                updateConfig('requireApiKeyRotation', checked)
+              }
             />
           </div>
 
@@ -315,11 +382,16 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
             <div className="space-y-2">
               <Label>Rotation Period (days)</Label>
               <Input
+                max={365}
+                min={7}
+                onChange={(e) =>
+                  updateConfig(
+                    'rotationDays',
+                    Number.parseInt(e.target.value, 10)
+                  )
+                }
                 type="number"
                 value={config.rotationDays}
-                onChange={(e) => updateConfig('rotationDays', parseInt(e.target.value))}
-                min={7}
-                max={365}
               />
             </div>
           )}
@@ -332,21 +404,19 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
             <Eye className="h-5 w-5" />
             Data & Privacy
           </CardTitle>
-          <CardDescription>
-            Control data logging and retention
-          </CardDescription>
+          <CardDescription>Control data logging and retention</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="log-queries">Log Queries</Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Store user queries for analysis (with consent)
               </p>
             </div>
             <Switch
-              id="log-queries"
               checked={config.logQueries}
+              id="log-queries"
               onCheckedChange={(checked) => updateConfig('logQueries', checked)}
             />
           </div>
@@ -355,13 +425,18 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
             <div className="space-y-2">
               <Label>Data Retention (days)</Label>
               <Input
+                max={365}
+                min={1}
+                onChange={(e) =>
+                  updateConfig(
+                    'retentionDays',
+                    Number.parseInt(e.target.value, 10)
+                  )
+                }
                 type="number"
                 value={config.retentionDays}
-                onChange={(e) => updateConfig('retentionDays', parseInt(e.target.value))}
-                min={1}
-                max={365}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Queries will be automatically deleted after this period
               </p>
             </div>
@@ -379,27 +454,30 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         <CardContent className="space-y-4">
           <div className="flex gap-2">
             <Input
-              placeholder="example.com"
-              value={newDomain}
               onChange={(e) => setNewDomain(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addDomain()}
+              placeholder="example.com"
+              value={newDomain}
             />
             <Button onClick={addDomain}>Add Domain</Button>
           </div>
 
           <div className="space-y-2">
             {config.allowedDomains.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 No domain restrictions (all domains allowed)
               </p>
             ) : (
-              config.allowedDomains.map(domain => (
-                <div key={domain} className="flex items-center justify-between p-2 bg-muted rounded">
-                  <span className="text-sm font-mono">{domain}</span>
+              config.allowedDomains.map((domain) => (
+                <div
+                  className="flex items-center justify-between rounded bg-muted p-2"
+                  key={domain}
+                >
+                  <span className="font-mono text-sm">{domain}</span>
                   <Button
+                    onClick={() => removeDomain(domain)}
                     size="sm"
                     variant="ghost"
-                    onClick={() => removeDomain(domain)}
                   >
                     Remove
                   </Button>
@@ -424,7 +502,10 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
             ) : (
               <Warning className="h-4 w-4 text-yellow-500" />
             )}
-            <span className="text-sm">Content filtering {config.enableContentFiltering ? 'enabled' : 'disabled'}</span>
+            <span className="text-sm">
+              Content filtering{' '}
+              {config.enableContentFiltering ? 'enabled' : 'disabled'}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             {config.blockPromptInjection ? (
@@ -432,7 +513,10 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
             ) : (
               <Warning className="h-4 w-4 text-yellow-500" />
             )}
-            <span className="text-sm">Prompt injection protection {config.blockPromptInjection ? 'enabled' : 'disabled'}</span>
+            <span className="text-sm">
+              Prompt injection protection{' '}
+              {config.blockPromptInjection ? 'enabled' : 'disabled'}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             {config.enableRateLimiting ? (
@@ -440,7 +524,9 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
             ) : (
               <Warning className="h-4 w-4 text-yellow-500" />
             )}
-            <span className="text-sm">Rate limiting {config.enableRateLimiting ? 'enabled' : 'disabled'}</span>
+            <span className="text-sm">
+              Rate limiting {config.enableRateLimiting ? 'enabled' : 'disabled'}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             {config.encryptApiKeys ? (
@@ -448,19 +534,26 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
             ) : (
               <Warning className="h-4 w-4 text-red-500" />
             )}
-            <span className="text-sm">API key encryption {config.encryptApiKeys ? 'enabled' : 'DISABLED'}</span>
+            <span className="text-sm">
+              API key encryption{' '}
+              {config.encryptApiKeys ? 'enabled' : 'DISABLED'}
+            </span>
           </div>
         </CardContent>
       </Card>
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={testSecuritySettings} disabled={loading}>
+        <Button
+          disabled={loading}
+          onClick={testSecuritySettings}
+          variant="outline"
+        >
           Test Configuration
         </Button>
-        <Button onClick={saveSettings} disabled={loading}>
+        <Button disabled={loading} onClick={saveSettings}>
           Save Security Settings
         </Button>
       </div>
     </div>
-  )
+  );
 }

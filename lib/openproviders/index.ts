@@ -19,7 +19,7 @@ import type {
 } from './types';
 
 // Keep options loosely typed to avoid coupling to provider signatures
-export type OpenProvidersOptions<T = unknown> = unknown;
+export type OpenProvidersOptions<_T = unknown> = unknown;
 
 // Get Ollama base URL from environment or use default
 const getOllamaBaseURL = () => {
@@ -78,7 +78,7 @@ export function openproviders<T extends SupportedModel>(
     // For GPT-5 models, use the Responses API format
     // According to the cookbook, we should use openai.responses() for GPT-5
     const isGPT5Model = modelId.startsWith('gpt-5');
-    
+
     // Configure provider options for GPT-5 models
     const providerOptions = isGPT5Model
       ? {
@@ -123,9 +123,10 @@ export function openproviders<T extends SupportedModel>(
     }
 
     // Fallback to default provider
-    const enhancedOpenAI = customHeaders || Object.keys(providerOptions).length > 0
-      ? createOpenAI({ headers: customHeaders, ...providerOptions })
-      : openai;
+    const enhancedOpenAI =
+      customHeaders || Object.keys(providerOptions).length > 0
+        ? createOpenAI({ headers: customHeaders, ...providerOptions })
+        : openai;
 
     return enhancedOpenAI(modelId as OpenAIModel);
   }

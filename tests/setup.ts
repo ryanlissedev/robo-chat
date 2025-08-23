@@ -23,3 +23,6 @@ vi.mock('next/navigation', async (orig) => {
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => null,
 }));
+
+// Mock CSS imports to prevent "Unknown file extension" errors
+vi.mock('katex/dist/katex.min.css', () => ({}));

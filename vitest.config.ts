@@ -1,13 +1,22 @@
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
+const ENCRYPTION_KEY_LENGTH = 32;
+
 export default defineConfig({
   plugins: [],
-  css: {},
+  css: {
+    modules: {
+      generateScopedName: '[name]__[local]___[hash:base64:5]',
+    },
+  },
   test: {
+    // Transform CSS files to empty modules
+    css: false,
     globals: true,
     environment: 'happy-dom',
     setupFiles: ['./tests/setup.ts'],
+    // Handle CSS imports in tests
     // Add server configuration for better module resolution
     server: {
       deps: {
@@ -63,6 +72,7 @@ export default defineConfig({
     mockReset: true,
     clearMocks: true,
     restoreMocks: true,
+    // Add CSS module mocking - moved to top level
   },
   resolve: {
     alias: {
@@ -78,6 +88,6 @@ export default defineConfig({
     'process.env.NODE_ENV': '"test"',
     'process.env.NEXT_PUBLIC_SUPABASE_URL': '"http://localhost:54321"',
     'process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY': '"test-anon-key"',
-    'process.env.ENCRYPTION_KEY': `"${Buffer.from('a'.repeat(32)).toString('base64')}"`,
+    'process.env.ENCRYPTION_KEY': `"${Buffer.from('a'.repeat(ENCRYPTION_KEY_LENGTH)).toString('base64')}"`,
   },
 });

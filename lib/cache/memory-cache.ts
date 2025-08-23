@@ -3,17 +3,19 @@ import type { CacheStore } from './CacheStore';
 type Entry = { value: string; expiresAt: number };
 
 export class MemoryCache implements CacheStore {
-  private store = new Map<string, Entry>();
+  private readonly store = new Map<string, Entry>();
 
   async get(key: string): Promise<string | null> {
     const entry = this.store.get(key);
-    if (!entry) return null;
+    if (!entry) {
+      return null;
+    }
     if (Date.now() > entry.expiresAt) {
       this.store.delete(key);
       return null;
     }
     return entry.value;
-    }
+  }
 
   async setex(key: string, ttlSeconds: number, value: string): Promise<void> {
     const expiresAt = Date.now() + ttlSeconds * 1000;
@@ -26,4 +28,3 @@ export class MemoryCache implements CacheStore {
 }
 
 export const memoryCache = new MemoryCache();
-

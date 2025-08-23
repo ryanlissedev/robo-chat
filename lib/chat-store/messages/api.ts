@@ -14,7 +14,7 @@ export interface MessageFromDB
   createdAt?: Date;
 }
 
-interface MessageToInsert {
+type MessageToInsert = {
   role: 'system' | 'user' | 'assistant' | 'data';
   content: string;
   parts?: unknown;
@@ -26,7 +26,7 @@ interface MessageToInsert {
   message_group_id?: string;
   model?: string;
   createdAt?: Date;
-}
+};
 
 export async function getMessagesFromDb(
   chatId: string

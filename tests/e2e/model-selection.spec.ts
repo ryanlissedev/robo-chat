@@ -374,7 +374,7 @@ test.describe('Model Selection', () => {
       await page.reload();
       await waitForPageReady(page);
 
-      const modelSelectorResult: any = await page.evaluate(() => {
+      const _modelSelectorResult: any = await page.evaluate(() => {
         return new Promise((resolve) => {
           const button = document.querySelector(
             '[data-testid="model-selector-trigger"]'

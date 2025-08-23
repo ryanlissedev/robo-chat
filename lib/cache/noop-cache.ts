@@ -13,4 +13,3 @@ class NoopCache implements CacheStore {
 }
 
 export const noopCache: CacheStore = new NoopCache();
-

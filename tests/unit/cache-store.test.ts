@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { memoryCache } from '@/lib/cache/memory-cache';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getCacheStore } from '@/lib/cache';
+import { memoryCache } from '@/lib/cache/memory-cache';
 
 describe('MemoryCache', () => {
   beforeEach(async () => {
@@ -35,7 +35,7 @@ describe('getCacheStore', () => {
   });
 
   it('returns memory cache by default', () => {
-    delete process.env.CACHE_PROVIDER;
+    process.env.CACHE_PROVIDER = undefined;
     const store = getCacheStore();
     expect(store).toHaveProperty('setex');
   });
@@ -47,4 +47,3 @@ describe('getCacheStore', () => {
     expect(got).toBeNull();
   });
 });
-

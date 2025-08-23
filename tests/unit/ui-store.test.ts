@@ -386,7 +386,9 @@ describe('UI Store', () => {
 
       expect(result.current.isLoading).toBe(true);
 
-      const executionResult = await resultPromise;
+      const executionResult = await act(async () => {
+        return await resultPromise;
+      });
 
       expect(executionResult).toBe('success');
       expect(result.current.isLoading).toBe(false);
@@ -405,7 +407,9 @@ describe('UI Store', () => {
         resultPromise = result.current.execute(mockAsyncFn);
       });
 
-      const executionResult = await resultPromise;
+      const executionResult = await act(async () => {
+        return await resultPromise;
+      });
 
       expect(executionResult).toBe(null);
       expect(result.current.isLoading).toBe(false);
