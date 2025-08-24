@@ -1,8 +1,8 @@
-# Base Chat
+# RoboRail Assistant Chat
 
-General-purpose AI chat scaffold for building your own apps.
+Powerful AI chat platform for productive conversations.
 
-Base Chat is an open-source starter that supports GPT-5 models, optional file search, and observability hooks. It’s designed to be a clean foundation you can customize for any domain.
+RoboRail Assistant Chat is a sophisticated AI chat platform that supports GPT-5 models, optional file search, and observability hooks. It's designed to be your intelligent assistant for all your conversational needs.
 
 ## 🚀 Core Features
 
@@ -33,8 +33,8 @@ This scaffold is intentionally neutral. Add your own domain expertise via prompt
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/base-chat.git
-cd base-chat
+git clone https://github.com/your-org/roborail-assistant-chat.git
+cd roborail-assistant-chat
 
 # Install dependencies
 npm install
@@ -47,7 +47,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Visit `http://localhost:3000` to start using Base Chat!
+Visit `http://localhost:3000` to start using RoboRail Assistant Chat!
 
 ### Docker Deployment
 

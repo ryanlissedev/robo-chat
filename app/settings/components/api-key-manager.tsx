@@ -3,6 +3,7 @@
 import { Check, Eye, EyeSlash, Key, X } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { clientLogger } from '@/lib/utils/client-logger';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -84,7 +85,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
       if (error) {
         // Handle case where table doesn't exist yet
         if (error.code === '42P01' || error.message.includes('does not exist')) {
-          console.warn('user_api_keys table does not exist yet');
+          clientLogger.warn('user_api_keys table does not exist yet');
           return;
         }
         throw error;
@@ -96,7 +97,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
       });
       setApiKeys(keysMap);
     } catch (error: any) {
-      console.error('Failed to load API keys:', error);
+      clientLogger.error('Failed to load API keys', error);
       toast.error('Failed to load API keys');
     }
   };
@@ -161,7 +162,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
       setNewKeys({ ...newKeys, [provider]: '' });
       toast.success(`${provider} API key saved successfully`);
     } catch (error: any) {
-      console.error('Failed to save API key:', error);
+      clientLogger.error('Failed to save API key', error);
       toast.error(error.message || 'Failed to save API key');
     } finally {
       setLoading({ ...loading, [provider]: false });
@@ -186,7 +187,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
       if (error) {
         // Handle case where table doesn't exist yet
         if (error.code === '42P01' || error.message.includes('does not exist')) {
-          console.warn('user_api_keys table does not exist yet');
+          clientLogger.warn('user_api_keys table does not exist yet');
           return;
         }
         throw error;
@@ -198,7 +199,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
 
       toast.success(`${provider} API key deleted`);
     } catch (error: any) {
-      console.error('Failed to delete API key:', error);
+      clientLogger.error('Failed to delete API key', error);
       toast.error('Failed to delete API key');
     } finally {
       setLoading({ ...loading, [provider]: false });

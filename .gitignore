@@ -22,7 +22,10 @@
 
 # misc
 .DS_Store
+**/.DS_Store
 *.pem
+Thumbs.db
+.kiro/.DS_Store
 
 # debug
 npm-debug.log*

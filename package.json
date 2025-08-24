@@ -1,5 +1,5 @@
 {
-  "name": "base-chat",
+  "name": "roborail-assistant-chat",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -29,7 +29,6 @@
     "@ai-sdk/ui-utils": "^1.2.11",
     "@ai-sdk/xai": "^2.0.10",
     "@anthropic-ai/sdk": "^0.60.0",
-    "@langchain/core": "^0.3.72",
     "@openrouter/ai-sdk-provider": "1.1.2",
     "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-alert-dialog": "1.1.15",
@@ -60,7 +59,6 @@
     "cmdk": "^1.1.1",
     "dompurify": "^3.2.6",
     "embla-carousel-react": "^8.6.0",
-    "exa-js": "^1.8.27",
     "file-type": "^20.5.0",
     "idb-keyval": "^6.2.2",
     "langsmith": "^0.3.62",
@@ -80,7 +78,6 @@
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "shiki": "^3.11.0",
-    "slugify": "^1.6.6",
     "sonner": "^2.0.7",
     "streamdown": "^1.0.11",
     "tailwind-merge": "^3.3.1",
@@ -92,7 +89,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
-    "@browser-echo/next": "^0.0.6",
     "@eslint/eslintrc": "^3.3.1",
     "@ianvs/prettier-plugin-sort-imports": "^4.6.2",
     "@next/bundle-analyzer": "^15.5.0",
@@ -122,7 +118,6 @@
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tailwindcss": "^4.1.12",
-    "tw-animate-css": "^1.3.7",
     "typescript": "5.9.2",
     "ultracite": "5.2.3",
     "vitest": "3.2.4"

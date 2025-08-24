@@ -5,6 +5,7 @@ import type {
   SupabaseClientType,
 } from '@/app/types/api.types';
 import type { Json } from '@/app/types/database.types';
+import { logWarning } from '@/lib/utils/logger';
 
 const DEFAULT_STEP = 0;
 
@@ -188,7 +189,7 @@ export async function storeAssistantMessage(
   const chatExists = await ensureChatExistsInDatabase(supabase, chatId, userId);
   if (!chatExists) {
     // If we can't ensure chat exists, skip saving to avoid foreign key constraint
-    console.warn(`Chat ${chatId} does not exist and cannot be created. Skipping message save.`);
+    logWarning('Chat does not exist and cannot be created. Skipping message save.', { chatId });
     return;
   }
 

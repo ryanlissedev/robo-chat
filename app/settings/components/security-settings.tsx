@@ -1,5 +1,7 @@
 'use client';
 
+import { clientLogger } from '@/lib/utils/client-logger';
+
 import {
   CheckCircle,
   Eye,
@@ -87,14 +89,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
       if (error) {
         // Handle case where table doesn't exist yet or no data found
         if (error.code === '42P01' || error.message.includes('does not exist')) {
-          console.warn('user_security_settings table does not exist yet');
+          clientLogger.warn('user_security_settings table does not exist yet');
           return;
         }
         if (error.code === 'PGRST116') {
           // No rows found - this is expected for first time users
           return;
         }
-        console.error('Error loading security settings:', error);
+        clientLogger.error('Error loading security settings', error);
         return;
       }
 
@@ -102,7 +104,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         setConfig(data.config as SecurityConfig);
       }
     } catch (error: any) {
-      console.error('Failed to load security settings:', error);
+      clientLogger.error('Failed to load security settings', error);
     }
   };
 
@@ -136,7 +138,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
 
       toast.success('Security settings saved');
     } catch (error: any) {
-      console.error('Failed to save security settings:', error);
+      clientLogger.error('Failed to save security settings', error);
       toast.error('Failed to save settings');
     } finally {
       setLoading(false);

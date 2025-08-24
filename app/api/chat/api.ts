@@ -1,4 +1,5 @@
 import { storeAssistantMessage as storeAssistantMessageToDb } from '@/app/api/chat/db';
+import { logWarning } from '@/lib/utils/logger';
 import type {
   ChatApiParams,
   LogUserMessageParams,
@@ -134,7 +135,7 @@ export async function logUserMessage({
   const chatExists = await ensureChatExistsForUser(supabase, chatId, userId);
   if (!chatExists) {
     // If we can't ensure chat exists, skip saving to avoid foreign key constraint
-    console.warn(`Chat ${chatId} does not exist and cannot be created for user ${userId}. Skipping user message save.`);
+    logWarning(`Chat ${chatId} does not exist and cannot be created for user ${userId}. Skipping user message save.`, { chatId, userId });
     return;
   }
 
@@ -149,7 +150,7 @@ export async function logUserMessage({
 
   if (error) {
     // Silently handle error to avoid breaking chat flow
-    console.warn(`Failed to save user message: ${error.message}`);
+    logWarning('Failed to save user message', { error: error.message });
   }
 }
 

@@ -1,5 +1,7 @@
 'use client';
 
+import { clientLogger } from '@/lib/utils/client-logger';
+
 import {
   ArrowsClockwise,
   Brain,
@@ -93,14 +95,14 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
       if (error) {
         // Handle case where table doesn't exist yet or no data found
         if (error.code === '42P01' || error.message.includes('does not exist')) {
-          console.warn('user_retrieval_settings table does not exist yet');
+          clientLogger.warn('user_retrieval_settings table does not exist yet');
           return;
         }
         if (error.code === 'PGRST116') {
           // No rows found - this is expected for first time users
           return;
         }
-        console.error('Error loading retrieval settings:', error);
+        clientLogger.error('Error loading retrieval settings', error);
         return;
       }
 
@@ -108,7 +110,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
         setConfig(data.config as RetrievalConfig);
       }
     } catch (error: any) {
-      console.error('Failed to load retrieval settings:', error);
+      clientLogger.error('Failed to load retrieval settings', error);
     }
   };
 
@@ -143,7 +145,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
       toast.success('Retrieval settings saved');
       setSaved(true);
     } catch (error: any) {
-      console.error('Failed to save retrieval settings:', error);
+      clientLogger.error('Failed to save retrieval settings', error);
       toast.error('Failed to save settings');
     } finally {
       setLoading(false);

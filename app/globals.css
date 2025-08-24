@@ -1,6 +1,4 @@
 @import "tailwindcss";
-
-@import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
@@ -181,11 +179,6 @@ code {
   box-shadow: 0 0 20px rgba(30, 64, 175, 0.3);
 }
 
-/* Voice interaction indicator with HGG branding */
-.voice-hgg-indicator {
-  background: linear-gradient(45deg, rgb(30, 64, 175), rgb(59, 130, 246));
-}
-
 /* Safety warning with enhanced visibility */
 .hgg-safety-warning {
   border-left: 4px solid rgb(234, 179, 8);
@@ -194,93 +187,6 @@ code {
     rgba(254, 249, 195, 0.8),
     rgba(254, 249, 195, 0.4)
   );
-}
-
-/* Voice visualizer animations */
-@keyframes voice-wave {
-  0%,
-  100% {
-    transform: scaleY(0.3);
-  }
-  50% {
-    transform: scaleY(1);
-  }
-}
-
-.voice-wave-bar {
-  animation: voice-wave 0.8s ease-in-out infinite;
-}
-
-.voice-wave-bar:nth-child(2) {
-  animation-delay: 0.1s;
-}
-.voice-wave-bar:nth-child(3) {
-  animation-delay: 0.2s;
-}
-.voice-wave-bar:nth-child(4) {
-  animation-delay: 0.3s;
-}
-.voice-wave-bar:nth-child(5) {
-  animation-delay: 0.4s;
-}
-.voice-wave-bar:nth-child(6) {
-  animation-delay: 0.5s;
-}
-.voice-wave-bar:nth-child(7) {
-  animation-delay: 0.4s;
-}
-.voice-wave-bar:nth-child(8) {
-  animation-delay: 0.3s;
-}
-.voice-wave-bar:nth-child(9) {
-  animation-delay: 0.2s;
-}
-.voice-wave-bar:nth-child(10) {
-  animation-delay: 0.1s;
-}
-
-/* Microphone button glow effect */
-.mic-glow {
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-}
-
-.mic-recording {
-  background: linear-gradient(45deg, #ef4444, #dc2626);
-  box-shadow: 0 0 30px rgba(239, 68, 68, 0.6);
-}
-
-/* Voice input bar slide animation */
-@keyframes slide-up {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.voice-bar-enter {
-  animation: slide-up 0.3s ease-out;
-}
-
-/* ChatGPT-style input enhancements */
-.chatgpt-voice-input {
-  background: #f7f7f8;
-  border: 1px solid #e5e5e7;
-  border-radius: 24px;
-  transition: all 0.2s ease;
-}
-
-.chatgpt-voice-input:hover {
-  border-color: #d1d1d6;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-}
-
-.chatgpt-voice-input:focus-within {
-  border-color: #007aff;
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
 /* Scrollbar hiding for textarea */

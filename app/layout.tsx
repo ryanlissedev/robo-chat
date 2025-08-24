@@ -26,14 +26,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Base Chat - AI Chat Scaffold',
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || 
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+    'http://localhost:3000'
+  ),
+  title: 'RoboRail Assistant Chat - AI Chat Platform',
   description:
-    'Base Chat is a general-purpose AI chat starter. Built with GPT-5 support, optional file search, and observability hooks. Use it to scaffold your own AI chat apps.',
+    'RoboRail Assistant Chat is a powerful AI chat platform. Built with GPT-5 support, optional file search, and observability hooks. Your intelligent assistant for productive conversations.',
   keywords: 'AI chat, GPT-5, chatbot starter, scaffold, Next.js, Vercel AI SDK',
-  authors: [{ name: 'Base Chat' }],
+  authors: [{ name: 'RoboRail' }],
   openGraph: {
-    title: 'Base Chat - AI Chat Scaffold',
-    description: 'A clean starting point for building AI chat apps',
+    title: 'RoboRail Assistant Chat - AI Chat Platform',
+    description: 'Your intelligent assistant for productive conversations',
     type: 'website',
   },
 };
