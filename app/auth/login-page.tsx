@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -65,7 +66,7 @@ export default function LoginPage() {
               size="lg"
               variant="secondary"
             >
-              <img
+              <Image
                 alt="Google logo"
                 className="mr-2 size-4"
                 height={20}

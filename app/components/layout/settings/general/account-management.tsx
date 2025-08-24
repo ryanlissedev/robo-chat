@@ -22,7 +22,7 @@ export function AccountManagement() {
       await signOut();
       await clearAllIndexedDBStores();
       router.push('/');
-    } catch (_e) {
+    } catch {
       toast({ title: 'Failed to sign out', status: 'error' });
     }
   };

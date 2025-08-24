@@ -7,6 +7,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { storeAssistantMessage } from '@/app/api/chat/db';
 import type { StoreAssistantMessageParams } from '@/app/types/api.types';
 
+// Mock the logger
+vi.mock('@/lib/utils/logger', () => ({
+  logWarning: vi.fn(),
+  logError: vi.fn(),
+  logInfo: vi.fn(),
+  logDebug: vi.fn(),
+  logTrace: vi.fn(),
+}));
+
 // Mock Supabase client
 const mockSelect = vi.fn();
 const mockEq = vi.fn();
@@ -84,6 +93,9 @@ describe('Chat Database Fix', () => {
   });
 
   it('should skip message saving if chat cannot be created', async () => {
+    // Import the mocked logger
+    const { logWarning } = await import('@/lib/utils/logger');
+    
     // Mock chat doesn't exist
     mockSingle.mockResolvedValueOnce({
       data: null,
@@ -95,8 +107,6 @@ describe('Chat Database Fix', () => {
       data: null,
       error: { message: 'Insert failed' },
     });
-
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const params: StoreAssistantMessageParams = {
       supabase: mockSupabase as any,
@@ -115,11 +125,10 @@ describe('Chat Database Fix', () => {
     await expect(storeAssistantMessage(params)).resolves.not.toThrow();
 
     // Verify warning was logged
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Chat test-chat-id does not exist and cannot be created')
+    expect(logWarning).toHaveBeenCalledWith(
+      'Chat does not exist and cannot be created. Skipping message save.',
+      { chatId: 'test-chat-id' }
     );
-
-    consoleSpy.mockRestore();
   });
 
   it('should proceed normally if chat already exists', async () => {

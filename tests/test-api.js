@@ -27,14 +27,15 @@ async function testChatAPI() {
   });
 
   if (!response.ok) {
-    const _text = await response.text();
+    const text = await response.text();
+    console.error('API Error:', text);
     return;
   }
 
   const reader = response.body;
   const decoder = new TextDecoder();
   let buffer = '';
-  let _messageCount = 0;
+  let messageCount = 0;
 
   for await (const chunk of reader) {
     const text = decoder.decode(chunk, { stream: true });
@@ -52,10 +53,12 @@ async function testChatAPI() {
         }
 
         try {
-          const _parsed = JSON.parse(data);
-          _messageCount++;
-        } catch (_e) {
+          const parsed = JSON.parse(data);
+          messageCount++;
+          console.log('Received message:', parsed);
+        } catch (e) {
           if (data) {
+            console.warn('Failed to parse message:', data);
           }
         }
       }

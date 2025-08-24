@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 export function LinkMarkdown({
   href,
   children,
@@ -24,7 +26,7 @@ export function LinkMarkdown({
       rel="noopener noreferrer"
       target="_blank"
     >
-      <img
+      <Image
         alt="favicon"
         className="size-3.5 rounded-full"
         height={14}

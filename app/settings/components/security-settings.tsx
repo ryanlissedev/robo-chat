@@ -72,10 +72,6 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
   const [newDomain, setNewDomain] = useState('');
   const supabase = createClient();
 
-  useEffect(() => {
-    loadSettings();
-  }, [loadSettings]);
-
   const loadSettings = async () => {
     if (!supabase) return;
 
@@ -103,10 +99,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
       if (data && data.config) {
         setConfig(data.config as SecurityConfig);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       clientLogger.error('Failed to load security settings', error);
     }
   };
+
+  useEffect(() => {
+    loadSettings();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveSettings = async () => {
     if (!supabase) {
@@ -137,7 +137,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
       }
 
       toast.success('Security settings saved');
-    } catch (error: any) {
+    } catch (error: unknown) {
       clientLogger.error('Failed to save security settings', error);
       toast.error('Failed to save settings');
     } finally {
@@ -145,7 +145,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
     }
   };
 
-  const updateConfig = (key: keyof SecurityConfig, value: any) => {
+  const updateConfig = <K extends keyof SecurityConfig>(key: K, value: SecurityConfig[K]) => {
     setConfig({ ...config, [key]: value });
   };
 
@@ -193,7 +193,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
       } else {
         toast.error(`Security test failed: ${result.error}`);
       }
-    } catch (_error) {
+    } catch {
       toast.error('Failed to test security settings');
     } finally {
       setLoading(false);

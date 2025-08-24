@@ -18,7 +18,6 @@ import { useChats } from '@/lib/chat-store/chats/provider';
 import { useMessages } from '@/lib/chat-store/messages/provider';
 import { MESSAGE_MAX_LENGTH, SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
 import type { Attachment } from '@/lib/file-handling';
-import { API_ROUTE_CHAT } from '@/lib/routes';
 import { useUser } from '@/lib/user-store/provider';
 import { cn } from '@/lib/utils';
 
@@ -208,7 +207,7 @@ export function ProjectView({ projectId }: ProjectViewProps) {
         optimisticAttachments.length > 0 ? optimisticAttachments : undefined,
     };
 
-    setMessages((prev) => [...prev, optimisticMessage as any]);
+    setMessages((prev) => [...prev, optimisticMessage as ExtendedUIMessage]);
     setInput('');
 
     const submittedFiles = [...files];
@@ -289,7 +288,6 @@ export function ProjectView({ projectId }: ProjectViewProps) {
     handleFileUploads,
     selectedModel,
     sendMessage,
-    cacheAndAddMessage,
     messages.length,
     bumpChat,
     enableSearch,
@@ -302,7 +300,7 @@ export function ProjectView({ projectId }: ProjectViewProps) {
 
     // v5 doesn't have reload - use setMessages to remove last message
     setMessages(messages.slice(0, -1));
-  }, [user, selectedModel, setMessages, messages]);
+  }, [user, setMessages, messages]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

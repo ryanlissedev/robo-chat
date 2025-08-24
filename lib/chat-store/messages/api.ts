@@ -19,9 +19,9 @@ type MessageToInsert = {
   content: string;
   parts?: unknown;
   experimental_attachments?: Array<{
-    url?: string;
-    name?: string;
-    contentType?: string;
+    url: string;
+    name: string;
+    contentType: string;
   }>;
   message_group_id?: string;
   model?: string;
@@ -78,7 +78,7 @@ async function insertMessageToDb(chatId: string, message: MessageToInsert) {
     chat_id: chatId,
     role: message.role,
     content: message.content,
-    experimental_attachments: message.experimental_attachments,
+    experimental_attachments: message.experimental_attachments?.filter(att => att.url && att.name && att.contentType),
     created_at: message.createdAt?.toISOString() || new Date().toISOString(),
     message_group_id: message.message_group_id || null,
     model: message.model || null,
@@ -95,7 +95,7 @@ async function insertMessagesToDb(chatId: string, messages: MessageToInsert[]) {
     chat_id: chatId,
     role: message.role,
     content: message.content,
-    experimental_attachments: message.experimental_attachments,
+    experimental_attachments: message.experimental_attachments?.filter(att => att.url && att.name && att.contentType),
     created_at: message.createdAt?.toISOString() || new Date().toISOString(),
     message_group_id: message.message_group_id || null,
     model: message.model || null,

@@ -1,9 +1,13 @@
 'use client';
 
 import { ArrowUpIcon, StopIcon } from '@phosphor-icons/react';
-import { AudioWaveform, Mic } from 'lucide-react';
+import { AudioWaveform } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ModelSelector } from '@/components/common/model-selector/base';
+import { VoiceButton } from '@/app/components/voice/button/voice-button';
+import { TranscriptionPanel } from '@/app/components/voice/panel/transcription-panel';
+import { useVoiceStore } from '@/app/components/voice/store/voice-store';
+import { useVoiceIntegration } from '@/app/components/voice/hooks/use-voice-integration';
 import {
   PromptInput,
   PromptInputAction,
@@ -35,6 +39,7 @@ type ChatInputProps = {
   onSelectModel: (model: string) => void;
   selectedModel: string;
   isUserAuthenticated: boolean;
+  userId?: string;
   stop: () => void;
   status?: 'submitted' | 'streaming' | 'ready' | 'error';
   setEnableSearch: (enabled: boolean) => void;
@@ -57,6 +62,7 @@ export function ChatInput({
   onSelectModel,
   selectedModel,
   isUserAuthenticated,
+  userId,
   stop,
   status,
   setEnableSearch,
@@ -67,7 +73,7 @@ export function ChatInput({
 }: ChatInputProps) {
   const selectModelConfig = getModelInfo(selectedModel);
   const hasSearchSupport = Boolean(selectModelConfig?.webSearch);
-  const isOnlyWhitespace = (text: string) => !/[^\s]/.test(text);
+  const isOnlyWhitespace = useCallback((text: string) => !/[^\s]/.test(text), []);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Always show reasoning effort selector
@@ -183,8 +189,41 @@ export function ChatInput({
     }
   }, [hasSearchSupport, enableSearch, setEnableSearch]);
 
+  // Voice functionality
+  const {} = useVoiceStore();
+  const [showTranscriptionPanel, setShowTranscriptionPanel] = useState(false);
+  
+  // Voice integration with vector store indexing
+  const {} = useVoiceIntegration({
+    userId: isUserAuthenticated ? userId : undefined,
+    autoIndexTranscripts: true,
+    onTranscriptIndexed: (result) => {
+      console.log('Transcript indexed to vector store:', result);
+    },
+    onIndexError: (error) => {
+      console.error('Transcript indexing failed:', error);
+    }
+  });
+
+  const handleVoiceTranscript = useCallback((transcript: string) => {
+    onValueChange(value ? `${value}\n${transcript}` : transcript);
+    setShowTranscriptionPanel(false);
+  }, [value, onValueChange]);
+
+  const handleCloseTranscription = useCallback(() => {
+    setShowTranscriptionPanel(false);
+  }, []);
+
   return (
     <div className="relative flex w-full flex-col gap-4">
+      {showTranscriptionPanel && (
+        <TranscriptionPanel
+          className="mb-4"
+          onSendTranscript={handleVoiceTranscript}
+          onClose={handleCloseTranscription}
+          isVisible={showTranscriptionPanel}
+        />
+      )}
       {hasSuggestions && (
         <PromptSystem
           onSuggestion={onSuggestion}
@@ -216,7 +255,6 @@ export function ChatInput({
               />
               <ModelSelector
                 className="rounded-full"
-                isUserAuthenticated={isUserAuthenticated}
                 selectedModelId={selectedModel}
                 setSelectedModelId={onSelectModel}
               />
@@ -234,15 +272,11 @@ export function ChatInput({
               />
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                aria-label="Voice input"
-                className="size-10 rounded-full hover:bg-accent"
-                size="sm"
-                type="button"
-                variant="ghost"
-              >
-                <Mic className="size-5" />
-              </Button>
+              <VoiceButton
+                size="md"
+                onTranscriptReady={handleVoiceTranscript}
+                disabled={isSubmitting}
+              />
               <PromptInputAction
                 tooltip={
                   status === 'streaming' ? 'Stop' : value ? 'Send' : 'Audio'

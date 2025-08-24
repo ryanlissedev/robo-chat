@@ -40,6 +40,21 @@ export type OptimisticMessageData = {
   }>;
 };
 
+export type ChatRequestOptions = {
+  body: {
+    chatId: string;
+    userId: string;
+    model: string;
+    isAuthenticated: boolean;
+    systemPrompt: string;
+    enableSearch?: boolean;
+    reasoningEffort: 'low' | 'medium' | 'high';
+    context?: 'chat' | 'voice';
+    personalityMode?: 'safety-focused' | 'technical-expert' | 'friendly-assistant';
+  };
+  experimental_attachments?: Attachment[];
+};
+
 export type ChatOperationDependencies = {
   checkLimitsAndNotify: (uid: string) => Promise<boolean>;
   ensureChatExists: (uid: string, input: string) => Promise<string | null>;
@@ -69,7 +84,7 @@ export async function submitMessageScenario(
 ): Promise<
   OperationResult<{
     chatId: string;
-    requestOptions: any;
+    requestOptions: ChatRequestOptions;
     optimisticMessage: OptimisticMessageData;
   }>
 > {
@@ -82,14 +97,12 @@ export async function submitMessageScenario(
     systemPrompt,
     enableSearch,
     reasoningEffort,
-    chatId,
   } = context;
   const {
     checkLimitsAndNotify,
     ensureChatExists,
     handleFileUploads,
     createOptimisticAttachments,
-    cleanupOptimisticAttachments,
   } = dependencies;
 
   try {
@@ -107,7 +120,7 @@ export async function submitMessageScenario(
     if (!limitResult.success) {
       return limitResult as OperationResult<{
         chatId: string;
-        requestOptions: any;
+        requestOptions: ChatRequestOptions;
         optimisticMessage: OptimisticMessageData;
       }>;
     }
@@ -117,7 +130,7 @@ export async function submitMessageScenario(
     if (!inputValidation.success) {
       return inputValidation as OperationResult<{
         chatId: string;
-        requestOptions: any;
+        requestOptions: ChatRequestOptions;
         optimisticMessage: OptimisticMessageData;
       }>;
     }
@@ -138,7 +151,7 @@ export async function submitMessageScenario(
     if (!fileResult.success) {
       return fileResult as unknown as OperationResult<{
         chatId: string;
-        requestOptions: any;
+        requestOptions: ChatRequestOptions;
         optimisticMessage: OptimisticMessageData;
       }>;
     }
@@ -165,6 +178,7 @@ export async function submitMessageScenario(
         systemPrompt: systemPrompt || SYSTEM_PROMPT_DEFAULT,
         enableSearch,
         reasoningEffort,
+        context: 'chat' as const,  // Explicitly set chat context for immediate response
       },
       experimental_attachments: fileResult.data || undefined,
     };
@@ -295,7 +309,7 @@ export async function submitSuggestionScenario(
 ): Promise<
   OperationResult<{
     chatId: string;
-    requestOptions: any;
+    requestOptions: ChatRequestOptions;
     optimisticMessage: OptimisticMessageData;
   }>
 > {
@@ -317,7 +331,7 @@ export async function submitSuggestionScenario(
     if (!limitResult.success) {
       return limitResult as OperationResult<{
         chatId: string;
-        requestOptions: any;
+        requestOptions: ChatRequestOptions;
         optimisticMessage: OptimisticMessageData;
       }>;
     }
@@ -345,6 +359,7 @@ export async function submitSuggestionScenario(
         isAuthenticated,
         systemPrompt: SYSTEM_PROMPT_DEFAULT,
         reasoningEffort,
+        context: 'chat' as const,  // Explicitly set chat context for immediate response
       },
     };
 
@@ -376,7 +391,7 @@ export async function prepareReloadScenario(context: {
   isAuthenticated: boolean;
   systemPrompt?: string;
   reasoningEffort: 'low' | 'medium' | 'high';
-}): Promise<OperationResult<{ requestOptions: any }>> {
+}): Promise<OperationResult<{ requestOptions: ChatRequestOptions }>> {
   const {
     user,
     chatId,
@@ -396,7 +411,7 @@ export async function prepareReloadScenario(context: {
     // When: Preparing reload options
     const requestOptions = {
       body: {
-        chatId,
+        chatId: chatId || '',
         userId: uid,
         model: selectedModel,
         isAuthenticated,
@@ -422,7 +437,7 @@ export async function prepareReloadScenario(context: {
 /**
  * Centralized error handling for chat operations
  */
-export function handleChatError(error: Error, _context = 'Chat operation') {
+export function handleChatError(error: Error) {
   let errorMsg = error.message || 'Something went wrong.';
 
   if (errorMsg === 'An error occurred' || errorMsg === 'fetch failed') {

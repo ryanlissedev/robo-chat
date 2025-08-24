@@ -72,7 +72,7 @@ export function Message({
         messageId={id}
         onQuote={onQuote}
         onReload={onReload}
-        parts={parts as any}
+        parts={parts}
         status={status}
       >
         {children}

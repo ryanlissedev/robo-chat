@@ -173,7 +173,16 @@ describe('useChatCore', () => {
         success: true,
         data: {
           chatId: 'test-chat-id',
-          requestOptions: { body: JSON.stringify({ test: 'data' }) },
+          requestOptions: {
+            body: {
+              chatId: 'test-chat-id',
+              userId: 'test-user',
+              model: 'test-model',
+              isAuthenticated: true,
+              systemPrompt: 'test prompt',
+              reasoningEffort: 'medium' as const,
+            },
+          },
           optimisticMessage: {
             id: 'opt-1',
             role: 'user',
@@ -354,7 +363,16 @@ describe('useChatCore', () => {
         success: true,
         data: {
           chatId: 'test-chat-id',
-          requestOptions: { body: JSON.stringify({ suggestion: 'data' }) },
+          requestOptions: {
+            body: {
+              chatId: 'test-chat-id',
+              userId: 'test-user',
+              model: 'test-model',
+              isAuthenticated: true,
+              systemPrompt: 'test prompt',
+              reasoningEffort: 'medium' as const,
+            },
+          },
           optimisticMessage: {
             id: 'opt-2',
             role: 'user',
@@ -428,7 +446,16 @@ describe('useChatCore', () => {
       mockBusinessLogic.prepareReloadScenario.mockResolvedValue({
         success: true,
         data: {
-          requestOptions: { body: JSON.stringify({ reload: 'data' }) },
+          requestOptions: {
+            body: {
+              chatId: 'test-chat-id',
+              userId: 'test-user',
+              model: 'test-model',
+              isAuthenticated: true,
+              systemPrompt: 'test prompt',
+              reasoningEffort: 'medium' as const,
+            },
+          },
         },
       });
     });
@@ -461,7 +488,14 @@ describe('useChatCore', () => {
         success: true,
         data: {
           requestOptions: {
-            chatId: 'test-chat-id'
+            body: {
+              chatId: 'test-chat-id',
+              userId: 'test-user',
+              model: 'test-model',
+              isAuthenticated: true,
+              systemPrompt: 'test prompt',
+              reasoningEffort: 'medium' as const,
+            },
           },
         },
       });
@@ -594,8 +628,7 @@ describe('useChatCore', () => {
 
       expect(result.current.isSubmitting).toBe(false);
       expect(mockBusinessLogic.handleChatError).toHaveBeenCalledWith(
-        expect.any(Error),
-        'Message submission'
+        expect.any(Error)
       );
     });
 
@@ -617,8 +650,7 @@ describe('useChatCore', () => {
 
       expect(result.current.isSubmitting).toBe(false);
       expect(mockBusinessLogic.handleChatError).toHaveBeenCalledWith(
-        expect.any(Error),
-        'Suggestion submission'
+        expect.any(Error)
       );
     });
   });

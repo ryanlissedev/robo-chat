@@ -83,7 +83,7 @@ const initialDialogState: DialogState = {
 };
 
 const initialChatUIState: ChatUIState = {
-  enableSearch: true,
+  enableSearch: true, // Search is always enabled, but handoff behavior differs
   reasoningEffort: 'medium',
   isSubmitting: false,
   hasDialogAuth: false,

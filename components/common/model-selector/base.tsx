@@ -43,14 +43,12 @@ type ModelSelectorProps = {
   selectedModelId: string;
   setSelectedModelId: (modelId: string) => void;
   className?: string;
-  isUserAuthenticated?: boolean;
 };
 
 export function ModelSelector({
   selectedModelId,
   setSelectedModelId,
   className,
-  isUserAuthenticated = true,
 }: ModelSelectorProps) {
   const { models, isLoading: isLoadingModels, favoriteModels } = useModel();
   const { isModelHidden } = useUserPreferences();

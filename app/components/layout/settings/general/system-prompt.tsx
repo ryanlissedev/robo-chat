@@ -28,7 +28,7 @@ export function SystemPromptSection() {
         description: "It'll be used for new chats.",
         status: 'success',
       });
-    } catch (_error) {
+    } catch {
       toast({
         title: 'Failed to save',
         description: "Couldn't save your system prompt. Please try again.",

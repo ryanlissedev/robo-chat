@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import type { TestChatMessage } from '@/lib/types/models';
 
 type TestResult = {
   message: string;
@@ -29,12 +30,12 @@ export default function TestChatPage() {
     ];
 
     const newResults: TestResult[] = [];
-    const conversationHistory: any[] = [];
+    const conversationHistory: TestChatMessage[] = [];
 
     for (const userMsg of testMessages) {
       conversationHistory.push({
         role: 'user',
-        parts: [{ type: 'text', text: userMsg }],
+        content: userMsg,
       });
 
       const startTime = Date.now();
@@ -135,7 +136,7 @@ export default function TestChatPage() {
           if (assistantContent) {
             conversationHistory.push({
               role: 'assistant',
-              parts: [{ type: 'text', text: assistantContent }],
+              content: assistantContent,
             });
 
             newResults.push({
@@ -159,7 +160,7 @@ export default function TestChatPage() {
             success: false,
           });
         }
-      } catch (_error) {
+      } catch {
         newResults.push({
           message: userMsg,
           success: false,
@@ -213,12 +214,12 @@ export default function TestChatPage() {
                 key={i}
               >
                 <div className="font-semibold text-blue-600">
-                  Test {i + 1}: "{result.message}"
+                  Test {i + 1}: &quot;{result.message}&quot;
                 </div>
                 {result.success ? (
                   <>
                     <div className="mt-1 text-green-600">
-                      ✅ Assistant: "{result.response}"
+                      ✅ Assistant: &quot;{result.response}&quot;
                     </div>
                     {result.time && (
                       <div className="mt-1 text-gray-500 text-sm">

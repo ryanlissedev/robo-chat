@@ -64,7 +64,7 @@ export function useChatOperations({
       }
 
       return true;
-    } catch (_err) {
+    } catch {
       return false;
     }
   };

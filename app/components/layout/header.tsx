@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { HistoryTrigger } from '@/app/components/history/history-trigger';
 import { ButtonNewChat } from '@/app/components/layout/button-new-chat';
@@ -29,10 +30,12 @@ export function Header({ hasSidebar }: { hasSidebar: boolean }) {
                 className="pointer-events-auto inline-flex items-center font-medium text-xl tracking-tight"
                 href="/"
               >
-                <img
+                <Image
                   alt="HGG Logo"
                   className="mr-2 h-8 w-8 rounded-sm"
+                  height={32}
                   src="/hgg-logo.png"
+                  width={32}
                 />
                 {APP_NAME}
               </Link>

@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         !!apiKey && apiKey !== envKeyMap[provider as ProviderWithoutOllama],
       provider,
     });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

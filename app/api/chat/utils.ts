@@ -1,85 +1,9 @@
-import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
-import { getMessageContent, hasParts } from '@/app/types/ai-extended';
+import { getMessageContent } from '@/app/types/ai-extended';
 
 // Constants
 const DEFAULT_ERROR_STATUS_CODE = 500;
 
-// Type definitions for better type safety
-type MessageContent = Array<{ type?: string; text?: string }>;
-type MessageWithContent = {
-  role: 'user' | 'assistant' | 'system';
-  content?: string | MessageContent;
-  toolInvocations?: unknown[];
-  [key: string]: unknown;
-};
-
-// Helper to check if a part is tool-related
-function isToolPart(part: { type?: string }): boolean {
-  if (!part?.type) {
-    return false;
-  }
-  return ['tool-call', 'tool-result', 'tool-invocation'].includes(part.type);
-}
-
-// Helper to filter tool content from message content array
-function filterToolContent(content: MessageContent): MessageContent {
-  return content.filter((part) => {
-    if (typeof part === 'object' && part.type) {
-      return !isToolPart(part);
-    }
-    return true;
-  });
-}
-
-// Helper to extract text content from filtered content
-function extractTextContent(content: MessageContent): MessageContent {
-  const textParts = content.filter(
-    (part) => typeof part === 'object' && part.type === 'text'
-  );
-
-  if (textParts.length > 0) {
-    return textParts;
-  }
-
-  // If no text parts found, create a single text part with concatenated text
-  const textContent = content
-    .map((part) => (typeof part === 'object' ? part.text || '' : String(part)))
-    .filter(Boolean)
-    .join(' ');
-
-  return textContent ? [{ type: 'text', text: textContent }] : [];
-}
-
-// Helper to clean assistant message
-function _cleanAssistantMessage(
-  message: MessageWithContent
-): MessageWithContent | null {
-  const cleanedMessage: MessageWithContent = { ...message };
-
-  // Remove tool invocations
-  if (message.toolInvocations && Array.isArray(message.toolInvocations)) {
-    cleanedMessage.toolInvocations = undefined;
-  }
-
-  // Handle array content
-  if (Array.isArray(message.content)) {
-    const filteredContent = filterToolContent(
-      message.content as MessageContent
-    );
-    const extractedContent = extractTextContent(filteredContent);
-
-    // If content changed, update the message
-    if (filteredContent.length !== (message.content as unknown[]).length) {
-      return {
-        ...cleanedMessage,
-        content: extractedContent,
-      };
-    }
-  }
-
-  return cleanedMessage;
-}
 
 /**
  * Clean messages when switching between agents with different tool capabilities.
@@ -98,7 +22,7 @@ export function cleanMessagesForTools(
   const cleanedMessages = messages
     .map((message) => {
       // Skip tool messages entirely when no tools are available
-      if ((message as any).role === 'tool') {
+      if ((message as unknown as Record<string, unknown>).role === 'tool') {
         return null;
       }
 

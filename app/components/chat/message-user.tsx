@@ -1,6 +1,5 @@
 'use client';
 
-import type { UIMessage as MessageType } from '@ai-sdk/react';
 import { Check, Copy, Trash } from '@phosphor-icons/react';
 import Image from 'next/image';
 import { useRef, useState } from 'react';
@@ -28,7 +27,11 @@ const getTextFromDataUrl = (dataUrl: string) => {
 
 export type MessageUserProps = {
   hasScrollAnchor?: boolean;
-  attachments?: any[];
+  attachments?: Array<{
+    name: string;
+    contentType: string;
+    url: string;
+  }>;
   children: string;
   copied: boolean;
   copyToClipboard: () => void;

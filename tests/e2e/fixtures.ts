@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Page, TestInfo } from '@playwright/test';
 import { test as base } from '@playwright/test';
 
 // Define page object models and fixtures for E2E tests
@@ -246,8 +246,8 @@ export async function interceptNetworkRequests(page: Page) {
   return requests;
 }
 
-export async function takeScreenshotOnFailure(page: Page, testInfo: any) {
-  if (testInfo.status === 'failed') {
+export async function takeScreenshotOnFailure(page: Page, testInfo: TestInfo) {
+  if (testInfo.status !== 'passed') {
     const screenshot = await page.screenshot();
     await testInfo.attach('screenshot', {
       body: screenshot,

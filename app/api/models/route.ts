@@ -72,7 +72,7 @@ export async function GET() {
         'Content-Type': 'application/json',
       },
     });
-  } catch (_error) {
+  } catch {
     return new Response(JSON.stringify({ error: 'Failed to fetch models' }), {
       status: 500,
       headers: {
@@ -93,7 +93,7 @@ export async function POST() {
       timestamp: new Date().toISOString(),
       count: models.length,
     });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to refresh models' },
       { status: 500 }

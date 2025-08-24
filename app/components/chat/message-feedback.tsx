@@ -90,7 +90,7 @@ export function MessageFeedback({
       setShowCommentDialog(false);
       setComment('');
       setPendingFeedback(null);
-    } catch (_error) {
+    } catch {
       toast.error('Failed to submit feedback');
     } finally {
       setLoading(false);
@@ -231,7 +231,8 @@ export function MessageFeedbackInline({
       if (onFeedback) {
         await onFeedback(newFeedback);
       }
-    } catch (_error) {
+    } catch {
+      // Silent error handling
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import type { UserPreferencesUpdate } from '@/lib/types/api-errors';
 
 export async function GET() {
   try {
@@ -55,7 +56,7 @@ export async function GET() {
       multi_model_enabled: data.multi_model_enabled,
       hidden_models: data.hidden_models || [],
     });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -111,7 +112,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Prepare update object with only provided fields
-    const updateData: any = {};
+    const updateData: UserPreferencesUpdate = {};
     if (layout !== undefined) {
       updateData.layout = layout;
     }
@@ -162,7 +163,7 @@ export async function PUT(request: NextRequest) {
       multi_model_enabled: data.multi_model_enabled,
       hidden_models: data.hidden_models || [],
     });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

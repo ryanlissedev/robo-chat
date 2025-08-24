@@ -1,7 +1,7 @@
 'use client';
 
-import type { UIMessage as MessageType } from '@ai-sdk/react';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
+import { getMessageContent } from '@/app/types/ai-extended';
 import { useEffect, useState } from 'react';
 import {
   ChatContainerContent,
@@ -60,7 +60,7 @@ function ResponseCard({ response, group }: ResponseCardProps) {
 
         {response.message ? (
           <Message
-            attachments={(response.message as any).experimental_attachments}
+            attachments={'experimental_attachments' in response.message ? response.message.experimental_attachments : undefined}
             className="bg-transparent p-0 px-0"
             hasScrollAnchor={false}
             id={response.message.id}
@@ -70,13 +70,13 @@ function ResponseCard({ response, group }: ResponseCardProps) {
             onReload={() => group.onReload(response.model)}
             parts={
               response.message.parts || [
-                { type: 'text', text: (response.message as any).content || '' },
+                { type: 'text', text: getMessageContent(response.message) || '' },
               ]
             }
             status={response.isLoading ? 'streaming' : 'ready'}
             variant="assistant"
           >
-            {(response.message as any).content || ''}
+            {getMessageContent(response.message) || ''}
           </Message>
         ) : response.isLoading ? (
           <div className="space-y-2">
@@ -135,20 +135,20 @@ export function MultiModelConversation({
                   <div className="mb-10 w-full space-y-3" key={groupIndex}>
                     <div className="mx-auto w-full max-w-3xl">
                       <Message
-                        attachments={(group.userMessage as any).experimental_attachments}
+                        attachments={'experimental_attachments' in group.userMessage ? group.userMessage.experimental_attachments : undefined}
                         id={group.userMessage.id}
                         onDelete={() => {}}
                         onEdit={() => {}}
                         onReload={() => {}}
                         parts={
                           group.userMessage.parts || [
-                            { type: 'text', text: (group.userMessage as any).content },
+                            { type: 'text', text: getMessageContent(group.userMessage) },
                           ]
                         }
                         status="ready"
                         variant="user"
                       >
-                        {(group.userMessage as any).content}
+                        {getMessageContent(group.userMessage)}
                       </Message>
                     </div>
 

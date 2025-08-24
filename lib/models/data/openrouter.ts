@@ -1,9 +1,9 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ModelConfig } from '../types';
+import type { ModelSettings } from '@/lib/types/models';
 
-type OpenRouterModelSettings = {
+type OpenRouterModelSettings = ModelSettings & {
   enableSearch?: boolean;
-  [key: string]: unknown;
 };
 
 export const openrouterModels: ModelConfig[] = [
@@ -34,7 +34,7 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://deepseek.com',
     releasedAt: '2024-04-01',
     icon: 'deepseek',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
       }).chat('deepseek/deepseek-r1:free');
@@ -67,10 +67,10 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://www.anthropic.com/claude/sonnet',
     releasedAt: '2025-04-01',
     icon: 'claude',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },
@@ -105,10 +105,10 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://www.anthropic.com/claude',
     releasedAt: '2025-02-24',
     icon: 'claude',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },
@@ -143,10 +143,10 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://ai.google.dev',
     releasedAt: '2025-03-20',
     icon: 'gemini',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },
@@ -181,10 +181,10 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://openai.com',
     releasedAt: '2025-04-14',
     icon: 'openai',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },
@@ -219,10 +219,10 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://platform.openai.com/docs/models/o4-mini',
     releasedAt: '2025-04-01',
     icon: 'openai',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },
@@ -257,10 +257,10 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://x.ai/api',
     releasedAt: '2025-02-15',
     icon: 'xai',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },
@@ -295,10 +295,10 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://ai.google.dev',
     releasedAt: '2025-03-25',
     icon: 'gemini',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },
@@ -333,10 +333,10 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://www.llama.com/',
     releasedAt: '2025-04-01',
     icon: 'meta',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },
@@ -371,10 +371,10 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://platform.openai.com/docs/models/gpt-4o-mini',
     releasedAt: '2025-04-14',
     icon: 'openai',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },
@@ -409,10 +409,10 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://platform.openai.com/docs/models/gpt-4o-mini',
     releasedAt: '2025-04-14',
     icon: 'openai',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },
@@ -447,11 +447,13 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://platform.openai.com/docs/models/o3-mini',
     releasedAt: '2025-04-01',
     icon: 'openai',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
-          plugins: [{ id: 'web', max_results: 3 }],
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
+          extraBody: {
+            plugins: [{ id: 'web', max_results: 3 }],
+          },
         }),
       }).chat('openai/o3-mini');
     },
@@ -483,11 +485,13 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://www.anthropic.com/claude',
     releasedAt: '2024-10-22',
     icon: 'claude',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
-          plugins: [{ id: 'web', max_results: 3 }],
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
+          extraBody: {
+            plugins: [{ id: 'web', max_results: 3 }],
+          },
         }),
       }).chat('anthropic/claude-3.5-sonnet');
     },
@@ -519,11 +523,13 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://ai.google.dev',
     releasedAt: '2024-12-11',
     icon: 'gemini',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
-          plugins: [{ id: 'web', max_results: 3 }],
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
+          extraBody: {
+            plugins: [{ id: 'web', max_results: 3 }],
+          },
         }),
       }).chat('google/gemini-2.0-flash-001');
     },
@@ -555,11 +561,13 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://ai.google.dev',
     releasedAt: '2024-12-11',
     icon: 'gemini',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
-          plugins: [{ id: 'web', max_results: 3 }],
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
+          extraBody: {
+            plugins: [{ id: 'web', max_results: 3 }],
+          },
         }),
       }).chat('google/gemini-2.0-flash-lite-001');
     },
@@ -591,11 +599,13 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://platform.openai.com/docs/models',
     releasedAt: '2025-05-01',
     icon: 'openai',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
-          plugins: [{ id: 'web', max_results: 3 }],
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
+          extraBody: {
+            plugins: [{ id: 'web', max_results: 3 }],
+          },
         }),
       }).chat('openai/gpt-4.5-preview');
     },
@@ -627,11 +637,13 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://openrouter.ai/perplexity/sonar',
     releasedAt: '2025-01-27',
     icon: 'perplexity',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
-          plugins: [{ id: 'web', max_results: 3 }],
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
+          extraBody: {
+            plugins: [{ id: 'web', max_results: 3 }],
+          },
         }),
       }).chat('perplexity/sonar');
     },
@@ -663,10 +675,10 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://openrouter.ai/perplexity/sonar-reasoning',
     releasedAt: '2025-01-29',
     icon: 'perplexity',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },
@@ -701,10 +713,10 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://openrouter.ai/perplexity/sonar-reasoning-pro',
     releasedAt: '2025-07-25',
     icon: 'perplexity',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },
@@ -739,10 +751,10 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://openrouter.ai/perplexity/sonar-pro',
     releasedAt: '2025-03-27',
     icon: 'perplexity',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },
@@ -777,10 +789,10 @@ export const openrouterModels: ModelConfig[] = [
     modelPage: 'https://openrouter.ai/perplexity/sonar-deep-research',
     releasedAt: '2025-03-07',
     icon: 'perplexity',
-    apiSdk: (apiKey?: string, settings?: unknown) => {
+    apiSdk: (apiKey?: string, opts?: unknown) => {
       return createOpenRouter({
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-        ...((settings as any)?.enableSearch && {
+        ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },

@@ -112,12 +112,15 @@ async function testFullChatFlow() {
             parts: [{ type: 'text', text: assistantResponse }],
           });
         } else {
+          console.log('No response received');
         }
       } else {
-        const _errorText = await response.text();
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
         break;
       }
-    } catch (_error) {
+    } catch (error) {
+      console.error('Request failed:', error);
       break;
     }
 
@@ -134,10 +137,15 @@ async function testFullChatFlow() {
     100;
 
   if (successRate === 100) {
+    console.log('All tests passed successfully!');
   } else if (successRate >= 50) {
+    console.log(`Partial success: ${successRate}% of messages received responses`);
   } else {
+    console.warn(`Low success rate: ${successRate}% of messages received responses`);
   }
 }
 
 // Run the test
-testFullChatFlow().catch((_error) => {});
+testFullChatFlow().catch((error) => {
+  console.error('Test failed:', error);
+});

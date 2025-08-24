@@ -40,7 +40,7 @@ export async function GET() {
     );
 
     return NextResponse.json(providerStatus);
-  } catch (_err) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

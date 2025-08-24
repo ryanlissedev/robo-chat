@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'API key rotated successfully',
     });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

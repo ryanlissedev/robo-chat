@@ -75,7 +75,7 @@ export function MultiChatInput({
         onSend();
       }
     },
-    [isSubmitting, anyLoading, onSend, status, value, isOnlyWhitespace]
+    [isSubmitting, anyLoading, onSend, status, value]
   );
 
   return (

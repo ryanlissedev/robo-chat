@@ -9,13 +9,19 @@ import {
   Spinner,
   Wrench,
 } from '@phosphor-icons/react';
-import type { ToolInvocationUIPart } from '@/app/types/ai-extended';
+import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 
+// Type for AI SDK tool parts
+type ToolUIPart = NonNullable<MessageAISDK['parts']>[number] & {
+  type: `tool-${string}`;
+  toolCallId: string;
+};
+
 type ToolInvocationProps = {
-  toolInvocations: ToolInvocationUIPart[];
+  toolInvocations: ToolUIPart[];
   className?: string;
   defaultOpen?: boolean;
 };
@@ -39,14 +45,14 @@ export function ToolInvocation({
   // Group tool invocations by toolCallId
   const groupedTools = toolInvocationsData.reduce(
     (acc, item) => {
-      const { toolCallId } = item.toolInvocation;
+      const { toolCallId } = item;
       if (!acc[toolCallId]) {
         acc[toolCallId] = [];
       }
       acc[toolCallId].push(item);
       return acc;
     },
-    {} as Record<string, ToolInvocationUIPart[]>
+    {} as Record<string, ToolUIPart[]>
   );
 
   const uniqueToolIds = Object.keys(groupedTools);
@@ -128,7 +134,7 @@ export function ToolInvocation({
 }
 
 type SingleToolViewProps = {
-  toolInvocations: ToolInvocationUIPart[];
+  toolInvocations: ToolUIPart[];
   defaultOpen?: boolean;
   className?: string;
 };
@@ -141,33 +147,36 @@ function SingleToolView({
   // Group by toolCallId and pick the most informative state
   const groupedTools = toolInvocations.reduce(
     (acc, item) => {
-      const { toolCallId } = item.toolInvocation;
+      const { toolCallId } = item;
       if (!acc[toolCallId]) {
         acc[toolCallId] = [];
       }
       acc[toolCallId].push(item);
       return acc;
     },
-    {} as Record<string, ToolInvocationUIPart[]>
+    {} as Record<string, ToolUIPart[]>
   );
 
-  // For each toolCallId, get the most informative state (result > call > requested)
+  // For each toolCallId, get the most informative state (output-available > input-available > input-streaming)
   const toolsToDisplay = Object.values(groupedTools)
     .map((group) => {
-      const resultTool = group.find(
-        (item) => item.toolInvocation.state === 'result'
+      const outputTool = group.find(
+        (item) => 'state' in item && item.state === 'output-available'
       );
-      const callTool = group.find(
-        (item) => item.toolInvocation.state === 'call'
+      const inputAvailableTool = group.find(
+        (item) => 'state' in item && item.state === 'input-available'
       );
-      const partialCallTool = group.find(
-        (item) => item.toolInvocation.state === 'partial-call'
+      const inputStreamingTool = group.find(
+        (item) => 'state' in item && item.state === 'input-streaming'
+      );
+      const errorTool = group.find(
+        (item) => 'state' in item && item.state === 'output-error'
       );
 
       // Return the most informative one
-      return resultTool || callTool || partialCallTool;
+      return outputTool || inputAvailableTool || inputStreamingTool || errorTool || group[0];
     })
-    .filter(Boolean) as ToolInvocationUIPart[];
+    .filter(Boolean) as ToolUIPart[];
 
   if (toolsToDisplay.length === 0) {
     return null;
@@ -191,7 +200,7 @@ function SingleToolView({
         {toolsToDisplay.map((tool) => (
           <SingleToolCard
             defaultOpen={defaultOpen}
-            key={tool.toolInvocation.toolCallId}
+            key={tool.toolCallId}
             toolData={tool}
           />
         ))}
@@ -206,16 +215,21 @@ function SingleToolCard({
   defaultOpen = false,
   className,
 }: {
-  toolData: ToolInvocationUIPart;
+  toolData: ToolUIPart;
   defaultOpen?: boolean;
   className?: string;
 }) {
   const [isExpanded, setIsExpanded] = useState(defaultOpen);
-  const { toolInvocation } = toolData;
-  const { state, toolName, toolCallId, args } = toolInvocation;
-  const isLoading = state === 'call';
-  const isCompleted = state === 'result';
-  const result = isCompleted ? toolInvocation.result : undefined;
+  
+  // Extract properties from AI SDK tool part structure
+  const toolCallId = toolData.toolCallId;
+  const toolName = 'toolName' in toolData ? (toolData.toolName as string) : toolData.type.replace('tool-', '');
+  const state = 'state' in toolData ? toolData.state : 'input-streaming';
+  const args: Record<string, unknown> = 'input' in toolData ? toolData.input as Record<string, unknown> : {};
+  const isLoading = state === 'input-streaming' || state === 'input-available';
+  const isCompleted = state === 'output-available';
+  const hasError = state === 'output-error';
+  const result = isCompleted && 'output' in toolData ? toolData.output : undefined;
 
   // Parse the result JSON if available
   const { parsedResult, parseError } = useMemo(() => {
@@ -257,7 +271,7 @@ function SingleToolCard({
   }, [isCompleted, result]);
 
   // Format the arguments for display
-  const formattedArgs = args
+  const formattedArgs: React.ReactNode = args && typeof args === 'object' && args !== null
     ? Object.entries(args).map(([key, value]) => (
         <div className="mb-1" key={key}>
           <span className="font-medium text-muted-foreground">{key}:</span>{' '}
@@ -277,7 +291,7 @@ function SingleToolCard({
     : null;
 
   // Render generic results based on their structure
-  const renderResults = () => {
+  const renderResults = (): React.ReactNode => {
     if (!parsedResult) {
       return 'No result data available';
     }
@@ -375,7 +389,7 @@ function SingleToolCard({
     }
 
     // Fallback
-    return 'No result data available';
+    return <div>No result data available</div>;
   };
 
   return (
@@ -408,6 +422,19 @@ function SingleToolCard({
                 <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-blue-700 text-xs dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400">
                   <Spinner className="mr-1 h-3 w-3 animate-spin" />
                   Running
+                </div>
+              </motion.div>
+            ) : hasError ? (
+              <motion.div
+                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, scale: 0.9, filter: 'blur(2px)' }}
+                initial={{ opacity: 0, scale: 0.9, filter: 'blur(2px)' }}
+                key="error"
+                transition={{ duration: 0.15 }}
+              >
+                <div className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-1.5 py-0.5 text-red-700 text-xs dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+                  <CheckCircle className="mr-1 h-3 w-3" />
+                  Error
                 </div>
               </motion.div>
             ) : (
@@ -445,7 +472,7 @@ function SingleToolCard({
           >
             <div className="space-y-3 px-3 pt-3 pb-3">
               {/* Arguments section */}
-              {args && Object.keys(args).length > 0 && (
+              {args && typeof args === 'object' && args !== null && Object.keys(args).length > 0 && (
                 <div>
                   <div className="mb-1 font-medium text-muted-foreground text-xs">
                     Arguments
@@ -466,8 +493,20 @@ function SingleToolCard({
                     {parseError ? (
                       <div className="text-red-500">{parseError}</div>
                     ) : (
-                      renderResults()
+                      <div>{renderResults()}</div>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* Error section */}
+              {hasError && 'errorText' in toolData && (
+                <div>
+                  <div className="mb-1 font-medium text-muted-foreground text-xs">
+                    Error
+                  </div>
+                  <div className="max-h-60 overflow-auto rounded border bg-background p-2 text-sm text-red-500">
+                    {toolData.errorText}
                   </div>
                 </div>
               )}

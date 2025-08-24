@@ -27,26 +27,33 @@ function convertDbMessageToAISDK(dbMessage: MessageFromDB): MessageAISDK {
 }
 
 // Convert AI SDK message to database format
-function convertAISDKMessageToDb(aiMessage: MessageAISDK): any {
+function convertAISDKMessageToDb(aiMessage: MessageAISDK): {
+  role: 'system' | 'user' | 'assistant' | 'data';
+  content: string;
+  parts: MessageAISDK['parts'];
+} {
   // Extract text content from parts for legacy content field
   const textContent =
     aiMessage.parts
-      ?.map((part: any) => {
+      ?.map((part: MessageAISDK['parts'][0]) => {
         if (part?.type === 'text' && typeof part.text === 'string') {
           return part.text as string;
         }
+        // Handle text-delta type (currently not in UIMessagePart union)
         if (
-          part?.type === 'text-delta' &&
-          typeof (part as any).textDelta === 'string'
+          'type' in part &&
+          (part as { type: string; textDelta?: string }).type === 'text-delta' &&
+          'textDelta' in part &&
+          typeof (part as { type: string; textDelta?: string }).textDelta === 'string'
         ) {
-          return (part as any).textDelta as string;
+          return (part as { type: string; textDelta: string }).textDelta;
         }
         return '';
       })
       ?.join('') || '';
 
   return {
-    role: aiMessage.role,
+    role: aiMessage.role as 'system' | 'user' | 'assistant' | 'data',
     content: textContent,
     parts: aiMessage.parts,
   };

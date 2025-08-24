@@ -1,7 +1,6 @@
 'use client';
 
 import { CaretDown, Link } from '@phosphor-icons/react';
-import type { SourceUrlUIPart } from '@/app/types/ai-extended';
 import { AnimatePresence, motion } from 'motion/react';
 import Image from 'next/image';
 import { useState } from 'react';

@@ -77,7 +77,7 @@ export async function POST(req: Request) {
           comment,
           userId: user.id,
         });
-      } catch (_e) {
+      } catch {
         // Silently handle LangSmith error
       }
     }
@@ -87,7 +87,7 @@ export async function POST(req: Request) {
       message: 'Feedback submitted successfully',
       langsmith: langsmithResult,
     });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -148,7 +148,7 @@ export async function GET(req: Request) {
       feedback: data?.message || null,
       createdAt: data?.created_at || null,
     });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

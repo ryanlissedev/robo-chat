@@ -78,10 +78,6 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
   const [saved, setSaved] = useState(true);
   const supabase = createClient();
 
-  useEffect(() => {
-    loadSettings();
-  }, [loadSettings]);
-
   const loadSettings = async () => {
     if (!supabase) return;
 
@@ -109,10 +105,14 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
       if (data && data.config) {
         setConfig(data.config as RetrievalConfig);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       clientLogger.error('Failed to load retrieval settings', error);
     }
   };
+
+  useEffect(() => {
+    loadSettings();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveSettings = async () => {
     if (!supabase) {
@@ -144,7 +144,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
 
       toast.success('Retrieval settings saved');
       setSaved(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       clientLogger.error('Failed to save retrieval settings', error);
       toast.error('Failed to save settings');
     } finally {
@@ -152,7 +152,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
     }
   };
 
-  const updateConfig = (key: keyof RetrievalConfig, value: any) => {
+  const updateConfig = <K extends keyof RetrievalConfig>(key: K, value: RetrievalConfig[K]) => {
     setConfig({ ...config, [key]: value });
     setSaved(false);
   };
@@ -203,7 +203,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
               <Label>Rewrite Strategy</Label>
               <Select
                 onValueChange={(value) =>
-                  updateConfig('rewriteStrategy', value)
+                  updateConfig('rewriteStrategy', value as 'expansion' | 'refinement' | 'decomposition' | 'multi-perspective')
                 }
                 value={config.rewriteStrategy}
               >
@@ -287,7 +287,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
                 <Label>Reranking Method</Label>
                 <Select
                   onValueChange={(value) =>
-                    updateConfig('rerankingMethod', value)
+                    updateConfig('rerankingMethod', value as 'semantic' | 'cross-encoder' | 'diversity')
                   }
                   value={config.rerankingMethod}
                 >

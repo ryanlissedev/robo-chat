@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useChatDraft } from '@/app/hooks/use-chat-draft';
 import { toast } from '@/components/ui/toast';
 import { SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
-import { API_ROUTE_CHAT } from '@/lib/routes';
 import type { UserProfile } from '@/lib/user/types';
 import {
   type ChatOperationDependencies,
@@ -33,7 +32,11 @@ type UseChatCoreProps = {
   handleFileUploads: (
     uid: string,
     chatId: string
-  ) => Promise<any[] | null>;
+  ) => Promise<Array<{
+    name: string;
+    contentType: string;
+    url: string;
+  }> | null>;
   selectedModel: string;
   clearDraft: () => void;
   bumpChat: (chatId: string) => void;
@@ -82,7 +85,7 @@ export function useChatCore({
 
   // Handle errors using extracted error handler
   const handleError = useCallback((error: Error) => {
-    handleChatError(error, 'Chat');
+    handleChatError(error);
   }, []);
 
   // Initialize useChat
@@ -155,6 +158,7 @@ export function useChatCore({
     setFiles([]);
 
     try {
+
       // Use BDD scenario for message submission
       const context: MessageSubmissionContext = {
         input: currentInput,
@@ -201,7 +205,7 @@ export function useChatCore({
       // Handle unexpected errors - restore input
       setInputValue(currentInput);
       setFiles(submittedFiles);
-      handleChatError(error as Error, 'Message submission');
+      handleChatError(error as Error);
     } finally {
       setIsSubmitting(false);
     }
@@ -264,7 +268,7 @@ export function useChatCore({
         // v5 sendMessage expects an object with text property for proper formatting
         await sendMessage({ text: suggestion }, requestOptions);
       } catch (error) {
-        handleChatError(error as Error, 'Suggestion submission');
+        handleChatError(error as Error);
       } finally {
         setIsSubmitting(false);
       }
@@ -308,7 +312,7 @@ export function useChatCore({
       // Proceed with reload using prepared options - using setMessages for AI SDK v5
       setMessages(messages.slice(0, -1));
     } catch (error) {
-      handleChatError(error as Error, 'Chat reload');
+      handleChatError(error as Error);
     }
   }, [
     user,

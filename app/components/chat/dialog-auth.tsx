@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -78,7 +79,7 @@ export function DialogAuth({ open, setOpen }: DialogAuthProps) {
             size="lg"
             variant="secondary"
           >
-            <img
+            <Image
               alt="Google logo"
               className="mr-2 size-4"
               height={20}

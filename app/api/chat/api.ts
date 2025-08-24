@@ -67,7 +67,7 @@ export async function incrementMessageCount({
 
   try {
     await incrementUsage(supabase, userId);
-  } catch (_err) {
+  } catch {
     // Don't throw error as this shouldn't block the chat
   }
 }
@@ -186,7 +186,7 @@ export async function storeAssistantMessage({
       message_group_id,
       model,
     });
-  } catch (_error) {
+  } catch {
     // Silently handle error to avoid breaking chat flow
   }
 }

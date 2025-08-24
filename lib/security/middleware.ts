@@ -33,7 +33,6 @@ const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
 // Rate limiting middleware
 export async function rateLimit(
-  _req: NextRequest,
   limitKey: keyof typeof RATE_LIMITS
 ): Promise<NextResponse | null> {
   const supabase = await createClient();
@@ -175,8 +174,6 @@ function getObjectDepth(obj: unknown, currentDepth = 0): number {
 
 // API key usage tracking
 export async function trackApiKeyUsage(
-  _userId: string,
-  _provider: string,
   supabase: SupabaseClient | null
 ): Promise<void> {
   if (!supabase) {
@@ -292,10 +289,7 @@ export function detectSuspiciousApiKey(apiKey: string): {
 
 // Audit log helper
 export async function logSecurityEvent(
-  supabase: SupabaseClient | null,
-  _userId: string,
-  _action: string,
-  _metadata: Record<string, unknown>
+  supabase: SupabaseClient | null
 ): Promise<void> {
   if (!supabase) {
     return; // Skip logging if supabase is not available

@@ -58,7 +58,7 @@ export async function GET(request: Request) {
 
     if (insertError && insertError.code !== '23505') {
     }
-  } catch (_err) {}
+  } catch {}
 
   const host = request.headers.get('host');
   const protocol = host?.includes('localhost') ? 'http' : 'https';

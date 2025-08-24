@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, Eye, EyeSlash, Key, X } from '@phosphor-icons/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { clientLogger } from '@/lib/utils/client-logger';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,7 @@ type ApiKey = {
   id: string;
   provider: string;
   masked_key: string;
-  last_used?: string;
+  last_used?: string | null;
   created_at: string;
   is_active: boolean;
 };
@@ -69,11 +69,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const supabase = createClient();
 
-  useEffect(() => {
-    loadApiKeys();
-  }, [loadApiKeys]);
-
-  const loadApiKeys = async () => {
+  const loadApiKeys = useCallback(async () => {
     if (!supabase) return;
     
     try {
@@ -96,11 +92,15 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
         keysMap[key.provider] = key;
       });
       setApiKeys(keysMap);
-    } catch (error: any) {
+    } catch (error) {
       clientLogger.error('Failed to load API keys', error);
       toast.error('Failed to load API keys');
     }
-  };
+  }, [supabase, userId]);
+
+  useEffect(() => {
+    loadApiKeys();
+  }, [loadApiKeys]);
 
   const saveApiKey = async (provider: string) => {
     if (!supabase) {
@@ -161,9 +161,9 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
 
       setNewKeys({ ...newKeys, [provider]: '' });
       toast.success(`${provider} API key saved successfully`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       clientLogger.error('Failed to save API key', error);
-      toast.error(error.message || 'Failed to save API key');
+      toast.error((error as Error).message || 'Failed to save API key');
     } finally {
       setLoading({ ...loading, [provider]: false });
     }
@@ -198,7 +198,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
       setApiKeys(newApiKeys);
 
       toast.success(`${provider} API key deleted`);
-    } catch (error: any) {
+    } catch (error) {
       clientLogger.error('Failed to delete API key', error);
       toast.error('Failed to delete API key');
     } finally {
@@ -223,7 +223,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
       } else {
         toast.error(`${provider} API key test failed: ${result.error}`);
       }
-    } catch (_error) {
+    } catch {
       toast.error('Failed to test API key');
     } finally {
       setLoading({ ...loading, [`test-${provider}`]: false });

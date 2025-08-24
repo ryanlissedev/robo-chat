@@ -47,10 +47,25 @@ export interface ExtendedUIMessage extends UIMessage {
 }
 
 /**
- * Tool invocation UI part interface for AI SDK v5
- * Defines the structure of tool invocation data in the UI
+ * Tool invocation UI part interface for AI SDK v5 compatibility
+ * Custom interface that extends the AI SDK's built-in tool parts
+ * This allows our components to work with both custom and AI SDK tool data
  */
 export interface ToolInvocationUIPart {
+  type: 'tool-invocation';
+  toolCallId: string;
+  state: 'partial-call' | 'call' | 'result';
+  toolName: string;
+  args: Record<string, unknown>;
+  result?: unknown;
+}
+
+/**
+ * Legacy tool invocation structure for backward compatibility
+ * @deprecated Use ToolInvocationUIPart directly instead
+ */
+export interface LegacyToolInvocationUIPart {
+  type: 'tool-invocation';
   toolInvocation: {
     toolCallId: string;
     toolName: string;
@@ -90,8 +105,8 @@ export function getMessageContent(message: ExtendedUIMessage): string {
   }
   
   if (hasParts(message)) {
-    const textParts = message.parts.filter(part => part.type === 'text' && part.text);
-    return textParts.map(part => part.text).join('');
+    const textParts = message.parts.filter(part => part.type === 'text' && 'text' in part);
+    return textParts.map(part => 'text' in part ? part.text : '').join('');
   }
   
   return '';

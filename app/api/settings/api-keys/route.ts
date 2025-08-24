@@ -39,7 +39,7 @@ export async function GET() {
     }
 
     return NextResponse.json({ keys: keys || [] });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -122,7 +122,7 @@ export async function POST(req: Request) {
       success: true,
       message: isUpdate ? 'API key updated' : 'API key added',
     });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -179,7 +179,7 @@ export async function DELETE(req: Request) {
     // Note: Audit log table doesn't exist in schema, removing audit logging
 
     return NextResponse.json({ success: true });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -238,7 +238,7 @@ export async function PATCH(req: Request) {
     // Note: Audit log table doesn't exist in schema, removing audit logging
 
     return NextResponse.json({ success: true });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -1,7 +1,6 @@
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
 import { ArrowClockwise, Check, Copy } from '@phosphor-icons/react';
 import { useCallback, useRef } from 'react';
-import type { ToolInvocationUIPart } from '@/app/types/ai-extended';
 // AI SDK Elements
 import {
   Reasoning,
@@ -59,30 +58,34 @@ export function MessageAssistant({
   langsmithRunId,
 }: MessageAssistantProps) {
   const { preferences } = useUserPreferences();
-  const sources = getSources(parts);
+  const sources = getSources(parts || []);
+  // Filter for tool parts using the AI SDK's built-in tool part types
   const toolInvocationParts = parts?.filter(
-    (part) => part.type === 'tool-invocation'
-  ) as ToolInvocationUIPart[] | undefined;
+    (part) => part.type.startsWith('tool-')
+  ) || [];
+  
   const reasoningParts = parts?.find((part) => part.type === 'reasoning');
   const contentNullOrEmpty = children === null || children === '';
   const isLastStreaming = status === 'streaming' && isLast;
+  
+  // Extract search image results from tool parts
   const searchImageResults =
     parts
       ?.filter(
-        (part: any) =>
-          part.type === 'tool-invocation' &&
+        (part) =>
+          part.type.startsWith('tool-') &&
+          'state' in part &&
           part.state === 'output-available' &&
-          (part as any).toolName === 'imageSearch' &&
-          (part as any).result?.content?.[0]?.type === 'images'
+          'toolName' in part &&
+          part.toolName === 'imageSearch'
       )
-      .flatMap((part) =>
-        part.type === 'tool-invocation' &&
-        part.state === 'output-available' &&
-        (part as any).toolName === 'imageSearch' &&
-        (part as any).result?.content?.[0]?.type === 'images'
-          ? ((part as any).result?.content?.[0]?.results ?? [])
-          : []
-      ) ?? [];
+      .flatMap((part) => {
+        if ('output' in part) {
+          const result = part.output as { content?: { type: string; results?: { title: string; imageUrl: string; sourceUrl: string }[] }[] };
+          return result?.content?.[0]?.type === 'images' ? (result.content[0].results ?? []) : [];
+        }
+        return [];
+      }) ?? [];
 
   const isQuoteEnabled = !preferences.multiModelEnabled;
   const messageRef = useRef<HTMLDivElement>(null);
@@ -123,7 +126,7 @@ export function MessageAssistant({
         {toolInvocationParts &&
           toolInvocationParts.length > 0 &&
           preferences.showToolInvocations && (
-            <ToolInvocation toolInvocations={toolInvocationParts} />
+            <ToolInvocation toolInvocations={toolInvocationParts as any} />
           )}
 
         {searchImageResults.length > 0 && (
@@ -145,7 +148,7 @@ export function MessageAssistant({
           <Sources>
             <SourcesTrigger count={sources.length} />
             <SourcesContent>
-              {sources.map((source: any, index: number) => (
+              {sources.map((source: { url: string; title?: string }, index: number) => (
                 <Source
                   href={source.url}
                   key={index}

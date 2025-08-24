@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { decryptApiKey, validateApiKeyFormat } from '@/lib/security/encryption';
 import { validateUserIdentity } from '@/lib/server/api';
+import type { APITestResult } from '@/lib/types/api-errors';
 
 export async function POST(req: Request) {
   try {
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
         '', // auth_tag doesn't exist in schema
         user.id
       );
-    } catch (_decryptError) {
+    } catch {
       return NextResponse.json(
         { error: 'Failed to decrypt API key' },
         { status: 500 }
@@ -79,7 +80,7 @@ export async function POST(req: Request) {
     }
 
     // Test the API key based on provider
-    let testResult = { success: false, error: 'Unknown provider' };
+    let testResult: APITestResult = { success: false, error: 'Unknown provider' };
 
     switch (provider) {
       case 'openai':
@@ -90,10 +91,10 @@ export async function POST(req: Request) {
           if (models.data.length > 0) {
             testResult = { success: true, error: '' };
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           testResult = {
             success: false,
-            error: error.message || 'Invalid OpenAI API key',
+            error: (error as Error).message || 'Invalid OpenAI API key',
           };
         }
         break;
@@ -110,36 +111,36 @@ export async function POST(req: Request) {
           if (response) {
             testResult = { success: true, error: '' };
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           testResult = {
             success: false,
-            error: error.message || 'Invalid Anthropic API key',
+            error: (error as Error).message || 'Invalid Anthropic API key',
           };
         }
         break;
 
       case 'mistral':
         try {
-          const _mistral = createMistral({ apiKey });
+          createMistral({ apiKey });
           // Test by creating a minimal completion
           testResult = { success: true, error: '' };
-        } catch (error: any) {
+        } catch (error: unknown) {
           testResult = {
             success: false,
-            error: error.message || 'Invalid Mistral API key',
+            error: (error as Error).message || 'Invalid Mistral API key',
           };
         }
         break;
 
       case 'google':
         try {
-          const _google = createGoogleGenerativeAI({ apiKey });
+          createGoogleGenerativeAI({ apiKey });
           // Test by creating a provider instance
           testResult = { success: true, error: '' };
-        } catch (error: any) {
+        } catch (error: unknown) {
           testResult = {
             success: false,
-            error: error.message || 'Invalid Google API key',
+            error: (error as Error).message || 'Invalid Google API key',
           };
         }
         break;
@@ -160,10 +161,10 @@ export async function POST(req: Request) {
               error: 'Invalid LangSmith API key',
             };
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           testResult = {
             success: false,
-            error: error.message || 'Invalid LangSmith API key',
+            error: (error as Error).message || 'Invalid LangSmith API key',
           };
         }
         break;
@@ -193,7 +194,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(testResult);
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

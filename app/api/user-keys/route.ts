@@ -94,7 +94,7 @@ export async function POST(request: Request) {
           if (favoritesError) {
           }
         }
-      } catch (_modelsError) {
+      } catch {
         // Don't fail the main request if favorite models update fails
       }
     }
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
         ? `API key saved and ${provider} models added to favorites`
         : 'API key updated',
     });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -149,7 +149,7 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

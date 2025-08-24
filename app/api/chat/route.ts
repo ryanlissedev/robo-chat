@@ -1,9 +1,8 @@
-import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
-import type { LanguageModelUsage, ToolSet, UIMessagePart } from 'ai';
+import type { LanguageModelUsage, ToolSet, UIMessagePart, UITools, UIDataTypes, LanguageModel, ModelMessage } from 'ai';
 import type { Attachment } from '@ai-sdk/ui-utils';
 import { convertToModelMessages, streamText } from 'ai';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
-import { getMessageContent, hasContent, hasParts, hasAttachments } from '@/app/types/ai-extended';
+import { getMessageContent } from '@/app/types/ai-extended';
 import type { SupabaseClientType } from '@/app/types/api.types';
 import { FILE_SEARCH_SYSTEM_PROMPT, SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
 import {
@@ -13,7 +12,7 @@ import {
   logMetrics,
   updateRun,
 } from '@/lib/langsmith/client';
-import { logger } from '@/lib/logger';
+import logger from '@/lib/utils/logger';
 import { getAllModels } from '@/lib/models';
 import { getProviderForModel } from '@/lib/openproviders/provider-map';
 import { fileSearchTool } from '@/lib/tools/file-search';
@@ -40,7 +39,7 @@ type UIMessageContent = {
   text?: string;
 };
 
-type MessagePart = UIMessagePart<any, any>;
+type MessagePart = UIMessagePart<UIDataTypes, UITools>;
 
 type TransformedMessage = {
   role: 'user' | 'assistant' | 'system';
@@ -59,6 +58,8 @@ type ChatRequest = {
   message_group_id?: string;
   reasoningEffort?: 'low' | 'medium' | 'high';
   verbosity?: 'low' | 'medium' | 'high';
+  context?: 'chat' | 'voice';  // Add context to differentiate chat vs voice
+  personalityMode?: 'safety-focused' | 'technical-expert' | 'friendly-assistant';  // For voice contexts
 };
 
 // Helper functions for message transformation
@@ -161,9 +162,23 @@ function resolveModelId(model: string): string {
 function getEffectiveSystemPrompt(
   systemPrompt: string,
   enableSearch: boolean,
-  isGPT5Model: boolean
+  isGPT5Model: boolean,
+  context?: 'chat' | 'voice',
+  personalityMode?: 'safety-focused' | 'technical-expert' | 'friendly-assistant'
 ): string {
-  return enableSearch && isGPT5Model
+  // For voice context with personality mode, use personality-specific prompts
+  if (context === 'voice' && personalityMode) {
+    // Import personality configs dynamically to get voice-specific prompts
+    const { PERSONALITY_CONFIGS } = require('@/app/components/voice/config/personality-configs');
+    if (PERSONALITY_CONFIGS[personalityMode]) {
+      return PERSONALITY_CONFIGS[personalityMode].systemPrompt;
+    }
+  }
+  
+  // For chat context or when no personality mode, use standard prompt selection
+  const useSearchPrompt = enableSearch && isGPT5Model;
+  
+  return useSearchPrompt
     ? FILE_SEARCH_SYSTEM_PROMPT
     : systemPrompt || SYSTEM_PROMPT_DEFAULT;
 }
@@ -190,7 +205,8 @@ function configureModelSettings(
 
 // Tools configuration
 function configureTools(enableSearch: boolean, isGPT5Model: boolean): ToolSet {
-  return enableSearch && isGPT5Model
+  const useTools = enableSearch && isGPT5Model;
+  return useTools
     ? { fileSearch: fileSearchTool }
     : ({} as ToolSet);
 }
@@ -366,6 +382,8 @@ export async function POST(req: Request) {
       message_group_id,
       reasoningEffort = 'medium',
       verbosity,
+      context = 'chat',  // Default to chat context
+      personalityMode,
     } = request;
 
     // Validate request
@@ -399,6 +417,7 @@ export async function POST(req: Request) {
       model
     );
 
+
     // Log request context
     logRequestContext({
       resolvedModel,
@@ -412,7 +431,9 @@ export async function POST(req: Request) {
     const effectiveSystemPrompt = getEffectiveSystemPrompt(
       systemPrompt,
       enableSearch,
-      isGPT5Model
+      isGPT5Model,
+      context,
+      personalityMode
     );
     const apiKey = await getApiKey(isAuthenticated, userId, resolvedModel);
 
@@ -468,24 +489,24 @@ export async function POST(req: Request) {
       (msg: TransformedMessage) => ({
         id: msg.id || Math.random().toString(36),
         role: msg.role,
-        parts: msg.parts as any, // Type assertion needed due to MessagePart vs custom part types
+        parts: msg.parts as UIMessagePart<UIDataTypes, UITools>[], // Type assertion needed due to MessagePart vs custom part types
         createdAt: new Date(),
         content: (() => {
-          const textPart = msg.parts.find(p => (p as any).type === 'text');
-          return textPart ? (textPart as any).text || '' : '';
+          const textPart = msg.parts.find(p => (p as Record<string, unknown>).type === 'text');
+          return textPart ? String((textPart as Record<string, unknown>).text) || '' : '';
         })(), // v4 compatibility
       })
     );
 
-    let modelMessages: any[];
+    let modelMessages: ModelMessage[];
     try {
       // Remove undefined parts before conversion and ensure compatibility
       const compatibleMessages = uiMessages.map(msg => ({
         ...msg,
         parts: msg.parts?.filter(Boolean) || []
       }));
-      modelMessages = convertToModelMessages(compatibleMessages as any) as any[];
-    } catch (_conversionError) {
+      modelMessages = convertToModelMessages(compatibleMessages as ExtendedUIMessage[]);
+    } catch {
       return new Response(
         JSON.stringify({ error: 'Failed to convert messages to model format' }),
         { status: 500 }
@@ -493,13 +514,13 @@ export async function POST(req: Request) {
     }
 
     const result = streamText({
-      model: modelConfig?.apiSdk ? modelConfig.apiSdk(apiKey, modelSettings) as any : undefined,
+      model: modelConfig?.apiSdk ? modelConfig.apiSdk(apiKey, modelSettings) as LanguageModel : undefined!,
       system: effectiveSystemPrompt,
       messages: modelMessages,
       tools,
       // GPT-5 models only support default temperature = 1
       temperature: isGPT5Model ? 1 : undefined,
-      onError: (_err: unknown) => {
+      onError: () => {
         // Don't set streamError anymore - let the AI SDK handle it through the stream
       },
 

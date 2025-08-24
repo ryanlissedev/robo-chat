@@ -40,7 +40,7 @@ export function DeveloperTools() {
         title: 'Copied to clipboard',
         status: 'success',
       });
-    } catch (_error) {
+    } catch {
       toast({
         title: 'Failed to copy to clipboard',
         status: 'error',

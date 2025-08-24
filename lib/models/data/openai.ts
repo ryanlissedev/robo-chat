@@ -1,6 +1,7 @@
 import type { OpenProvidersOptions } from '@/lib/openproviders';
 import { openproviders } from '@/lib/openproviders';
 import type { ModelConfig } from '../types';
+import type { ModelSettings } from '@/lib/types/models';
 
 const openaiModels: ModelConfig[] = [
   // GPT-5 Models (August 2025)
@@ -26,12 +27,14 @@ const openaiModels: ModelConfig[] = [
     apiDocs: 'https://platform.openai.com/docs/models/gpt-5',
     modelPage: 'https://platform.openai.com/docs/models/gpt-5-nano',
     icon: 'openai',
-    apiSdk: (apiKey?: string, settings?: any) =>
-      openproviders(
+    apiSdk: (apiKey?: string, opts?: unknown) => {
+      const settings = opts as ModelSettings;
+      return openproviders(
         'gpt-5-nano',
-        settings as OpenProvidersOptions<'gpt-5-nano'>,
+        settings as OpenProvidersOptions,
         apiKey
-      ),
+      );
+    },
   },
   {
     id: 'gpt-5-mini',
@@ -55,12 +58,14 @@ const openaiModels: ModelConfig[] = [
     apiDocs: 'https://platform.openai.com/docs/models/gpt-5',
     modelPage: 'https://platform.openai.com/docs/models/gpt-5-mini',
     icon: 'openai',
-    apiSdk: (apiKey?: string, settings?: any) =>
-      openproviders(
+    apiSdk: (apiKey?: string, opts?: unknown) => {
+      const settings = opts as ModelSettings;
+      return openproviders(
         'gpt-5-mini',
-        settings as OpenProvidersOptions<'gpt-5-mini'>,
+        settings as OpenProvidersOptions,
         apiKey
-      ),
+      );
+    },
   },
   {
     id: 'gpt-5',
@@ -85,8 +90,10 @@ const openaiModels: ModelConfig[] = [
     apiDocs: 'https://platform.openai.com/docs/models/gpt-5',
     modelPage: 'https://platform.openai.com/docs/models/gpt-5',
     icon: 'openai',
-    apiSdk: (apiKey?: string, settings?: any) =>
-      openproviders('gpt-5', settings as OpenProvidersOptions<'gpt-5'>, apiKey),
+    apiSdk: (apiKey?: string, opts?: unknown) => {
+      const settings = opts as ModelSettings;
+      return openproviders('gpt-5', settings as OpenProvidersOptions, apiKey);
+    },
   },
   // Legacy GPT-4 models for compatibility
   {
@@ -111,12 +118,14 @@ const openaiModels: ModelConfig[] = [
     apiDocs: 'https://platform.openai.com/docs/models/gpt-4o-mini',
     modelPage: 'https://platform.openai.com/docs/models/gpt-4o-mini',
     icon: 'openai',
-    apiSdk: (apiKey?: string, settings?: any) =>
-      openproviders(
+    apiSdk: (apiKey?: string, opts?: unknown) => {
+      const settings = opts as ModelSettings;
+      return openproviders(
         'gpt-4o-mini',
-        settings as OpenProvidersOptions<'gpt-4o-mini'>,
+        settings as OpenProvidersOptions,
         apiKey
-      ),
+      );
+    },
   },
   {
     id: 'gpt-4o',
@@ -140,12 +149,14 @@ const openaiModels: ModelConfig[] = [
     apiDocs: 'https://platform.openai.com/docs/models/gpt-4o',
     modelPage: 'https://platform.openai.com/docs/models/gpt-4o',
     icon: 'openai',
-    apiSdk: (apiKey?: string, settings?: any) =>
-      openproviders(
+    apiSdk: (apiKey?: string, opts?: unknown) => {
+      const settings = opts as ModelSettings;
+      return openproviders(
         'gpt-4o',
-        settings as OpenProvidersOptions<'gpt-4o'>,
+        settings as OpenProvidersOptions,
         apiKey
-      ),
+      );
+    },
   },
 ];
 

@@ -63,7 +63,12 @@ export default function Article({
         <div className="mt-20 w-full">
           {messages.map((message) => {
             const parts = message?.parts as MessageAISDK['parts'];
-            const sources = getSources(parts);
+            const rawSources = getSources(parts);
+            const sources = rawSources.map((source, index) => ({
+              id: `source-${index}`,
+              url: source.url,
+              title: source.url,
+            }));
 
             return (
               <div key={message.id}>

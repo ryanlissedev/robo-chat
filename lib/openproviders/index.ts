@@ -19,7 +19,7 @@ import type {
 } from './types';
 
 // Keep options loosely typed to avoid coupling to provider signatures
-export type OpenProvidersOptions<_T = unknown> = unknown;
+export type OpenProvidersOptions = unknown;
 
 // Get Ollama base URL from environment or use default
 const getOllamaBaseURL = () => {

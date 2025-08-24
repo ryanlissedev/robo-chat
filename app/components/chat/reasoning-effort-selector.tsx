@@ -116,8 +116,6 @@ export function ReasoningEffortCompact({
   className,
   disabled = false,
 }: ReasoningEffortSelectorProps) {
-  const _selectedOption = reasoningOptions.find((opt) => opt.value === value);
-
   return (
     <div className={cn('flex items-center gap-1', className)}>
       {reasoningOptions.map((option) => {

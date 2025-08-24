@@ -75,7 +75,7 @@ export function PopoverContentAuth() {
           size="lg"
           variant="secondary"
         >
-          <img
+          <Image
             alt="Google logo"
             className="mr-2 size-4"
             height={20}

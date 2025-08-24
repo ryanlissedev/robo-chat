@@ -1,8 +1,6 @@
-const isDevelopment = process.env.NODE_ENV === 'development';
+import type { LogContext } from '@/lib/types/logger';
 
-interface LogContext {
-  [key: string]: any;
-}
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 class ClientLogger {
   private formatMessage(level: string, message: string, context?: LogContext): string {

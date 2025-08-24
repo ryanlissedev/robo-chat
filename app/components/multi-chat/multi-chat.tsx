@@ -55,8 +55,8 @@ export function MultiChat() {
 
   const modelsFromPersisted = useMemo(() => {
     return persistedMessages
-      .filter((msg) => (msg as any).model)
-      .map((msg) => (msg as any).model);
+      .filter((msg) => 'model' in msg && msg.model)
+      .map((msg) => ('model' in msg ? msg.model : ''));
   }, [persistedMessages]);
 
   const modelsFromLastGroup = useMemo(() => {
@@ -74,8 +74,8 @@ export function MultiChat() {
       if (msg.role === 'user') {
         break;
       }
-      if (msg.role === 'assistant' && (msg as any).model) {
-        modelsInLastGroup.push((msg as any).model);
+      if (msg.role === 'assistant' && 'model' in msg && msg.model) {
+        modelsInLastGroup.push(msg.model as string);
       }
     }
     return modelsInLastGroup;
@@ -120,7 +120,7 @@ export function MultiChat() {
       const message = persistedMessages[i];
 
       if (message.role === 'user') {
-        const groupKey = (message as any).content;
+        const groupKey = getMessageContent(message as ExtendedUIMessage);
         if (!groups[groupKey]) {
           groups[groupKey] = {
             userMessage: message,
@@ -137,7 +137,7 @@ export function MultiChat() {
         }
 
         if (associatedUserMessage) {
-          const groupKey = (associatedUserMessage as any).content;
+          const groupKey = getMessageContent(associatedUserMessage as ExtendedUIMessage);
           if (!groups[groupKey]) {
             groups[groupKey] = {
               userMessage: associatedUserMessage,
@@ -155,7 +155,7 @@ export function MultiChat() {
           userMessage: group.userMessage,
           responses: group.assistantMessages.map((msg, index) => {
             const model =
-              (msg as any).model || selectedModelIds[index] || `model-${index}`;
+              ('model' in msg && msg.model) ? msg.model as string : selectedModelIds[index] || `model-${index}`;
             const provider =
               models.find((m) => m.id === model)?.provider || 'unknown';
 
@@ -303,7 +303,7 @@ export function MultiChat() {
 
       setPrompt('');
       setFiles([]);
-    } catch (_error) {
+    } catch {
       toast({
         title: 'Failed to send message',
         description: 'Please try again.',
@@ -401,7 +401,7 @@ export function MultiChat() {
             transition={{ layout: { duration: 0 } }}
           >
             <h1 className="mb-6 font-medium text-3xl tracking-tight">
-              What's on your mind?
+              What&apos;s on your mind?
             </h1>
           </motion.div>
         ) : (
