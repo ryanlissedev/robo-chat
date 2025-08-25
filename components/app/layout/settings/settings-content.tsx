@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  CubeIcon,
-  GearSixIcon,
-  KeyIcon,
-  PaintBrushIcon,
-  PlugsConnectedIcon,
-  XIcon,
-} from '@phosphor-icons/react';
+import { CubeIcon, GearSixIcon, KeyIcon, PaintBrushIcon, PlugsConnectedIcon, X,  } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawerClose } from '@/components/ui/drawer';
@@ -46,7 +39,7 @@ export function SettingsContent({ isDrawer = false }: SettingsContentProps) {
           <h2 className="font-medium text-lg">Settings</h2>
           <DrawerClose asChild>
             <Button size="icon" variant="ghost">
-              <XIcon className="size-4" />
+              <X className="size-4" />
             </Button>
           </DrawerClose>
         </div>

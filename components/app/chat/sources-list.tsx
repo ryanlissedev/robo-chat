@@ -1,6 +1,6 @@
 'use client';
 
-import { CaretDown, Link } from '@phosphor-icons/react';
+import { ChevronDown, Link } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -70,7 +70,7 @@ export function SourcesList({ sources, className }: SourcesListProps) {
               )}
             </div>
           </div>
-          <CaretDown
+          <ChevronDown
             className={cn(
               'h-4 w-4 transition-transform',
               isExpanded ? 'rotate-180 transform' : ''

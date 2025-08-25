@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, PencilSimple, TrashSimple, X } from '@phosphor-icons/react';
+import { Check, PencilSimple, TrashSimple, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useKeyShortcut } from '@/app/hooks/use-key-shortcut';

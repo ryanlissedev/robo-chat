@@ -1,4 +1,4 @@
-import { DotsThree, PencilSimple, Trash } from '@phosphor-icons/react';
+import { DotsThree, PencilSimple, Trash } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';

@@ -223,11 +223,13 @@ describe('POST /api/chat - TDD London School', () => {
       await POST(request);
 
       // Assert - Verify model was resolved to gpt-5-mini
-      expect(mockValidateAndTrackUsage).toHaveBeenCalledWith({
-        userId: 'user-123',
-        model: 'gpt-5-mini', // Should be resolved
-        isAuthenticated: false,
-      });
+      expect(mockValidateAndTrackUsage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user-123',
+          model: 'gpt-5-mini', // Should be resolved
+          isAuthenticated: false,
+        })
+      );
     });
 
     it('should throw error for unknown model', async () => {

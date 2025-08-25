@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUpIcon, StopIcon } from '@phosphor-icons/react';
+import { ArrowUp, Square } from 'lucide-react';
 import { AudioWaveform } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ModelSelector } from '@/components/common/model-selector/base';
@@ -299,9 +299,9 @@ export function ChatInput({
                     type="button"
                   >
                     {status === 'streaming' ? (
-                      <StopIcon className="size-5" />
+                      <Square className="size-5" />
                     ) : (
-                      <ArrowUpIcon className="size-5" />
+                      <ArrowUp className="size-5" />
                     )}
                   </Button>
                 </PromptInputAction>

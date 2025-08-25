@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  DotsSixVerticalIcon,
-  MinusIcon,
-  PlusIcon,
-  StarIcon,
-} from '@phosphor-icons/react';
+import { DotsSixVerticalIcon, MinusIcon, PlusIcon, StarIcon,  } from 'lucide-react';
 import { AnimatePresence, motion, Reorder } from 'framer-motion';
 import { useMemo, useState } from 'react';
 import { useModel } from '@/lib/model-store/provider';

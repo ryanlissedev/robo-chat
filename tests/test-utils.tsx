@@ -4,6 +4,28 @@ import type React from 'react';
 import type { ReactElement } from 'react';
 import { expect, vi } from 'vitest';
 
+// Globally mock framer-motion to avoid DOM-specific APIs in JSDOM
+vi.mock('framer-motion', () => ({
+  motion: new Proxy({}, {
+    get: () => (props: any) => <div {...props} />,
+  }),
+  AnimatePresence: ({ children }: any) => <>{children}</>,
+}));
+
+// Polyfill matchMedia for libraries expecting addEventListener/removeEventListener
+if (typeof window !== 'undefined') {
+  (window as any).matchMedia = (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(), // deprecated
+    removeListener: vi.fn(), // deprecated
+    dispatchEvent: vi.fn(),
+  });
+}
+
 // Mock data for testing
 export const mockUserProfile = {
   id: 'test-user-id',

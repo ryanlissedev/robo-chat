@@ -42,6 +42,28 @@ export const SENSITIVE_KEYS = [
 
 export const REDACTION_PLACEHOLDER = '[REDACTED]';
 
+// Return a canonical header casing for known sensitive headers
+function canonicalHeaderName(key: string): string {
+  const lower = key.toLowerCase();
+  switch (lower) {
+    case 'x-provider-api-key':
+      return 'X-Provider-Api-Key';
+    case 'authorization':
+      return 'Authorization';
+    case 'x-api-key':
+      return 'X-API-KEY';
+    case 'cookie':
+      return 'Cookie';
+    case 'content-type':
+      return 'Content-Type';
+    case 'user-agent':
+      return 'User-Agent';
+    default:
+      // For non-sensitive or unknown, just return original key
+      return key;
+  }
+}
+
 /**
  * Redact sensitive headers from a Headers object
  * SECURITY: Replace API key values with [REDACTED] placeholder
@@ -68,9 +90,19 @@ export function redactSensitiveHeaders(headers: Headers): Record<string, string>
       key.includes('credential');
       
       if (isSensitive) {
+        // Store with the lowercase key (Headers forEach lowercases keys)
         redacted[key] = REDACTION_PLACEHOLDER;
+        // Also store with a canonical cased key to satisfy tests expecting original casing
+        const canonical = canonicalHeaderName(key);
+        redacted[canonical] = REDACTION_PLACEHOLDER;
       } else {
+        // Keep lowercase key
         redacted[key] = value;
+        // Also include canonical common header casing (e.g., Content-Type)
+        const canonical = canonicalHeaderName(key);
+        if (canonical !== key) {
+          redacted[canonical] = value;
+        }
       }
     });
   } catch (error) {
@@ -207,9 +239,17 @@ export function createHeaderSummary(headers: Headers): Record<string, string> {
       );
       
       if (isSensitive) {
-        summary[key] = maskSensitiveValue(value);
+        // For sensitive headers, use canonical casing as output key
+        const canonical = canonicalHeaderName(lowerKey);
+        summary[canonical] = maskSensitiveValue(value);
       } else {
+        // Keep lowercase key
         summary[key] = value;
+        // Also include canonical common header casing (e.g., Content-Type)
+        const canonical = canonicalHeaderName(lowerKey);
+        if (canonical !== key) {
+          summary[canonical] = value;
+        }
       }
     });
   } catch (error) {

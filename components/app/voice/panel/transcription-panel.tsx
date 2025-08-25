@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUpIcon, PencilIcon, XIcon } from '@phosphor-icons/react';
+import { ArrowUp, PencilIcon, X } from 'lucide-react';
 import { Check, Copy, RotateCcw, Trash2, Volume2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -184,7 +184,7 @@ export function TranscriptionPanel({
                   variant="ghost"
                   className="size-8 p-0"
                 >
-                  <XIcon className="size-4" />
+                  <X className="size-4" />
                 </Button>
               )}
             </div>
@@ -204,7 +204,7 @@ export function TranscriptionPanel({
           {hasError ? (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center gap-2 text-red-700 font-medium mb-2">
-                <XIcon className="size-5" />
+                <X className="size-5" />
                 Voice Error
               </div>
               <p className="text-red-600 text-sm mb-3">{error.message}</p>
@@ -337,7 +337,7 @@ export function TranscriptionPanel({
                         variant="default"
                         disabled={isRecording || isProcessing}
                       >
-                        <ArrowUpIcon className="size-4 mr-2" />
+                        <ArrowUp className="size-4 mr-2" />
                         Send to Chat
                       </Button>
                     </>

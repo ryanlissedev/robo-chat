@@ -1,4 +1,4 @@
-import { Check, X } from '@phosphor-icons/react';
+import { Check, X } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';

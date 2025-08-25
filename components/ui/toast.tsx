@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, Info, Warning } from '@phosphor-icons/react/dist/ssr';
+import { CheckCircle, Info, AlertTriangle } from 'lucide-react';
 import { toast as sonnerToast } from 'sonner';
 import { Button } from './button';
 
@@ -20,7 +20,7 @@ function Toast({ title, description, button, id, status }: ToastProps) {
     <div className="flex items-center overflow-hidden rounded-xl border border-input bg-popover p-4 shadow-xs backdrop-blur-xl">
       <div className="flex flex-1 items-center">
         {status === 'error' ? (
-          <Warning className="mr-3 size-4 text-primary" />
+          <AlertTriangle className="mr-3 size-4 text-primary" />
         ) : null}
         {status === 'info' ? (
           <Info className="mr-3 size-4 text-primary" />

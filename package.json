@@ -63,7 +63,7 @@
     "file-type": "^20.5.0",
     "idb-keyval": "^6.2.2",
     "langsmith": "^0.3.62",
-    "lucide-react": "^0.540.0",
+    "lucide-react": "^0.541.0",
     "marked": "16.2.0",
     "motion": "^12.23.12",
     "next": "^15.5.0",

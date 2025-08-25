@@ -1,6 +1,6 @@
 'use client';
 
-import { GithubLogoIcon } from '@phosphor-icons/react';
+import { GithubLogoIcon } from 'lucide-react';
 import { useState } from 'react';
 import XIcon from '@/components/icons/x';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -82,7 +82,7 @@ export function UserMenu() {
             rel="noopener noreferrer"
             target="_blank"
           >
-            <XIcon className="size-4 p-0.5" />
+            <X className="size-4 p-0.5" />
             <span>@zoladotchat</span>
           </a>
         </DropdownMenuItem>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { ChatCircleIcon } from '@phosphor-icons/react';
+import { MessageCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
 import { usePathname } from 'next/navigation';
@@ -390,7 +390,7 @@ export function ProjectView({ projectId }: ProjectViewProps) {
             }}
           >
             <div className="mb-6 flex items-center justify-center gap-2">
-              <ChatCircleIcon className="text-muted-foreground" size={24} />
+              <MessageCircle className="text-muted-foreground" size={24} />
               <h1 className="text-center font-medium text-3xl tracking-tight">
                 {project?.name || ''}
               </h1>

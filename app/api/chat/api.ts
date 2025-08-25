@@ -17,7 +17,8 @@ export async function validateAndTrackUsage({
   userId,
   model,
   isAuthenticated,
-}: ChatApiParams): Promise<SupabaseClientType | null> {
+  hasGuestCredentials = false,
+}: ChatApiParams & { hasGuestCredentials?: boolean }): Promise<SupabaseClientType | null> {
   const supabase = await validateUserIdentity(userId, isAuthenticated);
   if (!supabase) {
     return null;
@@ -41,11 +42,20 @@ export async function validateAndTrackUsage({
         );
       }
     }
-  } else if (!NON_AUTH_ALLOWED_MODELS.includes(model)) {
-    // For unauthenticated users, only allow specific models
-    throw new Error(
-      'This model requires authentication. Please sign in to access more models.'
-    );
+  } else {
+    // For unauthenticated users
+    const isFreeModel = FREE_MODELS_IDS.includes(model) || NON_AUTH_ALLOWED_MODELS.includes(model);
+    const isOllamaModel = model.startsWith('ollama:');
+    
+    // Allow access if:
+    // 1. It's a free model
+    // 2. It's an Ollama model
+    // 3. Guest has provided BYOK credentials
+    if (!isFreeModel && !isOllamaModel && !hasGuestCredentials) {
+      throw new Error(
+        'This model requires authentication or an API key. Please sign in or provide your API key to access this model.'
+      );
+    }
   }
 
   // Check usage limits for the model

@@ -1,6 +1,6 @@
 'use client';
 
-import { Brain, Database, Key, Shield } from '@phosphor-icons/react';
+import { Brain, Database, Key, Shield } from 'lucide-react';
 import { Header } from '@/components/app/layout/header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/lib/user-store/provider';

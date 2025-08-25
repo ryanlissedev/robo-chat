@@ -1,6 +1,6 @@
 'use client';
 
-import { KeyIcon, PlusIcon } from '@phosphor-icons/react';
+import { KeyIcon, PlusIcon } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Trash2 } from 'lucide-react';
 import { useState } from 'react';

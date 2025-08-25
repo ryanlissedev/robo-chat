@@ -1,6 +1,6 @@
 'use client';
 
-import { Brain, Gauge, Lightning } from '@phosphor-icons/react';
+import { Brain, Gauge, Lightning } from 'lucide-react';
 import { useState } from 'react';
 import {
   Select,

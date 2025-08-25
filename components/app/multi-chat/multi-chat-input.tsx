@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUp, Stop } from '@phosphor-icons/react';
+import { ArrowUp, Square } from 'lucide-react';
 import type React from 'react';
 import { useCallback } from 'react';
 import { MultiModelSelector } from '@/components/common/multi-model-selector/base';
@@ -117,7 +117,7 @@ export function MultiChatInput({
                 type="button"
               >
                 {status === 'streaming' || anyLoading ? (
-                  <Stop className="size-4" />
+                  <Square className="size-4" />
                 ) : (
                   <ArrowUp className="size-4" />
                 )}

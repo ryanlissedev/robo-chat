@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, FolderIcon, X } from '@phosphor-icons/react';
+import { Check, FolderIcon, X } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';

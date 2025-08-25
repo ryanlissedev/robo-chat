@@ -1,6 +1,6 @@
 'use client';
 
-import { SidebarSimpleIcon } from '@phosphor-icons/react';
+import { SidebarSimpleIcon } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import {
   Tooltip,

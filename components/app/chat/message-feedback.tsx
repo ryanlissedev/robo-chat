@@ -1,6 +1,6 @@
 'use client';
 
-import { ThumbsDown, ThumbsUp } from '@phosphor-icons/react';
+import { ThumbsDown, ThumbsUp } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';

@@ -1,6 +1,6 @@
 'use client';
 
-import { User } from '@phosphor-icons/react';
+import { User } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import {

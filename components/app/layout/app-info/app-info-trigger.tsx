@@ -1,6 +1,6 @@
 'use client';
 
-import { Info } from '@phosphor-icons/react';
+import { Info } from 'lucide-react';
 import Image from 'next/image';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import {

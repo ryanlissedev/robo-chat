@@ -1,4 +1,4 @@
-import { GlobeIcon } from '@phosphor-icons/react';
+import { Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -28,7 +28,7 @@ export function ButtonSearch({
             className="rounded-full border border-border bg-transparent dark:bg-secondary"
             variant="secondary"
           >
-            <GlobeIcon className="size-5" />
+            <Globe className="size-5" />
             Search
           </Button>
         </PopoverTrigger>
@@ -47,7 +47,7 @@ export function ButtonSearch({
       onClick={handleClick}
       variant="secondary"
     >
-      <GlobeIcon className="size-5" />
+      <Globe className="size-5" />
       <span className="hidden md:block">Search</span>
     </Button>
   );

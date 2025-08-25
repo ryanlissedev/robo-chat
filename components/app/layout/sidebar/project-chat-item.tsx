@@ -1,6 +1,6 @@
 'use client';
 
-import { ChatCircleIcon, Check, X } from '@phosphor-icons/react';
+import { MessageCircle, Check, X } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
@@ -147,7 +147,7 @@ export function ProjectChatItem({ chat, formatDate }: ProjectChatItemProps) {
         ref={containerRef}
       >
         <div className="flex items-center p-3">
-          <ChatCircleIcon
+          <MessageCircle
             className="mr-3 flex-shrink-0 text-muted-foreground"
             size={16}
           />

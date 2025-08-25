@@ -1,5 +1,5 @@
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
-import { ArrowUpRight } from '@phosphor-icons/react/dist/ssr';
+import { ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import { getSources } from '@/components/app/chat/get-sources';
 import { SourcesList } from '@/components/app/chat/sources-list';

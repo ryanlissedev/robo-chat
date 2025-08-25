@@ -546,10 +546,15 @@ export async function POST(req: Request) {
 
     const resolvedModel = resolveModelId(model);
 
+    // Check if guest has provided BYOK credentials
+    const guestApiKey = req.headers.get('x-provider-api-key') || req.headers.get('X-Provider-Api-Key');
+    const hasGuestCredentials = !isAuthenticated && Boolean(guestApiKey);
+
     const supabase = await validateAndTrackUsage({
       userId,
       model: resolvedModel,
       isAuthenticated,
+      hasGuestCredentials,
     });
 
     // Handle user message logging

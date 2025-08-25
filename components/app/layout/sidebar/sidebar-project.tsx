@@ -1,6 +1,6 @@
 'use client';
 
-import { FolderPlusIcon } from '@phosphor-icons/react';
+import { FolderPlusIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { DialogCreateProject } from './dialog-create-project';

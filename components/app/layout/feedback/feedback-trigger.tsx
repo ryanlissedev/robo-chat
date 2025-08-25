@@ -1,6 +1,6 @@
 'use client';
 
-import { Question } from '@phosphor-icons/react';
+import { HelpCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import { FeedbackForm } from '@/components/common/feedback-form';
@@ -25,7 +25,7 @@ export function FeedbackTrigger() {
 
   const trigger = (
     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-      <Question className="size-4" />
+      <HelpCircle className="size-4" />
       <span>Feedback</span>
     </DropdownMenuItem>
   );

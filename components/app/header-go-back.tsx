@@ -1,4 +1,4 @@
-import { ArrowLeft } from '@phosphor-icons/react';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export function HeaderGoBack({ href = '/' }: { href?: string }) {

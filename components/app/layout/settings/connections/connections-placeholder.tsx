@@ -1,4 +1,4 @@
-import { PlugsConnected } from '@phosphor-icons/react';
+import { PlugsConnected } from 'lucide-react';
 
 export function ConnectionsPlaceholder() {
   return (

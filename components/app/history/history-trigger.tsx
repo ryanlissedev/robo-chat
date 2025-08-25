@@ -1,6 +1,6 @@
 'use client';
 
-import { ListMagnifyingGlass } from '@phosphor-icons/react';
+import { ListMagnifyingGlass } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';

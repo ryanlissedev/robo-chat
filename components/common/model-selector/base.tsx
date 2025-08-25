@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  CaretDownIcon,
-  MagnifyingGlassIcon,
-  StarIcon,
-} from '@phosphor-icons/react';
+import { ChevronDown, MagnifyingGlassIcon, StarIcon,  } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
@@ -330,7 +326,7 @@ export function ModelSelector({
           {currentModel?.name || 'Select model'}
         </span>
       </div>
-      <CaretDownIcon className="size-4 opacity-50" />
+      <ChevronDown className="size-4 opacity-50" />
     </Button>
   );
 

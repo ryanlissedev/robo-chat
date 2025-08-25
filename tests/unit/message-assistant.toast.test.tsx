@@ -16,6 +16,14 @@ vi.mock('@/components/ai-elements/response', () => ({
   ),
 }));
 
+// Mock framer-motion to avoid DOM-specific APIs during tests
+vi.mock('framer-motion', () => ({
+  motion: new Proxy({}, {
+    get: () => (props: any) => <div {...props} />,
+  }),
+  AnimatePresence: ({ children }: any) => <>{children}</>,
+}));
+
 // Mock sonner library first
 vi.mock('sonner', () => ({
   toast: {

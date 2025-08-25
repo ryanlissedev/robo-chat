@@ -1,10 +1,4 @@
-import {
-  ArrowSquareOutIcon,
-  BrainIcon,
-  GlobeIcon,
-  ImageIcon,
-  WrenchIcon,
-} from '@phosphor-icons/react';
+import { ArrowSquareOutIcon, BrainIcon, Globe, ImageIcon, WrenchIcon,  } from 'lucide-react';
 import { addUTM } from '@/components/app/chat/utils';
 import type { ModelConfig } from '@/lib/models/types';
 import { PROVIDERS } from '@/lib/providers';
@@ -55,7 +49,7 @@ export function SubMenu({ hoveredModelData }: SubMenuProps) {
 
             {hoveredModelData.webSearch && (
               <div className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-blue-700 text-xs dark:bg-blue-800 dark:text-blue-100">
-                <GlobeIcon className="size-3" />
+                <Globe className="size-3" />
                 <span>Web Search</span>
               </div>
             )}

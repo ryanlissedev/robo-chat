@@ -1,6 +1,6 @@
 'use client';
 
-import { NotePencilIcon } from '@phosphor-icons/react/dist/ssr';
+import { NotePencilIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useKeyShortcut } from '@/app/hooks/use-key-shortcut';

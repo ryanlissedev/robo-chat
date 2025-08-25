@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  ChatTeardropText,
-  GithubLogo,
-  MagnifyingGlass,
-  NotePencilIcon,
-  X,
-} from '@phosphor-icons/react';
+import { ChatTeardropText, GithubLogo, Search, NotePencilIcon, X,  } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import { groupChatsByDate } from '@/components/app/history/utils';
@@ -79,7 +73,7 @@ export function AppSidebar() {
               classNameTrigger="bg-transparent hover:bg-accent/80 hover:text-foreground text-primary relative inline-flex w-full items-center rounded-md px-2 py-2 text-sm transition-colors group/search"
               hasPopover={false}
               hasSidebar={false}
-              icon={<MagnifyingGlass className="mr-2" size={24} />}
+              icon={<Search className="mr-2" size={24} />}
               label={
                 <div className="flex w-full items-center gap-2">
                   <span>Search</span>

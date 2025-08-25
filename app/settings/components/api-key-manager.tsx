@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Eye, EyeSlash, Key, X, Info } from '@phosphor-icons/react';
+import { Check, Eye, EyeOff, Key, X, Info } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { clientLogger } from '@/lib/utils/client-logger';
@@ -476,7 +476,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
                     size="icon"
                     onClick={() => setShowPassphrase(!showPassphrase)}
                   >
-                    {showPassphrase ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassphrase ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
                 <p className="text-muted-foreground text-xs">
@@ -546,7 +546,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
                         variant="ghost"
                       >
                         {isShowing ? (
-                          <EyeSlash className="h-4 w-4" />
+                          <EyeOff className="h-4 w-4" />
                         ) : (
                           <Eye className="h-4 w-4" />
                         )}
@@ -630,7 +630,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
                       variant="ghost"
                     >
                       {isShowing ? (
-                        <EyeSlash className="h-4 w-4" />
+                        <EyeOff className="h-4 w-4" />
                       ) : (
                         <Eye className="h-4 w-4" />
                       )}

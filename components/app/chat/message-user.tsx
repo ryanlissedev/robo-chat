@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Copy, Trash } from '@phosphor-icons/react';
+import { Check, Copy, Trash } from 'lucide-react';
 import Image from 'next/image';
 import { useRef, useState } from 'react';
 import {

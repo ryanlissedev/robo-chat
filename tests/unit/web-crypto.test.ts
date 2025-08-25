@@ -3,6 +3,26 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest'
 // Simulate browser crypto
 import 'happy-dom'
 
+// Polyfill storages for Bun/vitest node context where happy-dom may not install globals early enough
+if (typeof (globalThis as any).sessionStorage === 'undefined') {
+  (globalThis as any).sessionStorage = new (class {
+    private store = new Map<string, string>();
+    getItem(k: string) { return this.store.has(k) ? this.store.get(k)! : null; }
+    setItem(k: string, v: string) { this.store.set(k, String(v)); }
+    removeItem(k: string) { this.store.delete(k); }
+    clear() { this.store.clear(); }
+  })();
+}
+if (typeof (globalThis as any).localStorage === 'undefined') {
+  (globalThis as any).localStorage = new (class {
+    private store = new Map<string, string>();
+    getItem(k: string) { return this.store.has(k) ? this.store.get(k)! : null; }
+    setItem(k: string, v: string) { this.store.set(k, String(v)); }
+    removeItem(k: string) { this.store.delete(k); }
+    clear() { this.store.clear(); }
+  })();
+}
+
 import {
   deriveKeyFromPassphrase,
   encryptWithKey,

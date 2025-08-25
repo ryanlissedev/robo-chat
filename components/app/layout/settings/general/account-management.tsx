@@ -1,6 +1,6 @@
 'use client';
 
-import { SignOut } from '@phosphor-icons/react';
+import { SignOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';

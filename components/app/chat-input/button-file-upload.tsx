@@ -1,4 +1,4 @@
-import { FileArrowUp, Paperclip } from '@phosphor-icons/react';
+import { FileUp, Paperclip } from 'lucide-react';
 import {
   FileUpload,
   FileUploadContent,
@@ -120,7 +120,7 @@ export function ButtonFileUpload({
       </Tooltip>
       <FileUploadContent>
         <div className="flex flex-col items-center rounded-lg border border-input border-dashed bg-background p-8">
-          <FileArrowUp className="size-8 text-muted-foreground" />
+          <FileUp className="size-8 text-muted-foreground" />
           <span className="mt-4 mb-1 font-medium text-lg">Drop files here</span>
           <span className="text-muted-foreground text-sm">
             Drop any files here to add it to the conversation

@@ -2,12 +2,7 @@
 
 import { clientLogger } from '@/lib/utils/client-logger';
 
-import {
-  ArrowsClockwise,
-  Brain,
-  Funnel,
-  MagnifyingGlass,
-} from '@phosphor-icons/react';
+import { ArrowsClockwise, Brain, Funnel, Search,  } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -179,7 +174,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <MagnifyingGlass className="h-5 w-5" />
+            <Search className="h-5 w-5" />
             Query Rewriting
           </CardTitle>
           <CardDescription>

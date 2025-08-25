@@ -1,6 +1,6 @@
 'use client';
 
-import { DotsThree, PencilSimple, Trash } from '@phosphor-icons/react';
+import { DotsThree, PencilSimple, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { DialogDeleteProject } from '@/components/app/layout/sidebar/dialog-delete-project';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';

@@ -1,10 +1,4 @@
-import {
-  Check,
-  MagnifyingGlass,
-  PencilSimple,
-  TrashSimple,
-  X,
-} from '@phosphor-icons/react';
+import { Check, Search, PencilSimple, TrashSimple, X,  } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
@@ -288,7 +282,7 @@ export function DrawerHistory({
                 placeholder="Search..."
                 value={searchQuery}
               />
-              <MagnifyingGlass className="-translate-y-1/2 absolute top-1/2 left-2.5 h-3.5 w-3.5 transform text-gray-400" />
+              <Search className="-translate-y-1/2 absolute top-1/2 left-2.5 h-3.5 w-3.5 transform text-gray-400" />
             </div>
           </div>
 

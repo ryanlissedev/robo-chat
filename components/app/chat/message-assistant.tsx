@@ -1,5 +1,5 @@
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
-import { ArrowClockwise, Check, Copy } from '@phosphor-icons/react';
+import { ArrowClockwise, Check, Copy } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 // AI SDK Elements
 import {

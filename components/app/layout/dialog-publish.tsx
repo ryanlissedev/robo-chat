@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Copy, Globe, Spinner } from '@phosphor-icons/react';
+import { Check, Copy, Globe, Spinner } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import XIcon from '@/components/icons/x';
@@ -148,7 +148,7 @@ export function DialogPublish() {
           View Page
         </Button>
         <Button className="flex-1" onClick={shareOnX}>
-          Share on <XIcon className="size-4 text-primary-foreground" />
+          Share on <X className="size-4 text-primary-foreground" />
         </Button>
       </div>
     </>

@@ -1,11 +1,4 @@
-import {
-  BookOpenText,
-  Code,
-  Lightbulb,
-  Notepad,
-  PaintBrush,
-  Sparkle,
-} from '@phosphor-icons/react/dist/ssr';
+import { BookOpenText, Code, Lightbulb, Notepad, PaintBrush, Sparkle,  } from 'lucide-react';
 
 export const NON_AUTH_DAILY_MESSAGE_LIMIT = 10_000; // Temporarily increased for testing
 export const AUTH_DAILY_MESSAGE_LIMIT = 1000;

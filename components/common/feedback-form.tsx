@@ -1,6 +1,6 @@
 'use client';
 
-import { CaretLeft, SealCheck, Spinner } from '@phosphor-icons/react';
+import { CaretLeft, SealCheck, Spinner } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';

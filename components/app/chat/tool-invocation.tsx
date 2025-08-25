@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  CaretDown,
-  CheckCircle,
-  Code,
-  Link,
-  Nut,
-  Spinner,
-  Wrench,
-} from '@phosphor-icons/react';
+import { ChevronDown, CheckCircle, Code, Link, Nut, Spinner, Wrench,  } from 'lucide-react';
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useMemo, useState } from 'react';
@@ -86,7 +78,7 @@ export function ToolInvocation({
               {uniqueToolIds.length}
             </div>
           </div>
-          <CaretDown
+          <ChevronDown
             className={cn(
               'h-4 w-4 transition-transform',
               isExpanded ? 'rotate-180 transform' : ''
@@ -453,7 +445,7 @@ function SingleToolCard({
             )}
           </AnimatePresence>
         </div>
-        <CaretDown
+        <ChevronDown
           className={cn(
             'h-4 w-4 transition-transform',
             isExpanded ? 'rotate-180 transform' : ''

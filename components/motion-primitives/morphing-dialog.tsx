@@ -1,6 +1,6 @@
 'use client';
 
-import { X } from '@phosphor-icons/react';
+import { X } from 'lucide-react';
 import {
   AnimatePresence,
   MotionConfig,

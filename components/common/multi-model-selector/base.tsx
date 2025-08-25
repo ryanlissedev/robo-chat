@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  CaretDownIcon,
-  CheckIcon,
-  MagnifyingGlassIcon,
-  StarIcon,
-} from '@phosphor-icons/react';
+import { ChevronDown, CheckIcon, MagnifyingGlassIcon, StarIcon,  } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { PopoverContentAuth } from '@/components/app/chat-input/popover-content-auth';
@@ -291,7 +286,7 @@ export function MultiModelSelector({
           )}
         </AnimatePresence>
       </div>
-      <CaretDownIcon className="ml-2 size-4 flex-shrink-0 opacity-50" />
+      <ChevronDown className="ml-2 size-4 flex-shrink-0 opacity-50" />
     </Button>
   );
 
@@ -318,7 +313,7 @@ export function MultiModelSelector({
                 variant="secondary"
               >
                 <span>Select models</span>
-                <CaretDownIcon className="size-4" />
+                <ChevronDown className="size-4" />
               </Button>
             </PopoverTrigger>
           </TooltipTrigger>

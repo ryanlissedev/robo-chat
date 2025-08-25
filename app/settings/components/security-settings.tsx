@@ -2,14 +2,7 @@
 
 import { clientLogger } from '@/lib/utils/client-logger';
 
-import {
-  CheckCircle,
-  Eye,
-  Key,
-  Lock,
-  Shield,
-  Warning,
-} from '@phosphor-icons/react';
+import { CheckCircle, Eye, Key, Lock, Shield, AlertTriangle,  } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -493,7 +486,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
       <Card className="border-yellow-500/50 bg-yellow-500/5">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
-            <Warning className="h-5 w-5" />
+            <AlertTriangle className="h-5 w-5" />
             Security Status
           </CardTitle>
         </CardHeader>
@@ -502,7 +495,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
             {config.enableContentFiltering ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
             ) : (
-              <Warning className="h-4 w-4 text-yellow-500" />
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
             )}
             <span className="text-sm">
               Content filtering{' '}
@@ -513,7 +506,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
             {config.blockPromptInjection ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
             ) : (
-              <Warning className="h-4 w-4 text-yellow-500" />
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
             )}
             <span className="text-sm">
               Prompt injection protection{' '}
@@ -524,7 +517,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
             {config.enableRateLimiting ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
             ) : (
-              <Warning className="h-4 w-4 text-yellow-500" />
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
             )}
             <span className="text-sm">
               Rate limiting {config.enableRateLimiting ? 'enabled' : 'disabled'}
@@ -534,7 +527,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
             {config.encryptApiKeys ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
             ) : (
-              <Warning className="h-4 w-4 text-red-500" />
+              <AlertTriangle className="h-4 w-4 text-red-500" />
             )}
             <span className="text-sm">
               API key encryption{' '}

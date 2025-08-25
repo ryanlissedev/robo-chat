@@ -1,4 +1,4 @@
-import { CaretDownIcon } from '@phosphor-icons/react';
+import { ChevronDown } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { Markdown } from '@/components/prompt-kit/markdown';
@@ -32,7 +32,7 @@ export function Reasoning({ reasoningText, isStreaming }: ReasoningProps) {
         type="button"
       >
         <span>Reasoning</span>
-        <CaretDownIcon
+        <ChevronDown
           className={cn(
             'size-3 transition-transform',
             isExpanded ? 'rotate-180' : ''
