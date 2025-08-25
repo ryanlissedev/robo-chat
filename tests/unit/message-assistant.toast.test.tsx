@@ -16,26 +16,56 @@ vi.mock('@/components/ai-elements/response', () => ({
   ),
 }));
 
+// Mock sonner library first
+vi.mock('sonner', () => ({
+  toast: {
+    custom: vi.fn((cb: any) => {
+      const id = 123;
+      const state = (global as any).__toastMockState;
+      if (state) {
+        state.cb = cb;
+      }
+      return id;
+    }),
+    dismiss: vi.fn(),
+  },
+}));
+
 // Mock the UI toast module to capture calls and provide a render callback
 vi.mock('@/components/ui/toast', () => {
   const state: { cb?: (id: number) => React.ReactElement; dismiss: any } = {
     cb: undefined,
     dismiss: vi.fn(),
   };
+  
+  // Store state globally for access in tests
+  (global as any).__toastMockState = state;
+  
   function toast(opts: any) {
-    // mirror the actual behavior: return sonner.custom(cb)
-    state.cb = (id: number) => (
+    // Import sonner dynamically to use the mock
+    const { toast: sonnerToast } = require('sonner');
+    
+    // Create the toast component
+    const toastElement = (id: number) => (
       <div>
-        <div>File search failed</div>
+        <div>{opts?.title || 'File search failed'}</div>
         {opts?.button ? (
-          <button onClick={() => { opts.button.onClick(); state.dismiss(id); }}>
+          <button onClick={() => { 
+            opts.button.onClick(); 
+            sonnerToast.dismiss(id);
+            state.dismiss(id); 
+          }}>
             {opts.button.label}
           </button>
         ) : null}
       </div>
     );
-    return 1; // fake toast id
+    
+    // Store callback and trigger sonner.custom
+    state.cb = toastElement;
+    return sonnerToast.custom(toastElement);
   }
+  
   return {
     toast,
     __mock: state,

@@ -50,13 +50,22 @@ export function redactSensitiveHeaders(headers: Headers): Record<string, string>
   const redacted: Record<string, string> = {};
   
   try {
+    // Headers API normalizes keys to lowercase
     headers.forEach((value, key) => {
-      const lowerKey = key.toLowerCase();
+      // key is already lowercase from Headers API
       
-      // Check if this is a sensitive header
+      // Check if this is a sensitive header (case-insensitive)
       const isSensitive = SENSITIVE_HEADERS.some(
-        sensitiveHeader => sensitiveHeader.toLowerCase() === lowerKey
-      );
+        sensitiveHeader => sensitiveHeader.toLowerCase() === key
+      ) || 
+      key.includes('api-key') ||
+      key.includes('api_key') ||
+      key.includes('apikey') ||
+      key.includes('authorization') ||
+      key.includes('token') ||
+      key.includes('secret') ||
+      key.includes('password') ||
+      key.includes('credential');
       
       if (isSensitive) {
         redacted[key] = REDACTION_PLACEHOLDER;

@@ -27,10 +27,11 @@ describe('Redaction Utilities', () => {
 
       const result = redactSensitiveHeaders(headers);
 
-      expect(result['X-Provider-Api-Key']).toBe(REDACTION_PLACEHOLDER);
-      expect(result['Authorization']).toBe(REDACTION_PLACEHOLDER);
-      expect(result['Content-Type']).toBe('application/json');
-      expect(result['User-Agent']).toBe('test-agent');
+      // Headers API normalizes keys to lowercase
+      expect(result['x-provider-api-key']).toBe(REDACTION_PLACEHOLDER);
+      expect(result['authorization']).toBe(REDACTION_PLACEHOLDER);
+      expect(result['content-type']).toBe('application/json');
+      expect(result['user-agent']).toBe('test-agent');
     });
 
     it('should handle case-insensitive headers', () => {
