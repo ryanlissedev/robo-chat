@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useVoiceStore } from '../store/voice-store';
+import { RealtimeAudioModal } from '../modal/realtime-audio-modal';
 
 interface VoiceButtonProps {
   className?: string;
@@ -46,6 +47,7 @@ export function VoiceButton({
 
   const [isPressed, setIsPressed] = useState(false);
   const [showPulse, setShowPulse] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   // Handle transcript changes
   useEffect(() => {
@@ -62,10 +64,14 @@ export function VoiceButton({
   const handleClick = useCallback(async () => {
     if (disabled) return;
 
+    // If status is idle and we click the AudioWaveform icon, show the modal
+    if (status === 'idle') {
+      setShowModal(true);
+      return;
+    }
+
     try {
-      if (status === 'idle') {
-        await startSession();
-      } else if (status === 'connected') {
+      if (status === 'connected') {
         startRecording();
       } else if (status === 'recording') {
         stopRecording();
@@ -75,7 +81,7 @@ export function VoiceButton({
     } catch (error) {
       console.error('Voice button error:', error);
     }
-  }, [status, disabled, startSession, startRecording, stopRecording, reset]);
+  }, [status, disabled, startRecording, stopRecording, reset]);
 
   const handleMouseDown = useCallback(() => {
     if (disabled || status !== 'connected') return;
@@ -180,11 +186,24 @@ export function VoiceButton({
   const buttonState = getButtonState();
   const isActive = status === 'recording' || status === 'transcribing';
 
+  const handleModalTranscript = useCallback((transcript: string) => {
+    setShowModal(false);
+    if (onTranscriptReady) {
+      onTranscriptReady(transcript);
+    }
+  }, [onTranscriptReady]);
+
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
+    <>
+      <RealtimeAudioModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onTranscriptReady={handleModalTranscript}
+      />
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
             aria-label={buttonState.ariaLabel}
             className={cn(
               sizeMap[size],
@@ -226,5 +245,6 @@ export function VoiceButton({
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
+    </>
   );
 }

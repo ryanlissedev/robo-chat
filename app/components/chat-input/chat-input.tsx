@@ -240,14 +240,14 @@ export function ChatInput({
         >
           <FileList files={files} onFileRemove={onFileRemove} />
           <PromptInputTextarea
-            className="min-h-[48px] pt-3 pl-4 text-lg leading-[1.4] sm:text-lg md:text-lg"
+            className="min-h-[40px] sm:min-h-[48px] pt-2 sm:pt-3 pl-3 sm:pl-4 text-base sm:text-lg leading-[1.4]"
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             placeholder="Ask anything…"
             ref={textareaRef}
           />
-          <PromptInputActions className="mt-3 w-full justify-between p-2">
-            <div className="flex gap-2">
+          <PromptInputActions className="mt-2 sm:mt-3 w-full justify-between p-1.5 sm:p-2">
+            <div className="flex gap-1 sm:gap-2 flex-wrap">
               <ButtonFileUpload
                 isUserAuthenticated={isUserAuthenticated}
                 model={selectedModel}
@@ -271,9 +271,16 @@ export function ChatInput({
                 value={currentReasoningEffort}
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <VoiceButton
+                size="sm"
+                className="sm:hidden"
+                onTranscriptReady={handleVoiceTranscript}
+                disabled={isSubmitting}
+              />
               <VoiceButton
                 size="md"
+                className="hidden sm:flex"
                 onTranscriptReady={handleVoiceTranscript}
                 disabled={isSubmitting}
               />
@@ -290,7 +297,7 @@ export function ChatInput({
                         ? 'Send message'
                         : 'Audio input'
                   }
-                  className="size-10 rounded-full transition-all duration-300 ease-out"
+                  className="size-8 sm:size-10 rounded-full transition-all duration-300 ease-out"
                   disabled={
                     status !== 'streaming' &&
                     !!value &&
@@ -301,11 +308,11 @@ export function ChatInput({
                   type="button"
                 >
                   {status === 'streaming' ? (
-                    <StopIcon className="size-5" />
+                    <StopIcon className="size-4 sm:size-5" />
                   ) : value && !isOnlyWhitespace(value) ? (
-                    <ArrowUpIcon className="size-5" />
+                    <ArrowUpIcon className="size-4 sm:size-5" />
                   ) : (
-                    <AudioWaveform className="size-5" />
+                    <AudioWaveform className="size-4 sm:size-5" />
                   )}
                 </Button>
               </PromptInputAction>
