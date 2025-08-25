@@ -14,6 +14,8 @@ interface AudioVisualizerProps {
   color?: string;
   backgroundColor?: string;
   sensitivity?: number;
+  audioLevel?: number;
+  isActive?: boolean;
 }
 
 export function AudioVisualizer({
@@ -25,15 +27,21 @@ export function AudioVisualizer({
   showOutputLevel = false,
   color = '#3b82f6',
   backgroundColor = 'transparent',
-  sensitivity = 1.0
+  sensitivity = 1.0,
+  audioLevel,
+  isActive
 }: AudioVisualizerProps) {
   const {
     status,
-    isRecording,
-    inputLevel,
+    isRecording: storeIsRecording,
+    inputLevel: storeInputLevel,
     outputLevel,
     visualizationData,
   } = useVoiceStore();
+  
+  // Use props if provided, otherwise fall back to store values
+  const isRecording = isActive !== undefined ? isActive : storeIsRecording;
+  const inputLevel = audioLevel !== undefined ? audioLevel * 100 : storeInputLevel;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | undefined>(undefined);
