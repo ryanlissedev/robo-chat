@@ -5,6 +5,7 @@ import {
   enhancedRetrieval,
   type RetrievalPipelineConfig,
 } from '@/lib/retrieval/query-rewriting';
+import logger from '@/lib/utils/logger';
 
 type FileSearchResult = {
   file_id: string;
@@ -12,6 +13,37 @@ type FileSearchResult = {
   content: string;
   score: number;
   metadata?: Record<string, unknown>;
+};
+
+type FileSearchResponse = {
+  success: boolean;
+  query: string;
+  enhanced_query?: string;
+  results: Array<{
+    rank: number;
+    file_id: string;
+    file_name: string;
+    content: string;
+    score: number;
+    metadata?: Record<string, unknown>;
+  }>;
+  total_results: number;
+  summary: string;
+  sources?: Array<{
+    id: string;
+    name: string;
+    score: number;
+    excerpt: string;
+  }>;
+  thinking?: string;
+  search_config?: {
+    vector_store_id: string;
+    query_rewriting: boolean;
+    rewrite_strategy?: string;
+    reranking: boolean;
+    reranking_method?: string;
+  };
+  error?: string;
 };
 
 export const fileSearchTool = tool({
@@ -61,10 +93,27 @@ export const fileSearchTool = tool({
     enable_reranking = true,
     reranking_method = 'semantic',
   }) => {
+    logger.info({
+      at: 'fileSearchTool.execute.start',
+      query,
+      max_results,
+      file_types,
+      vector_store_id,
+      enable_rewriting,
+      rewrite_strategy,
+      enable_reranking,
+      reranking_method,
+      timestamp: new Date().toISOString()
+    }, 'File search tool execution started');
+    
     try {
       // Get API key from environment
       const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) {
+        logger.error({
+          at: 'fileSearchTool.execute.apiKeyMissing',
+          timestamp: new Date().toISOString()
+        }, 'OpenAI API key not found');
         throw new Error('OpenAI API key is required for file search. Set OPENAI_API_KEY environment variable.');
       }
 
@@ -73,12 +122,28 @@ export const fileSearchTool = tool({
       // If no vector store ID provided, get the default one or create a new one
       let storeId: string | undefined = vector_store_id;
       if (!storeId) {
+        logger.info({
+          at: 'fileSearchTool.execute.vectorStore.lookup',
+          timestamp: new Date().toISOString()
+        }, 'Looking up default vector store');
+        
         // Try to get the user's default vector store
         const stores = await openai.vectorStores.list({ limit: 1 });
         if (stores.data.length > 0) {
           storeId = stores.data[0].id;
+          logger.info({
+            at: 'fileSearchTool.execute.vectorStore.found',
+            storeId,
+            storeName: stores.data[0].name,
+            timestamp: new Date().toISOString()
+          }, 'Using existing vector store');
         } else {
           // Create a new vector store if none exists
+          logger.info({
+            at: 'fileSearchTool.execute.vectorStore.creating',
+            timestamp: new Date().toISOString()
+          }, 'Creating new vector store');
+          
           const newStore = await openai.vectorStores.create({
             name: 'Base Chat Default Store',
             metadata: {
@@ -87,7 +152,20 @@ export const fileSearchTool = tool({
             },
           });
           storeId = newStore.id;
+          
+          logger.info({
+            at: 'fileSearchTool.execute.vectorStore.created',
+            storeId: newStore.id,
+            storeName: newStore.name,
+            timestamp: new Date().toISOString()
+          }, 'Created new vector store');
         }
+      } else {
+        logger.info({
+          at: 'fileSearchTool.execute.vectorStore.provided',
+          storeId,
+          timestamp: new Date().toISOString()
+        }, 'Using provided vector store ID');
       }
 
       // Configure retrieval pipeline
@@ -107,16 +185,42 @@ export const fileSearchTool = tool({
         metadataFilters: file_types ? { fileTypes: file_types } : undefined,
       };
 
+      logger.info({
+        at: 'fileSearchTool.execute.retrieval.config',
+        retrievalConfig,
+        timestamp: new Date().toISOString()
+      }, 'Configured retrieval pipeline');
+
       // Use enhanced retrieval with query rewriting and reranking
       // Note: retrieval currently feature-gated; returns empty results if unsupported
+      logger.info({
+        at: 'fileSearchTool.execute.retrieval.calling',
+        query,
+        storeId,
+        timestamp: new Date().toISOString()
+      }, 'Calling enhanced retrieval');
+      
       const results = await enhancedRetrieval(
         query,
         storeId as string,
         openai,
         retrievalConfig
       );
+      
+      logger.info({
+        at: 'fileSearchTool.execute.retrieval.complete',
+        resultsCount: results.length,
+        hasResults: results.length > 0,
+        timestamp: new Date().toISOString()
+      }, 'Enhanced retrieval completed');
 
       // Format results for output
+      logger.info({
+        at: 'fileSearchTool.execute.formatting.start',
+        rawResultsCount: results.length,
+        timestamp: new Date().toISOString()
+      }, 'Formatting search results');
+      
       const formattedResults = results.map((result, index) => ({
         rank: index + 1,
         file_id: result.file_id || result.id,
@@ -126,13 +230,39 @@ export const fileSearchTool = tool({
         metadata: result.metadata,
       }));
 
+      logger.info({
+        at: 'fileSearchTool.execute.formatting.complete',
+        formattedResultsCount: formattedResults.length,
+        topResultScore: formattedResults.length > 0 ? formattedResults[0].score : null,
+        timestamp: new Date().toISOString()
+      }, 'Formatted search results');
+
       // Create a summary of the search results
       const summary =
         formattedResults.length > 0
           ? `Found ${formattedResults.length} relevant documents. Top result has ${Math.round(formattedResults[0].score * 100)}% relevance.`
           : 'No relevant documents found. Try rephrasing your query or uploading more documents.';
 
-      return {
+      // Extract sources from results for citation
+      const sources = formattedResults.map(result => ({
+        id: result.file_id,
+        name: result.file_name,
+        score: result.score,
+        excerpt: result.content.substring(0, 200),
+      }));
+
+      // Generate thinking/reasoning trace
+      const thinking = [
+        `Searching for: "${query}"`,
+        enable_rewriting ? `Enhanced query with ${rewrite_strategy} strategy` : null,
+        `Found ${formattedResults.length} relevant documents`,
+        enable_reranking ? `Applied ${reranking_method} reranking` : null,
+        formattedResults.length > 0 ? 
+          `Top result: ${formattedResults[0].file_name} (score: ${formattedResults[0].score.toFixed(3)})` : 
+          'No matching documents found',
+      ].filter(Boolean).join('\n');
+
+      const response = {
         success: true,
         query,
         enhanced_query: enable_rewriting
@@ -141,6 +271,8 @@ export const fileSearchTool = tool({
         results: formattedResults,
         total_results: formattedResults.length,
         summary,
+        sources, // Add sources for UI citation
+        thinking, // Add thinking trace for UI display
         search_config: {
           vector_store_id: storeId,
           query_rewriting: enable_rewriting,
@@ -149,16 +281,43 @@ export const fileSearchTool = tool({
           reranking_method,
         },
       };
+      
+      logger.info({
+        at: 'fileSearchTool.execute.success',
+        response: {
+          success: response.success,
+          query: response.query,
+          enhanced_query: response.enhanced_query,
+          total_results: response.total_results,
+          summary: response.summary,
+          sources: response.sources,
+          thinking: response.thinking,
+          search_config: response.search_config
+        },
+        timestamp: new Date().toISOString()
+      }, 'File search completed successfully');
+      
+      return response;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to perform file search';
+      
+      logger.error({
+        at: 'fileSearchTool.execute.error',
+        query,
+        error: errorMessage,
+        errorDetails: error instanceof Error ? {
+          name: error.name,
+          stack: error.stack,
+        } : error,
+        timestamp: new Date().toISOString()
+      }, 'File search failed');
+      
       return {
         success: false,
         query,
         results: [],
         total_results: 0,
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to perform file search',
+        error: errorMessage,
       };
     }
   },

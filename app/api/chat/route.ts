@@ -206,6 +206,17 @@ function configureModelSettings(
 // Tools configuration
 function configureTools(enableSearch: boolean, isGPT5Model: boolean): ToolSet {
   const useTools = enableSearch && isGPT5Model;
+  
+  if (useTools) {
+    logger.info({
+      at: 'api.chat.configureTools',
+      enableSearch,
+      isGPT5Model,
+      toolsEnabled: true,
+      toolNames: ['fileSearch']
+    }, 'Configuring file search tool');
+  }
+  
   return useTools
     ? { fileSearch: fileSearchTool }
     : ({} as ToolSet);
@@ -523,8 +534,52 @@ export async function POST(req: Request) {
       onError: () => {
         // Don't set streamError anymore - let the AI SDK handle it through the stream
       },
+      // experimental_toolCallStreaming: true, // Removed - not supported in current AI SDK version
+      // onToolCall not supported in current AI SDK version - tool calls are logged in onFinish
 
       onFinish: async ({ response }) => {
+        // Log tool results if any
+        if (response.messages && response.messages.length > 0) {
+          const lastMessage = response.messages[response.messages.length - 1];
+          
+          // Check for tool invocations in the response
+          if (lastMessage && typeof lastMessage === 'object' && 'toolInvocations' in lastMessage) {
+            const toolInvocations = (lastMessage as any).toolInvocations;
+            if (toolInvocations && Array.isArray(toolInvocations)) {
+              for (const invocation of toolInvocations) {
+                logger.info({
+                  at: 'api.chat.toolInvocation',
+                  toolName: invocation.toolName,
+                  state: invocation.state,
+                  args: invocation.args,
+                  result: invocation.result,
+                  timestamp: new Date().toISOString()
+                }, 'Tool invocation result');
+                
+                // Log file search specific results
+                if (invocation.toolName === 'fileSearch' && invocation.result) {
+                  logger.info({
+                    at: 'api.chat.fileSearchResult',
+                    success: invocation.result.success,
+                    query: invocation.result.query,
+                    enhancedQuery: invocation.result.enhanced_query,
+                    totalResults: invocation.result.total_results,
+                    summary: invocation.result.summary,
+                    searchConfig: invocation.result.search_config,
+                    results: invocation.result.results?.map((r: any) => ({
+                      rank: r.rank,
+                      fileId: r.file_id,
+                      fileName: r.file_name,
+                      score: r.score,
+                      contentPreview: r.content?.substring(0, 100)
+                    }))
+                  }, 'File search tool results');
+                }
+              }
+            }
+          }
+        }
+        
         // Resolve final run ID from response (if available)
         const actualRunId = extractRunId(response) || langsmithRunId;
 
