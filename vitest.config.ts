@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
@@ -11,10 +12,10 @@ export default defineConfig({
     },
   },
   test: {
-    // Transform CSS files to empty modules
-    css: false,
-    globals: true,
-    environment: 'happy-dom',
+    // Allow CSS imports to be processed by Vite in tests
+    css: true,
+    globals: true, // Ensure vi, describe, it, etc are available globally
+    environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
     // Handle CSS imports in tests
     // Add server configuration for better module resolution
@@ -35,6 +36,7 @@ export default defineConfig({
       'playwright-tests/**',
     ],
     coverage: {
+      enabled: process.env.COVERAGE === '1',
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       exclude: [

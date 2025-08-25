@@ -11,7 +11,7 @@ export async function DELETE(
   }
   const openai = new OpenAI({ apiKey });
   try {
-    await openai.vectorStores.del(params.id);
+    await openai.vectorStores.delete(params.id);
     return NextResponse.json({ ok: true });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to delete vector store';

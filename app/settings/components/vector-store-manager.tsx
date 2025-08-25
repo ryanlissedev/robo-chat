@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { createClient } from '@/lib/supabase/client';
+// Uses server API routes under /api/vector-stores
 
 type VectorStore = {
   id: string;
@@ -48,7 +48,7 @@ type VectorStoreFile = {
 };
 
 type VectorStoreManagerProps = {
-  userId: string;
+  userId?: string;
 };
 
 const FILE_ICONS = {
@@ -62,7 +62,7 @@ const FILE_ICONS = {
   default: File,
 };
 
-export function VectorStoreManager({ userId }: VectorStoreManagerProps) {
+export function VectorStoreManager({ }: VectorStoreManagerProps) {
   const [vectorStores, setVectorStores] = useState<VectorStore[]>([]);
   const [selectedStore, setSelectedStore] = useState<VectorStore | null>(null);
   const [storeFiles, setStoreFiles] = useState<VectorStoreFile[]>([]);
@@ -70,89 +70,54 @@ export function VectorStoreManager({ userId }: VectorStoreManagerProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [newStoreName, setNewStoreName] = useState('');
-  const supabase = createClient();
+  // Vector store operations are performed via server API routes backed by OpenAI SDK
 
   const loadVectorStores = useCallback(async () => {
     setLoading(true);
     try {
-      if (!supabase) {
-        toast.error('Database not available');
-        return;
-      }
-
-      // Get OpenAI API key
-      const { data: keyData } = await supabase
-        .from('user_keys')
-        .select('encrypted_key, iv')
-        .eq('user_id', userId)
-        .eq('provider', 'openai')
-        .single();
-
-      if (!keyData?.encrypted_key) {
-        toast.error('OpenAI API key required');
-        return;
-      }
-
-      // For now, return mock data since OpenAI v5 vector stores API is different
-      const mockStores: VectorStore[] = [
-        {
-          id: 'vs_mock_1',
-          name: 'Documents',
-          status: 'active',
-          file_count: 5,
-          usage_bytes: 1024000,
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: 'vs_mock_2', 
-          name: 'Code Files',
-          status: 'active',
-          file_count: 12,
-          usage_bytes: 2048000,
-          created_at: new Date().toISOString(),
-        },
-      ];
-
-      setVectorStores(mockStores);
+      const res = await fetch('/api/vector-stores', { method: 'GET' });
+      if (!res.ok) throw new Error('Failed to fetch vector stores');
+      const data = await res.json();
+      const stores = (data.stores || []) as Array<{
+        id: string; name: string; created_at?: string; status?: string; usage_bytes?: number; file_counts?: { total: number }
+      }>;
+      setVectorStores(
+        stores.map((s) => ({
+          id: s.id,
+          name: s.name,
+          status: (s.status as VectorStore['status']) || 'active',
+          file_count: s.file_counts?.total ?? 0,
+          usage_bytes: s.usage_bytes ?? 0,
+          created_at: s.created_at || new Date().toISOString(),
+        }))
+      );
     } catch {
       toast.error('Failed to load vector stores');
     } finally {
       setLoading(false);
     }
-  }, [supabase, userId]);
+  }, []);
 
   const loadStoreFiles = useCallback(async (storeId: string) => {
     try {
-      if (!supabase) {
-        toast.error('Database not available');
-        return;
-      }
-
-      // Return mock files for now
-      const mockFiles: VectorStoreFile[] = [
-        {
-          id: 'file_1',
-          vector_store_id: storeId,
-          file_id: 'file_1',
-          file_name: 'document.pdf',
-          file_size: 1024000,
-          status: 'completed',
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: 'file_2',
-          vector_store_id: storeId,
-          file_id: 'file_2',
-          file_name: 'notes.txt',
-          file_size: 512000,
-          status: 'completed',
-          created_at: new Date().toISOString(),
-        },
-      ];
-
-      setStoreFiles(mockFiles);
+      const res = await fetch(`/api/vector-stores/${storeId}/files`);
+      if (!res.ok) throw new Error('Failed to fetch files');
+      const data = await res.json();
+      const files = (data.files || []) as Array<{
+        id: string; file_id?: string; filename?: string; name?: string; created_at?: string; status?: string; bytes?: number
+      }>;
+      const mapped: VectorStoreFile[] = files.map((f) => ({
+        id: f.id,
+        vector_store_id: storeId,
+        file_id: f.file_id || f.id,
+        file_name: f.filename || f.name || 'file',
+        file_size: f.bytes ?? 0,
+        status: (f.status as VectorStoreFile['status']) || 'completed',
+        created_at: f.created_at || new Date().toISOString(),
+      }));
+      setStoreFiles(mapped);
     } catch {}
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     loadVectorStores();
@@ -172,24 +137,12 @@ export function VectorStoreManager({ userId }: VectorStoreManagerProps) {
 
     setLoading(true);
     try {
-      if (!supabase) {
-        toast.error('Database not available');
-        return;
-      }
-
-      // Mock create vector store
-      const mockNewStore: VectorStore = {
-        id: `vs_${Date.now()}`,
-        name: newStoreName,
-        status: 'active',
-        file_count: 0,
-        usage_bytes: 0,
-        created_at: new Date().toISOString(),
-      };
-
-      // Add to current stores
-      setVectorStores(prev => [...prev, mockNewStore]);
-
+      const res = await fetch('/api/vector-stores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newStoreName }),
+      });
+      if (!res.ok) throw new Error('Create failed');
       toast.success('Vector store created successfully');
       setNewStoreName('');
       await loadVectorStores();
@@ -207,13 +160,8 @@ export function VectorStoreManager({ userId }: VectorStoreManagerProps) {
 
     setLoading(true);
     try {
-      if (!supabase) {
-        toast.error('Database connection failed');
-        return;
-      }
-      // Mock delete vector store
-      setVectorStores(prev => prev.filter(store => store.id !== storeId));
-
+      const res = await fetch(`/api/vector-stores/${storeId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete failed');
       toast.success('Vector store deleted');
       setSelectedStore(null);
       await loadVectorStores();
@@ -235,32 +183,19 @@ export function VectorStoreManager({ userId }: VectorStoreManagerProps) {
       setUploadProgress(0);
 
       try {
-        if (!supabase) {
-          toast.error('Database connection failed');
-          return;
-        }
-        // Mock file upload process
         const totalFiles = acceptedFiles.length;
         let completed = 0;
-
         for (const file of acceptedFiles) {
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate upload time
-          
-          const mockFile: VectorStoreFile = {
-            id: `file_${Date.now()}_${completed}`,
-            vector_store_id: selectedStore.id,
-            file_id: `file_${Date.now()}_${completed}`,
-            file_name: file.name,
-            file_size: file.size,
-            status: 'completed',
-            created_at: new Date().toISOString(),
-          };
-          
-          setStoreFiles(prev => [...prev, mockFile]);
+          const form = new FormData();
+          form.append('file', file);
+          const res = await fetch(`/api/vector-stores/${selectedStore.id}/files`, {
+            method: 'POST',
+            body: form,
+          });
+          if (!res.ok) throw new Error('Upload failed');
           completed++;
           setUploadProgress((completed / totalFiles) * 100);
         }
-
         toast.success(`Uploaded ${completed} of ${totalFiles} files`);
         await loadStoreFiles(selectedStore.id);
       } catch {
@@ -270,7 +205,7 @@ export function VectorStoreManager({ userId }: VectorStoreManagerProps) {
         setUploadProgress(0);
       }
     },
-    [selectedStore, loadStoreFiles, supabase]
+    [selectedStore, loadStoreFiles]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

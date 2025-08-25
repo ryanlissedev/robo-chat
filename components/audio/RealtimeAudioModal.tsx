@@ -22,6 +22,7 @@ import type { VoiceConfig } from '@/components/app/voice/store/voice-store';
 import { useWebRTCConnection } from '@/components/app/voice/hooks/use-webrtc-connection';
 import { useVoiceIntegration } from '@/components/app/voice/hooks/use-voice-integration';
 import { cn } from '@/lib/utils';
+import { clientLogger } from '@/lib/utils/client-logger';
 
 interface RealtimeAudioModalProps {
   children?: React.ReactNode;
@@ -72,10 +73,10 @@ export function RealtimeAudioModal({
     userId: isUserAuthenticated ? userId : undefined,
     autoIndexTranscripts: true,
     onTranscriptIndexed: (result) => {
-      console.log('Transcript indexed to vector store:', result);
+      clientLogger.info('Transcript indexed to vector store', { result });
     },
     onIndexError: (error) => {
-      console.error('Transcript indexing failed:', error);
+      clientLogger.error('Transcript indexing failed', error);
     }
   });
 
@@ -113,7 +114,7 @@ export function RealtimeAudioModal({
   // Handle connection errors
   useEffect(() => {
     if (connectionError) {
-      console.error('WebRTC connection error:', connectionError);
+      clientLogger.error('WebRTC connection error', connectionError);
     }
   }, [connectionError]);
 
@@ -192,6 +193,7 @@ export function RealtimeAudioModal({
                       size="sm"
                       variant="ghost"
                       className="size-8 p-0"
+                      aria-label="Open voice settings"
                     >
                       <Settings className="size-4" />
                     </Button>
@@ -206,6 +208,7 @@ export function RealtimeAudioModal({
                   size="sm"
                   variant="ghost"
                   className="size-8 p-0"
+                  aria-label="Close realtime audio modal"
                 >
                   <X className="size-4" />
                 </Button>
@@ -244,6 +247,7 @@ export function RealtimeAudioModal({
                       value={config.voice} 
                       onChange={(e) => handleVoiceChange(e.target.value as typeof config.voice)}
                       className="w-full p-2 text-xs border rounded"
+                      aria-label="Select voice"
                     >
                       <option value="alloy">Alloy</option>
                       <option value="echo">Echo</option>
@@ -260,6 +264,7 @@ export function RealtimeAudioModal({
                       value={config.language} 
                       onChange={(e) => handleLanguageChange(e.target.value)}
                       className="w-full p-2 text-xs border rounded"
+                      aria-label="Select language"
                     >
                       <option value="en-US">English (US)</option>
                       <option value="en-GB">English (UK)</option>
