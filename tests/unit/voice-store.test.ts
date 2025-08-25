@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { VoiceConfig } from '@/app/components/voice/store/voice-store';
-import { useVoiceStore } from '@/app/components/voice/store/voice-store';
+import type { VoiceConfig } from '@/components/app/voice/store/voice-store';
+import { useVoiceStore } from '@/components/app/voice/store/voice-store';
 
 // Mock fetch globally
 const mockFetch = vi.fn();

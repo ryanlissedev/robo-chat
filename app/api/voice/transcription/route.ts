@@ -293,22 +293,3 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// Helper function to get transcription statistics (for debugging)
-// Note: This function is not exported to avoid Next.js route conflicts
-function getTranscriptionStats() {
-  const totalSessions = transcriptions.size;
-  let totalTranscriptions = 0;
-  let totalConfidence = 0;
-  
-  for (const entries of transcriptions.values()) {
-    totalTranscriptions += entries.length;
-    totalConfidence += entries.reduce((sum, entry) => sum + entry.confidence, 0);
-  }
-  
-  return {
-    totalSessions,
-    totalTranscriptions,
-    averageConfidence: totalTranscriptions > 0 ? totalConfidence / totalTranscriptions : 0,
-    currentSessions: sessionTranscriptions.size,
-  };
-}

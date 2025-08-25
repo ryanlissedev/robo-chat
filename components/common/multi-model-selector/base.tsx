@@ -8,7 +8,7 @@ import {
 } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef, useState } from 'react';
-import { PopoverContentAuth } from '@/app/components/chat-input/popover-content-auth';
+import { PopoverContentAuth } from '@/components/app/chat-input/popover-content-auth';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import { useKeyShortcut } from '@/app/hooks/use-key-shortcut';
 import { Button } from '@/components/ui/button';

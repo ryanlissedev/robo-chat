@@ -152,7 +152,7 @@ export function VectorStoreManager({ userId }: VectorStoreManagerProps) {
 
       setStoreFiles(mockFiles);
     } catch {}
-  }, [supabase, userId]);
+  }, [supabase]);
 
   useEffect(() => {
     loadVectorStores();
@@ -270,7 +270,7 @@ export function VectorStoreManager({ userId }: VectorStoreManagerProps) {
         setUploadProgress(0);
       }
     },
-    [selectedStore, userId, loadStoreFiles, supabase]
+    [selectedStore, loadStoreFiles, supabase]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

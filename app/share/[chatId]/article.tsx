@@ -1,8 +1,8 @@
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
 import { ArrowUpRight } from '@phosphor-icons/react/dist/ssr';
 import Link from 'next/link';
-import { getSources } from '@/app/components/chat/get-sources';
-import { SourcesList } from '@/app/components/chat/sources-list';
+import { getSources } from '@/components/app/chat/get-sources';
+import { SourcesList } from '@/components/app/chat/sources-list';
 import type { Tables } from '@/app/types/database.types';
 import { Message, MessageContent } from '@/components/prompt-kit/message';
 import { Button } from '@/components/ui/button';

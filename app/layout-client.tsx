@@ -1,7 +1,14 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
 import { API_ROUTE_CSRF } from '@/lib/routes';
+
+const GuestKeyPortal = dynamic(
+  () => import('@/components/common/credentials/GuestKeyPortal').then((m) => m.GuestKeyPortal),
+  { ssr: false }
+);
 
 export function LayoutClient() {
   useQuery({
@@ -16,5 +23,8 @@ export function LayoutClient() {
     retry: false,
   });
 
-  return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  return mounted ? <GuestKeyPortal /> : null;
 }

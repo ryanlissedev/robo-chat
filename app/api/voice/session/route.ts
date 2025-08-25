@@ -214,14 +214,3 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// Helper function to get active sessions (for debugging)
-// Note: This function is not exported to avoid Next.js route conflicts
-function getActiveSessions() {
-  return Array.from(sessions.entries()).map(([id, session]) => ({
-    id,
-    status: session.status,
-    personalityMode: session.personalityMode,
-    createdAt: session.createdAt,
-    lastActiveAt: session.lastActiveAt,
-  }));
-}

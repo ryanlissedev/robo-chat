@@ -1,8 +1,7 @@
 'use client';
 
 import { Brain, Database, Key, Shield } from '@phosphor-icons/react';
-import { redirect } from 'next/navigation';
-import { Header } from '@/app/components/layout/header';
+import { Header } from '@/components/app/layout/header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/lib/user-store/provider';
 import { ApiKeyManager } from './components/api-key-manager';
@@ -13,10 +12,7 @@ import { VectorStoreManager } from './components/vector-store-manager';
 export default function SettingsPage() {
   const { user } = useUser();
 
-  // Redirect if not authenticated
-  if (!user) {
-    redirect('/auth/login');
-  }
+  // Guest users can access the API Keys tab, but other tabs require authentication
 
   return (
     <div className="flex h-full flex-col">
@@ -52,19 +48,37 @@ export default function SettingsPage() {
             </TabsList>
 
             <TabsContent className="space-y-4" value="api-keys">
-              <ApiKeyManager userId={user.id} />
+              <ApiKeyManager userId={user?.id} />
             </TabsContent>
 
             <TabsContent className="space-y-4" value="vector-stores">
-              <VectorStoreManager userId={user.id} />
+              {user ? (
+                <VectorStoreManager userId={user.id} />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <p className="text-muted-foreground">Please log in to manage vector stores.</p>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent className="space-y-4" value="retrieval">
-              <RetrievalSettings userId={user.id} />
+              {user ? (
+                <RetrievalSettings userId={user.id} />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <p className="text-muted-foreground">Please log in to manage retrieval settings.</p>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent className="space-y-4" value="security">
-              <SecuritySettings userId={user.id} />
+              {user ? (
+                <SecuritySettings userId={user.id} />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <p className="text-muted-foreground">Please log in to manage security settings.</p>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>

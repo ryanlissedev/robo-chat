@@ -6,6 +6,42 @@ import {
   refreshModelsCache,
 } from '@/lib/models';
 import { createClient } from '@/lib/supabase/server';
+import type { ModelConfig } from '@/lib/models/types';
+
+// Provider environment variable mappings
+const PROVIDER_ENV_MAPPING = {
+  openai: 'OPENAI_API_KEY',
+  anthropic: 'ANTHROPIC_API_KEY',
+  google: ['GOOGLE_API_KEY', 'GOOGLE_GENERATIVE_AI_API_KEY'],
+  mistral: 'MISTRAL_API_KEY',
+  perplexity: 'PERPLEXITY_API_KEY',
+  xai: 'XAI_API_KEY',
+  openrouter: 'OPENROUTER_API_KEY',
+} as const;
+
+// Helper function to check if environment variables are available for a provider
+function checkEnvAvailable(providerId: string): boolean {
+  const envKeys = PROVIDER_ENV_MAPPING[providerId as keyof typeof PROVIDER_ENV_MAPPING];
+  if (!envKeys) return false;
+  
+  if (Array.isArray(envKeys)) {
+    return envKeys.some(key => Boolean(process.env[key]));
+  }
+  
+  return Boolean(process.env[envKeys as string]);
+}
+
+// Helper function to add credentialInfo to models
+function addCredentialInfo(models: ModelConfig[], userProviders: string[] = []): ModelConfig[] {
+  return models.map(model => ({
+    ...model,
+    credentialInfo: {
+      envAvailable: checkEnvAvailable(model.providerId),
+      guestByokAvailable: true,
+      userByokAvailable: userProviders.includes(model.providerId),
+    },
+  }));
+}
 
 export async function GET() {
   try {
@@ -13,10 +49,9 @@ export async function GET() {
 
     if (!supabase) {
       const allModels = await getAllModels();
-      const models = allModels.map((model) => ({
-        ...model,
-        accessible: true,
-      }));
+      const models = addCredentialInfo(
+        allModels.map(model => ({ ...model, accessible: true }))
+      );
       return new Response(JSON.stringify({ models }), {
         status: 200,
         headers: {
@@ -28,7 +63,8 @@ export async function GET() {
     const { data: authData } = await supabase.auth.getUser();
 
     if (!authData?.user?.id) {
-      const models = await getModelsWithAccessFlags();
+      const base = await getModelsWithAccessFlags();
+      const models = addCredentialInfo(base);
       return new Response(JSON.stringify({ models }), {
         status: 200,
         headers: {
@@ -43,7 +79,7 @@ export async function GET() {
       .eq('user_id', authData.user.id);
 
     if (error) {
-      const models = await getModelsWithAccessFlags();
+      const models = addCredentialInfo(await getModelsWithAccessFlags());
       return new Response(JSON.stringify({ models }), {
         status: 200,
         headers: {
@@ -55,7 +91,7 @@ export async function GET() {
     const userProviders = data?.map((k) => k.provider) || [];
 
     if (userProviders.length === 0) {
-      const models = await getModelsWithAccessFlags();
+      const models = addCredentialInfo(await getModelsWithAccessFlags());
       return new Response(JSON.stringify({ models }), {
         status: 200,
         headers: {
@@ -64,7 +100,8 @@ export async function GET() {
       });
     }
 
-    const models = await getModelsForUserProviders(userProviders);
+    const baseModels = await getModelsForUserProviders(userProviders);
+    const models = addCredentialInfo(baseModels, userProviders);
 
     return new Response(JSON.stringify({ models }), {
       status: 200,

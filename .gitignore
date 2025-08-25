@@ -50,6 +50,10 @@ next-env.d.ts
 # env
 .env
 
+# logs
+logs/
+*.log
+
 # bun
 bun.lockb
 bun.lock
@@ -97,11 +101,11 @@ bun.lock
 .vscode/settings.json.bak
 .windsurf/rules/ruler_windsurf_instructions.md
 .windsurf/rules/ruler_windsurf_instructions.md.bak
-AGENT.md
+
 AGENT.md.bak
 AGENTS.md
 AGENTS.md.bak
-CLAUDE.md
+
 CLAUDE.md.bak
 CRUSH.md
 CRUSH.md.bak
@@ -115,8 +119,8 @@ ruler_aider_instructions.md.bak
 
 
 # Claude Flow generated files
-.claude/settings.local.json
-.mcp.json
+
+
 claude-flow.config.json
 .swarm/
 .hive-mind/

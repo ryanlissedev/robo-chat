@@ -4,11 +4,11 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 
 // Import components and hooks
-import { VoiceButton } from '@/app/components/voice/button/voice-button';
-import { TranscriptionPanel } from '@/app/components/voice/panel/transcription-panel';
-import { AudioVisualizer } from '@/app/components/voice/visualizer/audio-visualizer';
-import { useVoiceStore } from '@/app/components/voice/store/voice-store';
-import { useVoiceIntegration } from '@/app/components/voice/hooks/use-voice-integration';
+import { VoiceButton } from '@/components/app/voice/button/voice-button';
+import { TranscriptionPanel } from '@/components/app/voice/panel/transcription-panel';
+import { AudioVisualizer } from '@/components/app/voice/visualizer/audio-visualizer';
+import { useVoiceStore } from '@/components/app/voice/store/voice-store';
+import { useVoiceIntegration } from '@/components/app/voice/hooks/use-voice-integration';
 
 // Mock external dependencies
 vi.mock('@/app/components/voice/hooks/use-webrtc-connection', () => ({

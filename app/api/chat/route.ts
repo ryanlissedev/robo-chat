@@ -13,6 +13,8 @@ import {
   updateRun,
 } from '@/lib/langsmith/client';
 import logger from '@/lib/utils/logger';
+import { redactSensitiveHeaders, sanitizeLogEntry } from '@/lib/utils/redaction';
+import { trackCredentialUsage, trackCredentialError, type CredentialSource, type Provider } from '@/lib/utils/metrics';
 import { getAllModels } from '@/lib/models';
 import { getProviderForModel } from '@/lib/openproviders/provider-map';
 import { fileSearchTool } from '@/lib/tools/file-search';
@@ -159,19 +161,19 @@ function resolveModelId(model: string): string {
 }
 
 // System prompt configuration
-function getEffectiveSystemPrompt(
+async function getEffectiveSystemPrompt(
   systemPrompt: string,
   enableSearch: boolean,
   isGPT5Model: boolean,
   context?: 'chat' | 'voice',
   personalityMode?: 'safety-focused' | 'technical-expert' | 'friendly-assistant'
-): string {
+): Promise<string> {
   // For voice context with personality mode, use personality-specific prompts
   if (context === 'voice' && personalityMode) {
     // Import personality configs dynamically to get voice-specific prompts
-    const { PERSONALITY_CONFIGS } = require('@/app/components/voice/config/personality-configs');
+    const { PERSONALITY_CONFIGS } = await import('@/components/app/voice/config/personality-configs');
     if (PERSONALITY_CONFIGS[personalityMode]) {
-      return PERSONALITY_CONFIGS[personalityMode].systemPrompt;
+      return PERSONALITY_CONFIGS[personalityMode].instructions.systemPrompt;
     }
   }
   
@@ -309,26 +311,162 @@ function logRequestContext(options: {
   }
 }
 
-// API key retrieval
+// Types for credential resolution
+type GuestCredentials = {
+  provider?: string;
+  apiKey?: string;
+  source?: string;
+};
+
+type CredentialResult = {
+  apiKey?: string;
+  source: CredentialSource;
+  error?: string;
+};
+
+/**
+ * Extract guest credentials from request headers
+ * SECURITY: Never log the actual API key value
+ */
+function extractGuestCredentials(headers: Headers): GuestCredentials {
+  try {
+    const provider = headers.get('x-model-provider') || headers.get('X-Model-Provider');
+    const apiKey = headers.get('x-provider-api-key') || headers.get('X-Provider-Api-Key');
+    const source = headers.get('x-credential-source') || headers.get('X-Credential-Source');
+    
+    return {
+      provider: provider?.toLowerCase() || undefined,
+      apiKey: apiKey || undefined,
+      source: source || undefined,
+    };
+  } catch {
+    return {};
+  }
+}
+
+// Note: redactSensitiveHeaders is now imported from @/lib/utils/redaction
+
+/**
+ * Resolve credentials with proper precedence logic
+ * 1. Authenticated user BYOK (highest priority)
+ * 2. Guest header override (if no user key)
+ * 3. Environment variable fallback (handled downstream)
+ * 
+ * SECURITY: Never log actual API key values
+ */
+async function resolveCredentials(
+  user: { isAuthenticated: boolean; userId: string } | null,
+  model: string,
+  headers: Headers
+): Promise<CredentialResult> {
+  const provider = getProviderForModel(model);
+
+  // Log request context without sensitive data
+  const logContext = sanitizeLogEntry({
+    at: 'api.chat.resolveCredentials',
+    provider,
+    model,
+    isAuthenticated: user?.isAuthenticated || false,
+    hasUserId: Boolean(user?.userId),
+    headers: redactSensitiveHeaders(headers)
+  });
+  logger.info(logContext, 'Resolving credentials');
+
+  // 1. Authenticated user BYOK (highest priority)
+  if (user?.isAuthenticated && user.userId) {
+    try {
+      const { getEffectiveApiKey } = await import('@/lib/user-keys');
+      const userKey = await getEffectiveApiKey(user.userId, provider as ProviderWithoutOllama);
+      
+      if (userKey) {
+        logger.info(sanitizeLogEntry({
+          at: 'api.chat.resolveCredentials',
+          source: 'user-byok',
+          provider,
+          hasKey: true
+        }), 'Using user BYOK credentials');
+        
+        // Track successful credential usage
+        trackCredentialUsage('user-byok', provider as Provider, model, {
+          userId: user.userId,
+          success: true
+        });
+        
+        return {
+          apiKey: userKey,
+          source: 'user-byok'
+        };
+      }
+    } catch (error) {
+      logger.info(sanitizeLogEntry({
+        at: 'api.chat.resolveCredentials',
+        error: error instanceof Error ? error.message : String(error),
+        provider
+      }), 'Failed to retrieve user BYOK credentials');
+      
+      // Track credential error
+      trackCredentialError(error, provider as Provider, {
+        source: 'user-byok',
+        userId: user.userId,
+        model
+      });
+    }
+  }
+
+  // 2. Guest header override (if no user key)
+  const guestCredentials = extractGuestCredentials(headers);
+  if (guestCredentials.apiKey && guestCredentials.provider === provider) {
+    logger.info(sanitizeLogEntry({
+      at: 'api.chat.resolveCredentials',
+      source: 'guest-header',
+      provider,
+      hasKey: true,
+      credentialSource: guestCredentials.source
+    }), 'Using guest header credentials');
+    
+    // Track successful guest credential usage
+    trackCredentialUsage('guest-header', provider as Provider, model, {
+      success: true
+    });
+    
+    return {
+      apiKey: guestCredentials.apiKey,
+      source: 'guest-header'
+    };
+  }
+
+  // 3. No credentials found - will fallback to environment downstream
+  logger.info(sanitizeLogEntry({
+    at: 'api.chat.resolveCredentials',
+    source: 'environment',
+    provider,
+    hasKey: false
+  }), 'No user or guest credentials found, falling back to environment');
+  
+  // Track environment fallback usage
+  trackCredentialUsage('environment', provider as Provider, model, {
+    success: true // Assuming environment credentials work - actual success tracked in onFinish
+  });
+  
+  return {
+    source: 'environment'
+  };
+}
+
+// Legacy function for backward compatibility - now uses new credential resolution
 async function getApiKey(
+  req: Request,
   isAuthenticated: boolean,
   userId: string,
   resolvedModel: string
 ): Promise<string | undefined> {
-  if (!(isAuthenticated && userId)) {
-    return;
-  }
-
-  try {
-    const { getEffectiveApiKey } = await import('@/lib/user-keys');
-    const provider = getProviderForModel(resolvedModel);
-    return (
-      (await getEffectiveApiKey(userId, provider as ProviderWithoutOllama)) ||
-      undefined
-    );
-  } catch {
-    return;
-  }
+  const result = await resolveCredentials(
+    { isAuthenticated, userId },
+    resolvedModel,
+    req.headers
+  );
+  
+  return result.apiKey;
 }
 
 // LangSmith run creation
@@ -380,8 +518,9 @@ async function createLangSmithRun({
 }
 
 export async function POST(req: Request) {
+  let requestData: ChatRequest | null = null;
   try {
-    const request = (await req.json()) as ChatRequest;
+    requestData = (await req.json()) as ChatRequest;
     const {
       messages,
       chatId,
@@ -395,10 +534,10 @@ export async function POST(req: Request) {
       verbosity,
       context = 'chat',  // Default to chat context
       personalityMode,
-    } = request;
+    } = requestData;
 
     // Validate request
-    const validationError = validateChatRequest(request);
+    const validationError = validateChatRequest(requestData);
     if (validationError) {
       return new Response(JSON.stringify({ error: validationError }), {
         status: 400,
@@ -439,14 +578,14 @@ export async function POST(req: Request) {
     });
 
     // Get effective system prompt and API key
-    const effectiveSystemPrompt = getEffectiveSystemPrompt(
+    const effectiveSystemPrompt = await getEffectiveSystemPrompt(
       systemPrompt,
       enableSearch,
       isGPT5Model,
       context,
       personalityMode
     );
-    const apiKey = await getApiKey(isAuthenticated, userId, resolvedModel);
+    const apiKey = await getApiKey(req, isAuthenticated, userId, resolvedModel);
 
     // Create LangSmith run if enabled
     const langsmithRunId = await createLangSmithRun({
@@ -544,7 +683,32 @@ export async function POST(req: Request) {
           
           // Check for tool invocations in the response
           if (lastMessage && typeof lastMessage === 'object' && 'toolInvocations' in lastMessage) {
-            const toolInvocations = (lastMessage as any).toolInvocations;
+            const messageWithTools = lastMessage as { 
+              toolInvocations?: Array<{
+                toolName?: string;
+                state?: string;
+                args?: unknown;
+                result?: {
+                  success?: boolean;
+                  query?: string;
+                  enhanced_query?: string;
+                  total_results?: number;
+                  summary?: string;
+                  search_config?: unknown;
+                  results?: Array<{
+                    rank?: unknown;
+                    file_id?: unknown;
+                    fileName?: string;
+                    file_name?: string;
+                    score?: unknown;
+                    content?: string;
+                  }>;
+                  [key: string]: unknown;
+                };
+                [key: string]: unknown;
+              }>
+            };
+            const toolInvocations = messageWithTools.toolInvocations;
             if (toolInvocations && Array.isArray(toolInvocations)) {
               for (const invocation of toolInvocations) {
                 logger.info({
@@ -566,12 +730,12 @@ export async function POST(req: Request) {
                     totalResults: invocation.result.total_results,
                     summary: invocation.result.summary,
                     searchConfig: invocation.result.search_config,
-                    results: invocation.result.results?.map((r: any) => ({
+                    results: invocation.result.results?.map((r) => ({
                       rank: r.rank,
                       fileId: r.file_id,
                       fileName: r.file_name,
                       score: r.score,
-                      contentPreview: r.content?.substring(0, 100)
+                      contentPreview: r.content?.substring(0, 100) || ''
                     }))
                   }, 'File search tool results');
                 }
@@ -597,6 +761,17 @@ export async function POST(req: Request) {
             reasoningEffort,
           });
         }
+        
+        // Track successful completion
+        const usage = (response as ResponseWithUsage).usage;
+        const responseTime = usage?.totalTokens ? usage.totalTokens * 10 : undefined; // Rough estimate
+        
+        trackCredentialUsage('environment', resolvedModel.includes('gpt') ? 'openai' : 
+          resolvedModel.includes('claude') ? 'anthropic' : 'unknown' as Provider, resolvedModel, {
+          userId,
+          success: true,
+          responseTime
+        });
 
         // Update LangSmith run if enabled
         if (actualRunId && isLangSmithEnabled()) {
@@ -634,6 +809,37 @@ export async function POST(req: Request) {
       message?: string;
       statusCode?: number;
     };
+    
+    // Track error for metrics - use model from request data if available
+    let modelToUse = 'unknown-model';
+    let userIdToUse = 'unknown-user';
+    
+    if (requestData) {
+      modelToUse = requestData.model || 'unknown-model';
+      userIdToUse = requestData.userId || 'unknown-user';
+      
+      try {
+        // Try to resolve the model if possible
+        const resolvedModelValue = resolveModelId(requestData.model);
+        modelToUse = resolvedModelValue;
+      } catch {
+        // If model resolution fails, use original model
+        modelToUse = requestData.model || 'unknown-model';
+      }
+    }
+    
+    try {
+      const provider = getProviderForModel(modelToUse) as Provider;
+      trackCredentialError(err, provider, {
+        model: modelToUse,
+        userId: userIdToUse
+      });
+    } catch {
+      // Silently handle provider resolution errors to prevent error loops
+    }
+    
+    // Log error with redaction
+    logger.error(sanitizeLogEntry({ error: err, at: 'api.chat.POST' }), 'Chat API error');
 
     return createErrorResponse(error);
   }

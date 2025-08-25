@@ -3,7 +3,7 @@ import { memo, useId, useMemo } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
-import { LinkMarkdown } from '@/app/components/chat/link-markdown';
+import { LinkMarkdown } from '@/components/app/chat/link-markdown';
 import { cn } from '@/lib/utils';
 import { ButtonCopy } from '../common/button-copy';
 import {

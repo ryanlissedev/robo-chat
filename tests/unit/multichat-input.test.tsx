@@ -1,7 +1,7 @@
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { MultiChatInput } from '@/app/components/multi-chat/multi-chat-input';
+import { MultiChatInput } from '@/components/app/multi-chat/multi-chat-input';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { renderWithProviders, screen } from '@/tests/test-utils';
 

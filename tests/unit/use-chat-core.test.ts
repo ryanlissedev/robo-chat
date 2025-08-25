@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { UIMessage as Message } from 'ai';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useChatCore } from '@/app/components/chat/use-chat-core';
+import { useChatCore } from '@/components/app/chat/use-chat-core';
 import { SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
 import { createMockFile, mockUserProfile } from '../test-utils';
 
@@ -30,12 +30,19 @@ vi.mock('@ai-sdk/react', () => {
   };
 });
 
-vi.mock('@/app/components/chat/chat-business-logic', () => ({
-  submitMessageScenario: vi.fn(),
-  submitSuggestionScenario: vi.fn(),
-  prepareReloadScenario: vi.fn(),
-  handleChatError: vi.fn(),
-}));
+vi.mock('@/components/app/chat/chat-business-logic', () => {
+  const submitMessageScenario = vi.fn();
+  const submitSuggestionScenario = vi.fn();
+  const prepareReloadScenario = vi.fn();
+  const handleChatError = vi.fn();
+  
+  return {
+    submitMessageScenario,
+    submitSuggestionScenario,
+    prepareReloadScenario,
+    handleChatError,
+  };
+});
 
 // Mock the chat draft hook with proper implementation
 const mockSetDraftValue = vi.fn();
@@ -57,7 +64,7 @@ vi.mock('next/navigation', () => ({
 import { useChat } from '@ai-sdk/react';
 import { useSearchParams } from 'next/navigation';
 // Import the actual business logic module for proper typing (after mocking)
-import * as businessLogic from '@/app/components/chat/chat-business-logic';
+import * as businessLogic from '@/components/app/chat/chat-business-logic';
 
 // Mock toast
 vi.mock('@/components/ui/toast', () => ({

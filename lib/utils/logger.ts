@@ -1,32 +1,9 @@
 import pino from 'pino';
+import { sanitizeLogEntry, redactErrorData } from '@/lib/utils/redaction';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
-const isProduction = process.env.NODE_ENV === 'production';
 
-// Function to create safe transport configuration
-function createTransportConfig() {
-  // Only use transport in development and NOT in production/serverless environments
-  if (isDevelopment && typeof window === 'undefined') {
-    try {
-      // Use sync transport to avoid worker thread issues
-      const pretty = require('pino-pretty');
-      return pretty({
-        colorize: true,
-        ignore: 'pid,hostname',
-        translateTime: 'SYS:standard',
-        sync: true, // Important: Prevents worker thread issues
-      });
-    } catch (error) {
-      // Fallback if pino-pretty is not available
-      console.warn('pino-pretty not available, using default logger format');
-      return undefined;
-    }
-  }
-  
-  return undefined;
-}
-
-// Create logger with error handling and fallback
+// Create logger with error handling and fallback, without pretty transports (to avoid require/worker threads)
 const createLogger = () => {
   const baseConfig = {
     level: process.env.LOG_LEVEL || (isDevelopment ? 'debug' : 'info'),
@@ -47,6 +24,10 @@ const createLogger = () => {
         'session',
         'secret',
         'private',
+        'req.headers["x-provider-api-key"]',
+        'req.headers["X-Provider-Api-Key"]',
+        'headers["x-provider-api-key"]',
+        'headers["X-Provider-Api-Key"]',
         'OPENAI_API_KEY',
         'ANTHROPIC_API_KEY',
         'MISTRAL_API_KEY',
@@ -64,24 +45,18 @@ const createLogger = () => {
     },
   };
 
-  try {
-    const transport = createTransportConfig();
-    
-    if (transport) {
-      // Development mode with pretty printing (as stream, not transport)
-      return pino(baseConfig, transport);
-    } else {
-      // Production mode or fallback - no transport/pretty printing
-      return pino(baseConfig);
-    }
-  } catch (error) {
-    // Ultimate fallback - create basic logger
-    console.warn('Failed to create pino logger with transport, using basic logger:', error);
-    return pino(baseConfig);
-  }
+  // Always use base pino without pretty printing to avoid CommonJS require
+  return pino(baseConfig);
 };
 
 const logger = createLogger();
+
+// Type guards to safely inspect unknown values
+const hasMessage = (val: unknown): val is { message?: string } =>
+  typeof val === 'object' && val !== null && 'message' in val;
+
+const hasCode = (val: unknown): val is { code?: string } =>
+  typeof val === 'object' && val !== null && 'code' in val;
 
 // Add process-level error handlers to catch any remaining worker thread issues
 if (typeof process !== 'undefined') {
@@ -95,7 +70,7 @@ if (typeof process !== 'undefined') {
     if (error.message.includes('worker thread') || 
         error.message.includes('thread-stream') ||
         error.message.includes('worker.js') ||
-        ('code' in error && (error as any).code === 'MODULE_NOT_FOUND' && error.message.includes('worker'))) {
+        (hasCode(error) && error.code === 'MODULE_NOT_FOUND' && error.message.includes('worker'))) {
       
       console.error('Logger worker thread error caught and handled:', error.message);
       // Don't exit the process for logger errors
@@ -117,8 +92,8 @@ if (typeof process !== 'undefined') {
   });
 
   // Handle unhandled promise rejections that might be related to worker threads
-  process.on('unhandledRejection', (reason: any) => {
-    if (reason && typeof reason === 'object' && 
+  process.on('unhandledRejection', (reason: unknown) => {
+    if (hasMessage(reason) && 
         (reason.message?.includes('worker thread') || 
          reason.message?.includes('thread-stream') ||
          reason.message?.includes('worker.js'))) {
@@ -136,27 +111,35 @@ if (typeof process !== 'undefined') {
 export default logger;
 
 export const logError = (error: unknown, context?: Record<string, unknown>) => {
+  // Sanitize error and context before logging
+  const safeError = redactErrorData(error);
+  const safeContext = context ? sanitizeLogEntry(context) : {};
+  
   if (error instanceof Error) {
-    logger.error({ err: error, ...context }, error.message);
+    logger.error({ err: safeError, ...safeContext }, error.message);
   } else {
-    logger.error({ error, ...context }, 'Unknown error occurred');
+    logger.error({ error: safeError, ...safeContext }, 'Unknown error occurred');
   }
 };
 
 export const logWarning = (message: string, context?: Record<string, unknown>) => {
-  logger.warn(context, message);
+  const safeContext = context ? sanitizeLogEntry(context) : {};
+  logger.warn(safeContext, message);
 };
 
 export const logInfo = (message: string, context?: Record<string, unknown>) => {
-  logger.info(context, message);
+  const safeContext = context ? sanitizeLogEntry(context) : {};
+  logger.info(safeContext, message);
 };
 
 export const logDebug = (message: string, context?: Record<string, unknown>) => {
-  logger.debug(context, message);
+  const safeContext = context ? sanitizeLogEntry(context) : {};
+  logger.debug(safeContext, message);
 };
 
 export const logTrace = (message: string, context?: Record<string, unknown>) => {
-  logger.trace(context, message);
+  const safeContext = context ? sanitizeLogEntry(context) : {};
+  logger.trace(safeContext, message);
 };
 
 export const createChildLogger = (name: string) => {

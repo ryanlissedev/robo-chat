@@ -1,4 +1,4 @@
-import { tool } from 'ai';
+import { tool } from '@ai-sdk/provider-utils';
 import OpenAI from 'openai';
 import { z } from 'zod';
 import {
@@ -7,43 +7,57 @@ import {
 } from '@/lib/retrieval/query-rewriting';
 import logger from '@/lib/utils/logger';
 
+// OpenAI client defaults and retry helpers
+const OPENAI_CLIENT_DEFAULTS = {
+  maxRetries: 3,
+  timeout: 30_000,
+} as const;
+
+type RetryOptions = {
+  attempts?: number; // total attempts including first
+  baseDelayMs?: number; // initial delay
+  maxDelayMs?: number; // cap delay
+};
+
+const isRetriableError = (err: unknown): boolean => {
+  // Network-level errors
+  const anyErr = err as { code?: string; status?: number; name?: string };
+  if (anyErr?.code && ['ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'ENETUNREACH', 'ECONNREFUSED'].includes(anyErr.code)) {
+    return true;
+  }
+  // OpenAI APIError has status
+  if (typeof anyErr?.status === 'number') {
+    const s = anyErr.status;
+    if (s === 408 || s === 425 || s === 429 || (s >= 500 && s <= 504)) return true;
+  }
+  return false;
+};
+
+async function withRetry<T>(fn: () => Promise<T>, opts: RetryOptions = {}): Promise<T> {
+  const attempts = Math.max(1, opts.attempts ?? 3);
+  const base = opts.baseDelayMs ?? 500;
+  const cap = opts.maxDelayMs ?? 4_000;
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const retriable = isRetriableError(err);
+      if (!retriable || i === attempts - 1) break;
+      const delay = Math.min(cap, base * Math.pow(2, i)) + Math.floor(Math.random() * 150);
+      await new Promise((res) => setTimeout(res, delay));
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error('Operation failed');
+}
+
 type FileSearchResult = {
   file_id: string;
   file_name: string;
   content: string;
   score: number;
   metadata?: Record<string, unknown>;
-};
-
-type FileSearchResponse = {
-  success: boolean;
-  query: string;
-  enhanced_query?: string;
-  results: Array<{
-    rank: number;
-    file_id: string;
-    file_name: string;
-    content: string;
-    score: number;
-    metadata?: Record<string, unknown>;
-  }>;
-  total_results: number;
-  summary: string;
-  sources?: Array<{
-    id: string;
-    name: string;
-    score: number;
-    excerpt: string;
-  }>;
-  thinking?: string;
-  search_config?: {
-    vector_store_id: string;
-    query_rewriting: boolean;
-    rewrite_strategy?: string;
-    reranking: boolean;
-    reranking_method?: string;
-  };
-  error?: string;
 };
 
 export const fileSearchTool = tool({
@@ -117,7 +131,7 @@ export const fileSearchTool = tool({
         throw new Error('OpenAI API key is required for file search. Set OPENAI_API_KEY environment variable.');
       }
 
-      const openai = new OpenAI({ apiKey });
+      const openai = new OpenAI({ apiKey, ...OPENAI_CLIENT_DEFAULTS });
 
       // If no vector store ID provided, get the default one or create a new one
       let storeId: string | undefined = vector_store_id;
@@ -128,7 +142,7 @@ export const fileSearchTool = tool({
         }, 'Looking up default vector store');
         
         // Try to get the user's default vector store
-        const stores = await openai.vectorStores.list({ limit: 1 });
+        const stores = await withRetry(() => openai.vectorStores.list({ limit: 1 }));
         if (stores.data.length > 0) {
           storeId = stores.data[0].id;
           logger.info({
@@ -144,13 +158,13 @@ export const fileSearchTool = tool({
             timestamp: new Date().toISOString()
           }, 'Creating new vector store');
           
-          const newStore = await openai.vectorStores.create({
+          const newStore = await withRetry(() => openai.vectorStores.create({
             name: 'Base Chat Default Store',
             metadata: {
               created_by: 'Base Chat',
               purpose: 'file_search',
             },
-          });
+          }));
           storeId = newStore.id;
           
           logger.info({
@@ -200,11 +214,13 @@ export const fileSearchTool = tool({
         timestamp: new Date().toISOString()
       }, 'Calling enhanced retrieval');
       
-      const results = await enhancedRetrieval(
-        query,
-        storeId as string,
-        openai,
-        retrievalConfig
+      const results = await withRetry(() =>
+        enhancedRetrieval(
+          query,
+          storeId as string,
+          openai,
+          retrievalConfig
+        )
       );
       
       logger.info({
@@ -330,10 +346,10 @@ export async function createVectorStore(
   fileIds: string[],
   metadata?: Record<string, unknown>
 ): Promise<string> {
-  const openai = new OpenAI({ apiKey });
+  const openai = new OpenAI({ apiKey, ...OPENAI_CLIENT_DEFAULTS });
 
   try {
-    const vectorStore = await openai.vectorStores.create({
+    const vectorStore = await withRetry(() => openai.vectorStores.create({
       name,
       file_ids: fileIds,
       metadata: {
@@ -348,7 +364,7 @@ export async function createVectorStore(
           chunk_overlap_tokens: 400,
         },
       },
-    });
+    }));
 
     return vectorStore.id;
   } catch {
@@ -364,13 +380,13 @@ export async function uploadFileForSearch(
   purpose: 'assistants' = 'assistants',
   metadata?: Record<string, unknown>
 ): Promise<string> {
-  const openai = new OpenAI({ apiKey });
+  const openai = new OpenAI({ apiKey, ...OPENAI_CLIENT_DEFAULTS });
 
   try {
-    const uploadedFile = await openai.files.create({
+    const uploadedFile = await withRetry(() => openai.files.create({
       file: file as File,
       purpose,
-    });
+    }));
 
     // Store metadata for better search
     if (metadata) {
@@ -455,12 +471,12 @@ export async function searchMultipleStores(
   vectorStoreIds: string[],
   config?: RetrievalPipelineConfig
 ): Promise<FileSearchResult[]> {
-  const openai = new OpenAI({ apiKey });
+  const openai = new OpenAI({ apiKey, ...OPENAI_CLIENT_DEFAULTS });
 
   try {
     // Search each vector store in parallel
     const searchPromises = vectorStoreIds.map((storeId) =>
-      enhancedRetrieval(query, storeId, openai, config)
+      withRetry(() => enhancedRetrieval(query, storeId, openai, config))
     );
 
     const allResults = await Promise.all(searchPromises);

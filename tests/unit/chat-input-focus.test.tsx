@@ -1,7 +1,7 @@
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { ChatInput } from '@/app/components/chat-input/chat-input';
+import { ChatInput } from '@/components/app/chat-input/chat-input';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ModelProvider } from '@/lib/model-store/provider';
 import { UserPreferencesProvider } from '@/lib/user-preference-store/provider';

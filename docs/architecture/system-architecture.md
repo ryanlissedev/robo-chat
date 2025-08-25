@@ -28,6 +28,21 @@ flowchart LR
   end
 
   subgraph Infra [External Services]
+
+## Guest BYOK Flow (Browser → API → Providers)
+
+- Browser (Guest): User supplies provider key in GuestKeyModal; stored per scope:
+  - Request-only (no storage)
+  - Tab memory (in-memory)
+  - Session (AES-GCM; tab key in memory; bundle in sessionStorage)
+  - Persistent (AES-GCM with passphrase; bundle in localStorage)
+- Request: Client attaches headers when available
+  - X-Model-Provider, X-Provider-Api-Key, X-Credential-Source=guest-byok
+- API (app/api/chat/route.ts): Credential precedence
+  - User BYOK → Guest header → Env key
+  - Never persists guest keys; logs redact X-Provider-Api-Key
+- Providers: lib/openproviders/index.ts uses apiKey override per call
+
     LLM[AI SDK v5 Providers\nOpenAI, Anthropic, Google, Mistral, xAI, etc.]
     Supabase[(Supabase Auth/DB/Storage)]
     LangSmith[(LangSmith Tracing)]

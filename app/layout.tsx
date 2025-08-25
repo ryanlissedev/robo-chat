@@ -86,6 +86,7 @@ export default async function RootLayout({
                       >
                         <SidebarProvider defaultOpen>
                           <Toaster position="top-center" />
+                          <div id="guest-byok-modal-root" />
                           {children}
                         </SidebarProvider>
                       </ThemeProvider>

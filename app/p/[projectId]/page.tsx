@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { LayoutApp } from '@/app/components/layout/layout-app';
+import { LayoutApp } from '@/components/app/layout/layout-app';
 import { ProjectView } from '@/app/p/[projectId]/project-view';
 import { MessagesProvider } from '@/lib/chat-store/messages/provider';
 import { isSupabaseEnabled } from '@/lib/supabase/config';

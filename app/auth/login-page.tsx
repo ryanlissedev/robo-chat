@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { signInWithGoogle } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
-import { HeaderGoBack } from '../components/header-go-back';
+import { HeaderGoBack } from '@/components/app/header-go-back';
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
