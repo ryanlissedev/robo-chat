@@ -196,3 +196,13 @@ export const SYSTEM_PROMPT_DEFAULT = BASE_SYSTEM_PROMPT;
 export const FILE_SEARCH_SYSTEM_PROMPT = BASE_SYSTEM_PROMPT;
 
 export const MESSAGE_MAX_LENGTH = 10_000;
+
+// Retrieval defaults (server-side only)
+export const RETRIEVAL_TOP_K = Number(process.env.RETRIEVAL_TOP_K ?? 5);
+export const RETRIEVAL_MAX_TOKENS = Number(
+  process.env.RETRIEVAL_MAX_TOKENS ?? 2000
+);
+export const RETRIEVAL_TWO_PASS_ENABLED =
+  process.env.RETRIEVAL_TWO_PASS_ENABLED === 'true';
+export const RETRIEVAL_RETRIEVER_MODEL_ID =
+  process.env.RETRIEVAL_RETRIEVER_MODEL_ID || 'gpt-4.1';

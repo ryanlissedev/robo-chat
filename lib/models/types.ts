@@ -19,6 +19,7 @@ type ModelConfig = {
 
   vision?: boolean;
   tools?: boolean;
+  fileSearchTools?: boolean;
   audio?: boolean;
   reasoningText?: boolean;
   webSearch?: boolean;

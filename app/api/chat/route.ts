@@ -4,7 +4,9 @@ import { convertToModelMessages, streamText } from 'ai';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import { getMessageContent } from '@/app/types/ai-extended';
 import type { SupabaseClientType } from '@/app/types/api.types';
-import { FILE_SEARCH_SYSTEM_PROMPT, SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
+import { FILE_SEARCH_SYSTEM_PROMPT, SYSTEM_PROMPT_DEFAULT, RETRIEVAL_MAX_TOKENS, RETRIEVAL_TOP_K, RETRIEVAL_TWO_PASS_ENABLED } from '@/lib/config';
+import { performVectorRetrieval } from '@/lib/retrieval/vector-retrieval';
+import { retrieveWithGpt41 } from '@/lib/retrieval/two-pass';
 import {
   createRun,
   extractRunId,
@@ -99,6 +101,13 @@ function createFallbackContent(msg: unknown, role?: string): MessagePart[] {
   return [createTextPart(fallbackText)];
 }
 
+// Utility to create a safe preview for logs
+function getPreview(text: string | undefined | null, max = 500): string {
+  if (!text) return '';
+  const trimmed = String(text).trim();
+  return trimmed.length > max ? `${trimmed.slice(0, max)}…` : trimmed;
+}
+
 function transformMessageToV5Format(msg: unknown): TransformedMessage {
   // Ensure msg has proper structure
   if (!msg || typeof msg !== 'object') {
@@ -164,7 +173,7 @@ function resolveModelId(model: string): string {
 async function getEffectiveSystemPrompt(
   systemPrompt: string,
   enableSearch: boolean,
-  isGPT5Model: boolean,
+  modelSupportsFileSearchTools: boolean,
   context?: 'chat' | 'voice',
   personalityMode?: 'safety-focused' | 'technical-expert' | 'friendly-assistant'
 ): Promise<string> {
@@ -178,7 +187,7 @@ async function getEffectiveSystemPrompt(
   }
   
   // For chat context or when no personality mode, use standard prompt selection
-  const useSearchPrompt = enableSearch && isGPT5Model;
+  const useSearchPrompt = enableSearch && modelSupportsFileSearchTools;
   
   return useSearchPrompt
     ? FILE_SEARCH_SYSTEM_PROMPT
@@ -190,13 +199,15 @@ function configureModelSettings(
   enableSearch: boolean,
   reasoningEffort: string,
   verbosity?: string,
-  isGPT5Model?: boolean
+  isReasoningCapable?: boolean
 ) {
   return {
-    enableSearch,
+    // Vector-store only: do not enable provider-level web search.
+    // We still enable the fileSearch tool separately via configureTools().
+    enableSearch: false,
     reasoningEffort,
     verbosity,
-    headers: isGPT5Model
+    headers: isReasoningCapable
       ? {
           'X-Reasoning-Effort': reasoningEffort,
           ...(verbosity ? { 'X-Text-Verbosity': verbosity } : {}),
@@ -206,14 +217,14 @@ function configureModelSettings(
 }
 
 // Tools configuration
-function configureTools(enableSearch: boolean, isGPT5Model: boolean): ToolSet {
-  const useTools = enableSearch && isGPT5Model;
+function configureTools(enableSearch: boolean, modelSupportsFileSearchTools: boolean): ToolSet {
+  const useTools = enableSearch && modelSupportsFileSearchTools;
   
   if (useTools) {
     logger.info({
       at: 'api.chat.configureTools',
       enableSearch,
-      isGPT5Model,
+      fileSearchToolsCapable: modelSupportsFileSearchTools,
       toolsEnabled: true,
       toolNames: ['fileSearch']
     }, 'Configuring file search tool');
@@ -274,7 +285,9 @@ async function getModelConfiguration(
   }
 
   const isGPT5Model = resolvedModel.startsWith('gpt-5');
-  return { modelConfig, isGPT5Model };
+  const isReasoningCapable = Boolean(modelConfig?.reasoningText);
+  const modelSupportsFileSearchTools = Boolean((modelConfig as { fileSearchTools?: boolean })?.fileSearchTools);
+  return { modelConfig, isGPT5Model, isReasoningCapable, modelSupportsFileSearchTools };
 }
 
 // Request logging
@@ -284,6 +297,7 @@ function logRequestContext(options: {
   reasoningEffort: string;
   verbosity?: string;
   isGPT5Model?: boolean;
+  modelSupportsFileSearchTools?: boolean;
 }) {
   try {
     const {
@@ -292,6 +306,7 @@ function logRequestContext(options: {
       reasoningEffort,
       verbosity,
       isGPT5Model,
+      modelSupportsFileSearchTools,
     } = options;
     const provider = getProviderForModel(resolvedModel);
     logger.info(
@@ -303,6 +318,7 @@ function logRequestContext(options: {
         reasoningEffort,
         verbosity,
         temperature: isGPT5Model ? 1 : undefined,
+        fileSearchToolsCapable: modelSupportsFileSearchTools,
       },
       'chat request'
     );
@@ -567,7 +583,7 @@ export async function POST(req: Request) {
     });
 
     // Get and validate model configuration
-    const { modelConfig, isGPT5Model } = await getModelConfiguration(
+    const { modelConfig, isGPT5Model, isReasoningCapable, modelSupportsFileSearchTools } = await getModelConfiguration(
       resolvedModel,
       model
     );
@@ -580,13 +596,32 @@ export async function POST(req: Request) {
       reasoningEffort,
       verbosity,
       isGPT5Model,
+      modelSupportsFileSearchTools,
     });
+
+    // Log user query preview
+    try {
+      const lastUserMessage = messages.at(-1);
+      const userText = lastUserMessage ? getMessageContent(lastUserMessage) : '';
+      logger.info(
+        {
+          at: 'api.chat.userQuery',
+          chatId,
+          userId,
+          model: resolvedModel,
+          preview: getPreview(userText),
+        },
+        'User query preview'
+      );
+    } catch {
+      // ignore logging errors
+    }
 
     // Get effective system prompt and API key
     const effectiveSystemPrompt = await getEffectiveSystemPrompt(
       systemPrompt,
       enableSearch,
-      isGPT5Model,
+      modelSupportsFileSearchTools,
       context,
       personalityMode
     );
@@ -603,12 +638,12 @@ export async function POST(req: Request) {
     });
 
     // Configure tools and model settings
-    const tools = configureTools(enableSearch, isGPT5Model);
+    const tools = configureTools(enableSearch, modelSupportsFileSearchTools);
     const modelSettings = configureModelSettings(
       enableSearch,
       reasoningEffort,
       verbosity,
-      isGPT5Model
+      isReasoningCapable
     );
 
     // Convert UIMessages to ModelMessages for v5
@@ -660,6 +695,114 @@ export async function POST(req: Request) {
         ...msg,
         parts: msg.parts?.filter(Boolean) || []
       }));
+      // If enableSearch is true but tools are disabled for this model, inject server-retrieved context
+      if (enableSearch && !modelSupportsFileSearchTools) {
+        const lastUserMessage = messages.at(-1);
+        const userQuery = lastUserMessage ? getMessageContent(lastUserMessage) : '';
+        let retrieved = [] as Array<{ fileId: string; fileName: string; score: number; content: string; url?: string }>;
+        try {
+          retrieved = RETRIEVAL_TWO_PASS_ENABLED
+            ? await retrieveWithGpt41(userQuery, messages, { topK: RETRIEVAL_TOP_K })
+            : await performVectorRetrieval(userQuery, { topK: RETRIEVAL_TOP_K });
+        } catch {
+          retrieved = await performVectorRetrieval(userQuery, { topK: RETRIEVAL_TOP_K });
+        }
+
+        // Clip content to budget
+        let budget = RETRIEVAL_MAX_TOKENS;
+        const snippets: string[] = [];
+        for (const doc of retrieved) {
+          if (budget <= 0) break;
+          const snippet = doc.content.slice(0, Math.min(doc.content.length, Math.max(200, Math.floor(budget / 2))));
+          budget -= Math.ceil(snippet.length / 4); // rough token estimate
+          snippets.push(`Source: ${doc.fileName} (${(doc.score * 100).toFixed(1)}%)\n${snippet}`);
+        }
+
+        const sourcesList = retrieved.map((d) => `- ${d.fileName}${d.url ? ` (${d.url})` : ''}`).join('\n');
+        const systemAugmentation = `Use the following retrieved context from the user's files to answer. If it is not relevant, say so and proceed without it.\n\n[Retrieved Context]\n${snippets.join('\n\n')}\n\n[Sources]\n${sourcesList}`;
+
+        const augmentedSystem = [effectiveSystemPrompt, systemAugmentation].filter(Boolean).join('\n\n');
+        // Update effectiveSystemPrompt for injection path
+        // Note: we cannot reassign const; redefine for local use
+        const systemForInjection = augmentedSystem;
+
+        modelMessages = convertToModelMessages(compatibleMessages as ExtendedUIMessage[]);
+
+        const result = streamText({
+          model: modelConfig?.apiSdk ? (modelConfig.apiSdk(apiKey, modelSettings) as LanguageModel) : undefined!,
+          system: systemForInjection,
+          messages: modelMessages,
+          tools: {},
+          temperature: isGPT5Model ? 1 : undefined,
+          onError: () => {},
+          onFinish: async ({ response }) => {
+            // Same onFinish as below for logging and storage
+            if (response.messages && response.messages.length > 0) {
+              const lastMessage = response.messages[response.messages.length - 1];
+              if (lastMessage && typeof lastMessage === 'object' && 'toolInvocations' in lastMessage) {
+                const messageWithTools = lastMessage as { toolInvocations?: Array<Record<string, unknown>> };
+                const toolInvocations = messageWithTools.toolInvocations;
+                if (toolInvocations && Array.isArray(toolInvocations)) {
+                  for (const invocation of toolInvocations) {
+                    logger.info({ at: 'api.chat.toolInvocation', invocation }, 'Tool invocation result');
+                  }
+                }
+              }
+            }
+
+            try {
+              let assistantText = '';
+              const msgs = (response.messages || []) as Array<unknown>;
+              const last = msgs[msgs.length - 1] as { role?: string; content?: unknown; parts?: Array<{ type?: string; text?: string }> } | undefined;
+
+              if (last && last.role === 'assistant') {
+                if (typeof last.content === 'string') {
+                  assistantText = last.content;
+                } else if (Array.isArray(last.content)) {
+                  assistantText = (last.content as Array<{ type?: string; text?: string }>)
+                    .map((p) => (p && typeof p === 'object' && 'text' in p ? (p as { text?: string }).text || '' : ''))
+                    .join('');
+                } else if (Array.isArray(last.parts)) {
+                  assistantText = last.parts
+                    .map((p) => (p && typeof p === 'object' && p.type === 'text' ? p.text || '' : ''))
+                    .join('');
+                }
+              }
+
+              logger.info({ at: 'api.chat.assistantResponse', chatId, userId, model: resolvedModel, preview: getPreview(assistantText) }, 'Assistant response preview');
+            } catch {}
+
+            const actualRunId = extractRunId(response) || langsmithRunId;
+            if (supabase) {
+              await storeAssistantMessage({
+                supabase,
+                chatId,
+                messages: response.messages as unknown as import('@/app/types/api.types').Message[],
+                userId,
+                message_group_id,
+                model,
+                langsmithRunId: actualRunId,
+                reasoningEffort,
+              });
+            }
+
+            const usage = (response as ResponseWithUsage).usage;
+            const responseTime = usage?.totalTokens ? usage.totalTokens * 10 : undefined;
+            trackCredentialUsage('environment', resolvedModel.includes('gpt') ? 'openai' : resolvedModel.includes('claude') ? 'anthropic' : 'unknown' as Provider, resolvedModel, { userId, success: true, responseTime });
+
+            if (actualRunId && isLangSmithEnabled()) {
+              await updateRun({ runId: actualRunId, outputs: { messages: response.messages, usage: (response as ResponseWithUsage).usage } });
+              const usage2 = (response as ResponseWithUsage).usage;
+              if (usage2) {
+                await logMetrics({ runId: actualRunId, metrics: { totalTokens: usage2.totalTokens, inputTokens: usage2.inputTokens, outputTokens: usage2.outputTokens, reasoningEffort, enableSearch } });
+              }
+            }
+          },
+        });
+
+        return result.toUIMessageStreamResponse();
+      }
+
       modelMessages = convertToModelMessages(compatibleMessages as ExtendedUIMessage[]);
     } catch {
       return new Response(
@@ -749,6 +892,40 @@ export async function POST(req: Request) {
           }
         }
         
+        // Log assistant response preview
+        try {
+          let assistantText = '';
+          const msgs = (response.messages || []) as Array<unknown>;
+          const last = msgs[msgs.length - 1] as { role?: string; content?: unknown; parts?: Array<{ type?: string; text?: string }> } | undefined;
+
+          if (last && last.role === 'assistant') {
+            if (typeof last.content === 'string') {
+              assistantText = last.content;
+            } else if (Array.isArray(last.content)) {
+              assistantText = (last.content as Array<{ type?: string; text?: string }>)
+                .map((p) => (p && typeof p === 'object' && 'text' in p ? (p as { text?: string }).text || '' : ''))
+                .join('');
+            } else if (Array.isArray(last.parts)) {
+              assistantText = last.parts
+                .map((p) => (p && typeof p === 'object' && p.type === 'text' ? p.text || '' : ''))
+                .join('');
+            }
+          }
+
+          logger.info(
+            {
+              at: 'api.chat.assistantResponse',
+              chatId,
+              userId,
+              model: resolvedModel,
+              preview: getPreview(assistantText),
+            },
+            'Assistant response preview'
+          );
+        } catch {
+          // ignore logging errors
+        }
+
         // Resolve final run ID from response (if available)
         const actualRunId = extractRunId(response) || langsmithRunId;
 
