@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, MagnifyingGlassIcon, StarIcon,  } from 'lucide-react';
+import { ChevronDown, Search, Star } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
@@ -230,7 +230,7 @@ function ModelItem({
                 variant="secondary"
                 className="flex items-center gap-1 h-auto px-1.5 py-0.5 text-[10px]"
               >
-                <StarIcon className="size-2" />
+                <Star className="size-2" />
                 <span>Locked</span>
               </Badge>
             ) : (
@@ -352,7 +352,7 @@ export function ModelSelector({
             </DrawerHeader>
             <div className="px-4 pb-2">
               <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   className="pl-8"
                   onChange={handleSearchChange}
@@ -441,7 +441,7 @@ export function ModelSelector({
           >
             <div className="sticky top-0 z-10 rounded-t-md border-b bg-background px-0 pt-0 pb-0">
               <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   className="rounded-b-none border border-none pl-8 shadow-none focus-visible:ring-0 dark:bg-popover"
                   onChange={handleSearchChange}

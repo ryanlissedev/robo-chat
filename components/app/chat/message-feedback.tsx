@@ -124,9 +124,9 @@ export function MessageFeedback({
           <ThumbsUp
             className={cn(
               'h-4 w-4',
-              feedback === 'upvote' ? 'text-green-500' : 'text-muted-foreground'
+              feedback === 'upvote' ? 'text-green-500' : 'text-muted-foreground',
+              feedback === 'upvote' && 'fill-current'
             )}
-            weight={feedback === 'upvote' ? 'fill' : 'regular'}
           />
         </button>
 
@@ -145,9 +145,9 @@ export function MessageFeedback({
           <ThumbsDown
             className={cn(
               'h-4 w-4',
-              feedback === 'downvote' ? 'text-red-500' : 'text-muted-foreground'
+              feedback === 'downvote' ? 'text-red-500' : 'text-muted-foreground',
+              feedback === 'downvote' && 'fill-current'
             )}
-            weight={feedback === 'downvote' ? 'fill' : 'regular'}
           />
         </button>
       </div>

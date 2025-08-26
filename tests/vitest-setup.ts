@@ -8,8 +8,8 @@ import { vi } from 'vitest';
 (global as any).React = React;
 
 // Ensure vi is available globally
-if (typeof globalThis.vi === 'undefined') {
-  globalThis.vi = vi;
+if (typeof (globalThis as any).vi === 'undefined') {
+  (globalThis as any).vi = vi;
 }
 
 // Mock modules at the module level

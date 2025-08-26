@@ -1,6 +1,19 @@
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
+import { vi } from 'vitest';
+import React from 'react';
+// Mock the ReasoningEffortSelector to a simple stub for this focus test
+vi.mock('@/components/app/chat/reasoning-effort-selector', () => ({
+  ReasoningEffortSelector: (props: any) => (
+    <div data-testid="reasoning-effort-selector" {...props} />
+  ),
+}));
+vi.mock('@/components/app/suggestions/prompt-system', () => ({
+  PromptSystem: (props: any) => (
+    <div data-testid="prompt-system" {...props} />
+  ),
+}));
 import { ChatInput } from '@/components/app/chat-input/chat-input';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ModelProvider } from '@/lib/model-store/provider';

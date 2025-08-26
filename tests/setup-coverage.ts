@@ -1,5 +1,7 @@
+/// <reference types="vitest/globals" />
 import '@testing-library/jest-dom';
 import React from 'react';
+import type { vi as viType } from 'vitest';
 
 // Make React available globally for components that assume it
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -9,11 +11,11 @@ import React from 'react';
 // since vi.mock may not be available in the hoisted context
 
 // Only set up mocks if vi is available
-if (typeof globalThis.vi !== 'undefined') {
-  const { vi } = globalThis;
+if (typeof (globalThis as any).vi !== 'undefined') {
+  const vi = (globalThis as any).vi as typeof viType;
   
   // Mock next/navigation redirect as vi.fn()
-  vi.mock('next/navigation', async (orig) => {
+  vi.mock('next/navigation', async (orig: () => Promise<any>) => {
     const actual = await (orig() as Promise<any>);
     return {
       ...actual,

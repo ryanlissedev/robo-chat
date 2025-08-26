@@ -1,4 +1,4 @@
-import { BookOpenText, Code, Lightbulb, Notepad, PaintBrush, Sparkle,  } from 'lucide-react';
+import { BookOpen, Code, Lightbulb, NotepadText, Paintbrush, Sparkle } from 'lucide-react';
 
 export const NON_AUTH_DAILY_MESSAGE_LIMIT = 10_000; // Temporarily increased for testing
 export const AUTH_DAILY_MESSAGE_LIMIT = 1000;
@@ -56,7 +56,7 @@ export const SUGGESTIONS = [
       'When should I check the hydraulic fluid levels?',
       'How do I clean and maintain the rail guides?',
     ],
-    icon: Notepad,
+    icon: NotepadText,
   },
   {
     label: 'Safety',
@@ -80,7 +80,7 @@ export const SUGGESTIONS = [
       'What are the power requirements for operation?',
       'What cutting speeds and feeds should I use?',
     ],
-    icon: BookOpenText,
+    icon: BookOpen,
   },
   {
     label: 'Setup',
@@ -92,7 +92,7 @@ export const SUGGESTIONS = [
       'How do I adjust cutting parameters for different materials?',
       'How do I position the workpiece correctly?',
     ],
-    icon: PaintBrush,
+    icon: Paintbrush,
   },
 ];
 

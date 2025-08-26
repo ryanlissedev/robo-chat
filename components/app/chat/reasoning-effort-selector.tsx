@@ -1,6 +1,6 @@
 'use client';
 
-import { Brain, Gauge, Lightning } from 'lucide-react';
+import { Brain, Gauge, Zap } from 'lucide-react';
 import { useState } from 'react';
 import {
   Select,
@@ -26,7 +26,7 @@ const reasoningOptions = [
     value: 'low' as ReasoningEffort,
     label: 'Low',
     description: 'Fast, basic reasoning',
-    icon: Lightning,
+    icon: Zap,
     color: 'text-green-500',
   },
   {
@@ -74,7 +74,6 @@ export function ReasoningEffortSelector({
             <div className="flex items-center gap-2">
               <selectedOption.icon
                 className={cn('h-5 w-5', selectedOption.color)}
-                weight="duotone"
               />
               <span className="font-medium text-sm">
                 {selectedOption.label}
@@ -94,7 +93,6 @@ export function ReasoningEffortSelector({
               <div className="flex items-center gap-2">
                 <option.icon
                   className={cn('h-5 w-5', option.color)}
-                  weight="duotone"
                 />
                 <span className="font-medium text-base">{option.label}</span>
               </div>
@@ -142,7 +140,6 @@ export function ReasoningEffortCompact({
                 'h-4 w-4',
                 isSelected ? option.color : 'text-muted-foreground'
               )}
-              weight={isSelected ? 'fill' : 'duotone'}
             />
           </button>
         );

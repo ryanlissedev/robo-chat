@@ -1,4 +1,4 @@
-import { ArrowSquareOutIcon, BrainIcon, Globe, ImageIcon, WrenchIcon,  } from 'lucide-react';
+import { ArrowUpRight, Brain, Globe, Image, Wrench } from 'lucide-react';
 import { addUTM } from '@/components/app/chat/utils';
 import type { ModelConfig } from '@/lib/models/types';
 import { PROVIDERS } from '@/lib/providers';
@@ -28,21 +28,21 @@ export function SubMenu({ hoveredModelData }: SubMenuProps) {
           <div className="mt-1 flex flex-wrap gap-2">
             {hoveredModelData.vision && (
               <div className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-green-700 text-xs dark:bg-green-800 dark:text-green-100">
-                <ImageIcon className="size-3" />
+                <Image className="size-3" />
                 <span>Vision</span>
               </div>
             )}
 
             {hoveredModelData.tools && (
               <div className="flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-purple-700 text-xs dark:bg-purple-800 dark:text-purple-100">
-                <WrenchIcon className="size-3" />
+                <Wrench className="size-3" />
                 <span>Tools</span>
               </div>
             )}
 
             {hoveredModelData.reasoningText && (
               <div className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-700 text-xs dark:bg-amber-800 dark:text-amber-100">
-                <BrainIcon className="size-3" />
+                <Brain className="size-3" />
                 <span>Reasoning</span>
               </div>
             )}
@@ -111,7 +111,7 @@ export function SubMenu({ hoveredModelData }: SubMenuProps) {
               target="_blank"
             >
               <span className="">API Docs</span>
-              <ArrowSquareOutIcon className="size-3" />
+              <ArrowUpRight className="size-3" />
             </a>
             <a
               className="flex items-center gap-0.5"
@@ -120,7 +120,7 @@ export function SubMenu({ hoveredModelData }: SubMenuProps) {
               target="_blank"
             >
               <span className="">Model Page</span>
-              <ArrowSquareOutIcon className="size-3" />
+              <ArrowUpRight className="size-3" />
             </a>
           </div>
         </div>

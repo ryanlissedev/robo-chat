@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, CheckIcon, MagnifyingGlassIcon, StarIcon,  } from 'lucide-react';
+import { Check, ChevronDown, Search, Star } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { PopoverContentAuth } from '@/components/app/chat-input/popover-content-auth';
@@ -126,7 +126,7 @@ export function MultiModelSelector({
         <div className="flex items-center gap-2">
           {isLocked && (
             <div className="flex items-center gap-0.5 rounded-full border border-input bg-accent px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground">
-              <StarIcon className="size-2" />
+              <Star className="size-2" />
               <span>Locked</span>
             </div>
           )}
@@ -342,7 +342,7 @@ export function MultiModelSelector({
             </DrawerHeader>
             <div className="px-4 pb-2">
               <div className="relative">
-                <MagnifyingGlassIcon className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   className="pl-8"
                   onChange={handleSearchChange}
@@ -421,7 +421,7 @@ export function MultiModelSelector({
           >
             <div className="sticky top-0 z-10 rounded-t-md border-b bg-background px-0 pt-0 pb-0">
               <div className="relative">
-                <MagnifyingGlassIcon className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   className="rounded-b-none border border-none pl-8 shadow-none focus-visible:ring-0 dark:bg-popover"
                   onChange={handleSearchChange}
@@ -478,7 +478,7 @@ export function MultiModelSelector({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {isSelected && <CheckIcon className="size-4" />}
+                        {isSelected && <Check className="size-4" />}
                         {isLocked && (
                           <div className="flex items-center gap-0.5 rounded-full border border-input bg-accent px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground">
                             <span>Locked</span>

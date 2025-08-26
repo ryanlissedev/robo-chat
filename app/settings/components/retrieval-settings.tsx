@@ -2,7 +2,7 @@
 
 import { clientLogger } from '@/lib/utils/client-logger';
 
-import { ArrowsClockwise, Brain, Funnel, Search,  } from 'lucide-react';
+import { Brain, Filter, RefreshCw, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -259,7 +259,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ArrowsClockwise className="h-5 w-5" />
+            <RefreshCw className="h-5 w-5" />
             Reranking
           </CardTitle>
           <CardDescription>
@@ -348,7 +348,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Funnel className="h-5 w-5" />
+            <Filter className="h-5 w-5" />
             Search Parameters
           </CardTitle>
           <CardDescription>

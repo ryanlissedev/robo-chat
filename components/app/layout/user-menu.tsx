@@ -82,7 +82,7 @@ export function UserMenu() {
             rel="noopener noreferrer"
             target="_blank"
           >
-            <X className="size-4 p-0.5" />
+            <XIcon className="size-4 p-0.5" />
             <span>@zoladotchat</span>
           </a>
         </DropdownMenuItem>

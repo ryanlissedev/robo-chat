@@ -1,5 +1,5 @@
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
-import { ArrowClockwise, Check, Copy } from 'lucide-react';
+import { Check, Copy, RotateCw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 // AI SDK Elements
 import {
@@ -282,7 +282,7 @@ export function MessageAssistant({
                   onClick={onReload}
                   type="button"
                 >
-                  <ArrowClockwise className="size-4" />
+                  <RotateCw className="size-4" />
                 </button>
               </MessageAction>
             ) : null}

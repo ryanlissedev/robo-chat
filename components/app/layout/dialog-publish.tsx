@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Copy, Globe, Spinner } from 'lucide-react';
+import { Check, Copy, Globe, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import XIcon from '@/components/icons/x';
@@ -107,7 +107,7 @@ export function DialogPublish() {
             variant="ghost"
           >
             {isLoading ? (
-              <Spinner className="size-5 animate-spin" />
+              <Loader2 className="size-5 animate-spin" />
             ) : (
               <Globe className="size-5" />
             )}
@@ -148,7 +148,7 @@ export function DialogPublish() {
           View Page
         </Button>
         <Button className="flex-1" onClick={shareOnX}>
-          Share on <X className="size-4 text-primary-foreground" />
+          Share on <XIcon className="size-4 text-primary-foreground" />
         </Button>
       </div>
     </>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Database, File, FileCode, FilePdf, FileText, FolderOpen, Plus, Trash, Upload,  } from 'lucide-react';
+import { Database, File, FileCode, FileText, FolderOpen, Plus, Trash, Upload } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
@@ -42,7 +42,7 @@ type VectorStoreManagerProps = {
 };
 
 const FILE_ICONS = {
-  pdf: FilePdf,
+  pdf: FileText,  // Using FileText as FilePdf doesn't exist in lucide-react
   txt: FileText,
   md: FileText,
   py: FileCode,

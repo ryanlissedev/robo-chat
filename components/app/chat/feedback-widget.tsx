@@ -1,6 +1,6 @@
 'use client';
 
-import { QuestionMark } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
@@ -66,7 +66,7 @@ export function FeedbackWidget({ authUserId }: FeedbackWidgetProps) {
               delay: isOpen ? 0 : TRANSITION_POPOVER.duration / 2,
             }}
           >
-            <QuestionMark className="size-4 text-foreground" />
+            <HelpCircle className="size-4 text-foreground" />
           </motion.span>
         </MorphingPopoverTrigger>
         <MorphingPopoverContent
