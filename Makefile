@@ -1,21 +1,24 @@
-# Makefile for robo-chat project
-# Using bun for package management and npm for test compatibility
+# RoboChat AI Assistant - Makefile
+# Optimized for both bun and npm package managers
 
-.PHONY: help install dev build test test-all lint typecheck clean kill-ports start
+.PHONY: help setup install dev build test test-all lint typecheck clean kill-ports start quick-start ci-test pre-commit
 
-# Default target
+# Default target - show help
 help:
-	@echo "Available commands:"
-	@echo "  make install    - Install dependencies with bun"
-	@echo "  make dev        - Start development server (kills ports first)"
+	@echo "RoboChat AI Assistant - Available Commands"
+	@echo "=========================================="
+	@echo "  make setup      - Run initial setup script"
+	@echo "  make install    - Install dependencies"
+	@echo "  make dev        - Start development server"
 	@echo "  make build      - Build production bundle"
 	@echo "  make test       - Run all tests"
-	@echo "  make test-all   - Run all tests with coverage"
-	@echo "  make lint       - Run linter"
-	@echo "  make typecheck  - Run TypeScript type checking"
-	@echo "  make clean      - Clean build artifacts and node_modules"
-	@echo "  make kill-ports - Kill processes on ports 3000 and 3001"
-	@echo "  make start      - Start production server"
+	@echo "  make test-all   - Run tests with coverage"
+	@echo "  make lint       - Check code quality"
+	@echo "  make typecheck  - Run TypeScript validation"
+	@echo "  make clean      - Clean all artifacts"
+	@echo "  make quick-start- Setup and start dev server"
+	@echo "  make ci-test    - Run CI test suite"
+	@echo "  make pre-commit - Pre-commit checks"
 
 # Kill ports before starting services
 kill-ports:
@@ -57,7 +60,7 @@ lint:
 # Type checking
 typecheck:
 	@echo "Running TypeScript type checking..."
-	@bun run typecheck
+	@bun run type-check
 
 # Clean build artifacts
 clean:
@@ -86,3 +89,19 @@ test-fix:
 	@echo "Running tests and fixing issues..."
 	@npm test 2>&1 | tee test-output.log
 	@echo "Test results saved to test-output.log"
+
+# Setup environment (new)
+setup:
+	@echo "Running setup script..."
+	@./SETUP.sh
+
+# Quick start - setup and run dev
+quick-start: setup dev
+
+# CI test suite
+ci-test: lint typecheck test
+	@echo "✅ CI tests passed!"
+
+# Pre-commit checks
+pre-commit: lint fix typecheck
+	@echo "✅ Ready to commit!"

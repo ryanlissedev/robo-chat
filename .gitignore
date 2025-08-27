@@ -122,6 +122,12 @@ ruler_aider_instructions.md.bak
 
 
 claude-flow.config.json
+
+# Agent-specific files
+.agent-session/
+.agent-cache/
+agent-logs/
+*.agent.log
 .swarm/
 .hive-mind/
 memory/claude-flow-data.json
