@@ -255,14 +255,14 @@ export function SidebarProjectItem({ project }: SidebarProjectItemProps) {
               onClick={handleSaveClick}
               type="button"
             >
-              <Check size={16} weight="bold" />
+              <Check size={16} />
             </button>
             <button
               className="flex size-7 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors duration-150 hover:bg-secondary hover:text-primary"
               onClick={handleCancelClick}
               type="button"
             >
-              <X size={16} weight="bold" />
+              <X size={16} />
             </button>
           </div>
         </div>

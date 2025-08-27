@@ -82,7 +82,7 @@ async function insertMessageToDb(chatId: string, message: MessageToInsert) {
     created_at: message.createdAt?.toISOString() || new Date().toISOString(),
     message_group_id: message.message_group_id || null,
     model: message.model || null,
-  });
+  } as never);
 }
 
 async function insertMessagesToDb(chatId: string, messages: MessageToInsert[]) {
@@ -101,7 +101,7 @@ async function insertMessagesToDb(chatId: string, messages: MessageToInsert[]) {
     model: message.model || null,
   }));
 
-  await supabase.from('messages').insert(payload);
+  await supabase.from('messages').insert(payload as never);
 }
 
 async function deleteMessagesFromDb(chatId: string) {

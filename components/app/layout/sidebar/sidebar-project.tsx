@@ -1,6 +1,6 @@
 'use client';
 
-import { FolderPlusIcon } from 'lucide-react';
+import { FolderPlus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { DialogCreateProject } from './dialog-create-project';
@@ -35,7 +35,7 @@ export function SidebarProject() {
         type="button"
       >
         <div className="flex items-center gap-2">
-          <FolderPlusIcon size={20} />
+          <FolderPlus size={20} />
           New project
         </div>
       </button>

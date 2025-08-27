@@ -6,7 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { renderWithProviders, screen } from '@/tests/test-utils';
 
 // Avoid provider/fetch complexity by mocking MultiModelSelector
-vi.mock('@/components/common/multi-model-selector/base', () => ({
+vi.hoisted(() => ({
   MultiModelSelector: () => <div data-testid="mock-multi-model-selector" />,
 }));
 

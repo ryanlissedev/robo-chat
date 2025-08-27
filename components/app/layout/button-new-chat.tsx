@@ -1,6 +1,6 @@
 'use client';
 
-import { NotePencilIcon } from 'lucide-react';
+import { PenTool } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useKeyShortcut } from '@/app/hooks/use-key-shortcut';
@@ -31,7 +31,7 @@ export function ButtonNewChat() {
           href="/"
           prefetch
         >
-          <NotePencilIcon size={24} />
+          <PenTool size={24} />
         </Link>
       </TooltipTrigger>
       <TooltipContent>New Chat ⌘⇧U</TooltipContent>

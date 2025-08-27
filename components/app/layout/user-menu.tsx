@@ -1,6 +1,6 @@
 'use client';
 
-import { GithubLogoIcon } from 'lucide-react';
+import { Github } from 'lucide-react';
 import { useState } from 'react';
 import XIcon from '@/components/icons/x';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -93,7 +93,7 @@ export function UserMenu() {
             rel="noopener noreferrer"
             target="_blank"
           >
-            <GithubLogoIcon className="size-4" />
+            <Github className="size-4" />
             <span>GitHub</span>
           </a>
         </DropdownMenuItem>

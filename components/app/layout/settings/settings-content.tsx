@@ -1,6 +1,6 @@
 'use client';
 
-import { CubeIcon, GearSixIcon, KeyIcon, PaintBrushIcon, PlugsConnectedIcon, X,  } from 'lucide-react';
+import { Box, Settings, Key, Paintbrush, Cable, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawerClose } from '@/components/ui/drawer';
@@ -62,35 +62,35 @@ export function SettingsContent({ isDrawer = false }: SettingsContentProps) {
                   className="ml-6 flex shrink-0 items-center gap-2"
                   value="general"
                 >
-                  <GearSixIcon className="size-4" />
+                  <Settings className="size-4" />
                   <span>General</span>
                 </TabsTrigger>
                 <TabsTrigger
                   className="flex shrink-0 items-center gap-2"
                   value="appearance"
                 >
-                  <PaintBrushIcon className="size-4" />
+                  <Paintbrush className="size-4" />
                   <span>Appearance</span>
                 </TabsTrigger>
                 <TabsTrigger
                   className="flex shrink-0 items-center gap-2"
                   value="apikeys"
                 >
-                  <KeyIcon className="size-4" />
+                  <Key className="size-4" />
                   <span>API Keys</span>
                 </TabsTrigger>
                 <TabsTrigger
                   className="flex shrink-0 items-center gap-2"
                   value="models"
                 >
-                  <CubeIcon className="size-4" />
+                  <Box className="size-4" />
                   <span>Models</span>
                 </TabsTrigger>
                 <TabsTrigger
                   className="flex shrink-0 items-center gap-2"
                   value="connections"
                 >
-                  <PlugsConnectedIcon className="size-4" />
+                  <Cable className="size-4" />
                   <span>Connections</span>
                 </TabsTrigger>
               </TabsList>
@@ -133,7 +133,7 @@ export function SettingsContent({ isDrawer = false }: SettingsContentProps) {
                   value="general"
                 >
                   <div className="flex items-center gap-2">
-                    <GearSixIcon className="size-4" />
+                    <Settings className="size-4" />
                     <span>General</span>
                   </div>
                 </TabsTrigger>
@@ -143,7 +143,7 @@ export function SettingsContent({ isDrawer = false }: SettingsContentProps) {
                   value="appearance"
                 >
                   <div className="flex items-center gap-2">
-                    <PaintBrushIcon className="size-4" />
+                    <Paintbrush className="size-4" />
                     <span>Appearance</span>
                   </div>
                 </TabsTrigger>
@@ -153,7 +153,7 @@ export function SettingsContent({ isDrawer = false }: SettingsContentProps) {
                   value="apikeys"
                 >
                   <div className="flex items-center gap-2">
-                    <KeyIcon className="size-4" />
+                    <Key className="size-4" />
                     <span>API Keys</span>
                   </div>
                 </TabsTrigger>
@@ -162,7 +162,7 @@ export function SettingsContent({ isDrawer = false }: SettingsContentProps) {
                   value="models"
                 >
                   <div className="flex items-center gap-2">
-                    <CubeIcon className="size-4" />
+                    <Box className="size-4" />
                     <span>Models</span>
                   </div>
                 </TabsTrigger>
@@ -171,7 +171,7 @@ export function SettingsContent({ isDrawer = false }: SettingsContentProps) {
                   value="connections"
                 >
                   <div className="flex items-center gap-2">
-                    <PlugsConnectedIcon className="size-4" />
+                    <Cable className="size-4" />
                     <span>Connections</span>
                   </div>
                 </TabsTrigger>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, PencilSimple, TrashSimple, X } from 'lucide-react';
+import { Check, Pencil, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useKeyShortcut } from '@/app/hooks/use-key-shortcut';
@@ -237,7 +237,7 @@ function CommandItemRow({
                 size="icon"
                 variant="ghost"
               >
-                <PencilSimple className="size-4 transition-colors duration-150 group-hover/edit:text-primary" />
+                <Pencil className="size-4 transition-colors duration-150 group-hover/edit:text-primary" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Edit</TooltipContent>
@@ -256,7 +256,7 @@ function CommandItemRow({
                 size="icon"
                 variant="ghost"
               >
-                <TrashSimple className="size-4 transition-colors duration-150 group-hover/delete:text-primary" />
+                <Trash2 className="size-4 transition-colors duration-150 group-hover/delete:text-primary" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Delete</TooltipContent>

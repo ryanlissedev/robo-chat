@@ -1,6 +1,6 @@
 'use client';
 
-import { CaretLeft, SealCheck, Spinner } from 'lucide-react';
+import { ChevronLeft, CircleCheck, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -103,7 +103,7 @@ export function FeedbackForm({ authUserId, onClose }: FeedbackFormProps) {
             transition={TRANSITION_CONTENT}
           >
             <div className="rounded-full bg-green-500/10 p-1">
-              <SealCheck className="size-6 text-green-500" />
+              <CircleCheck className="size-6 text-green-500" />
             </div>
             <p className="mt-3 mb-1 text-center font-medium text-foreground text-sm">
               Thank you for your time!
@@ -156,7 +156,7 @@ export function FeedbackForm({ authUserId, onClose }: FeedbackFormProps) {
                 type="button"
                 variant="ghost"
               >
-                <CaretLeft className="text-foreground" size={16} />
+                <ChevronLeft className="text-foreground" size={16} />
               </Button>
               <Button
                 aria-label="Submit feedback"
@@ -176,7 +176,7 @@ export function FeedbackForm({ authUserId, onClose }: FeedbackFormProps) {
                       key="submitting"
                       transition={TRANSITION_CONTENT}
                     >
-                      <Spinner className="size-4 animate-spin" />
+                      <Loader2 className="size-4 animate-spin" />
                       Sending...
                     </motion.span>
                   ) : (

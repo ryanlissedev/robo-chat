@@ -116,7 +116,7 @@ describe('Voice Components Integration', () => {
       const { getState } = useVoiceStore;
       
       // Initial state should be idle
-      expect(voiceButton).toHaveAttribute('aria-label', expect.stringContaining('Start voice session'));
+      expect(voiceButton).toHaveAttribute('aria-label', expect.stringContaining('Start voice transcription'));
       
       // First click to start session
       await act(async () => {

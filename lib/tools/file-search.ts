@@ -1,4 +1,5 @@
-import { tool } from '@ai-sdk/provider-utils';
+// ai v5 tools: import from ai instead of provider-utils to satisfy types
+import { tool } from 'ai';
 import OpenAI from 'openai';
 import { z } from 'zod';
 import {
@@ -265,6 +266,7 @@ export const fileSearchTool = tool({
         name: result.file_name,
         score: result.score,
         excerpt: result.content.substring(0, 200),
+        url: `/api/files/${result.file_id}`,
       }));
 
       // Generate thinking/reasoning trace

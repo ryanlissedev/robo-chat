@@ -31,6 +31,9 @@ const RATE_LIMITS = {
 // In-memory rate limit store (use Redis in production)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
+// Export for testing purposes
+export const clearRateLimitStore = () => rateLimitStore.clear();
+
 // Rate limiting middleware
 export async function rateLimit(
   limitKey: keyof typeof RATE_LIMITS

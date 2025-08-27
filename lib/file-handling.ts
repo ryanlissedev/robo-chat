@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/ssr';
 import * as fileType from 'file-type';
 import { toast } from '@/components/ui/toast';
 import { DAILY_FILE_UPLOAD_LIMIT } from './config';
@@ -155,7 +155,7 @@ export async function processFiles(
           file_name: file.name,
           file_type: file.type,
           file_size: file.size,
-        });
+        } as never);
 
         if (error) {
           throw new Error(`Database insertion failed: ${error.message}`);

@@ -255,3 +255,79 @@ export async function takeScreenshotOnFailure(page: Page, testInfo: TestInfo) {
     });
   }
 }
+
+// Mock API routes for testing
+export async function mockApiRoutes(page: Page) {
+  // Mock authentication endpoints
+  await page.route('**/api/auth/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true }),
+    });
+  });
+
+  // Mock user settings endpoints
+  await page.route('**/api/user/settings', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          theme: 'light',
+          defaultModel: 'gpt-3.5-turbo',
+          temperature: 0.7,
+          maxTokens: 1000,
+        }),
+      });
+    } else {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
+      });
+    }
+  });
+
+  // Mock chat endpoints
+  await page.route('**/api/chat/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ message: 'Test response' }),
+    });
+  });
+}
+
+// Create test user for authentication tests
+export async function createTestUser() {
+  return {
+    id: 'test-user-123',
+    email: 'test@example.com',
+    displayName: 'Test User',
+    role: 'user',
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// Setup test chat environment
+export async function setupTestChat(page: Page) {
+  // Navigate to chat page
+  await page.goto('/');
+  
+  // Wait for chat interface to load
+  await page.waitForSelector('[data-testid="chat-input"]', {
+    state: 'visible',
+  });
+
+  // Mock chat API responses
+  await page.route('**/api/chat/stream', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/plain',
+      body: 'Test response message',
+    });
+  });
+
+  return { ready: true };
+}

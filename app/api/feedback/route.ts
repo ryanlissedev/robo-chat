@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { messageId, feedback, comment, runId, userId } = body;
 
-    if (!(messageId && feedback)) {
+    if (!messageId || feedback === undefined) {
       return NextResponse.json(
         { error: 'Message ID and feedback are required' },
         { status: 400 }
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     const { error: dbError } = await supabase.from('feedback').upsert({
       message: `${feedback}${comment ? `: ${comment}` : ''}`, // Combine feedback and comment into message field
       user_id: user.id,
-    });
+    } as never);
 
     if (dbError) {
       return NextResponse.json(
@@ -145,8 +145,8 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       success: true,
-      feedback: data?.message || null,
-      createdAt: data?.created_at || null,
+      feedback: (data as unknown as { message?: string })?.message || null,
+      createdAt: (data as unknown as { created_at?: string })?.created_at || null,
     });
   } catch {
     return NextResponse.json(

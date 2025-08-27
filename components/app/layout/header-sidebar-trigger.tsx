@@ -1,6 +1,6 @@
 'use client';
 
-import { SidebarSimpleIcon } from 'lucide-react';
+import { PanelLeft } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 import {
   Tooltip,
@@ -31,7 +31,7 @@ export function HeaderSidebarTrigger({
           type="button"
           {...props}
         >
-          <SidebarSimpleIcon size={20} />
+          <PanelLeft size={20} />
           <span className="sr-only">Toggle sidebar</span>
         </button>
       </TooltipTrigger>
@@ -39,3 +39,4 @@ export function HeaderSidebarTrigger({
     </Tooltip>
   );
 }
+

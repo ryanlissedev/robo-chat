@@ -3,10 +3,11 @@ import Image from 'next/image';
 export function LinkMarkdown({
   href,
   children,
+  className,
   ...props
 }: React.ComponentProps<'a'>) {
   if (!href) {
-    return <span {...props}>{children}</span>;
+    return <span {...props} className={className}>{children}</span>;
   }
 
   // Check if href is a valid URL
@@ -14,18 +15,31 @@ export function LinkMarkdown({
   try {
     const url = new URL(href);
     domain = url.hostname;
+    
+    // Handle file URLs - extract filename from pathname
+    if (url.protocol === 'file:' && !domain) {
+      const pathname = url.pathname;
+      domain = pathname.split('/').pop() || href;
+    }
   } catch {
     // If href is not a valid URL (likely a relative path)
     domain = href.split('/').pop() || href;
   }
 
+  const linkClassName = [
+    "inline-flex h-5 max-w-32 items-center gap-1 overflow-hidden overflow-ellipsis whitespace-nowrap rounded-full bg-muted py-0 pr-2 pl-0.5 text-muted-foreground text-xs leading-none no-underline transition-colors duration-150 hover:bg-muted-foreground/30 hover:text-primary",
+    className
+  ].filter(Boolean).join(' ');
+
   return (
     <a
-      className="inline-flex h-5 max-w-32 items-center gap-1 overflow-hidden overflow-ellipsis whitespace-nowrap rounded-full bg-muted py-0 pr-2 pl-0.5 text-muted-foreground text-xs leading-none no-underline transition-colors duration-150 hover:bg-muted-foreground/30 hover:text-primary"
+      {...props}
+      className={linkClassName}
       href={href}
       rel="noopener noreferrer"
       target="_blank"
     >
+      {children}
       <Image
         alt="favicon"
         className="size-3.5 rounded-full"

@@ -1,4 +1,4 @@
-import { DotsThree, PencilSimple, Trash } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
@@ -49,7 +49,7 @@ export function SidebarItemMenu({
             className="flex size-7 items-center justify-center rounded-md p-1 transition-colors duration-150 hover:bg-secondary"
             onClick={(e) => e.stopPropagation()}
           >
-            <DotsThree className="text-primary" size={18} weight="bold" />
+            <MoreHorizontal className="text-primary" size={18} />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
@@ -61,7 +61,7 @@ export function SidebarItemMenu({
               onStartEditing();
             }}
           >
-            <PencilSimple className="mr-2" size={16} />
+            <Pencil className="mr-2" size={16} />
             Rename
           </DropdownMenuItem>
           <DropdownMenuItem

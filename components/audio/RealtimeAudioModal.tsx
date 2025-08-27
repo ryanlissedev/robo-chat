@@ -418,6 +418,3 @@ export function RealtimeAudioModal({
     </TooltipProvider>
   );
 }
-
-// Export default preset for easy use
-export default RealtimeAudioModal;

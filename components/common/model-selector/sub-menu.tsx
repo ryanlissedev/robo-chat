@@ -28,7 +28,7 @@ export function SubMenu({ hoveredModelData }: SubMenuProps) {
           <div className="mt-1 flex flex-wrap gap-2">
             {hoveredModelData.vision && (
               <div className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-green-700 text-xs dark:bg-green-800 dark:text-green-100">
-                <Image className="size-3" />
+                <Image className="size-3" aria-label="Vision capability" />
                 <span>Vision</span>
               </div>
             )}

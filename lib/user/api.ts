@@ -1,90 +1,108 @@
+import { toast } from '@/components/ui/toast';
 import { isSupabaseEnabled } from '@/lib/supabase/config';
-import { createClient } from '@/lib/supabase/server';
+import { createClient as createBrowserClient } from '@/lib/supabase/client';
 import {
   convertFromApiFormat,
   defaultPreferences,
 } from '@/lib/user-preference-store/utils';
 import type { UserProfile } from './types';
 
-export async function getSupabaseUser() {
-  const supabase = await createClient();
+// Server-only APIs moved to lib/user/server-api.ts to avoid importing server-only
+// modules (like next/headers) into client components. Keep this file client-safe.
+
+
+export async function fetchUserProfile(
+  id: string
+): Promise<UserProfile | null> {
+  const supabase = createBrowserClient();
   if (!supabase) {
-    return { supabase: null, user: null };
+    return null;
   }
 
-  const { data } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  // Don't return anonymous users
+  if (data.anonymous) {
+    return null;
+  }
+
   return {
-    supabase,
-    user: data.user ?? null,
+    ...data,
+    profile_image: data.profile_image || '',
+    display_name: data.display_name || '',
   };
 }
 
-export async function getUserProfile(): Promise<UserProfile | null> {
-  if (!isSupabaseEnabled) {
-    // return fake user profile for no supabase
-    return {
-      id: 'guest',
-      email: 'guest@zola.chat',
-      display_name: 'Guest',
-      profile_image: '',
-      anonymous: true,
-      preferences: defaultPreferences,
-    } as UserProfile;
+export async function updateUserProfile(
+  id: string,
+  updates: Partial<UserProfile>
+): Promise<boolean> {
+  const supabase = createBrowserClient();
+  if (!supabase) {
+    return false;
   }
 
-  const { supabase, user } = await getSupabaseUser();
-  if (!(supabase && user)) {
-    // Return a guest user profile when no authenticated user
-    return {
-      id: `guest-${Date.now()}`,
-      email: 'guest@zola.chat',
-      display_name: 'Guest',
-      profile_image: '',
-      anonymous: true,
-      preferences: defaultPreferences,
-    } as UserProfile;
+  const { error } = await supabase.from('users').update(updates).eq('id', id);
+
+  if (error) {
+    return false;
   }
 
-  const { data: userProfileData } = await supabase
-    .from('users')
-    .select('*, user_preferences(*)')
-    .eq('id', user.id)
-    .single();
+  return true;
+}
 
-  // Handle anonymous users properly - return their profile instead of null
-  if (userProfileData?.anonymous) {
-    return {
-      id: userProfileData.id,
-      email: userProfileData.email || 'guest@zola.chat',
-      display_name: userProfileData.display_name || 'Guest',
-      profile_image: userProfileData.profile_image || '',
-      anonymous: true,
-      preferences: defaultPreferences,
-    } as UserProfile;
+export async function signOutUser(): Promise<boolean> {
+  const supabase = createBrowserClient();
+  if (!supabase) {
+    toast({
+      title: 'Sign out is not supported in this deployment',
+      status: 'info',
+    });
+    return false;
   }
 
-  // Format user preferences if they exist
-  const formattedPreferences = userProfileData?.user_preferences
-    ? convertFromApiFormat({
-        layout: userProfileData.user_preferences.layout ?? undefined,
-        prompt_suggestions:
-          userProfileData.user_preferences.prompt_suggestions ?? undefined,
-        show_tool_invocations:
-          userProfileData.user_preferences.show_tool_invocations ?? undefined,
-        show_conversation_previews:
-          userProfileData.user_preferences.show_conversation_previews ??
-          undefined,
-        multi_model_enabled:
-          userProfileData.user_preferences.multi_model_enabled ?? undefined,
-        hidden_models:
-          userProfileData.user_preferences.hidden_models ?? undefined,
-      })
-    : undefined;
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    return false;
+  }
 
-  return {
-    ...userProfileData,
-    profile_image: user.user_metadata?.avatar_url ?? '',
-    display_name: user.user_metadata?.name ?? '',
-    preferences: formattedPreferences ?? defaultPreferences,
-  } as UserProfile;
+  return true;
+}
+
+export function subscribeToUserUpdates(
+  userId: string,
+  onUpdate: (newData: Partial<UserProfile>) => void
+) {
+  const supabase = createBrowserClient();
+  if (!supabase) {
+    return () => {};
+  }
+
+  const channel = supabase
+    .channel(`public:users:id=eq.${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'users',
+        filter: `id=eq.${userId}`,
+      },
+      (payload) => {
+        onUpdate(payload.new as Partial<UserProfile>);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }

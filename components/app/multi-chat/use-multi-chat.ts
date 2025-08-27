@@ -1,7 +1,6 @@
-// todo: fix this
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useChat } from '@ai-sdk/react';
+import { useChat, type Message, type UseChatHelpers } from '@ai-sdk/react';
 import { useMemo } from 'react';
 import { toast } from '@/components/ui/toast';
 
@@ -13,9 +12,9 @@ type ModelConfig = {
 
 type ModelChat = {
   model: ModelConfig;
-  messages: any[];
+  messages: Message[];
   isLoading: boolean;
-  sendMessage: (message: any, options?: any) => void;
+  sendMessage: (message: string | Message, options?: any) => void;
   stop: () => void;
 };
 
@@ -24,8 +23,7 @@ const MAX_MODELS = 10;
 
 export function useMultiChat(models: ModelConfig[]): ModelChat[] {
   // Create a fixed number of useChat hooks to avoid conditional hook calls
-  const chatHooks = Array.from({ length: MAX_MODELS }, (_, index) =>
-    // todo: fix this
+  const chatHooks: UseChatHelpers[] = Array.from({ length: MAX_MODELS }, (_, index) =>
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useChat({
       onError: (error) => {
@@ -49,8 +47,8 @@ export function useMultiChat(models: ModelConfig[]): ModelChat[] {
       return {
         model,
         messages: chatHook.messages,
-        isLoading: 'isLoading' in chatHook ? Boolean(chatHook.isLoading) : false,
-        sendMessage: (message: any, options?: any) => {
+        isLoading: chatHook.isLoading,
+        sendMessage: (message: string | Message, options?: any) => {
           // v5 uses sendMessage instead of append
           return chatHook.sendMessage(message, options);
         },
@@ -59,12 +57,11 @@ export function useMultiChat(models: ModelConfig[]): ModelChat[] {
     });
 
     return instances;
-    // todo: fix this
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     models,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    ...chatHooks.flatMap((chat) => [chat.messages, 'isLoading' in chat ? chat.isLoading : false]),
+    ...chatHooks.flatMap((chat) => [chat.messages, chat.isLoading]),
   ]);
 
   return activeChatInstances;

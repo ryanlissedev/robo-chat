@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, CheckCircle, Code, Link, Nut, Spinner, Wrench,  } from 'lucide-react';
+import { ChevronDown, CheckCircle, Code, Link, Nut, Loader2, Wrench } from 'lucide-react';
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useMemo, useState } from 'react';
@@ -412,7 +412,7 @@ function SingleToolCard({
                 transition={{ duration: 0.15 }}
               >
                 <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-blue-700 text-xs dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400">
-                  <Spinner className="mr-1 h-3 w-3 animate-spin" />
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                   Running
                 </div>
               </motion.div>

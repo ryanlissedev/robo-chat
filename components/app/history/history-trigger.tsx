@@ -1,6 +1,6 @@
 'use client';
 
-import { ListMagnifyingGlass } from 'lucide-react';
+import { TextSearch } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
@@ -57,7 +57,7 @@ export function HistoryTrigger({
       tabIndex={isMobile ? -1 : 0}
       type="button"
     >
-      {icon || <ListMagnifyingGlass size={24} />}
+      {icon || <TextSearch size={24} />}
       {label}
     </button>
   );

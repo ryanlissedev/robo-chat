@@ -279,9 +279,15 @@ describe('Voice Transcripts API Integration', () => {
         error: null,
       });
       
-      mockOpenAI.beta.vectorStores.list.mockRejectedValueOnce(
-        new Error('OpenAI API Error: Rate limit exceeded')
-      );
+      // Mock file creation to fail with invalid response
+      mockOpenAI.files.create.mockResolvedValueOnce({
+        // Missing id field to trigger our error handling
+        object: 'file',
+        bytes: 1024,
+        created_at: Date.now(),
+        filename: 'transcript.txt',
+        purpose: 'assistants',
+      });
 
       const requestBody = {
         transcript: 'Test transcript',
@@ -295,7 +301,8 @@ describe('Voice Transcripts API Integration', () => {
       expect(response.status).toBe(500);
       
       const responseData = await response.json();
-      expect(responseData.error).toBe('Failed to index transcript');
+      expect(responseData.error).toBe('Failed to upload transcript file');
+      expect(responseData.details).toContain('invalid response or missing file ID');
     });
   });
 
@@ -363,6 +370,7 @@ describe('Voice Transcripts API Integration', () => {
           },
         ],
         message: 'Found 2 matching transcripts',
+        total: 2,
       });
 
       // Verify Supabase calls
@@ -414,6 +422,7 @@ describe('Voice Transcripts API Integration', () => {
       expect(responseData).toEqual({
         results: [],
         message: 'Found 0 matching transcripts',
+        total: 0,
       });
 
       // Verify Supabase calls

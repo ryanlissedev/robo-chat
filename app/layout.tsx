@@ -10,7 +10,7 @@ import { ChatsProvider } from '@/lib/chat-store/chats/provider';
 import { ChatSessionProvider } from '@/lib/chat-store/session/provider';
 import { ModelProvider } from '@/lib/model-store/provider';
 import { TanstackQueryProvider } from '@/lib/tanstack-query/tanstack-query-provider';
-import { getUserProfile } from '@/lib/user/api';
+import { getUserProfile } from '@/lib/user/server-api';
 import { UserPreferencesProvider } from '@/lib/user-preference-store/provider';
 import { UserProvider } from '@/lib/user-store/provider';
 import { LayoutClient } from './layout-client';
@@ -80,7 +80,7 @@ export default async function RootLayout({
                     >
                       <ThemeProvider
                         attribute="class"
-                        defaultTheme="light"
+                        defaultTheme="system"
                         disableTransitionOnChange
                         enableSystem
                       >

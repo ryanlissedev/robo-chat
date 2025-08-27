@@ -252,10 +252,7 @@ export function MessageFeedbackInline({
         onClick={() => handleQuickFeedback('upvote')}
         title="Helpful"
       >
-        <ThumbsUp
-          className="h-3 w-3"
-          weight={feedback === 'upvote' ? 'fill' : 'regular'}
-        />
+        <ThumbsUp className="h-3 w-3" />
       </button>
       <button
         className={cn(
@@ -269,10 +266,7 @@ export function MessageFeedbackInline({
         onClick={() => handleQuickFeedback('downvote')}
         title="Not helpful"
       >
-        <ThumbsDown
-          className="h-3 w-3"
-          weight={feedback === 'downvote' ? 'fill' : 'regular'}
-        />
+        <ThumbsDown className="h-3 w-3" />
       </button>
     </div>
   );

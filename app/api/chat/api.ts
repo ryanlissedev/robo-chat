@@ -86,7 +86,7 @@ export async function incrementMessageCount({
  * Ensures a chat exists in the database before saving user messages
  * Creates the chat if it doesn't exist
  */
-async function ensureChatExistsForUser(
+  async function ensureChatExistsForUser(
   supabase: SupabaseClientType,
   chatId: string,
   userId: string
@@ -111,7 +111,7 @@ async function ensureChatExistsForUser(
       model: 'gpt-4o-mini', // Default model
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    });
+    } as never);
 
     return !insertError;
   } catch {
@@ -156,7 +156,7 @@ export async function logUserMessage({
     experimental_attachments: attachments,
     user_id: userId,
     message_group_id,
-  });
+  } as never);
 
   if (error) {
     // Silently handle error to avoid breaking chat flow

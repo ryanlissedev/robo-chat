@@ -1,6 +1,6 @@
 'use client';
 
-import { ChatTeardropText, GithubLogo, Search, NotePencilIcon, X,  } from 'lucide-react';
+import { MessageCircle, Github, Search, PenTool, X } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import { groupChatsByDate } from '@/components/app/history/utils';
@@ -62,7 +62,7 @@ export function AppSidebar() {
               type="button"
             >
               <div className="flex items-center gap-2">
-                <NotePencilIcon size={20} />
+                <PenTool size={20} />
                 New Chat
               </div>
               <div className="ml-auto text-muted-foreground text-xs opacity-0 duration-150 group-hover/new-chat:opacity-100">
@@ -100,7 +100,7 @@ export function AppSidebar() {
             </div>
           ) : (
             <div className="flex h-[calc(100vh-160px)] flex-col items-center justify-center">
-              <ChatTeardropText
+              <MessageCircle
                 className="mb-1 text-muted-foreground opacity-40"
                 size={24}
               />
@@ -121,7 +121,7 @@ export function AppSidebar() {
           target="_blank"
         >
           <div className="rounded-full border p-1">
-            <GithubLogo className="size-4" />
+            <Github className="size-4" />
           </div>
           <div className="flex flex-col">
             <div className="font-medium text-sidebar-foreground text-sm">

@@ -2,7 +2,7 @@
 
 import { ArrowUp, Square } from 'lucide-react';
 import { AudioWaveform } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ModelSelector } from '@/components/common/model-selector/base';
 import { VoiceButton } from '@/components/app/voice/button/voice-button';
 import { TranscriptionPanel } from '@/components/app/voice/panel/transcription-panel';
@@ -23,7 +23,7 @@ import {
 } from '../chat/reasoning-effort-selector';
 import { PromptSystem } from '../suggestions/prompt-system';
 import { ButtonFileUpload } from './button-file-upload';
-import { ButtonSearch } from './button-search';
+// Search is always enabled; toggle removed
 import { FileList } from './file-list';
 
 type ChatInputProps = {
@@ -67,13 +67,11 @@ export function ChatInput({
   stop,
   status,
   setEnableSearch,
-  enableSearch,
   quotedText,
   reasoningEffort,
   onReasoningEffortChange,
 }: ChatInputProps) {
-  const selectModelConfig = getModelInfo(selectedModel);
-  const hasSearchSupport = Boolean(selectModelConfig?.webSearch);
+  // Search is always enabled regardless of model webSearch capability
   const isOnlyWhitespace = useCallback((text: string) => !/[^\s]/.test(text), []);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -184,11 +182,10 @@ export function ChatInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quotedText, onValueChange, value]);
 
-  useMemo(() => {
-    if (!hasSearchSupport && enableSearch) {
-      setEnableSearch?.(false);
-    }
-  }, [hasSearchSupport, enableSearch, setEnableSearch]);
+  // Force-enable vector store search
+  useEffect(() => {
+    setEnableSearch?.(true);
+  }, [setEnableSearch]);
 
   // Voice functionality
   const {} = useVoiceStore();
@@ -214,6 +211,10 @@ export function ChatInput({
   const handleCloseTranscription = useCallback(() => {
     setShowTranscriptionPanel(false);
   }, []);
+
+  // Determine if selected model supports reasoning
+  const selectedModelInfo = getModelInfo(selectedModel);
+  const showReasoningEffort = Boolean(selectedModelInfo?.reasoningText);
 
   return (
     <div className="relative flex w-full flex-col gap-4">
@@ -259,18 +260,14 @@ export function ChatInput({
                 selectedModelId={selectedModel}
                 setSelectedModelId={onSelectModel}
               />
-              {hasSearchSupport ? (
-                <ButtonSearch
-                  isAuthenticated={isUserAuthenticated}
-                  isSelected={enableSearch}
-                  onToggle={setEnableSearch}
+              {/* Search toggle removed: vector-store search is always enabled */}
+              {showReasoningEffort && (
+                <ReasoningEffortSelector
+                  className="rounded-full"
+                  onChange={handleReasoningEffortChange}
+                  value={currentReasoningEffort}
                 />
-              ) : null}
-              <ReasoningEffortSelector
-                className="rounded-full"
-                onChange={handleReasoningEffortChange}
-                value={currentReasoningEffort}
-              />
+              )}
             </div>
             <div className="flex items-center gap-2">
               <VoiceButton
@@ -317,6 +314,7 @@ export function ChatInput({
                     size="sm"
                     type="button"
                     variant="ghost"
+                    disabled={isSubmitting}
                   >
                     <AudioWaveform className="size-5" />
                   </Button>

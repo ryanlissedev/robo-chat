@@ -33,9 +33,8 @@ jobs:
       - name: Run TypeScript checks
         run: npm run type-check
 
-      # TODO: Uncomment when tests are added
-      # - name: Run Tests
-      #   run: npm test
+      - name: Run Tests
+        run: npm test
 
   build:
     name: Build Application
@@ -140,25 +139,25 @@ jobs:
           build-args: |
             NEXT_PUBLIC_VERCEL_URL=${{ env.NEXT_PUBLIC_VERCEL_URL }}
 
-  # deploy:
-  #   name: Deploy Application
-  #   needs: docker
-  #   if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-  #   runs-on: ubuntu-latest
-  #   environment:
-  #     name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
-  #   steps:
-  #     - name: Deploy to Environment
-  #       run: |
-  #         echo "Deploying to ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}"
-  #         # Add your deployment commands here
-  #         # Example for a docker-compose deployment:
-  #         # ssh user@server "cd /path/to/app && docker-compose pull && docker-compose up -d"
-  #       env:
-  #         DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-  #         NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-  #         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-  #         SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-  #         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-  #         MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-  #         CSRF_SECRET: ${{ secrets.CSRF_SECRET }}
+  deploy:
+    name: Deploy Application
+    needs: docker
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    steps:
+      - name: Deploy to Environment
+        run: |
+          echo "Deploying to ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}"
+          # Add your deployment commands here
+          # Example for a docker-compose deployment:
+          # ssh user@server "cd /path/to/app && docker-compose pull && docker-compose up -d"
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          CSRF_SECRET: ${{ secrets.CSRF_SECRET }}

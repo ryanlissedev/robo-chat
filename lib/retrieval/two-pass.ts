@@ -6,6 +6,25 @@ import { RETRIEVAL_RETRIEVER_MODEL_ID } from '@/lib/config';
 import logger from '@/lib/utils/logger';
 import { performVectorRetrieval, type RetrievedDoc } from './vector-retrieval';
 
+type ToolInvocationResultSource = {
+  id?: string;
+  name?: string;
+  score?: number;
+  url?: string;
+};
+
+type FileSearchResultItem = {
+  file_id?: string;
+  file_name?: string;
+  content?: string;
+  score?: number;
+};
+
+type FileSearchToolResult = {
+  results?: Array<FileSearchResultItem>;
+  sources?: Array<ToolInvocationResultSource>;
+};
+
 export async function retrieveWithGpt41(
   query: string,
   _messages: ExtendedUIMessage[],
@@ -44,32 +63,19 @@ export async function retrieveWithGpt41(
             const last = msgs[msgs.length - 1] as {
               toolInvocations?: Array<{
                 toolName?: string;
-                result?: {
-                  results?: Array<{
-                    file_id?: string;
-                    file_name?: string;
-                    content?: string;
-                    score?: number;
-                  }>;
-                  sources?: Array<{ id?: string; name?: string; score?: number; url?: string }>;
-                };
+                result?: FileSearchToolResult;
               }>;
             };
             const invocations = last?.toolInvocations || [];
             for (const inv of invocations) {
               const t = inv as {
                 toolName?: string;
-                result?: { results?: Array<any>; sources?: Array<any> };
+                result?: FileSearchToolResult;
               };
               if (t.toolName === 'fileSearch' && t.result) {
                 const r = t.result.results || [];
                 for (let i = 0; i < r.length; i++) {
-                  const it = r[i] as {
-                    file_id?: string;
-                    file_name?: string;
-                    content?: string;
-                    score?: number;
-                  };
+                  const it = r[i] as FileSearchResultItem;
                   results.push({
                     fileId: it.file_id || `doc-${i + 1}`,
                     fileName: it.file_name || `Document ${i + 1}`,

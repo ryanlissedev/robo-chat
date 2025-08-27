@@ -1,6 +1,6 @@
 'use client';
 
-import { DotsSixVerticalIcon, MinusIcon, PlusIcon, StarIcon,  } from 'lucide-react';
+import { GripVertical, Minus, Plus, Star } from 'lucide-react';
 import { AnimatePresence, motion, Reorder } from 'framer-motion';
 import { useMemo, useState } from 'react';
 import { useModel } from '@/lib/model-store/provider';
@@ -141,7 +141,7 @@ export function ModelsSettings() {
                     <div className="flex items-center gap-3 rounded-lg border border-border bg-transparent p-3">
                       {/* Drag Handle */}
                       <div className="cursor-grab text-muted-foreground opacity-60 transition-opacity active:cursor-grabbing group-hover:opacity-100">
-                        <DotsSixVerticalIcon className="size-4" />
+                        <GripVertical className="size-4" />
                       </div>
 
                       {/* Provider Icon */}
@@ -178,7 +178,7 @@ export function ModelsSettings() {
                         }
                         type="button"
                       >
-                        <MinusIcon className="size-4" />
+                        <Minus className="size-4" />
                       </button>
                     </div>
                   </Reorder.Item>
@@ -192,7 +192,7 @@ export function ModelsSettings() {
               initial={{ opacity: 0 }}
             >
               <div className="text-center">
-                <StarIcon className="mx-auto mb-2 size-8 opacity-50" />
+                <Star className="mx-auto mb-2 size-8 opacity-50" />
                 <p className="text-sm">No favorite models yet</p>
                 <p className="text-xs">Add models from the list below</p>
               </div>
@@ -271,7 +271,7 @@ export function ModelsSettings() {
                             title="Add to favorites"
                             type="button"
                           >
-                            <PlusIcon className="size-4" />
+                            <Plus className="size-4" />
                           </button>
                         </motion.div>
                       );

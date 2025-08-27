@@ -73,7 +73,7 @@ export function Conversation({
               </Message>
             );
           })}
-          {status === 'submitted' &&
+          {(status === 'submitted' || status === 'streaming') &&
             messages.length > 0 &&
             messages.at(-1)?.role === 'user' && (
               <div className="group flex min-h-scroll-anchor w-full max-w-3xl flex-col items-start gap-2 px-6 pb-2">

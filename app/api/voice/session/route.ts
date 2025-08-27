@@ -23,33 +23,50 @@ setInterval(() => {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+    
     const { config, personalityMode = 'safety-focused', safetyProtocols = true } = body;
 
     // Validate config
     if (!config || typeof config !== 'object') {
       return NextResponse.json(
-        { error: 'Invalid configuration provided' },
+        { error: 'Valid configuration object is required' },
         { status: 400 }
       );
     }
+
+    // Validate personalityMode
+    const validPersonalityModes = ['safety-focused', 'technical-expert', 'friendly-assistant'];
+    const validatedPersonalityMode = validPersonalityModes.includes(personalityMode) 
+      ? personalityMode 
+      : 'safety-focused';
+
+    // Validate safetyProtocols
+    const validatedSafetyProtocols = typeof safetyProtocols === 'boolean' ? safetyProtocols : true;
 
     // Create new session
     const sessionId = randomUUID();
     const now = new Date();
     
-    const session = {
+    const session: VoiceSession = {
       id: sessionId,
-      status: 'active' as const,
+      status: 'active',
       config,
-      personalityMode,
-      safetyProtocols,
+      personalityMode: validatedPersonalityMode,
+      safetyProtocols: validatedSafetyProtocols,
       createdAt: now,
       lastActiveAt: now,
     };
 
     sessions.set(sessionId, session);
 
-    console.log(`Created voice session: ${sessionId} with personality: ${personalityMode}`);
+    console.log(`Created voice session: ${sessionId} with personality: ${validatedPersonalityMode}`);
 
     return NextResponse.json({
       sessionId,
@@ -57,12 +74,18 @@ export async function POST(request: NextRequest) {
       config: session.config,
       personalityMode: session.personalityMode,
       safetyProtocols: session.safetyProtocols,
+      createdAt: session.createdAt,
     });
 
   } catch (error) {
     console.error('Failed to create voice session:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    
     return NextResponse.json(
-      { error: 'Failed to create voice session' },
+      { 
+        error: 'Failed to create voice session',
+        details: errorMessage,
+      },
       { status: 500 }
     );
   }
@@ -114,11 +137,19 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
+    
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+    
     const { sessionId } = body;
 
-    if (!sessionId) {
+    if (!sessionId || typeof sessionId !== 'string' || !sessionId.trim()) {
       return NextResponse.json(
-        { error: 'Session ID is required' },
+        { error: 'Valid Session ID is required' },
         { status: 400 }
       );
     }
@@ -138,7 +169,10 @@ export async function DELETE(request: NextRequest) {
 
     // Remove from memory after a delay to allow cleanup
     setTimeout(() => {
-      sessions.delete(sessionId);
+      if (sessions.has(sessionId)) {
+        sessions.delete(sessionId);
+        console.log(`Cleaned up voice session from memory: ${sessionId}`);
+      }
     }, 5000);
 
     console.log(`Deactivated voice session: ${sessionId}`);
@@ -147,12 +181,18 @@ export async function DELETE(request: NextRequest) {
       sessionId,
       status: 'deleted',
       message: 'Voice session terminated successfully',
+      cleanupDelay: 5000,
     });
 
   } catch (error) {
     console.error('Failed to delete voice session:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    
     return NextResponse.json(
-      { error: 'Failed to delete voice session' },
+      { 
+        error: 'Failed to delete voice session',
+        details: errorMessage,
+      },
       { status: 500 }
     );
   }
@@ -161,11 +201,19 @@ export async function DELETE(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
+    
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+    
     const { sessionId, config, personalityMode, safetyProtocols } = body;
 
-    if (!sessionId) {
+    if (!sessionId || typeof sessionId !== 'string' || !sessionId.trim()) {
       return NextResponse.json(
-        { error: 'Session ID is required' },
+        { error: 'Valid Session ID is required' },
         { status: 400 }
       );
     }
@@ -179,22 +227,36 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Update session properties
-    if (config) {
+    let hasUpdates = false;
+
+    // Update session properties with validation
+    if (config && typeof config === 'object') {
       session.config = { ...session.config, ...config };
+      hasUpdates = true;
     }
 
-    if (personalityMode) {
-      session.personalityMode = personalityMode;
+    if (personalityMode && typeof personalityMode === 'string') {
+      const validPersonalityModes = ['safety-focused', 'technical-expert', 'friendly-assistant'];
+      if (validPersonalityModes.includes(personalityMode)) {
+        session.personalityMode = personalityMode;
+        hasUpdates = true;
+      } else {
+        return NextResponse.json(
+          { error: `Invalid personality mode. Valid options: ${validPersonalityModes.join(', ')}` },
+          { status: 400 }
+        );
+      }
     }
 
     if (typeof safetyProtocols === 'boolean') {
       session.safetyProtocols = safetyProtocols;
+      hasUpdates = true;
     }
 
-    session.lastActiveAt = new Date();
-
-    console.log(`Updated voice session: ${sessionId}`);
+    if (hasUpdates) {
+      session.lastActiveAt = new Date();
+      console.log(`Updated voice session: ${sessionId}`);
+    }
 
     return NextResponse.json({
       sessionId: session.id,
@@ -203,12 +265,18 @@ export async function PATCH(request: NextRequest) {
       personalityMode: session.personalityMode,
       safetyProtocols: session.safetyProtocols,
       lastActiveAt: session.lastActiveAt,
+      updated: hasUpdates,
     });
 
   } catch (error) {
     console.error('Failed to update voice session:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    
     return NextResponse.json(
-      { error: 'Failed to update voice session' },
+      { 
+        error: 'Failed to update voice session',
+        details: errorMessage,
+      },
       { status: 500 }
     );
   }

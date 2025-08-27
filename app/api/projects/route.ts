@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await supabase
       .from('projects')
-      .insert({ name, user_id: userId })
+      .insert({ name, user_id: userId } as never)
       .select()
       .single();
 

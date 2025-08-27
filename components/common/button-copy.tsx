@@ -10,13 +10,23 @@ type ButtonCopyProps = {
 export function ButtonCopy({ code }: ButtonCopyProps) {
   const [hasCopyLabel, setHasCopyLabel] = useState(false);
 
-  const onCopy = () => {
-    navigator.clipboard.writeText(code);
-    setHasCopyLabel(true);
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setHasCopyLabel(true);
 
-    setTimeout(() => {
-      setHasCopyLabel(false);
-    }, 1000);
+      setTimeout(() => {
+        setHasCopyLabel(false);
+      }, 1000);
+    } catch (error) {
+      // Handle clipboard errors gracefully
+      console.error('Failed to copy to clipboard:', error);
+      setHasCopyLabel(true);
+
+      setTimeout(() => {
+        setHasCopyLabel(false);
+      }, 1000);
+    }
   };
 
   return (

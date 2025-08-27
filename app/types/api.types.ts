@@ -1,5 +1,5 @@
 import type { Attachment } from '@ai-sdk/ui-utils';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/ssr';
 import type { Database, Json } from '@/app/types/database.types';
 import type { ReasoningEffort } from '@/lib/openproviders/types';
 

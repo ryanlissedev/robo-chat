@@ -78,6 +78,7 @@ export function openproviders<T extends SupportedModel>(
     // For GPT-5 models, use the Responses API format
     // According to the cookbook, we should use openai.responses() for GPT-5
     const isGPT5Model = modelId.startsWith('gpt-5');
+    const isReasoningModel = /^(o1|o3|o4)/.test(modelId);
 
     // Configure provider options for GPT-5 models
     const providerOptions = isGPT5Model
@@ -93,13 +94,26 @@ export function openproviders<T extends SupportedModel>(
       : openaiSettings;
 
     // Configure headers (for backwards compatibility)
-    const customHeaders = isGPT5Model
-      ? {
-          ...headers,
-          ...(reasoningEffort ? { 'X-Reasoning-Effort': reasoningEffort } : {}),
-          ...(verbosity ? { 'X-Text-Verbosity': verbosity } : {}),
-        }
-      : headers;
+    // - GPT-5: add reasoning/text verbosity headers
+    // - OpenAI o-series reasoning models (o1/o3/o4): require beta header
+    let customHeaders: Record<string, string> | undefined = headers as
+      | Record<string, string>
+      | undefined;
+
+    if (isGPT5Model) {
+      customHeaders = {
+        ...(customHeaders || {}),
+        ...(reasoningEffort ? { 'X-Reasoning-Effort': reasoningEffort } : {}),
+        ...(verbosity ? { 'X-Text-Verbosity': verbosity } : {}),
+      };
+    }
+
+    if (isReasoningModel) {
+      customHeaders = {
+        ...(customHeaders || {}),
+        'OpenAI-Beta': 'reasoning=v1',
+      };
+    }
 
     if (apiKey) {
       const openaiProvider = createOpenAI({

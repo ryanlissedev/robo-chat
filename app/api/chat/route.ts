@@ -5,7 +5,9 @@ import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import { getMessageContent } from '@/app/types/ai-extended';
 import type { SupabaseClientType } from '@/app/types/api.types';
 import { FILE_SEARCH_SYSTEM_PROMPT, SYSTEM_PROMPT_DEFAULT, RETRIEVAL_MAX_TOKENS, RETRIEVAL_TOP_K, RETRIEVAL_TWO_PASS_ENABLED } from '@/lib/config';
+import { shouldEnableFileSearchTools, shouldUseFallbackRetrieval, selectRetrievalMode } from '@/lib/retrieval/gating';
 import { performVectorRetrieval } from '@/lib/retrieval/vector-retrieval';
+import { buildAugmentedSystemPrompt } from '@/lib/retrieval/augment';
 import { retrieveWithGpt41 } from '@/lib/retrieval/two-pass';
 import {
   createRun,
@@ -30,6 +32,25 @@ import {
 import { createErrorResponse } from './utils';
 
 export const maxDuration = 60;
+// Lint constants
+const ID_RADIX = 36;
+const PREVIEW_SNIPPET_LENGTH = 100;
+
+// Helper to safely obtain apiSdk without non-null assertion
+function requireApiSdk(modelConfig: unknown) {
+  const apiSdk = (modelConfig as { apiSdk?: unknown })?.apiSdk;
+  if (typeof apiSdk !== 'function') {
+    throw new Error('Model is missing apiSdk configuration');
+  }
+  return apiSdk as (key: string | undefined, settings: unknown) => LanguageModel;
+}
+
+// Helper to infer provider from model id for metrics
+function inferProviderFromModel(modelId: string): Provider {
+  if (modelId.includes('gpt')) return 'openai' as Provider;
+  if (modelId.includes('claude')) return 'anthropic' as Provider;
+  return getProviderForModel(modelId) as Provider;
+}
 
 type ResponseWithUsage = {
   usage?: LanguageModelUsage;
@@ -103,7 +124,9 @@ function createFallbackContent(msg: unknown, role?: string): MessagePart[] {
 
 // Utility to create a safe preview for logs
 function getPreview(text: string | undefined | null, max = 500): string {
-  if (!text) return '';
+  if (!text) {
+    return '';
+  }
   const trimmed = String(text).trim();
   return trimmed.length > max ? `${trimmed.slice(0, max)}…` : trimmed;
 }
@@ -174,9 +197,13 @@ async function getEffectiveSystemPrompt(
   systemPrompt: string,
   enableSearch: boolean,
   modelSupportsFileSearchTools: boolean,
-  context?: 'chat' | 'voice',
-  personalityMode?: 'safety-focused' | 'technical-expert' | 'friendly-assistant'
+  options?: {
+    context?: 'chat' | 'voice';
+    personalityMode?: 'safety-focused' | 'technical-expert' | 'friendly-assistant';
+  }
 ): Promise<string> {
+  const context = options?.context;
+  const personalityMode = options?.personalityMode;
   // For voice context with personality mode, use personality-specific prompts
   if (context === 'voice' && personalityMode) {
     // Import personality configs dynamically to get voice-specific prompts
@@ -187,7 +214,7 @@ async function getEffectiveSystemPrompt(
   }
   
   // For chat context or when no personality mode, use standard prompt selection
-  const useSearchPrompt = enableSearch && modelSupportsFileSearchTools;
+  const useSearchPrompt = shouldEnableFileSearchTools(enableSearch, modelSupportsFileSearchTools);
   
   return useSearchPrompt
     ? FILE_SEARCH_SYSTEM_PROMPT
@@ -196,7 +223,6 @@ async function getEffectiveSystemPrompt(
 
 // Model configuration
 function configureModelSettings(
-  enableSearch: boolean,
   reasoningEffort: string,
   verbosity?: string,
   isReasoningCapable?: boolean
@@ -209,16 +235,16 @@ function configureModelSettings(
     verbosity,
     headers: isReasoningCapable
       ? {
-          'X-Reasoning-Effort': reasoningEffort,
-          ...(verbosity ? { 'X-Text-Verbosity': verbosity } : {}),
-        }
+        'X-Reasoning-Effort': reasoningEffort,
+        ...(verbosity ? { 'X-Text-Verbosity': verbosity } : {}),
+      }
       : undefined,
   };
 }
 
 // Tools configuration
 function configureTools(enableSearch: boolean, modelSupportsFileSearchTools: boolean): ToolSet {
-  const useTools = enableSearch && modelSupportsFileSearchTools;
+  const useTools = shouldEnableFileSearchTools(enableSearch, modelSupportsFileSearchTools);
   
   if (useTools) {
     logger.info({
@@ -382,7 +408,7 @@ async function resolveCredentials(
     at: 'api.chat.resolveCredentials',
     provider,
     model,
-    isAuthenticated: user?.isAuthenticated || false,
+    isAuthenticated: Boolean(user?.isAuthenticated),
     hasUserId: Boolean(user?.userId),
     headers: redactSensitiveHeaders(headers)
   });
@@ -534,6 +560,7 @@ async function createLangSmithRun({
 }
 
 export async function POST(req: Request) {
+  // biome-ignore lint/correctness/noExcessiveComplexity: This handler coordinates validation, logging, retrieval, streaming, and persistence.
   let requestData: ChatRequest | null = null;
   try {
     requestData = (await req.json()) as ChatRequest;
@@ -622,8 +649,7 @@ export async function POST(req: Request) {
       systemPrompt,
       enableSearch,
       modelSupportsFileSearchTools,
-      context,
-      personalityMode
+      { context, personalityMode }
     );
     const apiKey = await getApiKey(req, isAuthenticated, userId, resolvedModel);
 
@@ -640,7 +666,6 @@ export async function POST(req: Request) {
     // Configure tools and model settings
     const tools = configureTools(enableSearch, modelSupportsFileSearchTools);
     const modelSettings = configureModelSettings(
-      enableSearch,
       reasoningEffort,
       verbosity,
       isReasoningCapable
@@ -677,7 +702,7 @@ export async function POST(req: Request) {
     // Convert TransformedMessage[] to ExtendedUIMessage[] for convertToModelMessages
     const uiMessages: ExtendedUIMessage[] = validatedMessages.map(
       (msg: TransformedMessage) => ({
-        id: msg.id || Math.random().toString(36),
+        id: msg.id || Math.random().toString(ID_RADIX),
         role: msg.role,
         parts: msg.parts as UIMessagePart<UIDataTypes, UITools>[], // Type assertion needed due to MessagePart vs custom part types
         createdAt: new Date(),
@@ -696,32 +721,20 @@ export async function POST(req: Request) {
         parts: msg.parts?.filter(Boolean) || []
       }));
       // If enableSearch is true but tools are disabled for this model, inject server-retrieved context
-      if (enableSearch && !modelSupportsFileSearchTools) {
+      if (shouldUseFallbackRetrieval(enableSearch, modelSupportsFileSearchTools)) {
         const lastUserMessage = messages.at(-1);
         const userQuery = lastUserMessage ? getMessageContent(lastUserMessage) : '';
-        let retrieved = [] as Array<{ fileId: string; fileName: string; score: number; content: string; url?: string }>;
+        let retrieved = [] as { fileId: string; fileName: string; score: number; content: string; url?: string }[];
         try {
-          retrieved = RETRIEVAL_TWO_PASS_ENABLED
+          const mode = selectRetrievalMode(RETRIEVAL_TWO_PASS_ENABLED);
+          retrieved = mode === 'two-pass'
             ? await retrieveWithGpt41(userQuery, messages, { topK: RETRIEVAL_TOP_K })
             : await performVectorRetrieval(userQuery, { topK: RETRIEVAL_TOP_K });
         } catch {
           retrieved = await performVectorRetrieval(userQuery, { topK: RETRIEVAL_TOP_K });
         }
 
-        // Clip content to budget
-        let budget = RETRIEVAL_MAX_TOKENS;
-        const snippets: string[] = [];
-        for (const doc of retrieved) {
-          if (budget <= 0) break;
-          const snippet = doc.content.slice(0, Math.min(doc.content.length, Math.max(200, Math.floor(budget / 2))));
-          budget -= Math.ceil(snippet.length / 4); // rough token estimate
-          snippets.push(`Source: ${doc.fileName} (${(doc.score * 100).toFixed(1)}%)\n${snippet}`);
-        }
-
-        const sourcesList = retrieved.map((d) => `- ${d.fileName}${d.url ? ` (${d.url})` : ''}`).join('\n');
-        const systemAugmentation = `Use the following retrieved context from the user's files to answer. If it is not relevant, say so and proceed without it.\n\n[Retrieved Context]\n${snippets.join('\n\n')}\n\n[Sources]\n${sourcesList}`;
-
-        const augmentedSystem = [effectiveSystemPrompt, systemAugmentation].filter(Boolean).join('\n\n');
+        const augmentedSystem = buildAugmentedSystemPrompt(effectiveSystemPrompt, retrieved, { budgetTokens: RETRIEVAL_MAX_TOKENS });
         // Update effectiveSystemPrompt for injection path
         // Note: we cannot reassign const; redefine for local use
         const systemForInjection = augmentedSystem;
@@ -729,18 +742,21 @@ export async function POST(req: Request) {
         modelMessages = convertToModelMessages(compatibleMessages as ExtendedUIMessage[]);
 
         const result = streamText({
-          model: modelConfig?.apiSdk ? (modelConfig.apiSdk(apiKey, modelSettings) as LanguageModel) : undefined!,
+          model: requireApiSdk(modelConfig)(apiKey, modelSettings) as LanguageModel,
           system: systemForInjection,
           messages: modelMessages,
           tools: {},
           temperature: isGPT5Model ? 1 : undefined,
-          onError: () => {},
+          onError: () => {
+            logger.warn({ at: 'api.chat.streamText', phase: 'injection', event: 'error' }, 'Stream encountered an error');
+          },
+          // biome-ignore lint/correctness/noExcessiveComplexity: Logging and persistence steps are verbose by nature.
           onFinish: async ({ response }) => {
             // Same onFinish as below for logging and storage
             if (response.messages && response.messages.length > 0) {
-              const lastMessage = response.messages[response.messages.length - 1];
+              const lastMessage = response.messages.at(-1);
               if (lastMessage && typeof lastMessage === 'object' && 'toolInvocations' in lastMessage) {
-                const messageWithTools = lastMessage as { toolInvocations?: Array<Record<string, unknown>> };
+                const messageWithTools = lastMessage as { toolInvocations?: Record<string, unknown>[] };
                 const toolInvocations = messageWithTools.toolInvocations;
                 if (toolInvocations && Array.isArray(toolInvocations)) {
                   for (const invocation of toolInvocations) {
@@ -752,14 +768,14 @@ export async function POST(req: Request) {
 
             try {
               let assistantText = '';
-              const msgs = (response.messages || []) as Array<unknown>;
-              const last = msgs[msgs.length - 1] as { role?: string; content?: unknown; parts?: Array<{ type?: string; text?: string }> } | undefined;
+              const msgs = (response.messages || []) as unknown[];
+              const last = (msgs.at(-1)) as { role?: string; content?: unknown; parts?: { type?: string; text?: string }[] } | undefined;
 
               if (last && last.role === 'assistant') {
                 if (typeof last.content === 'string') {
                   assistantText = last.content;
                 } else if (Array.isArray(last.content)) {
-                  assistantText = (last.content as Array<{ type?: string; text?: string }>)
+                  assistantText = (last.content as { type?: string; text?: string }[])
                     .map((p) => (p && typeof p === 'object' && 'text' in p ? (p as { text?: string }).text || '' : ''))
                     .join('');
                 } else if (Array.isArray(last.parts)) {
@@ -770,7 +786,9 @@ export async function POST(req: Request) {
               }
 
               logger.info({ at: 'api.chat.assistantResponse', chatId, userId, model: resolvedModel, preview: getPreview(assistantText) }, 'Assistant response preview');
-            } catch {}
+            } catch {
+              // ignore logging errors
+            }
 
             const actualRunId = extractRunId(response) || langsmithRunId;
             if (supabase) {
@@ -788,13 +806,13 @@ export async function POST(req: Request) {
 
             const usage = (response as ResponseWithUsage).usage;
             const responseTime = usage?.totalTokens ? usage.totalTokens * 10 : undefined;
-            trackCredentialUsage('environment', resolvedModel.includes('gpt') ? 'openai' : resolvedModel.includes('claude') ? 'anthropic' : 'unknown' as Provider, resolvedModel, { userId, success: true, responseTime });
+            trackCredentialUsage('environment', inferProviderFromModel(resolvedModel), resolvedModel, { userId, success: true, responseTime });
 
             if (actualRunId && isLangSmithEnabled()) {
               await updateRun({ runId: actualRunId, outputs: { messages: response.messages, usage: (response as ResponseWithUsage).usage } });
-              const usage2 = (response as ResponseWithUsage).usage;
-              if (usage2) {
-                await logMetrics({ runId: actualRunId, metrics: { totalTokens: usage2.totalTokens, inputTokens: usage2.inputTokens, outputTokens: usage2.outputTokens, reasoningEffort, enableSearch } });
+              const usage2Metrics = (response as ResponseWithUsage).usage;
+              if (usage2Metrics) {
+                await logMetrics({ runId: actualRunId, metrics: { totalTokens: usage2Metrics.totalTokens, inputTokens: usage2Metrics.inputTokens, outputTokens: usage2Metrics.outputTokens, reasoningEffort, enableSearch } });
               }
             }
           },
@@ -812,7 +830,7 @@ export async function POST(req: Request) {
     }
 
     const result = streamText({
-      model: modelConfig?.apiSdk ? modelConfig.apiSdk(apiKey, modelSettings) as LanguageModel : undefined!,
+      model: requireApiSdk(modelConfig)(apiKey, modelSettings) as LanguageModel,
       system: effectiveSystemPrompt,
       messages: modelMessages,
       tools,
@@ -824,15 +842,16 @@ export async function POST(req: Request) {
       // experimental_toolCallStreaming: true, // Removed - not supported in current AI SDK version
       // onToolCall not supported in current AI SDK version - tool calls are logged in onFinish
 
+      // biome-ignore lint/correctness/noExcessiveComplexity: Logging and persistence steps are verbose by nature.
       onFinish: async ({ response }) => {
         // Log tool results if any
         if (response.messages && response.messages.length > 0) {
-          const lastMessage = response.messages[response.messages.length - 1];
+          const lastMessage = response.messages.at(-1);
           
           // Check for tool invocations in the response
           if (lastMessage && typeof lastMessage === 'object' && 'toolInvocations' in lastMessage) {
             const messageWithTools = lastMessage as { 
-              toolInvocations?: Array<{
+              toolInvocations?: {
                 toolName?: string;
                 state?: string;
                 args?: unknown;
@@ -843,18 +862,18 @@ export async function POST(req: Request) {
                   total_results?: number;
                   summary?: string;
                   search_config?: unknown;
-                  results?: Array<{
+                  results?: {
                     rank?: unknown;
                     file_id?: unknown;
                     fileName?: string;
                     file_name?: string;
                     score?: unknown;
                     content?: string;
-                  }>;
+                  }[];
                   [key: string]: unknown;
                 };
                 [key: string]: unknown;
-              }>
+              }[]
             };
             const toolInvocations = messageWithTools.toolInvocations;
             if (toolInvocations && Array.isArray(toolInvocations)) {
@@ -883,7 +902,7 @@ export async function POST(req: Request) {
                       fileId: r.file_id,
                       fileName: r.file_name,
                       score: r.score,
-                      contentPreview: r.content?.substring(0, 100) || ''
+                      contentPreview: r.content?.substring(0, PREVIEW_SNIPPET_LENGTH) || ''
                     }))
                   }, 'File search tool results');
                 }
@@ -895,14 +914,14 @@ export async function POST(req: Request) {
         // Log assistant response preview
         try {
           let assistantText = '';
-          const msgs = (response.messages || []) as Array<unknown>;
-          const last = msgs[msgs.length - 1] as { role?: string; content?: unknown; parts?: Array<{ type?: string; text?: string }> } | undefined;
+          const msgs = (response.messages || []) as unknown[];
+          const last = (msgs.at(-1)) as { role?: string; content?: unknown; parts?: { type?: string; text?: string }[] } | undefined;
 
           if (last && last.role === 'assistant') {
             if (typeof last.content === 'string') {
               assistantText = last.content;
             } else if (Array.isArray(last.content)) {
-              assistantText = (last.content as Array<{ type?: string; text?: string }>)
+              assistantText = (last.content as { type?: string; text?: string }[])
                 .map((p) => (p && typeof p === 'object' && 'text' in p ? (p as { text?: string }).text || '' : ''))
                 .join('');
             } else if (Array.isArray(last.parts)) {
@@ -948,8 +967,7 @@ export async function POST(req: Request) {
         const usage = (response as ResponseWithUsage).usage;
         const responseTime = usage?.totalTokens ? usage.totalTokens * 10 : undefined; // Rough estimate
         
-        trackCredentialUsage('environment', resolvedModel.includes('gpt') ? 'openai' : 
-          resolvedModel.includes('claude') ? 'anthropic' : 'unknown' as Provider, resolvedModel, {
+        trackCredentialUsage('environment', inferProviderFromModel(resolvedModel), resolvedModel, {
           userId,
           success: true,
           responseTime
@@ -966,14 +984,14 @@ export async function POST(req: Request) {
           });
 
           // Log metrics
-          const usage = (response as ResponseWithUsage).usage;
-          if (usage) {
+          const usageMetrics = (response as ResponseWithUsage).usage;
+          if (usageMetrics) {
             await logMetrics({
               runId: actualRunId,
               metrics: {
-                totalTokens: usage.totalTokens,
-                inputTokens: usage.inputTokens,
-                outputTokens: usage.outputTokens,
+                totalTokens: usageMetrics.totalTokens,
+                inputTokens: usageMetrics.inputTokens,
+                outputTokens: usageMetrics.outputTokens,
                 reasoningEffort,
                 enableSearch,
               },
@@ -1026,3 +1044,13 @@ export async function POST(req: Request) {
     return createErrorResponse(error);
   }
 }
+
+// Test-only exports (conditional to avoid Next.js type issues)
+if (process.env.NODE_ENV === 'test') {
+  // These exports are only available during testing
+  module.exports.getEffectiveSystemPrompt = getEffectiveSystemPrompt;
+  module.exports.configureModelSettings = configureModelSettings;
+  module.exports.configureTools = configureTools;
+  module.exports.getModelConfiguration = getModelConfiguration;
+}
+

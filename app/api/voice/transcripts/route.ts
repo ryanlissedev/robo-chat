@@ -77,17 +77,45 @@ ${transcript}`;
       { type: 'text/plain' }
     );
 
-    const uploadedFile = await openai.files.create({
-      file: transcriptFile,
-      purpose: 'assistants',
-    });
+    let uploadedFile: { id: string } | null = null;
+    try {
+      const fileResponse = await openai.files.create({
+        file: transcriptFile,
+        purpose: 'assistants',
+      });
+
+      if (!fileResponse || typeof fileResponse.id !== 'string' || !fileResponse.id.trim()) {
+        throw new Error('Failed to create OpenAI file - invalid response or missing file ID');
+      }
+      
+      uploadedFile = { id: fileResponse.id };
+    } catch (error) {
+      console.error('OpenAI file creation failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      return NextResponse.json(
+        { 
+          error: 'Failed to upload transcript file', 
+          details: errorMessage 
+        },
+        { status: 500 }
+      );
+    }
+
+    // Ensure uploadedFile exists before proceeding
+    if (!uploadedFile || !uploadedFile.id) {
+      console.error('Missing uploaded file data');
+      return NextResponse.json(
+        { error: 'File upload completed but file data is missing' },
+        { status: 500 }
+      );
+    }
 
     // Store transcript metadata in database for future indexing
     const { error: insertError } = await supabase
       .from('voice_transcripts')
       .insert({
         user_id: userId,
-        session_id: sessionId,
+        session_id: sessionId || null,
         transcript: transcript,
         file_id: uploadedFile.id,
         metadata: metadata || {},
@@ -96,6 +124,13 @@ ${transcript}`;
 
     if (insertError) {
       console.error('Failed to store transcript metadata:', insertError);
+      // Don't fail the entire request if DB insert fails - file is already uploaded
+      return NextResponse.json({
+        success: true,
+        fileId: uploadedFile.id,
+        message: 'Transcript uploaded successfully but metadata storage failed',
+        warning: 'Database storage failed - transcript may not be searchable',
+      });
     }
 
     return NextResponse.json({
@@ -145,15 +180,23 @@ export async function GET(request: NextRequest) {
 
     if (searchError) {
       console.error('Transcript search error:', searchError);
-      return NextResponse.json({
-        results: [],
-        message: 'Search failed',
-      });
+      return NextResponse.json(
+        {
+          error: 'Search failed',
+          details: searchError.message || 'Database search error',
+          results: [],
+        },
+        { status: 500 }
+      );
     }
 
+    // Ensure transcripts is an array
+    const results = Array.isArray(transcripts) ? transcripts : [];
+    
     return NextResponse.json({
-      results: transcripts || [],
-      message: `Found ${transcripts?.length || 0} matching transcripts`,
+      results: results,
+      message: `Found ${results.length} matching transcripts`,
+      total: results.length,
     });
 
   } catch (error) {

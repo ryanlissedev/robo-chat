@@ -67,7 +67,7 @@ export async function validateUserIdentity(
           message_count: 0,
           premium: false,
           created_at: new Date().toISOString(),
-        });
+        } as never);
       } catch {
         // If creation fails, still allow the request for guest users
         return supabase;

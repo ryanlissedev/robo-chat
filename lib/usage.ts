@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/app/types/database.types';
 import { UsageLimitError } from '@/lib/api';
 import {
   AUTH_DAILY_MESSAGE_LIMIT,
@@ -20,7 +21,10 @@ const isProModel = (modelId: string) => !isFreeModel(modelId);
  * @throws UsageLimitError if the daily limit is reached, or a generic Error if checking fails.
  * @returns User data including message counts and reset date
  */
-export async function checkUsage(supabase: SupabaseClient, userId: string) {
+export async function checkUsage(
+  supabase: SupabaseClient<Database>,
+  userId: string
+) {
   // Try to get user data, handling missing columns gracefully
   let userData: {
     message_count?: number;
@@ -159,7 +163,7 @@ export async function checkUsage(supabase: SupabaseClient, userId: string) {
  * @throws Error if updating fails.
  */
 export async function incrementUsage(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   userId: string
 ): Promise<void> {
   // Check if rate limiting is disabled for guest users
@@ -207,7 +211,10 @@ export async function incrementUsage(
   }
 }
 
-export async function checkProUsage(supabase: SupabaseClient, userId: string) {
+export async function checkProUsage(
+  supabase: SupabaseClient<Database>,
+  userId: string
+) {
   // Try to get user data, handling missing columns gracefully
   let userData: {
     daily_pro_message_count?: number;
@@ -279,7 +286,7 @@ export async function checkProUsage(supabase: SupabaseClient, userId: string) {
 }
 
 export async function incrementProUsage(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   userId: string
 ) {
   const { data, error } = await supabase
@@ -308,7 +315,7 @@ export async function incrementProUsage(
 }
 
 export async function checkUsageByModel(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   userId: string,
   modelId: string,
   isAuthenticated: boolean
@@ -337,7 +344,7 @@ export async function checkUsageByModel(
 }
 
 export async function incrementUsageByModel(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   userId: string,
   modelId: string,
   isAuthenticated: boolean

@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@/tests/test-utils';
+import { render, waitFor } from '@/tests/test-utils';
+import userEvent from '@testing-library/user-event';
 
 // Mock streamdown (which pulls in katex CSS) BEFORE importing MessageAssistant
 vi.mock('streamdown', () => ({
@@ -120,6 +121,7 @@ describe('MessageAssistant toast on fileSearch failure', () => {
   });
 
   it('shows error toast with Retry button and triggers onReload when clicked', async () => {
+    const user = userEvent.setup({ delay: null });
     const onReload = vi.fn();
 
     render(
@@ -144,10 +146,12 @@ describe('MessageAssistant toast on fileSearch failure', () => {
     const { getByText } = render(elem);
 
     // Click Retry and ensure onReload called and dismiss invoked
-    getByText('Retry').click();
+    await user.click(getByText('Retry'));
 
-    expect(onReload).toHaveBeenCalledTimes(1);
-    expect(mod.__mock.dismiss).toHaveBeenCalledWith(123);
+    await waitFor(() => {
+      expect(onReload).toHaveBeenCalledTimes(1);
+      expect(mod.__mock.dismiss).toHaveBeenCalledWith(123);
+    }, { timeout: 5000 });
   });
 
   it('shows error toast without button if no onReload provided', async () => {
@@ -167,7 +171,11 @@ describe('MessageAssistant toast on fileSearch failure', () => {
     );
 
     const mod: any = await import('@/components/ui/toast');
-    expect(typeof mod.__mock.cb).toBe('function');
+    
+    await waitFor(() => {
+      expect(typeof mod.__mock.cb).toBe('function');
+    }, { timeout: 5000 });
+    
     const elem = mod.__mock.cb(1);
     const { queryByText, getByText } = render(elem);
 

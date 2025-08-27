@@ -54,6 +54,9 @@ describe('Redaction Utilities', () => {
     });
 
     it('should handle headers iteration failure gracefully', () => {
+      // Mock console.error to suppress error output during test
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      
       // Create a mock headers object that throws on forEach
       const mockHeaders = {
         forEach: () => {
@@ -63,6 +66,9 @@ describe('Redaction Utilities', () => {
 
       const result = redactSensitiveHeaders(mockHeaders);
       expect(result).toEqual({});
+      
+      // Restore console.error
+      consoleSpy.mockRestore();
     });
   });
 
@@ -232,6 +238,9 @@ describe('Redaction Utilities', () => {
     });
 
     it('should handle headers processing failure', () => {
+      // Mock console.error to suppress error output during test
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      
       const mockHeaders = {
         forEach: () => {
           throw new Error('Headers processing failed');
@@ -240,6 +249,9 @@ describe('Redaction Utilities', () => {
 
       const result = createHeaderSummary(mockHeaders);
       expect(result).toEqual({ error: 'failed-to-process' });
+      
+      // Restore console.error
+      consoleSpy.mockRestore();
     });
   });
 

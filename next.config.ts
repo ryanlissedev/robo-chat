@@ -26,10 +26,7 @@ const nextConfig: NextConfig = withBundleAnalyzer({
       },
     ],
   },
-  eslint: {
-    // @todo: remove before going live
-    ignoreDuringBuilds: true,
-  },
+  
   typescript: {
     // TypeScript build gate temporarily disabled - errors reduced from 76 to 61
     // Remaining errors require extensive refactoring of model types and AI SDK integration

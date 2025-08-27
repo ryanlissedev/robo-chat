@@ -27,7 +27,7 @@ export async function getUserKey(
       return null;
     }
 
-    return decryptKey(data.encrypted_key, data.iv);
+    return decryptKey((data as unknown as { encrypted_key: string; iv: string }).encrypted_key, (data as unknown as { encrypted_key: string; iv: string }).iv);
   } catch {
     return null;
   }

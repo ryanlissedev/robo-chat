@@ -1,6 +1,6 @@
 'use client';
 
-import { KeyIcon, PlusIcon } from 'lucide-react';
+import { Key, Plus } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -254,7 +254,7 @@ export function ByokSection() {
           >
             {userKeyStatus[provider.id] && (
               <span className="absolute top-1 right-1 rounded-sm border-[1px] bg-secondary p-1">
-                <KeyIcon className="size-3.5 text-secondary-foreground" />
+                <Key className="size-3.5 text-secondary-foreground" />
               </span>
             )}
             <provider.icon className="size-4" />
@@ -270,7 +270,7 @@ export function ByokSection() {
           key="soon"
           type="button"
         >
-          <PlusIcon className="size-4" />
+          <Plus className="size-4" />
         </button>
       </div>
 

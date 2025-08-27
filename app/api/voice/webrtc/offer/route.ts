@@ -27,9 +27,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { sessionId, offer, config } = body;
 
-    if (!sessionId || !offer) {
+    // Validate required fields
+    if (!sessionId || typeof sessionId !== 'string' || !sessionId.trim()) {
       return NextResponse.json(
-        { error: 'Session ID and offer are required' },
+        { error: 'Valid Session ID is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!offer || typeof offer !== 'string' || !offer.trim()) {
+      return NextResponse.json(
+        { error: 'Valid WebRTC offer is required' },
         { status: 400 }
       );
     }
@@ -43,49 +51,67 @@ export async function POST(request: NextRequest) {
 
     console.log(`Processing WebRTC offer for session: ${sessionId}`);
 
+    // Validate config if provided
+    const validatedConfig = config && typeof config === 'object' ? config : {};
+
     // Store the offer temporarily
     pendingOffers.set(sessionId, {
       sessionId,
       offer,
-      config: config || {},
+      config: validatedConfig,
       createdAt: new Date(),
     });
 
-    // Create WebRTC answer for OpenAI Realtime API
-    const answer = await createRealtimeAnswer(offer, config);
+    try {
+      // Create WebRTC answer for OpenAI Realtime API
+      const answer = await createRealtimeAnswer(offer, validatedConfig);
 
-    if (!answer) {
-      return NextResponse.json(
-        { error: 'Failed to create WebRTC answer' },
-        { status: 500 }
-      );
+      if (!answer || typeof answer !== 'string' || !answer.trim()) {
+        throw new Error('Invalid or empty WebRTC answer received');
+      }
+
+      // Clean up stored offer
+      pendingOffers.delete(sessionId);
+
+      return NextResponse.json({
+        sessionId,
+        answer,
+        status: 'success',
+      });
+    } catch (answerError) {
+      // Clean up stored offer on failure
+      pendingOffers.delete(sessionId);
+      throw answerError;
     }
-
-    // Clean up stored offer
-    pendingOffers.delete(sessionId);
-
-    return NextResponse.json({
-      sessionId,
-      answer,
-      status: 'success',
-    });
 
   } catch (error) {
     console.error('Failed to process WebRTC offer:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    
     return NextResponse.json(
-      { error: 'Failed to process WebRTC offer' },
+      { 
+        error: 'Failed to process WebRTC offer',
+        details: errorMessage,
+      },
       { status: 500 }
     );
   }
 }
 
 async function createRealtimeAnswer(offer: string, config: VoiceSessionConfig): Promise<string | null> {
+  if (!offer || typeof offer !== 'string' || !offer.trim()) {
+    throw new Error('Invalid offer provided to createRealtimeAnswer');
+  }
+
   try {
+    // Validate and sanitize config
+    const safeConfig = config || {};
+    
     // Configuration for OpenAI Realtime API
     const realtimeConfig = {
-      model: config.model || 'gpt-4o-realtime-preview',
-      voice: config.voice || 'nova',
-      instructions: generateInstructions(config),
+      model: typeof safeConfig.model === 'string' ? safeConfig.model : 'gpt-4o-realtime-preview',
+      voice: typeof safeConfig.voice === 'string' ? safeConfig.voice : 'nova',
+      instructions: generateInstructions(safeConfig),
       input_audio_format: 'pcm16',
       output_audio_format: 'pcm16',
       input_audio_transcription: {
@@ -99,8 +125,8 @@ async function createRealtimeAnswer(offer: string, config: VoiceSessionConfig): 
       },
       tools: [],
       tool_choice: 'auto',
-      temperature: 0.7,
-      max_response_output_tokens: 4096,
+      temperature: typeof safeConfig.temperature === 'number' ? safeConfig.temperature : 0.7,
+      max_response_output_tokens: typeof safeConfig.maxTokens === 'number' ? safeConfig.maxTokens : 4096,
     };
 
     // Create WebSocket connection to OpenAI Realtime API
@@ -109,44 +135,66 @@ async function createRealtimeAnswer(offer: string, config: VoiceSessionConfig): 
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        ws.close();
-        reject(new Error('WebRTC offer timeout'));
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+        reject(new Error('WebRTC offer timeout after 10 seconds'));
       }, 10000); // 10 second timeout
 
       ws.onopen = () => {
         console.log('Connected to OpenAI Realtime API');
         
-        // Send session configuration
-        ws.send(JSON.stringify({
-          type: 'session.update',
-          session: realtimeConfig,
-        }));
+        try {
+          // Send session configuration
+          ws.send(JSON.stringify({
+            type: 'session.update',
+            session: realtimeConfig,
+          }));
 
-        // Send WebRTC offer
-        ws.send(JSON.stringify({
-          type: 'webrtc.offer',
-          offer: {
-            type: 'offer',
-            sdp: offer,
-          },
-        }));
+          // Send WebRTC offer
+          ws.send(JSON.stringify({
+            type: 'webrtc.offer',
+            offer: {
+              type: 'offer',
+              sdp: offer,
+            },
+          }));
+        } catch (sendError) {
+          clearTimeout(timeout);
+          ws.close();
+          reject(new Error(`Failed to send WebRTC messages: ${sendError}`));
+        }
       };
 
       ws.onmessage = (event) => {
         try {
+          if (!event.data) {
+            console.warn('Received empty WebSocket message');
+            return;
+          }
+          
           const data = JSON.parse(event.data);
           
           if (data.type === 'webrtc.answer') {
+            if (!data.answer || !data.answer.sdp) {
+              clearTimeout(timeout);
+              ws.close();
+              reject(new Error('Invalid WebRTC answer: missing SDP'));
+              return;
+            }
+            
             clearTimeout(timeout);
             ws.close();
             resolve(data.answer.sdp);
           } else if (data.type === 'error') {
             clearTimeout(timeout);
             ws.close();
-            reject(new Error(data.error?.message || 'OpenAI Realtime API error'));
+            const errorMsg = data.error?.message || data.error || 'OpenAI Realtime API error';
+            reject(new Error(`OpenAI API Error: ${errorMsg}`));
           }
         } catch (parseError) {
           console.error('Failed to parse WebRTC message:', parseError);
+          // Don't reject here, wait for timeout or proper message
         }
       };
 
@@ -159,14 +207,14 @@ async function createRealtimeAnswer(offer: string, config: VoiceSessionConfig): 
       ws.onclose = (event) => {
         clearTimeout(timeout);
         if (event.code !== 1000) {
-          reject(new Error(`WebSocket closed with code ${event.code}`));
+          reject(new Error(`WebSocket closed unexpectedly with code ${event.code}: ${event.reason || 'Unknown reason'}`));
         }
       };
     });
 
   } catch (error) {
     console.error('Failed to create realtime answer:', error);
-    return null;
+    throw error; // Re-throw instead of returning null for better error handling
   }
 }
 
@@ -203,7 +251,15 @@ function generateInstructions(config: VoiceSessionConfig): string {
     `,
   };
 
-  const safetyProtocols = config.safetyProtocols ? `
+  // Safely get personality mode with fallback
+  const personalityMode = (config && typeof config.personalityMode === 'string') 
+    ? config.personalityMode as keyof typeof personalityInstructions
+    : 'safety-focused';
+
+  const selectedPersonality = personalityInstructions[personalityMode] || personalityInstructions['safety-focused'];
+
+  // Safely check safety protocols
+  const safetyProtocols = (config && config.safetyProtocols !== false) ? `
     SAFETY PROTOCOLS ENABLED:
     - Always verify safety procedures before providing operational guidance
     - Flag any potentially unsafe suggestions or requests
@@ -225,10 +281,10 @@ function generateInstructions(config: VoiceSessionConfig): string {
 
   return [
     baseInstructions,
-    personalityInstructions[config.personalityMode as keyof typeof personalityInstructions] || personalityInstructions['safety-focused'],
+    selectedPersonality,
     safetyProtocols,
     voiceGuidelines,
-  ].join('\n').trim();
+  ].filter(Boolean).join('\n').trim();
 }
 
 export async function GET() {

@@ -3,15 +3,16 @@ import OpenAI from 'openai';
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: 'OPENAI_API_KEY not set' }, { status: 500 });
   }
   const openai = new OpenAI({ apiKey });
+  const { id } = await params;
   try {
-    const files = await openai.vectorStores.files.list(params.id, { limit: 100 });
+    const files = await openai.vectorStores.files.list(id, { limit: 100 });
     return NextResponse.json({ files: files.data });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to list vector store files';
@@ -19,12 +20,13 @@ export async function GET(
   }
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: 'OPENAI_API_KEY not set' }, { status: 500 });
   }
   const openai = new OpenAI({ apiKey });
+  const { id } = await params;
   try {
     // Expect multipart/form-data with field 'file'
     const formData = await req.formData();
@@ -34,7 +36,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
 
     const uploaded = await openai.files.create({ file, purpose: 'assistants' });
-    const attached = await openai.vectorStores.files.create(params.id, { file_id: uploaded.id });
+    const attached = await openai.vectorStores.files.create(id, { file_id: uploaded.id });
 
     return NextResponse.json({ file: attached });
   } catch (e) {

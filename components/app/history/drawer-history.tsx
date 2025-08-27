@@ -1,4 +1,4 @@
-import { Check, Search, PencilSimple, TrashSimple, X,  } from 'lucide-react';
+import { Check, Search, Pencil, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
@@ -228,7 +228,7 @@ export function DrawerHistory({
                     type="button"
                     variant="ghost"
                   >
-                    <PencilSimple className="size-4" />
+                    <Pencil className="size-4" />
                   </Button>
                   <Button
                     className="size-8 text-muted-foreground hover:text-destructive"
@@ -240,7 +240,7 @@ export function DrawerHistory({
                     type="button"
                     variant="ghost"
                   >
-                    <TrashSimple className="size-4" />
+                    <Trash2 className="size-4" />
                   </Button>
                 </div>
               </div>

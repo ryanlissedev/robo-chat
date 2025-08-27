@@ -162,7 +162,7 @@ async function ensureChatExistsInDatabase(
         model: 'gpt-4o-mini', // Default model
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      });
+      } as never);
 
       return !insertError;
     }
@@ -200,7 +200,7 @@ export async function storeAssistantMessage(
     parts: processed.parts as unknown as Json,
     message_group_id,
     model,
-  });
+  } as never);
 
   if (error) {
     throw new Error(`Failed to save assistant message: ${error.message}`);

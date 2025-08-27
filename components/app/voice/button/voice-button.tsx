@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AudioWaveform, Mic, MicOff, Square } from 'lucide-react';
+import { Mic, MicOff, Square } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -113,15 +113,15 @@ export function VoiceButton({
       case 'idle':
         return {
           variant: 'ghost',
-          icon: <AudioWaveform className={iconSize} />,
-          tooltip: 'Start voice session',
-          ariaLabel: 'Start voice session',
+          icon: <Mic className={iconSize} />,
+          tooltip: 'Click to start voice transcription',
+          ariaLabel: 'Start voice transcription',
         };
       
       case 'connecting':
         return {
           variant: 'secondary',
-          icon: <AudioWaveform className={cn(iconSize, 'animate-pulse')} />,
+          icon: <Mic className={cn(iconSize, 'animate-pulse')} />,
           tooltip: 'Connecting...',
           ariaLabel: 'Connecting to voice service',
         };
@@ -146,7 +146,7 @@ export function VoiceButton({
       case 'processing':
         return {
           variant: 'secondary',
-          icon: <AudioWaveform className={cn(iconSize, 'animate-pulse')} />,
+          icon: <Mic className={cn(iconSize, 'animate-pulse')} />,
           tooltip: 'Processing audio...',
           ariaLabel: 'Processing audio',
         };
@@ -162,7 +162,7 @@ export function VoiceButton({
       case 'disconnecting':
         return {
           variant: 'ghost',
-          icon: <AudioWaveform className={cn(iconSize, 'animate-pulse')} />,
+          icon: <Mic className={cn(iconSize, 'animate-pulse')} />,
           tooltip: 'Disconnecting...',
           ariaLabel: 'Disconnecting from voice service',
         };
@@ -170,7 +170,7 @@ export function VoiceButton({
       default:
         return {
           variant: 'ghost',
-          icon: <AudioWaveform className={iconSize} />,
+          icon: <Mic className={iconSize} />,
           tooltip: 'Voice input',
           ariaLabel: 'Voice input',
         };

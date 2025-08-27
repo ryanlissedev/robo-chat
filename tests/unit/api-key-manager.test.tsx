@@ -123,6 +123,13 @@ describe('ApiKeyManager', () => {
     });
 
     it('should validate OpenAI API key format', async () => {
+      // Mock console.error to suppress error output during test
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      
+      // Mock the credential function to reject invalid keys
+      const mockSetMemoryCredential = vi.mocked(webCrypto.setMemoryCredential);
+      mockSetMemoryCredential.mockRejectedValue(new Error('Invalid API key format'));
+
       render(<ApiKeyManager />);
       
       const openaiInput = screen.getByPlaceholderText('Enter your OpenAI API key');
@@ -135,6 +142,9 @@ describe('ApiKeyManager', () => {
       await waitFor(() => {
         expect(screen.queryByText(/saved successfully/)).not.toBeInTheDocument();
       });
+      
+      // Restore console.error
+      consoleSpy.mockRestore();
     });
   });
 

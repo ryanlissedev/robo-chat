@@ -15,7 +15,7 @@ const TRANSITION = {
 export function FileList({ files, onFileRemove }: FileListProps) {
   return (
     <AnimatePresence initial={false}>
-      {files.length > 0 && (
+      {files && files.length > 0 && (
         <motion.div
           animate={{ height: 'auto' }}
           className="overflow-hidden"
@@ -26,7 +26,7 @@ export function FileList({ files, onFileRemove }: FileListProps) {
         >
           <div className="flex flex-row overflow-x-auto pl-3">
             <AnimatePresence initial={false}>
-              {files.map((file) => (
+              {files?.map((file) => (
                 <motion.div
                   animate={{ width: 180 }}
                   className="relative shrink-0 overflow-hidden pt-2"

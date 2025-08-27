@@ -3,14 +3,9 @@ import { type RenderOptions, render } from '@testing-library/react';
 import type React from 'react';
 import type { ReactElement } from 'react';
 import { expect, vi } from 'vitest';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
-// Globally mock framer-motion to avoid DOM-specific APIs in JSDOM
-vi.mock('framer-motion', () => ({
-  motion: new Proxy({}, {
-    get: () => (props: any) => <div {...props} />,
-  }),
-  AnimatePresence: ({ children }: any) => <>{children}</>,
-}));
+// Note: framer-motion is now mocked globally in setup.ts to avoid vi.mock issues
 
 // Polyfill matchMedia for libraries expecting addEventListener/removeEventListener
 if (typeof window !== 'undefined') {
@@ -112,7 +107,11 @@ export function renderWithProviders(
 ) {
   function Wrapper({ children }: { children: React.ReactNode }) {
     return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          {children}
+        </TooltipProvider>
+      </QueryClientProvider>
     );
   }
 
@@ -235,6 +234,7 @@ export const customMatchers = {
   toHaveAttribute: (expect as any).toHaveAttribute,
   toHaveValue: (expect as any).toHaveValue,
 };
+
 
 // Re-export everything from testing library
 export * from '@testing-library/react';

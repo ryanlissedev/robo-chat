@@ -1,6 +1,6 @@
 'use client';
 
-import { SignOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
@@ -39,9 +39,10 @@ export function AccountManagement() {
         size="sm"
         variant="default"
       >
-        <SignOut className="size-4" />
+        <LogOut className="size-4" />
         <span>Sign out</span>
       </Button>
     </div>
   );
 }
+

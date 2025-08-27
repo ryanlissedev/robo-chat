@@ -165,14 +165,14 @@ export function ProjectChatItem({ chat, formatDate }: ProjectChatItemProps) {
               onClick={handleSaveClick}
               type="button"
             >
-              <Check size={12} weight="bold" />
+              <Check size={12} />
             </button>
             <button
               className="flex size-6 items-center justify-center rounded-md p-1 text-muted-foreground transition-colors duration-150 hover:bg-secondary hover:text-primary"
               onClick={handleCancelClick}
               type="button"
             >
-              <X size={12} weight="bold" />
+              <X size={12} />
             </button>
           </div>
         </div>
