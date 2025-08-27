@@ -81,13 +81,22 @@ export function Conversation({
               </Message>
             );
           })}
-          {(status === 'submitted' || status === 'streaming') &&
-            messages.length > 0 &&
-            messages.at(-1)?.role === 'user' && (
+          {(() => {
+            const isActive = status === 'submitted' || status === 'streaming';
+            if (!isActive || messages.length === 0) return null;
+            const last = messages.at(-1) as ExtendedUIMessage | undefined;
+            const lastIsUser = last?.role === 'user';
+            const lastAssistantEmpty =
+              last?.role === 'assistant' &&
+              (!getMessageContent(last) ||
+                getMessageContent(last).trim().length === 0);
+            if (!(lastIsUser || lastAssistantEmpty)) return null;
+            return (
               <div className="group flex min-h-scroll-anchor w-full max-w-3xl flex-col items-start gap-2 px-6 pb-2">
                 <Loader />
               </div>
-            )}
+            );
+          })()}
           <div className="absolute bottom-0 flex w-full max-w-3xl flex-1 items-end justify-end gap-4 px-6 pb-2">
             <ScrollButton className="absolute top-[-50px] right-[30px]" />
           </div>

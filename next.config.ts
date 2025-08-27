@@ -28,9 +28,8 @@ const nextConfig: NextConfig = withBundleAnalyzer({
   },
 
   typescript: {
-    // TypeScript build gate temporarily disabled - errors reduced from 76 to 61
-    // Remaining errors require extensive refactoring of model types and AI SDK integration
-    ignoreBuildErrors: true,
+    // TypeScript build errors are now fixed and validation is enabled
+    ignoreBuildErrors: false,
   },
 });
 

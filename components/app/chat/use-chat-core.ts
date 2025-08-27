@@ -93,8 +93,16 @@ export function useChatCore({
   const [inputValue, setInputValue] = useState(draftValue);
 
   const { messages, status, error, stop, setMessages, sendMessage } = useChat({
-    onFinish: ({ message }) => cacheAndAddMessage(message),
-    onError: handleError,
+    experimental_throttle: 60,
+    onFinish: ({ message }) => {
+      cacheAndAddMessage(message);
+      // Keep isSubmitting true until streaming is complete
+      setTimeout(() => setIsSubmitting(false), 100);
+    },
+    onError: (error) => {
+      handleError(error);
+      setIsSubmitting(false);
+    },
   });
 
   // Set initial messages after useChat initialization
@@ -173,6 +181,7 @@ export function useChatCore({
         // Handle operation failure - restore input
         setInputValue(currentInput);
         setFiles(submittedFiles);
+        setIsSubmitting(false);
 
         if (result.error) {
           toast({ title: result.error, status: 'error' });
@@ -204,12 +213,13 @@ export function useChatCore({
       if (messages.length > 0) {
         bumpChat(currentChatId);
       }
+
+      // Don't set isSubmitting to false here - let onFinish handle it
     } catch (error) {
       // Handle unexpected errors - restore input
       setInputValue(currentInput);
       setFiles(submittedFiles);
       handleChatError(error as Error);
-    } finally {
       setIsSubmitting(false);
     }
   }, [

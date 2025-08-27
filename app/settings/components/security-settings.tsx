@@ -8,7 +8,7 @@ import {
   Lock,
   Shield,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -71,7 +71,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
   const [newDomain, setNewDomain] = useState('');
   const supabase = createClient();
 
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     if (!supabase) return;
 
     try {
@@ -98,13 +98,16 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         return;
       }
 
-      if ((data as any)?.config) {
-        setConfig((data as any).config as SecurityConfig);
+      if ((data as unknown as { config?: SecurityConfig })?.config) {
+        setConfig(
+          (data as unknown as { config?: SecurityConfig })
+            .config as SecurityConfig
+        );
       }
     } catch (error: unknown) {
       clientLogger.error('Failed to load security settings', error);
     }
-  };
+  }, [supabase, userId]);
 
   useEffect(() => {
     loadSettings();
@@ -118,18 +121,16 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
 
     setLoading(true);
     try {
-      const { error } = await (supabase as any)
-        .from('user_security_settings')
-        .upsert(
-          {
-            user_id: userId,
-            config,
-            updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: 'user_id',
-          }
-        );
+      const { error } = await supabase.from('user_security_settings').upsert(
+        {
+          user_id: userId,
+          config,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'user_id',
+        }
+      );
 
       if (error) {
         // Handle case where table doesn't exist yet

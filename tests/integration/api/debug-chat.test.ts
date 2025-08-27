@@ -19,37 +19,44 @@ vi.mock('@/lib/user-keys', () => ({
 // Mock ai streamText to simulate streaming response
 vi.mock('ai', () => ({
   streamText: vi.fn((args: any) => ({
-    toUIMessageStreamResponse: () => new Response('mocked-stream', { status: 200 }),
+    toUIMessageStreamResponse: () =>
+      new Response('mocked-stream', { status: 200 }),
     __args: args,
   })),
-  convertToModelMessages: vi.fn(() => [{ role: 'user', content: 'test message' }]),
+  convertToModelMessages: vi.fn(() => [
+    { role: 'user', content: 'test message' },
+  ]),
 }));
 
 // Mock retrieval modules
 vi.mock('@/lib/retrieval/vector-retrieval', () => ({
-  performVectorRetrieval: vi.fn().mockImplementation(async (_query, _options) => {
-    return [
-      {
-        fileId: '1',
-        fileName: 'debug.md',
-        score: 0.95,
-        content: 'Debug information content',
-      },
-    ];
-  }),
+  performVectorRetrieval: vi
+    .fn()
+    .mockImplementation(async (_query, _options) => {
+      return [
+        {
+          fileId: '1',
+          fileName: 'debug.md',
+          score: 0.95,
+          content: 'Debug information content',
+        },
+      ];
+    }),
 }));
 
 vi.mock('@/lib/retrieval/two-pass', () => ({
-  retrieveWithGpt41: vi.fn().mockImplementation(async (_query, _messages, _options) => {
-    return [
-      {
-        fileId: '2',
-        fileName: 'debug-two-pass.md',
-        score: 0.90,
-        content: 'Two-pass debug content',
-      },
-    ];
-  }),
+  retrieveWithGpt41: vi
+    .fn()
+    .mockImplementation(async (_query, _messages, _options) => {
+      return [
+        {
+          fileId: '2',
+          fileName: 'debug-two-pass.md',
+          score: 0.9,
+          content: 'Two-pass debug content',
+        },
+      ];
+    }),
 }));
 
 vi.mock('@/lib/retrieval/augment', () => ({
@@ -60,8 +67,14 @@ vi.mock('@/lib/retrieval/augment', () => ({
 
 vi.mock('@/lib/retrieval/gating', () => ({
   selectRetrievalMode: vi.fn(() => 'vector'),
-  shouldEnableFileSearchTools: vi.fn((enableSearch: boolean, modelSupportsTools: boolean) => enableSearch && modelSupportsTools),
-  shouldUseFallbackRetrieval: vi.fn((enableSearch: boolean, modelSupportsTools: boolean) => enableSearch && !modelSupportsTools),
+  shouldEnableFileSearchTools: vi.fn(
+    (enableSearch: boolean, modelSupportsTools: boolean) =>
+      enableSearch && modelSupportsTools
+  ),
+  shouldUseFallbackRetrieval: vi.fn(
+    (enableSearch: boolean, modelSupportsTools: boolean) =>
+      enableSearch && !modelSupportsTools
+  ),
 }));
 
 // Mock config
@@ -75,11 +88,11 @@ vi.mock('@/lib/config', () => ({
 
 // Mock utilities
 vi.mock('@/lib/utils/logger', () => ({
-  default: { 
-    info: vi.fn(), 
-    error: vi.fn(), 
-    warn: vi.fn(), 
-    debug: vi.fn() 
+  default: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
   },
 }));
 
@@ -112,8 +125,8 @@ vi.mock('@/lib/openproviders/provider-map', () => ({
 }));
 
 // Mock tools
-vi.mock('@/lib/tools/file-search', () => ({ 
-  fileSearchTool: { name: 'file_search', description: 'Search files' } 
+vi.mock('@/lib/tools/file-search', () => ({
+  fileSearchTool: { name: 'file_search', description: 'Search files' },
 }));
 
 // Mock external services
@@ -133,14 +146,19 @@ vi.mock('@/app/api/chat/api', () => ({
 }));
 
 vi.mock('@/app/api/chat/utils', () => ({
-  createErrorResponse: vi.fn((m: string, s = 400) => new Response(m, { status: s })),
+  createErrorResponse: vi.fn(
+    (m: string, s = 400) => new Response(m, { status: s })
+  ),
 }));
 
 import { streamText } from 'ai';
 import { POST } from '@/app/api/chat/route';
-import { performVectorRetrieval } from '@/lib/retrieval/vector-retrieval';
+import {
+  selectRetrievalMode,
+  shouldUseFallbackRetrieval,
+} from '@/lib/retrieval/gating';
 import { retrieveWithGpt41 } from '@/lib/retrieval/two-pass';
-import { selectRetrievalMode, shouldUseFallbackRetrieval } from '@/lib/retrieval/gating';
+import { performVectorRetrieval } from '@/lib/retrieval/vector-retrieval';
 
 function makeDebugRequest(body: any) {
   return new Request('http://localhost/api/chat', {
@@ -161,29 +179,33 @@ function makeDebugRequest(body: any) {
 describe('Debug Chat API Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
-    // Reset mock implementations
-    vi.mocked(performVectorRetrieval).mockImplementation(async (_query, _options) => {
-      return [
-        {
-          fileId: '1',
-          fileName: 'debug.md',
-          score: 0.95,
-          content: 'Debug information content',
-        },
-      ];
-    });
 
-    vi.mocked(retrieveWithGpt41).mockImplementation(async (_query, _messages, _options) => {
-      return [
-        {
-          fileId: '2',
-          fileName: 'debug-two-pass.md',
-          score: 0.90,
-          content: 'Two-pass debug content',
-        },
-      ];
-    });
+    // Reset mock implementations
+    vi.mocked(performVectorRetrieval).mockImplementation(
+      async (_query, _options) => {
+        return [
+          {
+            fileId: '1',
+            fileName: 'debug.md',
+            score: 0.95,
+            content: 'Debug information content',
+          },
+        ];
+      }
+    );
+
+    vi.mocked(retrieveWithGpt41).mockImplementation(
+      async (_query, _messages, _options) => {
+        return [
+          {
+            fileId: '2',
+            fileName: 'debug-two-pass.md',
+            score: 0.9,
+            content: 'Two-pass debug content',
+          },
+        ];
+      }
+    );
 
     vi.mocked(selectRetrievalMode).mockReturnValue('vector');
     vi.mocked(shouldUseFallbackRetrieval).mockReturnValue(true);
@@ -207,7 +229,7 @@ describe('Debug Chat API Tests', () => {
   it('should handle debug request with search enabled', async () => {
     // Ensure fallback retrieval is triggered by having no fileSearchTools support
     vi.mocked(shouldUseFallbackRetrieval).mockReturnValue(true);
-    
+
     const req = makeDebugRequest({
       messages: [{ role: 'user', content: 'Find debug logs' }],
       chatId: 'debug-2',
@@ -225,8 +247,10 @@ describe('Debug Chat API Tests', () => {
 
   it('should handle debug request with two-pass retrieval', async () => {
     // Import the gating functions to mock them properly
-    const { shouldUseFallbackRetrieval } = await import('@/lib/retrieval/gating');
-    
+    const { shouldUseFallbackRetrieval } = await import(
+      '@/lib/retrieval/gating'
+    );
+
     vi.mocked(selectRetrievalMode).mockReturnValue('two-pass');
     vi.mocked(shouldUseFallbackRetrieval).mockReturnValue(true);
 
@@ -273,7 +297,9 @@ describe('Debug Chat API Tests', () => {
 
   it('should handle debug request with error scenarios', async () => {
     // Mock retrieval to throw error
-    vi.mocked(performVectorRetrieval).mockRejectedValueOnce(new Error('Retrieval failed'));
+    vi.mocked(performVectorRetrieval).mockRejectedValueOnce(
+      new Error('Retrieval failed')
+    );
 
     const req = makeDebugRequest({
       messages: [{ role: 'user', content: 'Debug with error' }],
@@ -293,11 +319,11 @@ describe('Debug Chat API Tests', () => {
   it('should validate debug message structure', async () => {
     const req = makeDebugRequest({
       messages: [
-        { 
-          role: 'user', 
+        {
+          role: 'user',
           content: 'Debug message',
-          parts: [{ type: 'text', text: 'Debug with parts' }]
-        }
+          parts: [{ type: 'text', text: 'Debug with parts' }],
+        },
       ],
       chatId: 'debug-6',
       userId: 'debug-user',
@@ -346,11 +372,11 @@ describe('Debug Chat API Tests', () => {
   it('should handle debug requests with file attachments', async () => {
     const req = makeDebugRequest({
       messages: [
-        { 
-          role: 'user', 
+        {
+          role: 'user',
           content: 'Debug with attachment',
-          attachments: [{ type: 'file', name: 'debug-log.txt' }]
-        }
+          attachments: [{ type: 'file', name: 'debug-log.txt' }],
+        },
       ],
       chatId: 'debug-9',
       userId: 'debug-user',
@@ -378,7 +404,7 @@ describe('Debug Chat API Tests', () => {
     const res = await POST(req);
     expect(res.status).toBe(200);
     expect(streamText).toHaveBeenCalled();
-    
+
     // Check that streamText was called with the expected arguments structure
     const calls = vi.mocked(streamText).mock.calls;
     expect(calls.length).toBeGreaterThan(0);

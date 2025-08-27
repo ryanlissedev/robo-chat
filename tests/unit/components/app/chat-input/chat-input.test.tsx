@@ -20,7 +20,7 @@ vi.mock('@/components/common/model-selector/base', () => ({
       type="button"
       data-testid="model-selector"
       className={className}
-      onClick={() => setSelectedModelId('new-model')}
+      onClick={() => setSelectedModelId?.('new-model')}
     >
       Model: {selectedModelId}
     </button>
@@ -33,7 +33,7 @@ vi.mock('@/components/app/voice/button/voice-button', () => ({
       type="button"
       data-testid="voice-button"
       disabled={disabled}
-      onClick={() => onTranscriptReady('Voice transcript test')}
+      onClick={() => onTranscriptReady?.('Voice transcript test')}
     >
       Voice ({size})
     </button>
@@ -74,7 +74,7 @@ vi.mock('@/components/audio/RealtimeAudioModal', () => ({
   RealtimeAudioModal: ({ children, onTranscriptReady }: any) => (
     <div
       data-testid="realtime-audio-modal"
-      onClick={() => onTranscriptReady('Realtime audio')}
+      onClick={() => onTranscriptReady?.('Realtime audio')}
     >
       {children}
     </div>
@@ -119,11 +119,11 @@ vi.mock('@/components/prompt-kit/prompt-input', () => {
       value,
       maxHeight,
     }: any) => {
-      // Clone children and inject value/onChange to textarea
+      // Clone children and inject value/onChange and preserve all event handlers
       const enhancedChildren = React.Children.map(children, (child) => {
         if (
           React.isValidElement(child) &&
-          child.props['data-testid'] === 'chat-textarea'
+          child.type === PromptInputTextareaComponent
         ) {
           return React.cloneElement(child, {
             ...child.props,
@@ -164,7 +164,7 @@ vi.mock('@/components/app/chat/reasoning-effort-selector', () => ({
       data-testid="reasoning-effort-selector"
       className={className}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => onChange?.(e.target.value)}
     >
       <option value="low">Low</option>
       <option value="medium">Medium</option>
@@ -213,7 +213,7 @@ vi.mock('@/components/app/chat-input/button-file-upload', () => ({
     <button
       type="button"
       data-testid="file-upload-button"
-      onClick={() => onFileUpload([new File(['test'], 'test.txt')])}
+      onClick={() => onFileUpload?.([new File(['test'], 'test.txt')])}
     >
       Upload ({isUserAuthenticated ? 'auth' : 'guest'}, {model})
     </button>
@@ -236,10 +236,10 @@ vi.mock('@/components/app/chat-input/button-search', () => ({
 vi.mock('@/components/app/chat-input/file-list', () => ({
   FileList: ({ files, onFileRemove }: any) => (
     <div data-testid="file-list">
-      {files.map((file: File, index: number) => (
+      {files?.map((file: File, index: number) => (
         <div key={index}>
           {file.name}
-          <button type="button" onClick={() => onFileRemove(file)}>
+          <button type="button" onClick={() => onFileRemove?.(file)}>
             Remove
           </button>
         </div>
@@ -404,12 +404,21 @@ describe('ChatInput', () => {
 
     it('should handle Enter key to send message', async () => {
       const onSend = vi.fn();
-      const { container } = renderComponent({ value: 'Test message', onSend });
+      const { container, debug } = renderComponent({ value: 'Test message', onSend });
 
       const textarea = container.querySelector('[data-testid="chat-textarea"]');
+      expect(textarea).toBeInTheDocument();
+      
       if (textarea) {
-        await user.type(textarea as HTMLElement, '{Enter}');
-        expect(onSend).toHaveBeenCalledTimes(1);
+        // Test directly firing a keydown event
+        fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
+        
+        // Alternative: simulate typing and pressing enter
+        // await user.type(textarea as HTMLElement, '{Enter}');
+        
+        await waitFor(() => {
+          expect(onSend).toHaveBeenCalledTimes(1);
+        }, { timeout: 1000 });
       }
     });
 
@@ -508,9 +517,14 @@ describe('ChatInput', () => {
       const { container } = renderComponent({ value: 'Test message', onSend });
 
       const sendButton = container.querySelector('[aria-label="Send message"]');
+      expect(sendButton).toBeInTheDocument();
+      
       if (sendButton) {
-        await user.click(sendButton as HTMLElement);
-        expect(onSend).toHaveBeenCalledTimes(1);
+        fireEvent.click(sendButton);
+        
+        await waitFor(() => {
+          expect(onSend).toHaveBeenCalledTimes(1);
+        }, { timeout: 1000 });
       }
     });
 
@@ -523,9 +537,15 @@ describe('ChatInput', () => {
       });
 
       const stopButton = container.querySelector('[aria-label="Stop"]');
+      expect(stopButton).toBeInTheDocument();
+      
       if (stopButton) {
-        await user.click(stopButton as HTMLElement);
-        expect(stop).toHaveBeenCalledTimes(1);
+        // Try direct fireEvent.click
+        fireEvent.click(stopButton);
+        
+        await waitFor(() => {
+          expect(stop).toHaveBeenCalledTimes(1);
+        }, { timeout: 1000 });
       }
     });
 
@@ -562,9 +582,15 @@ describe('ChatInput', () => {
       const uploadButton = container.querySelector(
         '[data-testid="file-upload-button"]'
       );
+      expect(uploadButton).toBeInTheDocument();
+      
       if (uploadButton) {
-        await user.click(uploadButton as HTMLElement);
-        expect(onFileUpload).toHaveBeenCalledWith([expect.any(File)]);
+        // Try direct fireEvent.click
+        fireEvent.click(uploadButton);
+        
+        await waitFor(() => {
+          expect(onFileUpload).toHaveBeenCalledWith([expect.any(File)]);
+        }, { timeout: 1000 });
       }
     });
 
@@ -573,10 +599,20 @@ describe('ChatInput', () => {
       const onFileRemove = vi.fn();
       const { container } = renderComponent({ files: [file], onFileRemove });
 
-      const removeButton = container.querySelector('button');
-      if (removeButton && removeButton.textContent === 'Remove') {
-        await user.click(removeButton);
-        expect(onFileRemove).toHaveBeenCalledWith(file);
+      // Look specifically for the remove button in file list
+      const fileList = container.querySelector('[data-testid="file-list"]');
+      const removeButton = fileList?.querySelector('button');
+      
+      expect(removeButton).toBeInTheDocument();
+      expect(removeButton?.textContent).toBe('Remove');
+      
+      if (removeButton) {
+        // Use direct fireEvent.click
+        fireEvent.click(removeButton);
+        
+        await waitFor(() => {
+          expect(onFileRemove).toHaveBeenCalledWith(file);
+        }, { timeout: 1000 });
       }
     });
 
@@ -604,9 +640,8 @@ describe('ChatInput', () => {
           clipboardData: mockDataTransfer,
         });
 
-        await waitFor(() => {
-          expect(onFileUpload).toHaveBeenCalledWith([expect.any(File)]);
-        });
+        // File upload callback should be called synchronously after paste event
+        expect(onFileUpload).toHaveBeenCalledWith([expect.any(File)]);
       }
     });
 
@@ -646,9 +681,15 @@ describe('ChatInput', () => {
       const modelSelector = container.querySelector(
         '[data-testid="model-selector"]'
       );
+      expect(modelSelector).toBeInTheDocument();
+      
       if (modelSelector) {
-        await user.click(modelSelector as HTMLElement);
-        expect(onSelectModel).toHaveBeenCalledWith('new-model');
+        // Use direct fireEvent.click
+        fireEvent.click(modelSelector);
+        
+        await waitFor(() => {
+          expect(onSelectModel).toHaveBeenCalledWith('new-model');
+        }, { timeout: 1000 });
       }
     });
 
@@ -676,11 +717,17 @@ describe('ChatInput', () => {
       const voiceButton = container.querySelector(
         '[data-testid="voice-button"]'
       );
+      expect(voiceButton).toBeInTheDocument();
+      
       if (voiceButton) {
-        await user.click(voiceButton as HTMLElement);
-        expect(onValueChange).toHaveBeenCalledWith(
-          'existing text\nVoice transcript test'
-        );
+        // Use direct fireEvent.click
+        fireEvent.click(voiceButton);
+        
+        await waitFor(() => {
+          expect(onValueChange).toHaveBeenCalledWith(
+            'existing text\nVoice transcript test'
+          );
+        }, { timeout: 1000 });
       }
     });
 
@@ -691,9 +738,15 @@ describe('ChatInput', () => {
       const audioModal = container.querySelector(
         '[data-testid="realtime-audio-modal"]'
       );
+      expect(audioModal).toBeInTheDocument();
+      
       if (audioModal) {
-        await user.click(audioModal as HTMLElement);
-        expect(onValueChange).toHaveBeenCalledWith('Realtime audio');
+        // Use direct fireEvent.click
+        fireEvent.click(audioModal);
+        
+        await waitFor(() => {
+          expect(onValueChange).toHaveBeenCalledWith('Realtime audio');
+        }, { timeout: 1000 });
       }
     });
 
@@ -718,9 +771,15 @@ describe('ChatInput', () => {
       const selector = container.querySelector(
         '[data-testid="reasoning-effort-selector"]'
       );
+      expect(selector).toBeInTheDocument();
+      
       if (selector) {
-        await user.selectOptions(selector as HTMLElement, 'high');
-        expect(onReasoningEffortChange).toHaveBeenCalledWith('high');
+        // Use fireEvent.change for select elements
+        fireEvent.change(selector, { target: { value: 'high' } });
+        
+        await waitFor(() => {
+          expect(onReasoningEffortChange).toHaveBeenCalledWith('high');
+        }, { timeout: 1000 });
       }
     });
 
@@ -757,10 +816,20 @@ describe('ChatInput', () => {
         onSuggestion,
       });
 
-      const suggestButton = container.querySelector('button[type="button"]');
-      if (suggestButton && suggestButton.textContent === 'Suggest') {
-        await user.click(suggestButton);
-        expect(onSuggestion).toHaveBeenCalledWith('Test suggestion');
+      // Look specifically in the prompt system for the suggest button
+      const promptSystem = container.querySelector('[data-testid="prompt-system"]');
+      const suggestButton = promptSystem?.querySelector('button[type="button"]');
+      
+      expect(suggestButton).toBeInTheDocument();
+      expect(suggestButton?.textContent).toBe('Suggest');
+      
+      if (suggestButton) {
+        // Use direct fireEvent.click
+        fireEvent.click(suggestButton);
+        
+        await waitFor(() => {
+          expect(onSuggestion).toHaveBeenCalledWith('Test suggestion');
+        }, { timeout: 1000 });
       }
     });
   });

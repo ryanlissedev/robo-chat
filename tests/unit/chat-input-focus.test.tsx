@@ -1,3 +1,4 @@
+import { act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -81,14 +82,14 @@ describe('ChatInput focus resilience with suggestions', () => {
       'Ask anything…'
     ) as HTMLInputElement;
 
-    // Use global act function
-    await (global as any).act(async () => {
+    // Use act function
+    await act(async () => {
       await user.type(textarea, 'h');
     });
     expect(textarea.value).toBe('h');
 
     // Simulate suggestions mounting
-    (global as any).act(() => {
+    act(() => {
       rerender(
         <UserProvider initialUser={mockUserProfile}>
           <ModelProvider>
@@ -106,7 +107,7 @@ describe('ChatInput focus resilience with suggestions', () => {
     const textareaAfterRerender = screen.getByPlaceholderText(
       'Ask anything…'
     ) as HTMLInputElement;
-    await (global as any).act(async () => {
+    await act(async () => {
       await user.type(textareaAfterRerender, 'i');
     });
     expect(textareaAfterRerender.value).toBe('hi');

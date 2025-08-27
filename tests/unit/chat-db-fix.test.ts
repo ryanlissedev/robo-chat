@@ -16,62 +16,76 @@ vi.mock('@/lib/utils/logger', () => ({
   logTrace: vi.fn(),
 }));
 
-// Mock Supabase client
-const _mockSelect = vi.fn();
-const _mockEq = vi.fn();
-const mockSingle = vi.fn();
-const mockInsert = vi.fn();
-
-const mockSupabase = {
-  from: vi.fn((tableName: string) => {
-    if (tableName === 'chats') {
-      return {
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: mockSingle,
-          })),
-        })),
-        insert: mockInsert,
-      };
-    }
-    if (tableName === 'messages') {
-      return {
-        insert: mockInsert,
-      };
-    }
-    return {
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: mockSingle,
-        })),
-      })),
-      insert: mockInsert,
-    };
-  }),
-};
-
 describe('Chat Database Fix', () => {
+  // Helper function to create a Supabase mock
+  function createSupabaseMock(config: {
+    chatExists?: boolean;
+    chatCreateSuccess?: boolean;
+    messageInsertSuccess?: boolean;
+  } = {}) {
+    const {
+      chatExists = true,
+      chatCreateSuccess = true,
+      messageInsertSuccess = true,
+    } = config;
+
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: chatExists ? { id: 'test-chat-id' } : null,
+      error: chatExists ? null : { message: 'No rows returned' },
+    });
+
+    const mockChatInsert = vi.fn().mockResolvedValue({
+      data: chatCreateSuccess ? [{ id: 'test-chat-id' }] : null,
+      error: chatCreateSuccess ? null : { message: 'Insert failed' },
+    });
+
+    const mockMessageInsert = vi.fn().mockResolvedValue({
+      data: messageInsertSuccess ? [{ id: 'test-message-id' }] : null,
+      error: messageInsertSuccess ? null : { message: 'Message insert failed' },
+    });
+
+    const mockFrom = vi.fn().mockImplementation((tableName: string) => {
+      if (tableName === 'chats') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: mockSingle,
+            })),
+          })),
+          insert: mockChatInsert,
+        };
+      }
+      if (tableName === 'messages') {
+        return {
+          insert: mockMessageInsert,
+        };
+      }
+      return {};
+    });
+
+    return {
+      from: mockFrom,
+      mocks: {
+        from: mockFrom,
+        single: mockSingle,
+        chatInsert: mockChatInsert,
+        messageInsert: mockMessageInsert,
+      },
+    };
+  }
+
   beforeEach(() => {
+    // Clear all mocks before each test
     vi.clearAllMocks();
   });
 
   it('should create chat if it does not exist before saving assistant message', async () => {
-    // Mock chat doesn't exist
-    mockSingle.mockResolvedValueOnce({
-      data: null,
-      error: { message: 'No rows returned' },
+    // Arrange - Chat doesn't exist initially, but creation succeeds
+    const mockSupabase = createSupabaseMock({
+      chatExists: false,
+      chatCreateSuccess: true,
+      messageInsertSuccess: true,
     });
-
-    // Mock successful chat creation and message insertion
-    mockInsert
-      .mockResolvedValueOnce({
-        data: { id: 'test-chat-id' },
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: { id: 'test-message-id' },
-        error: null,
-      });
 
     const params: StoreAssistantMessageParams = {
       supabase: mockSupabase as any,
@@ -87,27 +101,21 @@ describe('Chat Database Fix', () => {
       model: 'gpt-4o-mini',
     };
 
+    // Act
     await expect(storeAssistantMessage(params)).resolves.not.toThrow();
 
-    // Verify chat creation was attempted
-    expect(mockSupabase.from).toHaveBeenCalledWith('chats');
-    expect(mockInsert).toHaveBeenCalled();
+    // Assert
+    expect(mockSupabase.mocks.from).toHaveBeenCalledWith('chats');
+    expect(mockSupabase.mocks.from).toHaveBeenCalledWith('messages');
+    expect(mockSupabase.mocks.chatInsert).toHaveBeenCalled();
+    expect(mockSupabase.mocks.messageInsert).toHaveBeenCalled();
   });
 
   it('should skip message saving if chat cannot be created', async () => {
-    // Import the mocked logger
-    const { logWarning } = await import('@/lib/utils/logger');
-
-    // Mock chat doesn't exist
-    mockSingle.mockResolvedValueOnce({
-      data: null,
-      error: { message: 'No rows returned' },
-    });
-
-    // Mock failed chat creation
-    mockInsert.mockResolvedValueOnce({
-      data: null,
-      error: { message: 'Insert failed' },
+    // Arrange - Chat doesn't exist and creation fails
+    const mockSupabase = createSupabaseMock({
+      chatExists: false,
+      chatCreateSuccess: false, // This will cause the skip logic to trigger
     });
 
     const params: StoreAssistantMessageParams = {
@@ -124,26 +132,25 @@ describe('Chat Database Fix', () => {
       model: 'gpt-4o-mini',
     };
 
+    // Act
     await expect(storeAssistantMessage(params)).resolves.not.toThrow();
 
-    // Verify warning was logged
+    // Assert - Get the mocked logger and check it was called
+    const { logWarning } = await import('@/lib/utils/logger');
     expect(logWarning).toHaveBeenCalledWith(
       'Chat does not exist and cannot be created. Skipping message save.',
       { chatId: 'test-chat-id' }
     );
+    
+    // Verify message insert was not attempted
+    expect(mockSupabase.mocks.messageInsert).not.toHaveBeenCalled();
   });
 
   it('should proceed normally if chat already exists', async () => {
-    // Mock chat exists
-    mockSingle.mockResolvedValueOnce({
-      data: { id: 'test-chat-id' },
-      error: null,
-    });
-
-    // Mock successful message insertion
-    mockInsert.mockResolvedValueOnce({
-      data: { id: 'test-message-id' },
-      error: null,
+    // Arrange - Chat exists
+    const mockSupabase = createSupabaseMock({
+      chatExists: true,
+      messageInsertSuccess: true,
     });
 
     const params: StoreAssistantMessageParams = {
@@ -160,11 +167,12 @@ describe('Chat Database Fix', () => {
       model: 'gpt-4o-mini',
     };
 
+    // Act
     await expect(storeAssistantMessage(params)).resolves.not.toThrow();
 
-    // Verify message insertion was attempted (chat exists, so no chat creation needed)
-    expect(mockSupabase.from).toHaveBeenCalledWith('chats');
-    expect(mockSupabase.from).toHaveBeenCalledWith('messages');
-    expect(mockInsert).toHaveBeenCalled();
+    // Assert - Verify both chats and messages tables are accessed
+    expect(mockSupabase.mocks.from).toHaveBeenCalledWith('chats');
+    expect(mockSupabase.mocks.from).toHaveBeenCalledWith('messages');
+    expect(mockSupabase.mocks.messageInsert).toHaveBeenCalled();
   });
 });

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ButtonSearch } from '@/components/app/chat-input/button-search';
@@ -6,20 +6,22 @@ import { ButtonSearch } from '@/components/app/chat-input/button-search';
 // Mock Lucide React icons
 vi.mock('lucide-react', () => ({
   Globe: ({ className }: { className?: string }) => (
-    <div data-testid="globe-icon" className={className}>
-      Globe
-    </div>
+    <svg data-testid="globe-icon" className={className}>
+      <title>Globe</title>
+    </svg>
   ),
 }));
 
 // Mock UI components
 vi.mock('@/components/ui/button', () => ({
-  Button: ({ children, onClick, className, variant, ...props }: any) => (
+  Button: ({ children, onClick, className, variant, size, disabled, ...props }: any) => (
     <button
       type="button"
       onClick={onClick}
       className={className}
       data-variant={variant}
+      data-size={size}
+      disabled={disabled}
       {...props}
     >
       {children}
@@ -67,7 +69,8 @@ describe('ButtonSearch', () => {
     it('should render search button when authenticated', () => {
       renderButtonSearch({ isAuthenticated: true });
 
-      expect(screen.getByRole('button')).toBeInTheDocument();
+      const button = screen.getByRole('button');
+      expect(button).toBeInTheDocument();
       expect(screen.getByTestId('globe-icon')).toBeInTheDocument();
       expect(screen.getByText('Search')).toBeInTheDocument();
     });
@@ -89,7 +92,9 @@ describe('ButtonSearch', () => {
       });
 
       const button = screen.getByRole('button');
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
 
       expect(onToggle).toHaveBeenCalledWith(true);
     });
@@ -103,7 +108,9 @@ describe('ButtonSearch', () => {
       });
 
       const button = screen.getByRole('button');
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
 
       expect(onToggle).toHaveBeenCalledWith(false);
     });
@@ -158,9 +165,11 @@ describe('ButtonSearch', () => {
 
       // Component always calls onToggle(!isSelected)
       // Since isSelected=false, all clicks will call onToggle(true)
-      await user.click(button); // !false -> true
-      await user.click(button); // !false -> true
-      await user.click(button); // !false -> true
+      await act(async () => {
+        await user.click(button); // !false -> true
+        await user.click(button); // !false -> true
+        await user.click(button); // !false -> true
+      });
 
       expect(onToggle).toHaveBeenCalledTimes(3);
       expect(onToggle).toHaveBeenNthCalledWith(1, true);
@@ -181,7 +190,8 @@ describe('ButtonSearch', () => {
     it('should render button inside popover trigger', () => {
       renderButtonSearch({ isAuthenticated: false });
 
-      expect(screen.getByRole('button')).toBeInTheDocument();
+      const button = screen.getByRole('button');
+      expect(button).toBeInTheDocument();
       expect(screen.getByTestId('globe-icon')).toBeInTheDocument();
       expect(screen.getByText('Search')).toBeInTheDocument();
     });
@@ -194,7 +204,9 @@ describe('ButtonSearch', () => {
       });
 
       const button = screen.getByRole('button');
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
 
       // onToggle should not be called since it's in a popover
       expect(onToggle).not.toHaveBeenCalled();
@@ -238,7 +250,9 @@ describe('ButtonSearch', () => {
       const button = screen.getByRole('button');
 
       // Should not crash when clicking
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
 
       expect(button).toBeInTheDocument();
     });
@@ -345,10 +359,14 @@ describe('ButtonSearch', () => {
 
       // Component always calls onToggle(!isSelected)
       // Since isSelected=false, both keys will call onToggle(true)
-      await user.keyboard('{Enter}');
+      await act(async () => {
+        await user.keyboard('{Enter}');
+      });
       expect(onToggle).toHaveBeenCalledWith(true);
 
-      await user.keyboard(' ');
+      await act(async () => {
+        await user.keyboard(' ');
+      });
       expect(onToggle).toHaveBeenCalledWith(true);
     });
 
@@ -394,7 +412,9 @@ describe('ButtonSearch', () => {
 
       const button = screen.getByRole('button');
 
-      expect(() => user.click(button)).not.toThrow();
+      await act(async () => {
+        expect(() => user.click(button)).not.toThrow();
+      });
     });
 
     it('should handle boolean conversion for isSelected', () => {
@@ -439,7 +459,8 @@ describe('ButtonSearch', () => {
       );
 
       // Component should still work
-      expect(screen.getByRole('button')).toBeInTheDocument();
+      const button = screen.getByRole('button');
+      expect(button).toBeInTheDocument();
     });
 
     it('should handle rapid state changes', async () => {
@@ -452,8 +473,10 @@ describe('ButtonSearch', () => {
       const button = screen.getByRole('button');
 
       // Simulate rapid clicking
-      const clicks = Array(10).fill(null);
-      await Promise.all(clicks.map(() => user.click(button)));
+      await act(async () => {
+        const clicks = Array(10).fill(null);
+        await Promise.all(clicks.map(() => user.click(button)));
+      });
 
       expect(onToggle).toHaveBeenCalledTimes(10);
     });

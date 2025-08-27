@@ -51,35 +51,12 @@ vi.mock('next/headers', () => ({
   cookies: mockCookies,
 }));
 
-// Mock Supabase config - dynamically compute from environment
-vi.mock('@/lib/supabase/config', () => {
-  const isSupabaseEnabled = () =>
-    Boolean(
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-        !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder') &&
-        !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('placeholder') &&
-        process.env.NEXT_PUBLIC_SUPABASE_URL !==
-          'https://placeholder.supabase.co' &&
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'placeholder_anon_key'
-    );
-
-  const isDevelopmentMode = () => process.env.NODE_ENV === 'development';
-
-  const isRealtimeEnabled = () => isSupabaseEnabled() && !isDevelopmentMode();
-
-  return {
-    get isSupabaseEnabled() {
-      return isSupabaseEnabled();
-    },
-    get isDevelopmentMode() {
-      return isDevelopmentMode();
-    },
-    get isRealtimeEnabled() {
-      return isRealtimeEnabled();
-    },
-  };
-});
+// Mock Supabase config - use standard pattern
+vi.mock('@/lib/supabase/config', () => ({
+  isSupabaseEnabled: vi.fn(() => true),
+  isDevelopmentMode: vi.fn(() => false),
+  isRealtimeEnabled: vi.fn(() => false),
+}));
 
 // Import the modules after mocking to get the mocked versions
 const { createClient } = await import('@/lib/supabase/client');

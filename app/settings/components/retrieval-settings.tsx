@@ -1,7 +1,7 @@
 'use client';
 
 import { Brain, Filter, RefreshCw, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -72,7 +72,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
   const [saved, setSaved] = useState(true);
   const supabase = createClient();
 
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     if (!supabase) return;
 
     try {
@@ -99,13 +99,16 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
         return;
       }
 
-      if ((data as any)?.config) {
-        setConfig((data as any).config as RetrievalConfig);
+      if ((data as unknown as { config?: RetrievalConfig })?.config) {
+        setConfig(
+          (data as unknown as { config?: RetrievalConfig })
+            .config as RetrievalConfig
+        );
       }
     } catch (error: unknown) {
       clientLogger.error('Failed to load retrieval settings', error);
     }
-  };
+  }, [supabase, userId]);
 
   useEffect(() => {
     loadSettings();
@@ -119,18 +122,16 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
 
     setLoading(true);
     try {
-      const { error } = await (supabase as any)
-        .from('user_retrieval_settings')
-        .upsert(
-          {
-            user_id: userId,
-            config,
-            updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: 'user_id',
-          }
-        );
+      const { error } = await supabase.from('user_retrieval_settings').upsert(
+        {
+          user_id: userId,
+          config,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'user_id',
+        }
+      );
 
       if (error) {
         // Handle case where table doesn't exist yet

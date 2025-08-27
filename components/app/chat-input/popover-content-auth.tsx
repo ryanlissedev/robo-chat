@@ -18,15 +18,15 @@ export function PopoverContentAuth() {
   }
 
   const handleSignInWithGoogle = async () => {
-    const supabase = createClient();
-
-    if (!supabase) {
-      throw new Error('Supabase is not configured');
-    }
-
     try {
       setIsLoading(true);
       setError(null);
+
+      const supabase = createClient();
+
+      if (!supabase) {
+        throw new Error('Supabase is not configured');
+      }
 
       const data = await signInWithGoogle(supabase);
 
@@ -36,7 +36,7 @@ export function PopoverContentAuth() {
       }
     } catch (err: unknown) {
       setError(
-        (err as Error).message ||
+        (err instanceof Error && err.message) ||
           'An unexpected error occurred. Please try again.'
       );
     } finally {

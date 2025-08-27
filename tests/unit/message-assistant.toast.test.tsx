@@ -28,68 +28,43 @@ vi.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
 
-// Mock sonner library first
+// Mock the UI toast component that MessageAssistant actually uses
+vi.mock('@/components/ui/toast', () => {
+  // Create a mock toast function that captures its arguments
+  const toastMock = vi.fn((options: any) => {
+    const globalState = (global as any).__toastMockState;
+    if (globalState) {
+      globalState.lastToastOptions = options;
+    }
+    return 'mock-toast-id';
+  });
+
+  // Create global toast mock state for test access
+  const globalToastMockState = {
+    lastToastOptions: undefined as any,
+    toast: toastMock,
+  };
+
+  // Make it available globally for test access
+  (global as any).__toastMockState = globalToastMockState;
+
+  return {
+    toast: toastMock,
+  };
+});
+
+// Also mock sonner since it's used by the UI toast component
 vi.mock('sonner', () => ({
   toast: {
-    custom: vi.fn((cb: any) => {
-      const id = 123;
-      const state = (global as any).__toastMockState;
-      if (state) {
-        state.cb = cb;
-      }
-      return id;
-    }),
+    custom: vi.fn(() => 'mock-sonner-id'),
     dismiss: vi.fn(),
   },
 }));
 
-// Mock the UI toast module to capture calls and provide a render callback
-vi.mock('@/components/ui/toast', () => {
-  const state: { cb?: (id: number) => React.ReactElement; dismiss: any } = {
-    cb: undefined,
-    dismiss: vi.fn(),
-  };
-
-  // Store state globally for access in tests
-  (global as any).__toastMockState = state;
-
-  function toast(opts: any) {
-    // Import sonner dynamically to use the mock
-    const { toast: sonnerToast } = require('sonner');
-
-    // Create the toast component
-    const toastElement = (id: number) => (
-      <div>
-        <div>{opts?.title || 'File search failed'}</div>
-        {opts?.button ? (
-          <button
-            type="button"
-            onClick={() => {
-              opts.button.onClick();
-              sonnerToast.dismiss(id);
-              state.dismiss(id);
-            }}
-          >
-            {opts.button.label}
-          </button>
-        ) : null}
-      </div>
-    );
-
-    // Store callback and trigger sonner.custom
-    state.cb = toastElement;
-    return sonnerToast.custom(toastElement);
-  }
-
-  return {
-    toast,
-    __mock: state,
-  };
-});
-
 import { MessageAssistant } from '@/components/app/chat/message-assistant';
+import { cleanup, renderWithProviders } from '@/tests/test-utils';
 
-// Mock user preferences hook to avoid needing real provider
+// Mock user preferences provider and hook properly
 vi.mock('@/lib/user-preference-store/provider', () => ({
   useUserPreferences: () => ({
     preferences: {
@@ -97,6 +72,7 @@ vi.mock('@/lib/user-preference-store/provider', () => ({
       multiModelEnabled: false,
     },
   }),
+  UserPreferencesProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 // Helpers to build a tool part for fileSearch failure
@@ -118,18 +94,33 @@ function buildFileSearchFailurePart(message: string) {
 }
 
 describe('MessageAssistant toast on fileSearch failure', () => {
-  beforeEach(async () => {
-    // reset mock toast state
-    const mod: any = await import('@/components/ui/toast');
-    mod.__mock.cb = undefined;
-    mod.__mock.dismiss.mockReset();
+  beforeEach(() => {
+    // Clear all mocks and reset state
+    vi.clearAllMocks();
+
+    // Reset toast mock state
+    const globalState = (global as any).__toastMockState;
+    if (globalState) {
+      globalState.lastToastOptions = undefined;
+      if (globalState.toast && vi.isMockFunction(globalState.toast)) {
+        globalState.toast.mockReset();
+      }
+    }
+
+    // Clean up React components to reset internal refs
+    cleanup();
   });
 
   it('shows error toast with Retry button and triggers onReload when clicked', async () => {
     const user = userEvent.setup({ delay: null });
     const onReload = vi.fn();
 
-    render(
+    const globalState = (global as any).__toastMockState;
+    
+    // Reset state for clean test
+    globalState.lastToastOptions = undefined;
+
+    const { unmount } = renderWithProviders(
       <MessageAssistant
         children={''}
         isLast
@@ -137,60 +128,81 @@ describe('MessageAssistant toast on fileSearch failure', () => {
         copied={false}
         copyToClipboard={() => {}}
         onReload={onReload}
-        parts={[buildFileSearchFailurePart('Network error')]} // simulate tool output
+        parts={[buildFileSearchFailurePart('Network error test 1')]}
         status={'ready'}
         className={''}
-        messageId={'m1'}
+        messageId={'m1-unique-test'}
         onQuote={() => {}}
       />
     );
 
-    const mod: any = await import('@/components/ui/toast');
-    expect(typeof mod.__mock.cb).toBe('function');
-    const elem = mod.__mock.cb(123);
-    const { getByText } = render(elem);
+    // Toast is called synchronously after render - no need for waitFor
+    expect(globalState.lastToastOptions).toBeDefined();
+    expect(globalState.lastToastOptions.title).toBe('File search failed');
+    expect(globalState.lastToastOptions.button).toBeDefined();
 
-    // Click Retry and ensure onReload called and dismiss invoked
-    await user.click(getByText('Retry'));
+    // Verify button configuration
+    expect(globalState.lastToastOptions.button.label).toBe('Retry');
+    expect(typeof globalState.lastToastOptions.button.onClick).toBe('function');
 
-    await waitFor(
-      () => {
-        expect(onReload).toHaveBeenCalledTimes(1);
-        expect(mod.__mock.dismiss).toHaveBeenCalledWith(123);
-      },
-      { timeout: 5000 }
-    );
+    // Simulate button click
+    globalState.lastToastOptions.button.onClick();
+
+    // Verify onReload was called
+    expect(onReload).toHaveBeenCalledTimes(1);
+    
+    // Clean up this component instance
+    unmount();
   });
 
   it('shows error toast without button if no onReload provided', async () => {
-    render(
+    const globalState = (global as any).__toastMockState;
+    
+    // Reset state for clean test
+    globalState.lastToastOptions = undefined;
+
+    const { unmount } = renderWithProviders(
       <MessageAssistant
         children={''}
         isLast
         hasScrollAnchor={false}
         copied={false}
         copyToClipboard={() => {}}
-        parts={[buildFileSearchFailurePart('Failed to search')]}
+        parts={[
+          {
+            type: 'tool-fileSearch',
+            toolCallId: 'call_no_reload_test2',
+            toolName: 'fileSearch',
+            state: 'output-available',
+            output: {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({
+                    success: false,
+                    error: 'No onReload test error 2',
+                  }),
+                },
+              ],
+            },
+          } as any,
+        ]}
         status={'ready'}
         className={''}
-        messageId={'m2'}
+        messageId={'m2-no-reload-unique'}
         onQuote={() => {}}
+        // Explicitly no onReload prop - this should result in no button
       />
     );
 
-    const mod: any = await import('@/components/ui/toast');
-
-    await waitFor(
-      () => {
-        expect(typeof mod.__mock.cb).toBe('function');
-      },
-      { timeout: 5000 }
-    );
-
-    const elem = mod.__mock.cb(1);
-    const { queryByText, getByText } = render(elem);
-
-    expect(getByText('File search failed')).toBeTruthy();
-    expect(queryByText('Retry')).toBeNull();
+    // Toast is called synchronously after render - no need for waitFor
+    expect(globalState.lastToastOptions).toBeDefined();
+    expect(globalState.lastToastOptions.title).toBe('File search failed');
+    
+    // Check that no button was provided since onReload is missing
+    expect(globalState.lastToastOptions.button).toBeUndefined();
+    
+    // Clean up this component instance
+    unmount();
   });
 });

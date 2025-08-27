@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { validateUserIdentity } from '@/lib/server/api';
 import { createClient } from '@/lib/supabase/server';
 import { createGuestServerClient } from '@/lib/supabase/server-guest';
+import { isSupabaseEnabled } from '@/lib/supabase/config';
 
 // Mock dependencies
 vi.mock('@/lib/supabase/server', () => ({
@@ -12,14 +13,7 @@ vi.mock('@/lib/supabase/server-guest', () => ({
   createGuestServerClient: vi.fn(),
 }));
 
-// Create a mock that we can control
-const mockIsSupabaseEnabled = { value: true };
-
-vi.mock('@/lib/supabase/config', () => ({
-  get isSupabaseEnabled() {
-    return mockIsSupabaseEnabled.value;
-  },
-}));
+// Using global standardized mock from tests/setup.ts
 
 // Mock Supabase client
 const mockSupabaseClient = {
@@ -56,7 +50,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
     vi.mocked(createGuestServerClient).mockResolvedValue(
       mockSupabaseClient as any
     );
-    mockIsSupabaseEnabled.value = true;
+    vi.mocked(isSupabaseEnabled).mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -65,7 +59,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
 
   describe('validateUserIdentity - Supabase Disabled', () => {
     it('should return null when Supabase is disabled', async () => {
-      mockIsSupabaseEnabled.value = false;
+      vi.mocked(isSupabaseEnabled).mockReturnValue(false);
 
       const result = await validateUserIdentity(mockUserId, true);
 

@@ -4,6 +4,9 @@ import { GET, POST } from '@/app/api/voice/transcripts/route';
 // Mock decryptApiKey
 vi.mock('@/lib/security/encryption', () => ({
   decryptApiKey: vi.fn(() => 'test-openai-key'),
+  encrypt: vi.fn(() => 'encrypted-data'),
+  decrypt: vi.fn(() => 'decrypted-data'),
+  encryptApiKey: vi.fn(() => ({ encrypted: 'encrypted-key', iv: 'test-iv' })),
 }));
 
 // Mock Supabase client

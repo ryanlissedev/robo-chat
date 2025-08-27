@@ -7,13 +7,13 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 // Import components and hooks
 import { VoiceButton } from '@/components/app/voice/button/voice-button';
 import { useVoiceIntegration } from '@/components/app/voice/hooks/use-voice-integration';
 import { TranscriptionPanel } from '@/components/app/voice/panel/transcription-panel';
 import { useVoiceStore } from '@/components/app/voice/store/voice-store';
 import { AudioVisualizer } from '@/components/app/voice/visualizer/audio-visualizer';
+import { renderWithProviders } from '../test-utils';
 
 // Mock external dependencies
 vi.mock('@/components/app/voice/hooks/use-webrtc-connection', () => ({
@@ -22,14 +22,23 @@ vi.mock('@/components/app/voice/hooks/use-webrtc-connection', () => ({
     connect: vi.fn(),
     disconnect: vi.fn(),
     sendMessage: vi.fn(),
+    sendData: vi.fn(),
+    connectionState: 'new',
+    iceConnectionState: 'new',
   })),
 }));
 
 vi.mock('@/components/app/voice/hooks/use-personality', () => ({
   usePersonality: vi.fn(() => ({
     currentPersonality: 'safety-focused',
+    currentMode: 'safety-focused',
     updatePersonality: vi.fn(),
     getPersonalityConfig: vi.fn(() => ({
+      name: 'Safety-Focused',
+      systemPrompt: 'Be helpful and safe',
+      voice: 'nova',
+    })),
+    getPersonalityByMode: vi.fn(() => ({
       name: 'Safety-Focused',
       systemPrompt: 'Be helpful and safe',
       voice: 'nova',
@@ -115,7 +124,7 @@ describe('Voice Components Integration', () => {
 
   describe('VoiceButton Integration', () => {
     it('should integrate with voice store for recording control', async () => {
-      render(<VoiceButton />);
+      renderWithProviders(<VoiceButton />);
 
       const buttons = screen.getAllByRole('button');
       const voiceButton = buttons[0]; // Get first button which should be voice button
@@ -178,7 +187,7 @@ describe('Voice Components Integration', () => {
         new Error('Permission denied')
       );
 
-      render(<VoiceButton />);
+      renderWithProviders(<VoiceButton />);
 
       const buttons = screen.getAllByRole('button');
       const voiceButton = buttons[0]; // Get first button which should be voice button
@@ -208,7 +217,7 @@ describe('Voice Components Integration', () => {
     it('should display transcript from voice store', async () => {
       const { getState } = useVoiceStore;
 
-      render(
+      renderWithProviders(
         <div>
           <VoiceButton />
           <TranscriptionPanel isVisible={true} />
@@ -245,7 +254,7 @@ describe('Voice Components Integration', () => {
     it('should handle edit transcript and update store', async () => {
       const { getState } = useVoiceStore;
 
-      render(
+      renderWithProviders(
         <div>
           <VoiceButton />
           <TranscriptionPanel isVisible={true} />
@@ -296,7 +305,7 @@ describe('Voice Components Integration', () => {
     it('should integrate with voice indexing', async () => {
       const { getState } = useVoiceStore;
 
-      render(
+      renderWithProviders(
         <div>
           <VoiceButton />
           <TranscriptionPanel isVisible={true} />
@@ -349,7 +358,7 @@ describe('Voice Components Integration', () => {
     it('should visualize audio from voice store data', async () => {
       const { getState } = useVoiceStore;
 
-      render(
+      renderWithProviders(
         <div>
           <VoiceButton />
           <AudioVisualizer />
@@ -387,7 +396,7 @@ describe('Voice Components Integration', () => {
     it('should update visualization based on recording state', async () => {
       const { getState } = useVoiceStore;
 
-      const { rerender } = render(
+      const { rerender } = renderWithProviders(
         <div>
           <VoiceButton />
           <AudioVisualizer />
@@ -537,7 +546,7 @@ describe('Voice Components Integration', () => {
         </div>
       );
 
-      render(<VoiceWorkflow />);
+      renderWithProviders(<VoiceWorkflow />);
 
       // Step 1: Start session
       const buttons = screen.getAllByRole('button');
@@ -614,7 +623,7 @@ describe('Voice Components Integration', () => {
 
       const { getState } = useVoiceStore;
 
-      render(
+      renderWithProviders(
         <div>
           <VoiceButton />
           <TranscriptionPanel isVisible={true} />
@@ -653,7 +662,7 @@ describe('Voice Components Integration', () => {
       const { getState } = useVoiceStore;
 
       // Render multiple components that use the same store
-      render(
+      renderWithProviders(
         <div>
           <VoiceButton />
           <TranscriptionPanel isVisible={true} />

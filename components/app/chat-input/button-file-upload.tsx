@@ -31,7 +31,7 @@ export function ButtonFileUpload({
   isUserAuthenticated,
   model,
 }: ButtonFileUploadProps) {
-  if (!isSupabaseEnabled) {
+  if (!isSupabaseEnabled()) {
     return null;
   }
 

@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cn, debounce, formatNumber, isDev } from '@/lib/utils';
 
+// Import timer test utilities
+import { createTimerTestContext, safeAdvanceTimers, safeRunPendingTimers } from '../utils/timer-test-utils';
+
 describe('utils', () => {
   describe('cn()', () => {
     it('should combine multiple class strings', () => {
@@ -94,13 +97,15 @@ describe('utils', () => {
   });
 
   describe('debounce()', () => {
+    const timerContext = createTimerTestContext();
+
     beforeEach(() => {
-      vi.useFakeTimers();
+      timerContext.setupTimers();
     });
 
     afterEach(() => {
-      vi.runOnlyPendingTimers();
-      vi.useRealTimers();
+      safeRunPendingTimers();
+      timerContext.cleanupTimers();
     });
 
     it('should delay function execution', () => {
@@ -110,7 +115,7 @@ describe('utils', () => {
       debouncedFn();
       expect(mockFn).not.toHaveBeenCalled();
 
-      vi.advanceTimersByTime(1000);
+      safeAdvanceTimers(1000);
       expect(mockFn).toHaveBeenCalledTimes(1);
     });
 
@@ -124,7 +129,7 @@ describe('utils', () => {
 
       expect(mockFn).not.toHaveBeenCalled();
 
-      vi.advanceTimersByTime(1000);
+      safeAdvanceTimers(1000);
       expect(mockFn).toHaveBeenCalledTimes(1);
       expect(mockFn).toHaveBeenCalledWith('third');
     });
@@ -134,13 +139,13 @@ describe('utils', () => {
       const debouncedFn = debounce(mockFn, 1000);
 
       debouncedFn();
-      vi.advanceTimersByTime(500);
+      safeAdvanceTimers(500);
 
       debouncedFn();
-      vi.advanceTimersByTime(500);
+      safeAdvanceTimers(500);
       expect(mockFn).not.toHaveBeenCalled();
 
-      vi.advanceTimersByTime(500);
+      safeAdvanceTimers(500);
       expect(mockFn).toHaveBeenCalledTimes(1);
     });
 
@@ -149,7 +154,7 @@ describe('utils', () => {
       const debouncedFn = debounce(mockFn, 1000);
 
       debouncedFn('arg1', 'arg2', 'arg3');
-      vi.advanceTimersByTime(1000);
+      safeAdvanceTimers(1000);
 
       expect(mockFn).toHaveBeenCalledWith('arg1', 'arg2', 'arg3');
     });
@@ -162,7 +167,7 @@ describe('utils', () => {
       const result = debouncedFn();
       expect(result).toBeUndefined();
 
-      vi.advanceTimersByTime(1000);
+      safeAdvanceTimers(1000);
       expect(mockFn).toHaveBeenCalled();
     });
 
@@ -171,10 +176,10 @@ describe('utils', () => {
       const debouncedFn = debounce(mockFn, 2000);
 
       debouncedFn();
-      vi.advanceTimersByTime(1000);
+      safeAdvanceTimers(1000);
       expect(mockFn).not.toHaveBeenCalled();
 
-      vi.advanceTimersByTime(1000);
+      safeAdvanceTimers(1000);
       expect(mockFn).toHaveBeenCalledTimes(1);
     });
 
@@ -195,7 +200,7 @@ describe('utils', () => {
 
       debouncedFn('test-arg');
 
-      vi.advanceTimersByTime(1000);
+      safeAdvanceTimers(1000);
       expect(mockFn).toHaveBeenCalledWith('test-arg');
     });
 
@@ -208,7 +213,7 @@ describe('utils', () => {
         debouncedFn(i);
       }
 
-      vi.advanceTimersByTime(1000);
+      safeAdvanceTimers(1000);
       expect(mockFn).toHaveBeenCalledTimes(1);
       expect(mockFn).toHaveBeenCalledWith(9); // Last call with value 9
     });
@@ -284,7 +289,7 @@ describe('utils', () => {
         debouncedFn();
 
         expect(() => {
-          vi.advanceTimersByTime(1000);
+          safeAdvanceTimers(1000);
         }).toThrow('Test error');
         expect(errorFn).toHaveBeenCalledTimes(1);
       });
@@ -302,7 +307,7 @@ describe('utils', () => {
 
         expect(clearTimeoutSpy).toHaveBeenCalledTimes(2);
 
-        vi.advanceTimersByTime(1000);
+        safeAdvanceTimers(1000);
         expect(mockFn).toHaveBeenCalledTimes(1);
 
         clearTimeoutSpy.mockRestore();

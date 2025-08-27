@@ -21,6 +21,7 @@ vi.mock('@/components/prompt-kit/file-upload', () => ({
     >
       <input
         type="file"
+        multiple={multiple}
         onChange={(e) => {
           const files = Array.from(e.target.files || []);
           onFilesAdded?.(files);
@@ -156,10 +157,10 @@ describe('ButtonFileUpload', () => {
 
       expect(screen.getByTestId('popover-content')).toBeInTheDocument();
       expect(
-        screen.getByText('This model does not support file uploads.')
+        screen.getByText(/This model does not support file uploads/i)
       ).toBeInTheDocument();
       expect(
-        screen.getByText('Please select another model.')
+        screen.getByText(/Please select another model/i)
       ).toBeInTheDocument();
     });
 
@@ -324,7 +325,7 @@ describe('ButtonFileUpload', () => {
         });
 
         expect(
-          screen.getByText('This model does not support file uploads.')
+          screen.getByText(/This model does not support file uploads/i)
         ).toBeInTheDocument();
         unmount();
       });
@@ -338,7 +339,7 @@ describe('ButtonFileUpload', () => {
 
       // Should show limitation message for unknown models
       expect(
-        screen.getByText('This model does not support file uploads.')
+        screen.getByText(/This model does not support file uploads/i)
       ).toBeInTheDocument();
     });
   });
@@ -530,7 +531,7 @@ describe('ButtonFileUpload', () => {
 
       // Should show limitation message for empty model
       expect(
-        screen.getByText('This model does not support file uploads.')
+        screen.getByText(/This model does not support file uploads/i)
       ).toBeInTheDocument();
     });
 

@@ -214,7 +214,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
       }
 
       const keysMap: Record<string, ApiKey> = {};
-      ((data as any[]) || []).forEach((key: any) => {
+      ((data as ApiKey[]) || []).forEach((key: ApiKey) => {
         keysMap[key.provider] = key as ApiKey;
       });
       setApiKeys(keysMap);
@@ -291,7 +291,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
         // Mask the key for storage (show only first 3 and last 4 characters)
         const maskedKey = `${key.substring(0, 3)}...${key.substring(key.length - 4)}`;
 
-        const { error } = await (supabase as any).from('user_api_keys').upsert(
+        const { error } = await supabase.from('user_api_keys').upsert(
           {
             user_id: userId,
             provider,
@@ -605,9 +605,11 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
                   {!isGuest && apiKeys[provider.id].last_used && (
                     <p className="text-muted-foreground text-xs">
                       Last used:{' '}
-                      {new Date(
-                        apiKeys[provider.id].last_used!
-                      ).toLocaleDateString()}
+                      {apiKeys[provider.id].last_used
+                        ? new Date(
+                            apiKeys[provider.id].last_used!
+                          ).toLocaleDateString()
+                        : 'Never'}
                     </p>
                   )}
                   {isGuest &&

@@ -112,8 +112,8 @@ export async function teardownTestEnvironment() {
   await testUtils.cleanup();
 }
 
-// Jest setup for database tests
-export const jestSetup = {
+// Vitest setup for database tests
+export const vitestSetup = {
   setupFilesAfterEnv: ['<rootDir>/tests/supabase-test-setup.ts'],
   testEnvironment: 'node',
   testMatch: ['<rootDir>/tests/**/*.test.ts', '<rootDir>/tests/**/*.spec.ts'],

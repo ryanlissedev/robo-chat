@@ -6,33 +6,69 @@ import type { Database } from '@/app/types/database.types';
 
 describe('storeAssistantMessage - TDD London School', () => {
   let mockSupabase: SupabaseClient<Database>;
-  let mockFrom: ReturnType<typeof vi.fn>;
-  let mockInsert: ReturnType<typeof vi.fn>;
-  let mockSelect: ReturnType<typeof vi.fn>;
-  let mockEq: ReturnType<typeof vi.fn>;
-  let mockSingle: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
-    // Mock Supabase client using London School approach
-    mockInsert = vi.fn().mockResolvedValue({ error: null });
-    mockSingle = vi
-      .fn()
-      .mockResolvedValue({ data: { id: 'test-chat-id' }, error: null });
-    mockEq = vi.fn().mockReturnValue({ single: mockSingle });
-    mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+  // Helper function to create a fresh Supabase mock
+  function createSupabaseMock(config: {
+    chatExists?: boolean;
+    chatCreateSuccess?: boolean;
+    messageInsertSuccess?: boolean;
+    messageInsertError?: string;
+  } = {}) {
+    const {
+      chatExists = true,
+      chatCreateSuccess = true,
+      messageInsertSuccess = true,
+      messageInsertError,
+    } = config;
 
-    // Mock the from method to return different objects based on table name
-    mockFrom = vi.fn().mockImplementation((table: string) => {
-      if (table === 'chats') {
-        return { select: mockSelect };
-      }
-      if (table === 'messages') {
-        return { insert: mockInsert };
-      }
-      return { insert: mockInsert, select: mockSelect };
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: chatExists ? { id: 'test-chat-id' } : null,
+      error: chatExists ? null : { message: 'No rows returned' },
     });
 
-    mockSupabase = { from: mockFrom } as unknown as SupabaseClient<Database>;
+    const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+
+    const mockChatInsert = vi.fn().mockResolvedValue({
+      data: chatCreateSuccess ? [{ id: 'test-chat-id' }] : null,
+      error: chatCreateSuccess ? null : { message: 'Chat creation failed' },
+    });
+
+    const mockMessageInsert = vi.fn().mockResolvedValue({
+      data: messageInsertSuccess ? [{ id: 'test-message-id' }] : null,
+      error: messageInsertError 
+        ? { message: messageInsertError }
+        : messageInsertSuccess 
+          ? null 
+          : { message: 'Message insert failed' },
+    });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'chats') {
+        return { select: mockSelect, insert: mockChatInsert };
+      }
+      if (table === 'messages') {
+        return { insert: mockMessageInsert };
+      }
+      return { insert: mockMessageInsert, select: mockSelect };
+    });
+
+    return {
+      from: mockFrom,
+      mocks: {
+        from: mockFrom,
+        select: mockSelect,
+        eq: mockEq,
+        single: mockSingle,
+        chatInsert: mockChatInsert,
+        messageInsert: mockMessageInsert,
+      },
+    } as SupabaseClient<Database> & { mocks: any };
+  }
+
+  beforeEach(() => {
+    // Create a default successful mock
+    mockSupabase = createSupabaseMock();
   });
 
   describe('when processing assistant messages with text content', () => {
@@ -57,9 +93,9 @@ describe('storeAssistantMessage - TDD London School', () => {
       });
 
       // Assert - Verify behavior (interactions)
-      expect(mockFrom).toHaveBeenCalledWith('chats');
-      expect(mockFrom).toHaveBeenCalledWith('messages');
-      expect(mockInsert).toHaveBeenCalledWith({
+      expect(mockSupabase.mocks.from).toHaveBeenCalledWith('chats');
+      // Note: messages table call happens only when chat exists, which should be the case
+      expect(mockSupabase.mocks.messageInsert).toHaveBeenCalledWith({
         chat_id: chatId,
         role: 'assistant',
         content: 'Hello world\n\nHow are you?',
@@ -113,7 +149,8 @@ describe('storeAssistantMessage - TDD London School', () => {
       });
 
       // Assert - Focus on collaborations
-      expect(mockInsert).toHaveBeenCalledWith(
+      expect(mockSupabase.mocks.from).toHaveBeenCalledWith('chats');
+      expect(mockSupabase.mocks.messageInsert).toHaveBeenCalledWith(
         expect.objectContaining({
           parts: expect.arrayContaining([
             expect.objectContaining({
@@ -149,7 +186,8 @@ describe('storeAssistantMessage - TDD London School', () => {
       });
 
       // Assert
-      expect(mockInsert).toHaveBeenCalledWith(
+      expect(mockSupabase.mocks.from).toHaveBeenCalledWith('chats');
+      expect(mockSupabase.mocks.messageInsert).toHaveBeenCalledWith(
         expect.objectContaining({
           parts: expect.arrayContaining([
             {
@@ -170,9 +208,10 @@ describe('storeAssistantMessage - TDD London School', () => {
 
   describe('when database operation fails', () => {
     it('should throw descriptive error', async () => {
-      // Arrange
-      const dbError = { message: 'Database connection failed' };
-      mockInsert.mockResolvedValue({ error: dbError });
+      // Arrange - Create mock that will fail message insert
+      mockSupabase = createSupabaseMock({
+        messageInsertError: 'Database connection failed',
+      });
 
       // Act & Assert
       await expect(
@@ -187,24 +226,25 @@ describe('storeAssistantMessage - TDD London School', () => {
     });
 
     it('should skip saving when chat does not exist and cannot be created', async () => {
-      // Arrange - Mock chat not existing
-      mockSingle.mockResolvedValue({
-        data: null,
-        error: { message: 'No rows returned' },
+      // Arrange - Create mock where chat doesn't exist and no userId provided
+      mockSupabase = createSupabaseMock({
+        chatExists: false,
       });
 
-      // Act
+      // Act - Note: no userId provided, so chat creation should fail
       await storeAssistantMessage({
         supabase: mockSupabase,
         chatId: 'non-existent-chat-id',
         messages: [
           { role: 'assistant', content: [{ type: 'text', text: 'Hello' }] },
         ],
+        // userId: undefined - this is key to trigger the skip logic
       });
 
-      // Assert - Should not attempt to insert message
-      expect(mockFrom).toHaveBeenCalledWith('chats');
-      expect(mockInsert).not.toHaveBeenCalled();
+      // Assert - Should check for chat existence but not insert message
+      expect(mockSupabase.mocks.from).toHaveBeenCalledWith('chats');
+      expect(mockSupabase.mocks.from).not.toHaveBeenCalledWith('messages');
+      expect(mockSupabase.mocks.messageInsert).not.toHaveBeenCalled();
     });
   });
 
@@ -218,7 +258,7 @@ describe('storeAssistantMessage - TDD London School', () => {
       });
 
       // Assert
-      expect(mockInsert).toHaveBeenCalledWith(
+      expect(mockSupabase.mocks.messageInsert).toHaveBeenCalledWith(
         expect.objectContaining({
           content: '',
           parts: [],
@@ -238,7 +278,7 @@ describe('storeAssistantMessage - TDD London School', () => {
       });
 
       // Assert
-      expect(mockInsert).toHaveBeenCalledWith(
+      expect(mockSupabase.mocks.messageInsert).toHaveBeenCalledWith(
         expect.objectContaining({
           content: '',
           parts: [],
@@ -274,7 +314,7 @@ describe('storeAssistantMessage - TDD London School', () => {
       });
 
       // Assert - Should not include the tool invocation
-      expect(mockInsert).toHaveBeenCalledWith(
+      expect(mockSupabase.mocks.messageInsert).toHaveBeenCalledWith(
         expect.objectContaining({
           parts: [],
         })

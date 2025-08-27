@@ -2,13 +2,19 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useVoiceStore } from '@/components/app/voice/store/voice-store';
 
+// Import timer test utilities
+import { createTimerTestContext, safeRunPendingTimers } from '../utils/timer-test-utils';
+
 // Mock fetch globally
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 describe('Voice Store', () => {
+  const timerContext = createTimerTestContext();
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    timerContext.setupTimers();
+    
     // Reset store state before each test
     act(() => {
       useVoiceStore.getState().reset();
@@ -17,10 +23,19 @@ describe('Voice Store', () => {
 
   afterEach(() => {
     vi.resetAllMocks();
+    
+    // Handle timer cleanup safely
+    safeRunPendingTimers();
+    timerContext.cleanupTimers();
+    
+    // Cleanup any remaining subscriptions or effects
+    act(() => {
+      useVoiceStore.getState().reset();
+    });
   });
 
   describe('Initial State', () => {
-    it('should have correct initial state', () => {
+    it.concurrent('should have correct initial state', () => {
       const { result } = renderHook(() => useVoiceStore());
 
       // Wrap all state reads in act() to prevent warnings
@@ -39,7 +54,7 @@ describe('Voice Store', () => {
       });
     });
 
-    it('should have correct default configuration', () => {
+    it.concurrent('should have correct default configuration', () => {
       const { result } = renderHook(() => useVoiceStore());
 
       act(() => {
@@ -438,7 +453,7 @@ describe('Voice Store', () => {
         await act(async () => {
           await result.current.indexTranscript('Test transcript');
         });
-      }).rejects.toThrow('User ID required for transcript indexing');
+      }).rejects.toThrow('Valid User ID required for transcript indexing');
 
       act(() => {
         expect(result.current.indexingStatus).toBe('failed');

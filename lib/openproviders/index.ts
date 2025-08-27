@@ -80,13 +80,13 @@ export function openproviders<T extends SupportedModel>(
     const isGPT5Model = modelId.startsWith('gpt-5');
     const isReasoningModel = /^(o1|o3|o4)/.test(modelId);
 
-    // Configure provider options for GPT-5 models
+    // Configure provider options for GPT-5 models with low verbosity defaults
     const providerOptions = isGPT5Model
       ? {
           ...openaiSettings,
           openai: {
-            textVerbosity: textVerbosity || verbosity || 'medium',
-            reasoningSummary: reasoningSummary || 'auto',
+            textVerbosity: textVerbosity || verbosity || 'low', // Default to low verbosity
+            reasoningSummary: reasoningSummary || 'concise', // Default to concise reasoning
             serviceTier: serviceTier || 'auto',
             ...(openaiSettings.openai || {}),
           },
@@ -121,8 +121,10 @@ export function openproviders<T extends SupportedModel>(
         headers: customHeaders,
         ...providerOptions,
       });
-      // Use the actual GPT-5 model ID (no mapping needed in August 2025)
-      return openaiProvider(modelId as OpenAIModel);
+      // Use openai.responses() for GPT-5 models as recommended in the cookbook
+      return isGPT5Model
+        ? openaiProvider.responses(modelId as OpenAIModel)
+        : openaiProvider(modelId as OpenAIModel);
     }
 
     // For default OpenAI provider, use environment variable
@@ -133,7 +135,10 @@ export function openproviders<T extends SupportedModel>(
         headers: customHeaders,
         ...providerOptions,
       });
-      return openaiProvider(modelId as OpenAIModel);
+      // Use openai.responses() for GPT-5 models as recommended in the cookbook
+      return isGPT5Model
+        ? openaiProvider.responses(modelId as OpenAIModel)
+        : openaiProvider(modelId as OpenAIModel);
     }
 
     // Fallback to default provider
@@ -142,7 +147,10 @@ export function openproviders<T extends SupportedModel>(
         ? createOpenAI({ headers: customHeaders, ...providerOptions })
         : openai;
 
-    return enhancedOpenAI(modelId as OpenAIModel);
+    // Use openai.responses() for GPT-5 models as recommended in the cookbook
+    return isGPT5Model
+      ? enhancedOpenAI.responses(modelId as OpenAIModel)
+      : enhancedOpenAI(modelId as OpenAIModel);
   }
 
   if (provider === 'mistral') {

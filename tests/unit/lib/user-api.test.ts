@@ -6,14 +6,21 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 vi.mock('@/lib/supabase/config', () => ({
-  isSupabaseEnabled: true,
+  isSupabaseEnabled: vi.fn(() => true),
+  isDevelopmentMode: vi.fn(() => false),
+  isRealtimeEnabled: vi.fn(() => false),
 }));
 
 import { createClient } from '@/lib/supabase/server';
+import { isSupabaseEnabled } from '@/lib/supabase/config';
+
+// Get the mocked version for use in tests
+const mockIsSupabaseEnabled = vi.mocked(isSupabaseEnabled);
 
 describe('User API', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mockIsSupabaseEnabled.mockReturnValue(true);
   });
 
   describe('getSupabaseUser', () => {
@@ -53,10 +60,25 @@ describe('User API', () => {
 
   describe('getUserProfile', () => {
     it('should return guest profile when supabase is disabled', async () => {
-      vi.mocked(require('@/lib/supabase/config')).isSupabaseEnabled = false;
+      mockIsSupabaseEnabled.mockReturnValue(false);
+      
       const profile = await getUserProfile();
-      expect(profile.anonymous).toBe(true);
-      expect(profile.display_name).toBe('Guest');
+      
+      expect(profile).toEqual({
+        id: 'guest',
+        email: 'guest@zola.chat',
+        display_name: 'Guest',
+        profile_image: '',
+        anonymous: true,
+        preferences: {
+          layout: 'fullscreen',
+          promptSuggestions: true,
+          showToolInvocations: true,
+          showConversationPreviews: true,
+          multiModelEnabled: false,
+          hiddenModels: [],
+        },
+      });
     });
 
     it('should return guest profile when user is not authenticated', async () => {
@@ -75,15 +97,23 @@ describe('User API', () => {
     });
 
     it('should return user profile when user is authenticated', async () => {
+      // Ensure Supabase is enabled for this test
+      mockIsSupabaseEnabled.mockReturnValue(true);
+      
       const mockUser = {
         id: 'user-123',
         email: 'test@example.com',
-        user_metadata: {},
+        user_metadata: {
+          name: 'Test User',
+          avatar_url: 'https://example.com/avatar.jpg'
+        },
       };
       const mockProfile = {
         id: 'user-123',
-        display_name: 'Test User',
+        email: 'test@example.com',
+        display_name: 'Test User Profile',
         anonymous: false,
+        user_preferences: null,
       };
       const mockSupabaseClient = {
         auth: {
@@ -100,7 +130,22 @@ describe('User API', () => {
 
       const profile = await getUserProfile();
 
-      expect(profile).toEqual(expect.objectContaining(mockProfile));
+      expect(profile).toEqual({
+        id: 'user-123',
+        email: 'test@example.com',
+        display_name: 'Test User', // From user_metadata.name
+        profile_image: 'https://example.com/avatar.jpg', // From user_metadata.avatar_url
+        anonymous: false,
+        user_preferences: null, // This property gets spread from the database result
+        preferences: {
+          layout: 'fullscreen',
+          promptSuggestions: true,
+          showToolInvocations: true,
+          showConversationPreviews: true,
+          multiModelEnabled: false,
+          hiddenModels: [],
+        },
+      });
     });
   });
 });

@@ -100,7 +100,6 @@ README.md
 # Testing
 coverage
 .nyc_output
-jest.config.js
 
 # Linting
 .eslintrc*

@@ -37,18 +37,19 @@ pkill -f "next dev"             # Kill all Next.js dev processes
 ```typescript
 // ❌ Error
 const message: Message = {
-  role: 'user',
-  content: ['Hello'] // Error: string[] not assignable to string
-}
+  role: "user",
+  content: ["Hello"], // Error: string[] not assignable to string
+};
 
 // ✅ Solution
 const message: Message = {
-  role: 'user',
-  content: 'Hello' // Correct type
-}
+  role: "user",
+  content: "Hello", // Correct type
+};
 ```
 
 **Fix Steps**:
+
 1. Check the type definition: `cmd+click` on the type
 2. Verify the expected shape
 3. Use type assertions if needed: `as Type`
@@ -59,6 +60,7 @@ const message: Message = {
 **Problem**: `Cannot find module '@/components/...'`
 
 **Solutions**:
+
 ```json
 // tsconfig.json - Check path aliases
 {
@@ -109,11 +111,11 @@ function Component() {
 // ✅ Solution: Use useEffect
 function Component() {
   const [date, setDate] = useState<string>('')
-  
+
   useEffect(() => {
     setDate(new Date().toLocaleString())
   }, [])
-  
+
   return <div>{date || 'Loading...'}</div>
 }
 ```
@@ -127,11 +129,11 @@ function Component() {
 // ✅ Solution: Check for browser
 function Component() {
   const [url, setUrl] = useState('')
-  
+
   useEffect(() => {
     setUrl(window.location.href)
   }, [])
-  
+
   return <div>{url}</div>
 }
 ```
@@ -161,9 +163,9 @@ function Component() {
 // ✅ Solution: Use effects or callbacks
 function Component() {
   const [count, setCount] = useState(0)
-  
+
   const increment = () => setCount(c => c + 1)
-  
+
   return <button onClick={increment}>{count}</button>
 }
 ```
@@ -179,22 +181,23 @@ function Component() {
 ```typescript
 // app/api/proxy/route.ts - Create proxy endpoint
 export async function POST(request: Request) {
-  const { url, ...options } = await request.json()
-  
+  const { url, ...options } = await request.json();
+
   const response = await fetch(url, {
     ...options,
     headers: {
       ...options.headers,
-      'Origin': 'https://allowed-origin.com'
-    }
-  })
-  
+      Origin: "https://allowed-origin.com",
+    },
+  });
+
   return new Response(response.body, {
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Content-Type': response.headers.get('Content-Type') || 'application/json'
-    }
-  })
+      "Access-Control-Allow-Origin": "*",
+      "Content-Type":
+        response.headers.get("Content-Type") || "application/json",
+    },
+  });
 }
 ```
 
@@ -203,28 +206,29 @@ export async function POST(request: Request) {
 **Problem**: `401 Unauthorized`
 
 **Debug Steps**:
+
 ```typescript
 // Check token in browser
-console.log('Token:', localStorage.getItem('token'))
+console.log("Token:", localStorage.getItem("token"));
 
 // Verify headers
-fetch('/api/protected', {
+fetch("/api/protected", {
   headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  }
-})
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  },
+});
 
 // Debug in API route
 export async function GET(request: Request) {
-  const auth = request.headers.get('Authorization')
-  console.log('Auth header:', auth)
-  
-  if (!auth?.startsWith('Bearer ')) {
-    return new Response('No token', { status: 401 })
+  const auth = request.headers.get("Authorization");
+  console.log("Auth header:", auth);
+
+  if (!auth?.startsWith("Bearer ")) {
+    return new Response("No token", { status: 401 });
   }
-  
-  const token = auth.slice(7)
+
+  const token = auth.slice(7);
   // Verify token...
 }
 ```
@@ -236,6 +240,7 @@ export async function GET(request: Request) {
 **Problem**: `Can't connect to database`
 
 **Check List**:
+
 ```bash
 # 1. Check environment variables
 cat .env.local | grep DATABASE_URL
@@ -273,13 +278,13 @@ npx prisma migrate reset
 // Debug SQL queries
 const result = await prisma.$queryRaw`
   SELECT * FROM users WHERE email = ${email}
-`
-console.log('Query result:', result)
+`;
+console.log("Query result:", result);
 
 // Enable query logging
 const prisma = new PrismaClient({
-  log: ['query', 'error', 'warn']
-})
+  log: ["query", "error", "warn"],
+});
 ```
 
 ### 5. Environment & Configuration
@@ -289,6 +294,7 @@ const prisma = new PrismaClient({
 **Problem**: `Environment variable X is not defined`
 
 **Solution Checklist**:
+
 ```bash
 # 1. Check .env.local exists
 ls -la .env*
@@ -330,11 +336,8 @@ PORT=3001 npm run dev
 ```javascript
 // tailwind.config.js - Check content paths
 module.exports = {
-  content: [
-    './app/**/*.{js,ts,jsx,tsx}',
-    './components/**/*.{js,ts,jsx,tsx}'
-  ]
-}
+  content: ["./app/**/*.{js,ts,jsx,tsx}", "./components/**/*.{js,ts,jsx,tsx}"],
+};
 ```
 
 ```bash
@@ -374,6 +377,7 @@ function RootLayout({ children }) {
 #### Slow Development Server
 
 **Solutions**:
+
 ```bash
 # 1. Clear caches
 rm -rf .next node_modules/.cache
@@ -388,20 +392,22 @@ GENERATE_SOURCEMAP=false npm run dev
 #### Memory Leaks
 
 **Detection**:
+
 ```typescript
 // Add memory monitoring
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === "development") {
   setInterval(() => {
-    const used = process.memoryUsage()
-    console.log('Memory:', {
+    const used = process.memoryUsage();
+    console.log("Memory:", {
       rss: `${Math.round(used.rss / 1024 / 1024)}MB`,
-      heap: `${Math.round(used.heapUsed / 1024 / 1024)}MB`
-    })
-  }, 10000)
+      heap: `${Math.round(used.heapUsed / 1024 / 1024)}MB`,
+    });
+  }, 10000);
 }
 ```
 
 **Common Causes**:
+
 - Event listeners not cleaned up
 - Intervals/timeouts not cleared
 - Large objects in closure scope
@@ -429,22 +435,22 @@ npm test -- -u
 
 ```typescript
 // Mock module
-jest.mock('@/lib/api', () => ({
-  fetchData: jest.fn(() => Promise.resolve({ data: 'test' }))
-}))
+vi.mock("@/lib/api", () => ({
+  fetchData: vi.fn(() => Promise.resolve({ data: "test" })),
+}));
 
 // Mock fetch
-global.fetch = jest.fn(() =>
+global.fetch = vi.fn(() =>
   Promise.resolve({
-    json: () => Promise.resolve({ data: 'test' }),
-    ok: true
-  })
-)
+    json: () => Promise.resolve({ data: "test" }),
+    ok: true,
+  }),
+);
 
 // Clear mocks between tests
 afterEach(() => {
-  jest.clearAllMocks()
-})
+  vi.clearAllMocks();
+});
 ```
 
 ### 9. Deployment Issues
@@ -467,6 +473,7 @@ npm run build # Run locally first
 #### Runtime Errors in Production
 
 **Debug Strategy**:
+
 1. Check production logs
 2. Add error boundary
 3. Enable source maps temporarily
@@ -479,7 +486,7 @@ class ErrorBoundary extends React.Component {
     console.error('Error caught:', error, errorInfo)
     // Send to error tracking service
   }
-  
+
   render() {
     if (this.state.hasError) {
       return <div>Something went wrong</div>
@@ -497,27 +504,27 @@ class ErrorBoundary extends React.Component {
 
 ```typescript
 // Check SSE implementation
-const response = await fetch('/api/chat', {
-  method: 'POST',
+const response = await fetch("/api/chat", {
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-  body: JSON.stringify({ messages })
-})
+  body: JSON.stringify({ messages }),
+});
 
 if (!response.ok) {
-  throw new Error(`HTTP error! status: ${response.status}`)
+  throw new Error(`HTTP error! status: ${response.status}`);
 }
 
-const reader = response.body?.getReader()
-const decoder = new TextDecoder()
+const reader = response.body?.getReader();
+const decoder = new TextDecoder();
 
 while (true) {
-  const { done, value } = await reader.read()
-  if (done) break
-  
-  const chunk = decoder.decode(value)
-  console.log('Chunk:', chunk) // Debug output
+  const { done, value } = await reader.read();
+  if (done) break;
+
+  const chunk = decoder.decode(value);
+  console.log("Chunk:", chunk); // Debug output
 }
 ```
 
@@ -529,35 +536,38 @@ while (true) {
 // Implement token counting
 function estimateTokens(text: string): number {
   // Rough estimate: 1 token ≈ 4 characters
-  return Math.ceil(text.length / 4)
+  return Math.ceil(text.length / 4);
 }
 
 function truncateMessages(messages: Message[], maxTokens = 4000) {
-  let tokenCount = 0
-  const truncated = []
-  
+  let tokenCount = 0;
+  const truncated = [];
+
   for (let i = messages.length - 1; i >= 0; i--) {
-    const tokens = estimateTokens(messages[i].content)
-    if (tokenCount + tokens > maxTokens) break
-    truncated.unshift(messages[i])
-    tokenCount += tokens
+    const tokens = estimateTokens(messages[i].content);
+    if (tokenCount + tokens > maxTokens) break;
+    truncated.unshift(messages[i]);
+    tokenCount += tokens;
   }
-  
-  return truncated
+
+  return truncated;
 }
 ```
 
 ### Provider-Specific Errors
 
 **OpenAI**:
+
 - Rate limits: Implement exponential backoff
 - API key issues: Check formatting and permissions
 
 **Anthropic**:
+
 - Model availability: Check region support
 - Context window: Different limits per model
 
 **Google AI**:
+
 - Safety filters: May block certain content
 - Quota limits: Check Google Cloud Console
 
@@ -567,22 +577,22 @@ function truncateMessages(messages: Message[], maxTokens = 4000) {
 
 ```javascript
 // Useful console commands
-console.table(data) // Display data in table
-console.time('operation') // Start timer
-console.timeEnd('operation') // End timer
-console.trace() // Stack trace
+console.table(data); // Display data in table
+console.time("operation"); // Start timer
+console.timeEnd("operation"); // End timer
+console.trace(); // Stack trace
 
 // Break on property change
-const obj = { value: 1 }
-Object.defineProperty(obj, 'value', {
+const obj = { value: 1 };
+Object.defineProperty(obj, "value", {
   set(val) {
-    debugger // Breaks here
-    this._value = val
+    debugger; // Breaks here
+    this._value = val;
   },
   get() {
-    return this._value
-  }
-})
+    return this._value;
+  },
+});
 ```
 
 ### React DevTools
@@ -643,6 +653,7 @@ curl -I http://localhost:3000/api/health
 ## Issue Template
 
 **Environment:**
+
 - OS: [e.g., macOS 14]
 - Node: [e.g., v20.0.0]
 - Browser: [e.g., Chrome 120]
@@ -651,6 +662,7 @@ curl -I http://localhost:3000/api/health
 Clear description of the issue
 
 **Steps to Reproduce:**
+
 1. Step one
 2. Step two
 3. See error
@@ -663,17 +675,21 @@ What actually happens
 
 **Error Messages:**
 ```
+
 Paste full error here
-```
+
+````
 
 **Code Sample:**
 ```typescript
 // Minimal code to reproduce
-```
+````
 
 **Attempted Solutions:**
+
 - What you've tried
 - What didn't work
+
 ```
 
 ### Useful Resources
@@ -705,3 +721,4 @@ Paste full error here
 ---
 
 Remember: Every error is a learning opportunity. Document your solutions to help others! 🚀
+```

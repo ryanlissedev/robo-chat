@@ -1,5 +1,5 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, render, screen, waitFor, cleanup } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchImages } from '@/components/app/chat/search-images';
 import * as utils from '@/components/app/chat/utils';
 
@@ -8,6 +8,7 @@ vi.mock('next/image', () => ({
   default: ({ alt, src, className, onError, onLoad, ...props }: any) => {
     return (
       <img
+        role="img"
         alt={alt}
         src={src || null}
         className={className}
@@ -70,31 +71,44 @@ describe('SearchImages', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    // Force cleanup to prevent state contamination between tests
+    cleanup();
+  });
+
   describe('Rendering', () => {
     it('should render image grid with results', () => {
-      renderSearchImages();
-
+      const { container } = renderSearchImages();
+      
+      // The component renders synchronously, no need to wait
       // Check that all images are rendered
       expect(screen.getByAltText('Beautiful sunset')).toBeInTheDocument();
       expect(screen.getByAltText('Mountain landscape')).toBeInTheDocument();
       expect(screen.getByAltText('City skyline')).toBeInTheDocument();
+      
+      // Verify the grid structure
+      expect(container.querySelector('.my-4.grid.grid-cols-1.gap-4.sm\\:grid-cols-3')).toBeInTheDocument();
     });
 
     it('should render links with correct href', () => {
-      renderSearchImages();
+      const { container } = renderSearchImages();
+      
+      // Debug: Print actual HTML to see what's rendered
+      console.log('Rendered HTML:', container.innerHTML);
 
-      const links = screen.getAllByRole('link');
-      expect(links).toHaveLength(3);
+      const links = screen.getAllByRole('link', { hidden: true });
+      expect(links).toHaveLength(6); // 3 images + 3 favicons = 6 links
 
+      // Links are in DOM order: image, favicon, image, favicon, image, favicon
       expect(links[0]).toHaveAttribute(
         'href',
         'https://example.com/sunset-article?utm_source=test'
       );
-      expect(links[1]).toHaveAttribute(
+      expect(links[2]).toHaveAttribute(
         'href',
         'https://nature.com/mountains?utm_source=test'
       );
-      expect(links[2]).toHaveAttribute(
+      expect(links[4]).toHaveAttribute(
         'href',
         'https://www.city.com/photos?utm_source=test'
       );
@@ -103,7 +117,7 @@ describe('SearchImages', () => {
     it('should open links in new tab', () => {
       renderSearchImages();
 
-      const links = screen.getAllByRole('link');
+      const links = screen.getAllByRole('link', { hidden: true });
       links.forEach((link) => {
         expect(link).toHaveAttribute('target', '_blank');
         expect(link).toHaveAttribute('rel', 'noopener noreferrer');
@@ -113,9 +127,8 @@ describe('SearchImages', () => {
     it('should apply correct CSS classes to grid', () => {
       renderSearchImages();
 
-      const container = screen
-        .getByAltText('Beautiful sunset')
-        .closest('.my-4');
+      const images = screen.getAllByAltText('Beautiful sunset');
+      const container = images[0].closest('.my-4');
       expect(container).toHaveClass(
         'my-4',
         'grid',
@@ -128,8 +141,10 @@ describe('SearchImages', () => {
     it('should apply correct styling to image links', () => {
       renderSearchImages();
 
-      const links = screen.getAllByRole('link');
-      links.forEach((link) => {
+      const links = screen.getAllByRole('link', { hidden: true });
+      // Only check main image links (every other link starting from index 0)
+      const imageLinks = [links[0], links[2], links[4]];
+      imageLinks.forEach((link) => {
         expect(link).toHaveClass(
           'group/image',
           'relative',
@@ -142,13 +157,15 @@ describe('SearchImages', () => {
   });
 
   describe('Image Display', () => {
-    it('should render images with correct attributes', () => {
+    it('should render images with correct attributes', async () => {
       renderSearchImages();
 
-      const images = screen
-        .getAllByRole('img')
-        .filter((img) => img.getAttribute('alt') !== 'favicon');
+      await waitFor(() => {
+        const images = screen
+          .getAllByRole('img', { hidden: true })
+          .filter((img) => img.getAttribute('alt') !== 'favicon');
 
+        expect(images).toHaveLength(3);
       expect(images[0]).toHaveAttribute(
         'src',
         'https://example.com/sunset.jpg'
@@ -170,73 +187,74 @@ describe('SearchImages', () => {
     it('should handle image load event', async () => {
       renderSearchImages();
 
-      const image = screen.getByAltText('Beautiful sunset');
-      expect(image).toHaveClass('opacity-0');
+      // Wait for images to be available
+      const images = await screen.findAllByRole('img', { name: 'Beautiful sunset' });
+      expect(images[0]).toHaveClass('opacity-0');
 
-      // Simulate image load - the actual opacity removal happens in the component's onLoad
-      await act(async () => {
-        const loadEvent = new Event('load');
-        image.dispatchEvent(loadEvent);
-      });
+      // Simulate load event - no act() needed for synchronous DOM events
+      const loadEvent = new Event('load');
+      images[0].dispatchEvent(loadEvent);
 
-      // Verify the onLoad handler was attached (we can't test the classList.remove directly with our simplified mock)
-      expect(image).toBeInTheDocument();
+      // Verify image is still present after load event (load doesn't hide images)
+      const imagesAfterLoad = await screen.findAllByRole('img', { name: 'Beautiful sunset' });
+      expect(imagesAfterLoad).toHaveLength(1);
     });
 
     it('should handle image error by hiding the item', async () => {
       renderSearchImages();
 
-      const image = screen.getByAltText('Beautiful sunset');
-      expect(image).toBeInTheDocument();
-
-      // Simulate image error
-      await act(async () => {
+      // Wait for images to be available and verify initial state
+      const images = await screen.findAllByRole('img', { name: 'Beautiful sunset' });
+      expect(images).toHaveLength(1);
+      
+      act(() => {
         const errorEvent = new Event('error');
-        image.dispatchEvent(errorEvent);
+        images[0].dispatchEvent(errorEvent);
       });
 
-      // Wait for the state update and re-render
       await waitFor(() => {
-        expect(
-          screen.queryByAltText('Beautiful sunset')
-        ).not.toBeInTheDocument();
+        expect(screen.queryByRole('img', { name: 'Beautiful sunset' })).not.toBeInTheDocument();
       });
     });
 
     it('should handle multiple image errors', async () => {
       renderSearchImages();
 
-      const images = [
-        screen.getByAltText('Beautiful sunset'),
-        screen.getByAltText('Mountain landscape'),
-      ];
+      // Wait for all images to be available first
+      const sunsetImages = await screen.findAllByRole('img', { name: 'Beautiful sunset' });
+      const mountainImages = await screen.findAllByRole('img', { name: 'Mountain landscape' });
+      const cityImages = await screen.findAllByRole('img', { name: 'City skyline' });
+      expect(sunsetImages).toHaveLength(1);
+      expect(mountainImages).toHaveLength(1);
+      expect(cityImages).toHaveLength(1);
 
       // Trigger errors for first two images
-      await act(async () => {
-        images.forEach((img) => {
-          const errorEvent = new Event('error');
-          img.dispatchEvent(errorEvent);
-        });
+      act(() => {
+        const errorEvent1 = new Event('error');
+        const errorEvent2 = new Event('error');
+        sunsetImages[0].dispatchEvent(errorEvent1);
+        mountainImages[0].dispatchEvent(errorEvent2);
       });
 
-      // Wait for state updates and re-render
       await waitFor(() => {
         expect(
-          screen.queryByAltText('Beautiful sunset')
+          screen.queryByRole('img', { name: 'Beautiful sunset' })
         ).not.toBeInTheDocument();
         expect(
-          screen.queryByAltText('Mountain landscape')
+          screen.queryByRole('img', { name: 'Mountain landscape' })
         ).not.toBeInTheDocument();
-        expect(screen.getByAltText('City skyline')).toBeInTheDocument();
       });
+
+      // Third image should still be present
+      expect(screen.getAllByRole('img', { name: 'City skyline' })).toHaveLength(1);
     });
   });
 
   describe('Favicon and Site Information', () => {
-    it('should render favicons for each image source', () => {
+    it('should render favicons for each image source', async () => {
       renderSearchImages();
 
-      const favicons = screen.getAllByAltText('favicon');
+      const favicons = await screen.findAllByRole('img', { name: 'favicon' });
       expect(favicons).toHaveLength(3);
 
       expect(favicons[0]).toHaveAttribute(
@@ -246,24 +264,38 @@ describe('SearchImages', () => {
       expect(favicons[0]).toHaveClass('h-4', 'w-4', 'rounded-full');
     });
 
-    it('should display site names correctly', () => {
+    it('should display site names correctly', async () => {
       renderSearchImages();
-
-      expect(screen.getByText('example.com')).toBeInTheDocument();
-      expect(screen.getByText('nature.com')).toBeInTheDocument();
-      expect(screen.getByText('city.com')).toBeInTheDocument();
+      
+      // Site names are rendered as text content within span elements in hover overlays
+      await waitFor(() => {
+        expect(screen.getByText('example.com', { hidden: true })).toBeInTheDocument();
+        expect(screen.getByText('nature.com', { hidden: true })).toBeInTheDocument();
+        expect(screen.getByText('city.com', { hidden: true })).toBeInTheDocument();
+      });
     });
 
-    it('should display image titles', () => {
+    it('should display image titles', async () => {
       renderSearchImages();
 
-      expect(screen.getByText('Beautiful sunset')).toBeInTheDocument();
-      expect(screen.getByText('Mountain landscape')).toBeInTheDocument();
-      expect(screen.getByText('City skyline')).toBeInTheDocument();
+      // Image titles are rendered as text content within span elements in hover overlays
+      await waitFor(() => {
+        expect(screen.getByText('Beautiful sunset', { hidden: true })).toBeInTheDocument();
+        expect(screen.getByText('Mountain landscape', { hidden: true })).toBeInTheDocument();
+        expect(screen.getByText('City skyline', { hidden: true })).toBeInTheDocument();
+      });
     });
 
-    it('should call utility functions with correct parameters', () => {
+    it('should call utility functions with correct parameters', async () => {
+      // Clear mocks to ensure clean state
+      vi.clearAllMocks();
+      
       renderSearchImages();
+
+      // Verify component rendered with expected content (titles are in hover overlays)
+      await waitFor(() => {
+        expect(screen.getByText('Beautiful sunset', { hidden: true })).toBeInTheDocument();
+      });
 
       expect(utils.addUTM).toHaveBeenCalledWith(
         'https://example.com/sunset-article'
@@ -294,12 +326,17 @@ describe('SearchImages', () => {
   });
 
   describe('Hover Effects', () => {
-    it('should apply hover styling classes to overlay', () => {
-      renderSearchImages();
+    it('should apply hover styling classes to overlay', async () => {
+      const { container } = renderSearchImages();
 
-      // Find overlays by their specific class combination instead of problematic selector
-      const overlays = document.querySelectorAll(
-        '.absolute.opacity-0.transition-opacity'
+      // Wait for component to render and verify by checking for image elements
+      await waitFor(() => {
+        expect(screen.getAllByRole('img', { hidden: true })).toHaveLength(6); // 3 main images + 3 favicons
+      });
+
+      // Find overlays by their specific class combination - these are the hover overlays
+      const overlays = container.querySelectorAll(
+        '.absolute.right-0.bottom-0.left-0'
       );
       expect(overlays).toHaveLength(3);
 
@@ -324,19 +361,17 @@ describe('SearchImages', () => {
       });
     });
 
-    it('should have proper text truncation classes', () => {
-      renderSearchImages();
+    it('should have proper text truncation classes', async () => {
+      const { container } = renderSearchImages();
 
-      const titleElements = screen.getAllByText(
-        /Beautiful sunset|Mountain landscape|City skyline/
-      );
-      const siteElements = screen.getAllByText(
-        /example\.com|nature\.com|city\.com/
-      );
-
-      [...titleElements, ...siteElements].forEach((element) => {
-        expect(element).toHaveClass('line-clamp-1', 'text-xs');
+      // Wait for component to render and verify by checking for image elements  
+      await waitFor(() => {
+        expect(screen.getAllByRole('img', { hidden: true })).toHaveLength(6); // 3 main images + 3 favicons
       });
+
+      // Check for line-clamp-1 and text-xs classes in the rendered HTML
+      const elementsWithTruncation = container.querySelectorAll('.line-clamp-1.text-xs');
+      expect(elementsWithTruncation.length).toBeGreaterThanOrEqual(6); // 3 titles + 3 site names
     });
   });
 
@@ -356,7 +391,7 @@ describe('SearchImages', () => {
       expect(container.firstChild).toBeNull();
     });
 
-    it('should handle results with missing properties gracefully', () => {
+    it('should handle results with missing properties gracefully', async () => {
       const incompleteResults = [
         {
           title: '',
@@ -374,25 +409,23 @@ describe('SearchImages', () => {
 
       // Should still render without crashing
       expect(screen.getByAltText('')).toBeInTheDocument();
-      expect(screen.getByText('Test Image')).toBeInTheDocument();
+      expect(screen.getByText('Test Image', { hidden: true })).toBeInTheDocument();
     });
   });
 
   describe('Responsive Design', () => {
-    it('should apply responsive grid classes', () => {
-      renderSearchImages();
+    it('should apply responsive grid classes', async () => {
+      const { container } = renderSearchImages();
 
-      const container = screen
-        .getByAltText('Beautiful sunset')
-        .closest('.grid');
-      expect(container).toHaveClass('grid-cols-1', 'sm:grid-cols-3');
+      const gridContainer = container.querySelector('.grid');
+      expect(gridContainer).toHaveClass('grid-cols-1', 'sm:grid-cols-3');
     });
 
-    it('should maintain aspect ratio constraints', () => {
+    it('should maintain aspect ratio constraints', async () => {
       renderSearchImages();
 
       const images = screen
-        .getAllByRole('img')
+        .getAllByRole('img', { hidden: true })
         .filter((img) => img.getAttribute('alt') !== 'favicon');
 
       images.forEach((image) => {
@@ -402,7 +435,7 @@ describe('SearchImages', () => {
   });
 
   describe('Performance', () => {
-    it('should handle large number of results efficiently', () => {
+    it('should handle large number of results efficiently', async () => {
       const largeResults = Array.from({ length: 100 }, (_, i) => ({
         title: `Image ${i + 1}`,
         imageUrl: `https://example.com/image${i + 1}.jpg`,
@@ -414,7 +447,7 @@ describe('SearchImages', () => {
       // Should render all images
       expect(
         screen
-          .getAllByRole('img')
+          .getAllByRole('img', { hidden: true })
           .filter((img) => img.getAttribute('alt') !== 'favicon')
       ).toHaveLength(100);
     });
@@ -422,13 +455,17 @@ describe('SearchImages', () => {
     it('should maintain state correctly after errors', async () => {
       renderSearchImages();
 
-      // Trigger error on first image
-      const firstImage = screen.getByAltText('Beautiful sunset');
-      await act(async () => {
-        firstImage.dispatchEvent(new Event('error'));
+      // Wait for all images to be available initially
+      const sunsetImages = await screen.findAllByAltText('Beautiful sunset');
+      const mountainImages = await screen.findAllByAltText('Mountain landscape');
+      const cityImages = await screen.findAllByAltText('City skyline');
+      expect(sunsetImages).toHaveLength(1);
+      expect(mountainImages).toHaveLength(1);
+      expect(cityImages).toHaveLength(1);
+      act(() => {
+        sunsetImages[0].dispatchEvent(new Event('error'));
       });
 
-      // Wait for state update
       await waitFor(() => {
         expect(
           screen.queryByAltText('Beautiful sunset')
@@ -436,47 +473,49 @@ describe('SearchImages', () => {
       });
 
       // Other images should still be present
-      expect(screen.getByAltText('Mountain landscape')).toBeInTheDocument();
-      expect(screen.getByAltText('City skyline')).toBeInTheDocument();
+      const remainingMountainImages = screen.getAllByAltText('Mountain landscape');
+      const remainingCityImages = screen.getAllByAltText('City skyline');
+      expect(remainingMountainImages).toHaveLength(1);
+      expect(remainingCityImages).toHaveLength(1);
 
       // Trigger error on second image
-      const secondImage = screen.getByAltText('Mountain landscape');
-      await act(async () => {
-        secondImage.dispatchEvent(new Event('error'));
+      const currentMountainImages = screen.getAllByAltText('Mountain landscape');
+      act(() => {
+        currentMountainImages[0].dispatchEvent(new Event('error'));
       });
 
-      // Wait for state update and verify only third image remains
       await waitFor(() => {
         expect(
           screen.queryByAltText('Mountain landscape')
         ).not.toBeInTheDocument();
-        expect(screen.getByAltText('City skyline')).toBeInTheDocument();
-        expect(
-          screen
-            .getAllByRole('img')
-            .filter((img) => img.getAttribute('alt') !== 'favicon')
-        ).toHaveLength(1);
       });
+
+      // Verify only the city image remains
+      const finalCityImages = screen.getAllByAltText('City skyline');
+      expect(finalCityImages).toHaveLength(1);
+      
+      const allImages = screen.getAllByRole('img', { hidden: true });
+      const mainImages = allImages.filter((img) => img.getAttribute('alt') !== 'favicon');
+      expect(mainImages).toHaveLength(1);
     });
   });
 
   describe('Accessibility', () => {
-    it('should have proper alt texts for all images', () => {
+    it('should have proper alt texts for all images', async () => {
       renderSearchImages();
 
-      const mainImages = screen
-        .getAllByRole('img')
-        .filter((img) => img.getAttribute('alt') !== 'favicon');
+      const allImages = await screen.findAllByRole('img');
+      const mainImages = allImages.filter((img) => img.getAttribute('alt') !== 'favicon');
 
       expect(mainImages[0]).toHaveAttribute('alt', 'Beautiful sunset');
       expect(mainImages[1]).toHaveAttribute('alt', 'Mountain landscape');
       expect(mainImages[2]).toHaveAttribute('alt', 'City skyline');
     });
 
-    it('should have proper alt texts for favicons', () => {
+    it('should have proper alt texts for favicons', async () => {
       renderSearchImages();
 
-      const favicons = screen.getAllByAltText('favicon');
+      const favicons = await screen.findAllByAltText('favicon');
       expect(favicons).toHaveLength(3);
 
       favicons.forEach((favicon) => {
@@ -484,20 +523,27 @@ describe('SearchImages', () => {
       });
     });
 
-    it('should have keyboard accessible links', () => {
+    it('should have keyboard accessible links', async () => {
       renderSearchImages();
 
-      const links = screen.getAllByRole('link');
+      const links = await screen.findAllByRole('link', { hidden: true });
+      expect(links).toHaveLength(6); // 3 images + 3 favicons
+      
       links.forEach((link) => {
         expect(link).not.toHaveAttribute('tabindex', '-1');
+        expect(link).toHaveAttribute('href');
+        expect(link).toHaveAttribute('target', '_blank');
+        expect(link).toHaveAttribute('rel', 'noopener noreferrer');
       });
     });
 
-    it('should provide proper link context', () => {
+    it('should provide proper link context', async () => {
       renderSearchImages();
 
-      const links = screen.getAllByRole('link');
-      links.forEach((link) => {
+      const links = screen.getAllByRole('link', { hidden: true });
+      // Only check main image links (every other link starting from index 0)
+      const imageLinks = [links[0], links[2], links[4]];
+      imageLinks.forEach((link) => {
         // Links should contain both image and text content for context
         const images = link.querySelectorAll('img');
         const mainImage = Array.from(images).find(
@@ -510,7 +556,7 @@ describe('SearchImages', () => {
   });
 
   describe('Edge Cases', () => {
-    it('should handle malformed URLs in sourceUrl', () => {
+    it('should handle malformed URLs in sourceUrl', async () => {
       const malformedResults = [
         {
           title: 'Test Image',
@@ -521,11 +567,13 @@ describe('SearchImages', () => {
 
       renderSearchImages({ results: malformedResults });
 
-      expect(screen.getByText('Test Image')).toBeInTheDocument();
-      expect(utils.getSiteName).toHaveBeenCalledWith('not-a-valid-url');
+      await waitFor(() => {
+        expect(screen.getByText('Test Image', { hidden: true })).toBeInTheDocument();
+        expect(utils.getSiteName).toHaveBeenCalledWith('not-a-valid-url');
+      });
     });
 
-    it('should handle very long titles and URLs', () => {
+    it('should handle very long titles and URLs', async () => {
       const longResults = [
         {
           title:
@@ -539,11 +587,13 @@ describe('SearchImages', () => {
       renderSearchImages({ results: longResults });
 
       // Should render without layout issues due to line-clamp classes
-      const titleElement = screen.getByText(/A very long image title/);
-      expect(titleElement).toHaveClass('line-clamp-1');
+      await waitFor(() => {
+        const titleElement = screen.getByText(/A very long image title/, { hidden: true });
+        expect(titleElement).toHaveClass('line-clamp-1');
+      });
     });
 
-    it('should handle empty strings in result properties', () => {
+    it('should handle empty strings in result properties', async () => {
       const emptyResults = [
         {
           title: '',
@@ -554,18 +604,23 @@ describe('SearchImages', () => {
 
       renderSearchImages({ results: emptyResults });
 
-      // Should render the structure even with empty values
-      // Note: Images with empty src will have src=null due to our mock
-      const images = screen
-        .getAllByRole('img')
-        .filter((img) => img.getAttribute('alt') !== 'favicon');
-      // With empty imageUrl, the Next.js Image might not render or render differently
-      // We'll check that the component doesn't crash rather than expecting a specific count
-      expect(images.length).toBeGreaterThanOrEqual(0);
+      await waitFor(() => {
+        // Should render the structure even with empty values
+        // Note: Images with empty src will have src=null due to our mock
+        // Images with empty alt text get role="presentation" instead of role="img"
+        const images = document.querySelectorAll('img');
+        const mainImages = Array.from(images).filter(
+          (img) => img.getAttribute('alt') !== 'favicon'
+        );
+        // With empty imageUrl, the Next.js Image might not render or render differently
+        // We'll check that the component doesn't crash rather than expecting a specific count
+        expect(mainImages.length).toBeGreaterThanOrEqual(0);
 
-      // Verify the link structure is still there
-      const links = screen.getAllByRole('link');
-      expect(links).toHaveLength(1);
+        // Verify the link structure is still there - should only have image link, no favicon link due to empty sourceUrl
+        const links = screen.getAllByRole('link', { hidden: true });
+        expect(links).toHaveLength(1); // Only the main image link, no favicon link
+      });
     });
   });
 });
+

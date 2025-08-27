@@ -2,11 +2,8 @@
 
 import { ArrowUp, AudioWaveform, Square } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { VoiceButton } from '@/components/app/voice/button/voice-button';
-import { useVoiceIntegration } from '@/components/app/voice/hooks/use-voice-integration';
-import { TranscriptionPanel } from '@/components/app/voice/panel/transcription-panel';
-import { useVoiceStore } from '@/components/app/voice/store/voice-store';
 import { RealtimeAudioModal } from '@/components/audio/RealtimeAudioModal';
+import { VoiceButton } from '@/components/app/voice/button/voice-button';
 import { ModelSelector } from '@/components/common/model-selector/base';
 import {
   PromptInput,
@@ -88,6 +85,19 @@ export function ChatInput({
       onReasoningEffortChange?.(effort);
     },
     [onReasoningEffortChange]
+  );
+
+  const handleVoiceTranscript = useCallback(
+    (transcript: string) => {
+      const newValue = value ? `${value}\n${transcript}` : transcript;
+      onValueChange(newValue);
+      
+      // Focus textarea after voice input
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus();
+      });
+    },
+    [value, onValueChange]
   );
 
   const handleSend = useCallback(() => {
@@ -189,44 +199,12 @@ export function ChatInput({
     setEnableSearch?.(true);
   }, [setEnableSearch]);
 
-  // Voice functionality
-  const {} = useVoiceStore();
-  const [showTranscriptionPanel, setShowTranscriptionPanel] = useState(false);
-
-  // Voice integration with vector store indexing
-  const {} = useVoiceIntegration({
-    userId: isUserAuthenticated ? userId : undefined,
-    autoIndexTranscripts: true,
-    onTranscriptIndexed: (_result) => {},
-    onIndexError: (_error) => {},
-  });
-
-  const handleVoiceTranscript = useCallback(
-    (transcript: string) => {
-      onValueChange(value ? `${value}\n${transcript}` : transcript);
-      setShowTranscriptionPanel(false);
-    },
-    [value, onValueChange]
-  );
-
-  const handleCloseTranscription = useCallback(() => {
-    setShowTranscriptionPanel(false);
-  }, []);
-
   // Determine if selected model supports reasoning
   const selectedModelInfo = getModelInfo(selectedModel);
   const showReasoningEffort = Boolean(selectedModelInfo?.reasoningText);
 
   return (
     <div className="relative flex w-full flex-col gap-4">
-      {showTranscriptionPanel && (
-        <TranscriptionPanel
-          className="mb-4"
-          onSendTranscript={handleVoiceTranscript}
-          onClose={handleCloseTranscription}
-          isVisible={showTranscriptionPanel}
-        />
-      )}
       {hasSuggestions && (
         <PromptSystem
           onSuggestion={onSuggestion}
@@ -256,6 +234,11 @@ export function ChatInput({
                 model={selectedModel}
                 onFileUpload={onFileUpload}
               />
+              <VoiceButton
+                size="sm"
+                onTranscriptReady={handleVoiceTranscript}
+                disabled={isSubmitting}
+              />
               <ModelSelector
                 className="rounded-full"
                 selectedModelId={selectedModel}
@@ -271,11 +254,6 @@ export function ChatInput({
               )}
             </div>
             <div className="flex items-center gap-2">
-              <VoiceButton
-                size="md"
-                onTranscriptReady={handleVoiceTranscript}
-                disabled={isSubmitting}
-              />
               {status === 'streaming' || (value && !isOnlyWhitespace(value)) ? (
                 <PromptInputAction
                   tooltip={status === 'streaming' ? 'Stop' : 'Send'}
@@ -313,7 +291,6 @@ export function ChatInput({
                     size="sm"
                     type="button"
                     variant="ghost"
-                    disabled={isSubmitting}
                   >
                     <AudioWaveform className="size-5" />
                   </Button>

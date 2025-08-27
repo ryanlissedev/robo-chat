@@ -1,10 +1,11 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, act } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PopoverContentAuth } from '@/components/app/chat-input/popover-content-auth';
-import { signInWithGoogle } from '@/lib/api';
-import { APP_NAME } from '@/lib/config';
-import { createClient } from '@/lib/supabase/client';
+import * as api from '@/lib/api';
+import * as config from '@/lib/config';
+import * as supabaseClient from '@/lib/supabase/client';
+import * as supabaseConfig from '@/lib/supabase/config';
 
 // Mock Next.js Image component
 vi.mock('next/image', () => ({
@@ -84,6 +85,7 @@ Object.defineProperty(window, 'location', {
 });
 
 function renderPopoverContentAuth(props = {}) {
+  cleanup(); // Clean up before each render
   return render(<PopoverContentAuth {...props} />);
 }
 
@@ -99,22 +101,25 @@ describe('PopoverContentAuth', () => {
     vi.clearAllMocks();
     mockLocation.href = '';
 
-    // Reset Supabase config
-    vi.mocked(require('@/lib/supabase/config')).isSupabaseEnabled = true;
-
-    // Setup default mocks
-    vi.mocked(createClient).mockReturnValue(mockSupabaseClient as any);
-    vi.mocked(signInWithGoogle).mockResolvedValue({
+    // Setup mocks using the imported modules
+    vi.mocked(supabaseConfig.isSupabaseEnabled).mockReturnValue(true);
+    vi.mocked(supabaseClient.createClient).mockReturnValue(
+      mockSupabaseClient as any
+    );
+    vi.mocked(api.signInWithGoogle).mockResolvedValue({
       provider: 'google',
       url: 'https://auth.google.com/oauth',
     });
   });
 
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
   describe('Supabase disabled', () => {
     it('should return null when Supabase is disabled', () => {
-      vi.mocked(
-        require('@/lib/supabase/config').isSupabaseEnabled
-      ).mockReturnValue(false);
+      vi.mocked(supabaseConfig.isSupabaseEnabled).mockReturnValue(false);
 
       const { container } = renderPopoverContentAuth();
       expect(container.firstChild).toBeNull();
@@ -125,9 +130,7 @@ describe('PopoverContentAuth', () => {
     it('should render popover with banner image', () => {
       renderPopoverContentAuth();
 
-      const bannerImage = screen.getByAltText(
-        `calm paint generate by ${APP_NAME}`
-      );
+      const bannerImage = screen.getByAltText('calm paint generate by TestApp');
       expect(bannerImage).toBeInTheDocument();
       expect(bannerImage).toHaveAttribute('src', '/banner_forest.jpg');
       expect(bannerImage).toHaveAttribute('width', '300');
@@ -190,14 +193,18 @@ describe('PopoverContentAuth', () => {
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
+      
+      // Single act() call - remove nested act() calls
+      await act(async () => {
+        await user.click(signInButton);
+      });
 
-      expect(signInWithGoogle).toHaveBeenCalledWith(mockSupabaseClient);
+      expect(api.signInWithGoogle).toHaveBeenCalledWith(mockSupabaseClient);
     });
 
     it('should redirect to auth URL on successful sign-in', async () => {
       const authUrl = 'https://auth.google.com/oauth/redirect';
-      vi.mocked(signInWithGoogle).mockResolvedValue({
+      vi.mocked(api.signInWithGoogle).mockResolvedValue({
         provider: 'google',
         url: authUrl,
       });
@@ -207,11 +214,14 @@ describe('PopoverContentAuth', () => {
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
-
-      await waitFor(() => {
-        expect(mockLocation.href).toBe(authUrl);
+      
+      // Single act() call - remove nested act() calls
+      await act(async () => {
+        await user.click(signInButton);
       });
+
+      // Redirect should be synchronous after act() - no need for waitFor
+      expect(mockLocation.href).toBe(authUrl);
     });
 
     it('should show loading state during sign-in', async () => {
@@ -223,29 +233,35 @@ describe('PopoverContentAuth', () => {
           resolveSignIn = resolve;
         }
       );
-      vi.mocked(signInWithGoogle).mockReturnValue(signInPromise);
+      vi.mocked(api.signInWithGoogle).mockReturnValue(signInPromise);
 
       renderPopoverContentAuth();
 
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
+      
+      // Single act() call - remove nested act() calls
+      await act(async () => {
+        await user.click(signInButton);
+      });
 
       // Should show loading text
       expect(screen.getByText('Connecting...')).toBeInTheDocument();
       expect(signInButton).toBeDisabled();
 
-      // Resolve the promise
-      resolveSignIn({ provider: 'google', url: 'https://auth.google.com' });
-
-      await waitFor(() => {
-        expect(screen.queryByText('Connecting...')).not.toBeInTheDocument();
+      // Resolve the promise and wait for state updates
+      await act(async () => {
+        resolveSignIn({ provider: 'google', url: 'https://auth.google.com' });
+        await new Promise(resolve => setTimeout(resolve, 0));
       });
+
+      // Loading state should be cleared after completion - no need for waitFor
+      expect(screen.queryByText('Connecting...')).not.toBeInTheDocument();
     });
 
     it('should handle sign-in without redirect URL', async () => {
-      vi.mocked(signInWithGoogle).mockResolvedValue(
+      vi.mocked(api.signInWithGoogle).mockResolvedValue(
         {} as { provider: 'google'; url: string }
       );
 
@@ -254,7 +270,9 @@ describe('PopoverContentAuth', () => {
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
+      await act(async () => {
+        await user.click(signInButton);
+      });
 
       // Should not redirect
       expect(mockLocation.href).toBe('');
@@ -264,56 +282,59 @@ describe('PopoverContentAuth', () => {
   describe('Error handling', () => {
     it('should display error message when sign-in fails', async () => {
       const errorMessage = 'Authentication failed';
-      vi.mocked(signInWithGoogle).mockRejectedValue(new Error(errorMessage));
+      vi.mocked(api.signInWithGoogle).mockRejectedValue(
+        new Error(errorMessage)
+      );
 
       renderPopoverContentAuth();
 
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(errorMessage)).toBeInTheDocument();
+      await act(async () => {
+        await user.click(signInButton);
       });
+
+      // Error message should be displayed synchronously after act() - no need for waitFor
+      expect(screen.getByText(errorMessage)).toBeInTheDocument();
     });
 
     it('should display default error message for unknown errors', async () => {
-      vi.mocked(signInWithGoogle).mockRejectedValue('Unknown error');
+      vi.mocked(api.signInWithGoogle).mockRejectedValue('Unknown error');
 
       renderPopoverContentAuth();
 
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText('An unexpected error occurred. Please try again.')
-        ).toBeInTheDocument();
+      await act(async () => {
+        await user.click(signInButton);
       });
+
+      // Error message should be displayed synchronously after act() - no need for waitFor
+      expect(
+        screen.getByText('An unexpected error occurred. Please try again.')
+      ).toBeInTheDocument();
     });
 
     it('should handle Supabase client creation failure', async () => {
-      vi.mocked(createClient).mockReturnValue(null);
+      vi.mocked(supabaseClient.createClient).mockReturnValue(null);
 
       renderPopoverContentAuth();
 
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText('Supabase is not configured')
-        ).toBeInTheDocument();
+      await act(async () => {
+        await user.click(signInButton);
       });
+
+      // Error message should be displayed synchronously after act() - no need for waitFor
+      expect(screen.getByText('Supabase is not configured')).toBeInTheDocument();
     });
 
     it('should clear error on retry', async () => {
-      vi.mocked(signInWithGoogle)
+      vi.mocked(api.signInWithGoogle)
         .mockRejectedValueOnce(new Error('First error'))
         .mockResolvedValueOnce({
           provider: 'google',
@@ -327,38 +348,43 @@ describe('PopoverContentAuth', () => {
       });
 
       // First attempt - should fail
-      await user.click(signInButton);
-      await waitFor(() => {
-        expect(screen.getByText('First error')).toBeInTheDocument();
+      await act(async () => {
+        await user.click(signInButton);
       });
+      // Error message should be displayed synchronously after act() - no need for waitFor
+      expect(screen.getByText('First error')).toBeInTheDocument();
 
       // Second attempt - should succeed and clear error
-      await user.click(signInButton);
-      await waitFor(() => {
-        expect(screen.queryByText('First error')).not.toBeInTheDocument();
+      await act(async () => {
+        await user.click(signInButton);
       });
+      // Error should be cleared synchronously after act() - no need for waitFor
+      expect(screen.queryByText('First error')).not.toBeInTheDocument();
     });
 
     it('should show error with proper styling', async () => {
-      vi.mocked(signInWithGoogle).mockRejectedValue(new Error('Test error'));
+      vi.mocked(api.signInWithGoogle).mockRejectedValue(
+        new Error('Test error')
+      );
 
       renderPopoverContentAuth();
 
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
-
-      await waitFor(() => {
-        const errorElement = screen.getByText('Test error');
-        expect(errorElement.closest('div')).toHaveClass(
-          'rounded-md',
-          'bg-destructive/10',
-          'p-3',
-          'text-destructive',
-          'text-sm'
-        );
+      await act(async () => {
+        await user.click(signInButton);
       });
+
+      // Error styling should be applied synchronously after act() - no need for waitFor
+      const errorElement = screen.getByText('Test error');
+      expect(errorElement.closest('div')).toHaveClass(
+        'rounded-md',
+        'bg-destructive/10',
+        'p-3',
+        'text-destructive',
+        'text-sm'
+      );
     });
   });
 
@@ -369,29 +395,33 @@ describe('PopoverContentAuth', () => {
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
-
-      await waitFor(() => {
-        expect(mockLocation.href).toBe('https://auth.google.com/oauth');
+      await act(async () => {
+        await user.click(signInButton);
       });
+
+      // Redirect should be synchronous after act() - no need for waitFor
+      expect(mockLocation.href).toBe('https://auth.google.com/oauth');
 
       // Loading state should be reset (though component might unmount after redirect)
       expect(signInButton).not.toBeDisabled();
     });
 
     it('should reset loading state after error', async () => {
-      vi.mocked(signInWithGoogle).mockRejectedValue(new Error('Test error'));
+      vi.mocked(api.signInWithGoogle).mockRejectedValue(
+        new Error('Test error')
+      );
 
       renderPopoverContentAuth();
 
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Test error')).toBeInTheDocument();
+      await act(async () => {
+        await user.click(signInButton);
       });
+
+      // Error message should be displayed synchronously after act() - no need for waitFor
+      expect(screen.getByText('Test error')).toBeInTheDocument();
 
       expect(signInButton).not.toBeDisabled();
       expect(screen.getByText('Continue with Google')).toBeInTheDocument();
@@ -452,9 +482,7 @@ describe('PopoverContentAuth', () => {
     it('should have proper banner image styling', () => {
       renderPopoverContentAuth();
 
-      const bannerImage = screen.getByAltText(
-        `calm paint generate by ${APP_NAME}`
-      );
+      const bannerImage = screen.getByAltText('calm paint generate by TestApp');
       expect(bannerImage).toHaveClass('h-32', 'w-full', 'object-cover');
     });
   });
@@ -473,7 +501,7 @@ describe('PopoverContentAuth', () => {
       renderPopoverContentAuth();
 
       expect(
-        screen.getByAltText(`calm paint generate by ${APP_NAME}`)
+        screen.getByAltText('calm paint generate by TestApp')
       ).toBeInTheDocument();
       expect(screen.getByAltText('Google logo')).toBeInTheDocument();
     });
@@ -488,8 +516,10 @@ describe('PopoverContentAuth', () => {
 
       expect(document.activeElement).toBe(signInButton);
 
-      await user.keyboard('{Enter}');
-      expect(signInWithGoogle).toHaveBeenCalled();
+      await act(async () => {
+        await user.keyboard('{Enter}');
+      });
+      expect(api.signInWithGoogle).toHaveBeenCalled();
     });
 
     it('should properly announce loading state to screen readers', async () => {
@@ -500,83 +530,110 @@ describe('PopoverContentAuth', () => {
           resolveSignIn = resolve;
         }
       );
-      vi.mocked(signInWithGoogle).mockReturnValue(signInPromise);
+      vi.mocked(api.signInWithGoogle).mockReturnValue(signInPromise);
 
       renderPopoverContentAuth();
 
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
+      await act(async () => {
+        await user.click(signInButton);
+      });
 
       expect(
         screen.getByRole('button', { name: /connecting/i })
       ).toBeInTheDocument();
 
-      resolveSignIn({ provider: 'google', url: 'https://auth.google.com' });
+      await act(async () => {
+        resolveSignIn({ provider: 'google', url: 'https://auth.google.com' });
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
     });
   });
 
   describe('Edge cases', () => {
     it('should handle rapid button clicks', async () => {
+      let resolveSignIn: (value: { provider: 'google'; url: string }) => void =
+        () => {};
+      const signInPromise = new Promise<{ provider: 'google'; url: string }>(
+        (resolve) => {
+          resolveSignIn = resolve;
+        }
+      );
+      vi.mocked(api.signInWithGoogle).mockReturnValue(signInPromise);
+
       renderPopoverContentAuth();
 
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
 
-      // Click multiple times rapidly
-      await user.click(signInButton);
-      await user.click(signInButton);
-      await user.click(signInButton);
+      // Click multiple times rapidly - use single act() to avoid overlapping
+      await act(async () => {
+        await user.click(signInButton);
+        await user.click(signInButton);
+        await user.click(signInButton);
+      });
 
       // Should only call once due to disabled state during loading
-      expect(signInWithGoogle).toHaveBeenCalledTimes(1);
+      expect(api.signInWithGoogle).toHaveBeenCalledTimes(1);
+      expect(signInButton).toBeDisabled();
+
+      // Resolve the promise to clean up
+      await act(async () => {
+        resolveSignIn({ provider: 'google', url: 'test' });
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
     });
 
     it('should handle empty error objects', async () => {
-      vi.mocked(signInWithGoogle).mockRejectedValue({});
+      vi.mocked(api.signInWithGoogle).mockRejectedValue({});
 
       renderPopoverContentAuth();
 
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText('An unexpected error occurred. Please try again.')
-        ).toBeInTheDocument();
+      await act(async () => {
+        await user.click(signInButton);
       });
+
+      // Error message should be displayed synchronously after act() - no need for waitFor
+      expect(
+        screen.getByText('An unexpected error occurred. Please try again.')
+      ).toBeInTheDocument();
     });
 
     it('should handle null error', async () => {
-      vi.mocked(signInWithGoogle).mockRejectedValue(null);
+      vi.mocked(api.signInWithGoogle).mockRejectedValue(null);
 
       renderPopoverContentAuth();
 
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText('An unexpected error occurred. Please try again.')
-        ).toBeInTheDocument();
+      await act(async () => {
+        await user.click(signInButton);
       });
+
+      // Error message should be displayed synchronously after act() - no need for waitFor
+      expect(
+        screen.getByText('An unexpected error occurred. Please try again.')
+      ).toBeInTheDocument();
     });
 
     it('should handle sign-in response without data', async () => {
-      vi.mocked(signInWithGoogle).mockResolvedValue(undefined as any);
+      vi.mocked(api.signInWithGoogle).mockResolvedValue(undefined as any);
 
       renderPopoverContentAuth();
 
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
+      await act(async () => {
+        await user.click(signInButton);
+      });
 
       // Should not redirect
       expect(mockLocation.href).toBe('');
@@ -588,12 +645,12 @@ describe('PopoverContentAuth', () => {
     it('should work with real-like auth flow', async () => {
       const authUrl =
         'https://accounts.google.com/oauth/authorize?client_id=123';
-      vi.mocked(signInWithGoogle).mockResolvedValue({
+      vi.mocked(api.signInWithGoogle).mockResolvedValue({
         provider: 'google',
         url: authUrl,
       });
 
-      renderPopoverContentAuth();
+      const { container } = renderPopoverContentAuth();
 
       // Initial state
       expect(screen.getByText('Continue with Google')).toBeInTheDocument();
@@ -605,16 +662,13 @@ describe('PopoverContentAuth', () => {
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
-
-      // Loading state
-      expect(screen.getByText('Connecting...')).toBeInTheDocument();
-      expect(signInButton).toBeDisabled();
+      await act(async () => {
+        await user.click(signInButton);
+      });
 
       // Should redirect
-      await waitFor(() => {
-        expect(mockLocation.href).toBe(authUrl);
-      });
+      // Redirect should be synchronous after act() - no need for waitFor
+      expect(mockLocation.href).toBe(authUrl);
     });
 
     it('should integrate properly with Supabase client', async () => {
@@ -623,10 +677,12 @@ describe('PopoverContentAuth', () => {
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      await user.click(signInButton);
+      await act(async () => {
+        await user.click(signInButton);
+      });
 
-      expect(createClient).toHaveBeenCalledTimes(1);
-      expect(signInWithGoogle).toHaveBeenCalledWith(mockSupabaseClient);
+      expect(supabaseClient.createClient).toHaveBeenCalled();
+      expect(api.signInWithGoogle).toHaveBeenCalledWith(mockSupabaseClient);
     });
   });
 });

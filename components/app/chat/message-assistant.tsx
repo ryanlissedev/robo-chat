@@ -7,13 +7,20 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from '@/components/ai-elements/reasoning';
-import { Response } from '@/components/ai-elements/response';
+
 import {
   Source,
   Sources,
   SourcesContent,
   SourcesTrigger,
 } from '@/components/ai-elements/source';
+import {
+  Tool as AITool,
+  ToolContent as AIToolContent,
+  ToolHeader as AIToolHeader,
+  ToolInput as AIToolInput,
+  ToolOutput as AIToolOutput,
+} from '@/components/ai-elements/tool';
 import {
   Message,
   MessageAction,
@@ -26,6 +33,7 @@ import { getSources } from './get-sources';
 import { MessageFeedback } from './message-feedback';
 import { QuoteButton } from './quote-button';
 import { SearchImages } from './search-images';
+import { SmoothStreamingMessage } from './smooth-streaming-message';
 import type { ToolUIPart } from './tool-invocation';
 import { ToolInvocation } from './tool-invocation';
 import { useAssistantMessageSelection } from './useAssistantMessageSelection';
@@ -76,6 +84,28 @@ export function MessageAssistant({
     () => parts?.filter(isToolUIPart) || [],
     [parts, isToolUIPart]
   );
+
+  const groupedToolParts = useMemo(() => {
+    const groups: Record<string, ToolUIPart[]> = {};
+    for (const p of toolInvocationParts) {
+      const id = (p as { toolCallId?: string }).toolCallId || 'unknown';
+      if (!groups[id]) groups[id] = [];
+      groups[id].push(p);
+    }
+    // For each group choose the most informative state to display
+    const chosen: ToolUIPart[] = [];
+    for (const id of Object.keys(groups)) {
+      const group = groups[id];
+      const pick =
+        group.find((x) => (x as any).state === 'output-available') ||
+        group.find((x) => (x as any).state === 'input-available') ||
+        group.find((x) => (x as any).state === 'input-streaming') ||
+        group.find((x) => (x as any).state === 'output-error') ||
+        group[0];
+      if (pick) chosen.push(pick);
+    }
+    return chosen;
+  }, [toolInvocationParts]);
 
   // Show actionable toast when fileSearch tool fails
   const hasShownFileSearchErrorRef = useRef(false);
@@ -168,7 +198,36 @@ export function MessageAssistant({
     }
   }, [toolInvocationParts, onReload]);
 
-  const reasoningParts = parts?.find((part) => part.type === 'reasoning');
+  // Better reasoning parts extraction - handle different formats
+  const reasoningParts = parts?.find((part) => {
+    if (part.type === 'reasoning') return true;
+    if (typeof part.type === 'string' && part.type.startsWith('tool-')) {
+      if ('toolName' in part && (part as any).toolName === 'reasoning')
+        return true;
+      if ('output' in part && (part as any).output?.reasoning) return true;
+    }
+    return false;
+  });
+  const reasoningText = (() => {
+    if (!reasoningParts) return undefined;
+    if ('text' in (reasoningParts as any) && (reasoningParts as any).text) {
+      return (reasoningParts as any).text as string;
+    }
+    if (
+      'reasoningText' in (reasoningParts as any) &&
+      (reasoningParts as any).reasoningText
+    ) {
+      return (reasoningParts as any).reasoningText as string;
+    }
+    if (
+      'output' in (reasoningParts as any) &&
+      (reasoningParts as any).output?.reasoning
+    ) {
+      return String((reasoningParts as any).output.reasoning);
+    }
+    return undefined;
+  })();
+
   const contentNullOrEmpty = children === null || children === '';
   const isLastStreaming = status === 'streaming' && isLast;
 
@@ -231,17 +290,47 @@ export function MessageAssistant({
         ref={messageRef}
         {...(isQuoteEnabled && { 'data-message-id': messageId })}
       >
-        {reasoningParts && 'text' in reasoningParts && reasoningParts.text && (
+        {((status === 'streaming' && isLast) || reasoningText) && (
           <Reasoning defaultOpen={false} isStreaming={status === 'streaming'}>
             <ReasoningTrigger />
-            <ReasoningContent>{reasoningParts.text}</ReasoningContent>
+            {reasoningText ? (
+              <ReasoningContent>{reasoningText}</ReasoningContent>
+            ) : null}
           </Reasoning>
         )}
 
-        {toolInvocationParts &&
-          toolInvocationParts.length > 0 &&
+        {groupedToolParts &&
+          groupedToolParts.length > 0 &&
           preferences.showToolInvocations && (
-            <ToolInvocation toolInvocations={toolInvocationParts} />
+            <div className="mb-6 w-full space-y-3">
+              {groupedToolParts.map((part) => (
+                <AITool key={part.toolCallId}>
+                  <AIToolHeader state={(part as any).state} type={part.type} />
+                  <AIToolContent>
+                    {'input' in (part as any) && (part as any).input ? (
+                      <AIToolInput input={(part as any).input} />
+                    ) : null}
+                    {'output' in (part as any) && (part as any).output ? (
+                      <AIToolOutput
+                        errorText={(part as any).errorText}
+                        output={
+                          // show strings/objects directly; otherwise JSON stringify as fallback
+                          typeof (part as any).output === 'string' ||
+                          ((part as any).output &&
+                            typeof (part as any).output === 'object') ? (
+                            <pre className="whitespace-pre-wrap text-xs">
+                              {typeof (part as any).output === 'string'
+                                ? (part as any).output
+                                : JSON.stringify((part as any).output, null, 2)}
+                            </pre>
+                          ) : null
+                        }
+                      />
+                    ) : null}
+                  </AIToolContent>
+                </AITool>
+              ))}
+            </div>
           )}
 
         {searchImageResults.length > 0 && (
@@ -249,14 +338,17 @@ export function MessageAssistant({
         )}
 
         {contentNullOrEmpty ? null : (
-          <Response
+          <div
             className={cn(
               'prose dark:prose-invert relative min-w-full bg-transparent p-0',
               'prose-h2:mt-8 prose-h2:mb-3 prose-table:block prose-h1:scroll-m-20 prose-h2:scroll-m-20 prose-h3:scroll-m-20 prose-h4:scroll-m-20 prose-h5:scroll-m-20 prose-h6:scroll-m-20 prose-table:overflow-y-auto prose-h1:font-semibold prose-h2:font-medium prose-h3:font-medium prose-strong:font-medium prose-h1:text-2xl prose-h2:text-xl prose-h3:text-base'
             )}
           >
-            {children}
-          </Response>
+            <SmoothStreamingMessage
+              text={children}
+              animate={status === 'streaming' && isLast}
+            />
+          </div>
         )}
 
         {sources && sources.length > 0 && (

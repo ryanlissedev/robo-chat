@@ -37,39 +37,49 @@ tests/
 ## Running Tests
 
 ### Quick Commands
+
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Run with coverage
-npm run test:coverage
+pnpm run test:coverage
 
 # Run in watch mode
-npm run test:watch
+pnpm run test:watch
 
 # Run specific test suite
-npm test -- components/chat
+pnpm test -- components/chat
 
 # Run with UI
-npm run test:ui
+pnpm run test:ui
 
 # Debug tests
-npm run test:debug
+pnpm run test:debug
 ```
 
 ### Test Types
 
 #### Unit Tests
+
 ```bash
-npm run test:unit
+pnpm run test:unit
 ```
 
 #### Integration Tests
+
+```bash
+pnpm run test:integration
+```
+
+#### Integration Tests
+
 ```bash
 npm run test:integration
 ```
 
 #### E2E Tests
+
 ```bash
 npm run test:e2e
 ```
@@ -94,13 +104,13 @@ describe('ChatMessage', () => {
 
   it('should render message content', () => {
     render(<ChatMessage message={mockMessage} />)
-    
+
     expect(screen.getByText('Hello, how can I help?')).toBeInTheDocument()
   })
 
   it('should display correct role icon', () => {
     render(<ChatMessage message={mockMessage} />)
-    
+
     const icon = screen.getByTestId('role-icon')
     expect(icon).toHaveClass('assistant-icon')
   })
@@ -110,9 +120,9 @@ describe('ChatMessage', () => {
       ...mockMessage,
       content: '**Bold** and *italic* text',
     }
-    
+
     render(<ChatMessage message={markdownMessage} />)
-    
+
     const boldText = screen.getByText('Bold')
     expect(boldText).toHaveStyle({ fontWeight: 'bold' })
   })
@@ -123,104 +133,104 @@ describe('ChatMessage', () => {
 
 ```typescript
 // tests/unit/hooks/use-chat.test.ts
-import { renderHook, act, waitFor } from '@testing-library/react'
-import { useChat } from '@/app/hooks/use-chat'
-import { server } from '@/tests/mocks/server'
-import { rest } from 'msw'
+import { renderHook, act, waitFor } from "@testing-library/react";
+import { useChat } from "@/app/hooks/use-chat";
+import { server } from "@/tests/mocks/server";
+import { rest } from "msw";
 
-describe('useChat', () => {
-  it('should load messages', async () => {
-    const { result } = renderHook(() => useChat('chat-1'))
-    
+describe("useChat", () => {
+  it("should load messages", async () => {
+    const { result } = renderHook(() => useChat("chat-1"));
+
     await waitFor(() => {
-      expect(result.current.messages).toHaveLength(3)
-    })
-    
-    expect(result.current.loading).toBe(false)
-  })
+      expect(result.current.messages).toHaveLength(3);
+    });
 
-  it('should send message', async () => {
-    const { result } = renderHook(() => useChat('chat-1'))
-    
+    expect(result.current.loading).toBe(false);
+  });
+
+  it("should send message", async () => {
+    const { result } = renderHook(() => useChat("chat-1"));
+
     await act(async () => {
-      await result.current.sendMessage('Hello')
-    })
-    
+      await result.current.sendMessage("Hello");
+    });
+
     expect(result.current.messages).toContainEqual(
       expect.objectContaining({
-        content: 'Hello',
-        role: 'user',
-      })
-    )
-  })
+        content: "Hello",
+        role: "user",
+      }),
+    );
+  });
 
-  it('should handle errors', async () => {
+  it("should handle errors", async () => {
     server.use(
-      rest.post('/api/chat', (req, res, ctx) => {
-        return res(ctx.status(500))
-      })
-    )
-    
-    const { result } = renderHook(() => useChat('chat-1'))
-    
+      rest.post("/api/chat", (req, res, ctx) => {
+        return res(ctx.status(500));
+      }),
+    );
+
+    const { result } = renderHook(() => useChat("chat-1"));
+
     await act(async () => {
-      await result.current.sendMessage('Test')
-    })
-    
-    expect(result.current.error).toBeTruthy()
-  })
-})
+      await result.current.sendMessage("Test");
+    });
+
+    expect(result.current.error).toBeTruthy();
+  });
+});
 ```
 
 ### API Test Example
 
 ```typescript
 // tests/unit/api/chat.test.ts
-import { POST } from '@/app/api/chat/route'
-import { createMockRequest } from '@/tests/utils'
-import { vi } from 'vitest'
+import { POST } from "@/app/api/chat/route";
+import { createMockRequest } from "@/tests/utils";
+import { vi } from "vitest";
 
-vi.mock('@/lib/auth', () => ({
-  getSession: vi.fn(() => ({ user: { id: 'user-1' } })),
-}))
+vi.mock("@/lib/auth", () => ({
+  getSession: vi.fn(() => ({ user: { id: "user-1" } })),
+}));
 
-describe('POST /api/chat', () => {
-  it('should stream response', async () => {
+describe("POST /api/chat", () => {
+  it("should stream response", async () => {
     const request = createMockRequest({
-      messages: [{ role: 'user', content: 'Hello' }],
-      model: 'gpt-4o',
-    })
-    
-    const response = await POST(request)
-    
-    expect(response.status).toBe(200)
-    expect(response.headers.get('content-type')).toBe('text/event-stream')
-  })
+      messages: [{ role: "user", content: "Hello" }],
+      model: "gpt-4o",
+    });
 
-  it('should validate input', async () => {
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("text/event-stream");
+  });
+
+  it("should validate input", async () => {
     const request = createMockRequest({
       messages: [], // Invalid: empty messages
-    })
-    
-    const response = await POST(request)
-    
-    expect(response.status).toBe(400)
-    const error = await response.json()
-    expect(error.error.code).toBe('INVALID_REQUEST')
-  })
+    });
 
-  it('should require authentication', async () => {
-    vi.mocked(getSession).mockResolvedValueOnce(null)
-    
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    const error = await response.json();
+    expect(error.error.code).toBe("INVALID_REQUEST");
+  });
+
+  it("should require authentication", async () => {
+    vi.mocked(getSession).mockResolvedValueOnce(null);
+
     const request = createMockRequest({
-      messages: [{ role: 'user', content: 'Hello' }],
-    })
-    
-    const response = await POST(request)
-    
-    expect(response.status).toBe(401)
-  })
-})
+      messages: [{ role: "user", content: "Hello" }],
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(401);
+  });
+});
 ```
 
 ## Integration Testing
@@ -242,20 +252,20 @@ describe('Chat Flow', () => {
   it('should complete full chat interaction', async () => {
     const user = userEvent.setup()
     render(<App />)
-    
+
     // Type message
     const input = screen.getByPlaceholderText('Type a message...')
     await user.type(input, 'What is the weather?')
-    
+
     // Send message
     const sendButton = screen.getByRole('button', { name: 'Send' })
     await user.click(sendButton)
-    
+
     // Wait for response
     await waitFor(() => {
       expect(screen.getByText(/weather/i)).toBeInTheDocument()
     })
-    
+
     // Verify message saved
     expect(screen.getAllByTestId('chat-message')).toHaveLength(2)
   })
@@ -263,13 +273,13 @@ describe('Chat Flow', () => {
   it('should handle file attachments', async () => {
     const user = userEvent.setup()
     render(<App />)
-    
+
     // Upload file
     const file = new File(['content'], 'test.pdf', { type: 'application/pdf' })
     const input = screen.getByLabelText('Upload file')
-    
+
     await user.upload(input, file)
-    
+
     // Verify file displayed
     await waitFor(() => {
       expect(screen.getByText('test.pdf')).toBeInTheDocument()
@@ -284,63 +294,67 @@ describe('Chat Flow', () => {
 
 ```typescript
 // tests/e2e/chat/conversation.spec.ts
-import { test, expect } from '@playwright/test'
-import { loginUser, createChat } from '@/tests/e2e/helpers'
+import { test, expect } from "@playwright/test";
+import { loginUser, createChat } from "@/tests/e2e/helpers";
 
-test.describe('Chat Conversation', () => {
+test.describe("Chat Conversation", () => {
   test.beforeEach(async ({ page }) => {
-    await loginUser(page, 'test@example.com')
-  })
+    await loginUser(page, "test@example.com");
+  });
 
-  test('should send and receive messages', async ({ page }) => {
-    await createChat(page)
-    
+  test("should send and receive messages", async ({ page }) => {
+    await createChat(page);
+
     // Send message
-    await page.fill('[data-testid="chat-input"]', 'Hello AI')
-    await page.click('[data-testid="send-button"]')
-    
+    await page.fill('[data-testid="chat-input"]', "Hello AI");
+    await page.click('[data-testid="send-button"]');
+
     // Wait for response
-    await expect(page.locator('[data-testid="assistant-message"]')).toBeVisible()
-    
+    await expect(
+      page.locator('[data-testid="assistant-message"]'),
+    ).toBeVisible();
+
     // Verify streaming
-    const message = page.locator('[data-testid="assistant-message"]').first()
-    await expect(message).toContainText('Hello')
-  })
+    const message = page.locator('[data-testid="assistant-message"]').first();
+    await expect(message).toContainText("Hello");
+  });
 
-  test('should handle multiple chats', async ({ page }) => {
+  test("should handle multiple chats", async ({ page }) => {
     // Create first chat
-    await createChat(page)
-    await page.fill('[data-testid="chat-input"]', 'First chat')
-    await page.click('[data-testid="send-button"]')
-    
-    // Create second chat
-    await page.click('[data-testid="new-chat"]')
-    await page.fill('[data-testid="chat-input"]', 'Second chat')
-    await page.click('[data-testid="send-button"]')
-    
-    // Switch back to first
-    await page.click('[data-testid="chat-list"] >> text=First chat')
-    
-    // Verify correct chat loaded
-    await expect(page.locator('[data-testid="user-message"]')).toContainText('First chat')
-  })
+    await createChat(page);
+    await page.fill('[data-testid="chat-input"]', "First chat");
+    await page.click('[data-testid="send-button"]');
 
-  test('should export chat', async ({ page }) => {
-    await createChat(page)
-    
+    // Create second chat
+    await page.click('[data-testid="new-chat"]');
+    await page.fill('[data-testid="chat-input"]', "Second chat");
+    await page.click('[data-testid="send-button"]');
+
+    // Switch back to first
+    await page.click('[data-testid="chat-list"] >> text=First chat');
+
+    // Verify correct chat loaded
+    await expect(page.locator('[data-testid="user-message"]')).toContainText(
+      "First chat",
+    );
+  });
+
+  test("should export chat", async ({ page }) => {
+    await createChat(page);
+
     // Add messages
-    await page.fill('[data-testid="chat-input"]', 'Test message')
-    await page.click('[data-testid="send-button"]')
-    
+    await page.fill('[data-testid="chat-input"]', "Test message");
+    await page.click('[data-testid="send-button"]');
+
     // Export
     const [download] = await Promise.all([
-      page.waitForEvent('download'),
+      page.waitForEvent("download"),
       page.click('[data-testid="export-chat"]'),
-    ])
-    
-    expect(download.suggestedFilename()).toContain('.json')
-  })
-})
+    ]);
+
+    expect(download.suggestedFilename()).toContain(".json");
+  });
+});
 ```
 
 ## Test Data & Mocking
@@ -349,62 +363,64 @@ test.describe('Chat Conversation', () => {
 
 ```typescript
 // tests/mocks/server.ts
-import { setupServer } from 'msw/node'
-import { handlers } from './handlers'
+import { setupServer } from "msw/node";
+import { handlers } from "./handlers";
 
-export const server = setupServer(...handlers)
+export const server = setupServer(...handlers);
 
 // tests/setup.ts
-import { server } from './mocks/server'
+import { server } from "./mocks/server";
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
-afterEach(() => server.resetHandlers())
-afterAll(() => server.close())
+beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
 ```
 
 ### Mock Handlers
 
 ```typescript
 // tests/mocks/handlers/chat.ts
-import { rest } from 'msw'
+import { rest } from "msw";
 
 export const chatHandlers = [
-  rest.post('/api/chat', async (req, res, ctx) => {
-    const { messages } = await req.json()
-    
+  rest.post("/api/chat", async (req, res, ctx) => {
+    const { messages } = await req.json();
+
     return res(
       ctx.status(200),
-      ctx.set('Content-Type', 'text/event-stream'),
-      ctx.body(`data: {"type":"text","content":"Hello from mock"}\ndata: [DONE]\n`)
-    )
+      ctx.set("Content-Type", "text/event-stream"),
+      ctx.body(
+        `data: {"type":"text","content":"Hello from mock"}\ndata: [DONE]\n`,
+      ),
+    );
   }),
-  
-  rest.get('/api/chats/:id', (req, res, ctx) => {
+
+  rest.get("/api/chats/:id", (req, res, ctx) => {
     return res(
       ctx.json({
         id: req.params.id,
-        title: 'Test Chat',
+        title: "Test Chat",
         messages: [],
-      })
-    )
+      }),
+    );
   }),
-]
+];
 ```
 
 ### Test Fixtures
 
 ```typescript
 // tests/fixtures/messages.ts
-import { faker } from '@faker-js/faker'
+import { faker } from "@faker-js/faker";
 
 export function createMockMessage(overrides = {}) {
   return {
     id: faker.string.uuid(),
-    role: faker.helpers.arrayElement(['user', 'assistant']),
+    role: faker.helpers.arrayElement(["user", "assistant"]),
     content: faker.lorem.paragraph(),
     createdAt: faker.date.recent().toISOString(),
     ...overrides,
-  }
+  };
 }
 
 export function createMockChat(overrides = {}) {
@@ -414,7 +430,7 @@ export function createMockChat(overrides = {}) {
     messages: Array.from({ length: 5 }, createMockMessage),
     createdAt: faker.date.recent().toISOString(),
     ...overrides,
-  }
+  };
 }
 ```
 
@@ -457,22 +473,22 @@ export { render }
 ```typescript
 // tests/utils/helpers.ts
 export async function waitForStream(stream: ReadableStream) {
-  const reader = stream.getReader()
-  const chunks: string[] = []
-  
+  const reader = stream.getReader();
+  const chunks: string[] = [];
+
   while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    chunks.push(new TextDecoder().decode(value))
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(new TextDecoder().decode(value));
   }
-  
-  return chunks.join('')
+
+  return chunks.join("");
 }
 
 export function mockSupabase() {
   return {
     auth: {
-      getUser: vi.fn(() => ({ data: { user: { id: 'test' } } })),
+      getUser: vi.fn(() => ({ data: { user: { id: "test" } } })),
       signIn: vi.fn(),
       signOut: vi.fn(),
     },
@@ -484,7 +500,7 @@ export function mockSupabase() {
       eq: vi.fn().mockReturnThis(),
       single: vi.fn(),
     })),
-  }
+  };
 }
 ```
 
@@ -494,26 +510,26 @@ export function mockSupabase() {
 
 ```typescript
 // vitest.config.ts
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-import path from 'path'
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'jsdom',
+    environment: "jsdom",
     globals: true,
-    setupFiles: ['./tests/setup.ts'],
+    setupFiles: ["./tests/setup.ts"],
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html', 'lcov'],
+      provider: "v8",
+      reporter: ["text", "html", "lcov"],
       exclude: [
-        'node_modules/',
-        'tests/',
-        '*.config.ts',
-        '*.config.js',
-        '.next/',
-        'public/',
+        "node_modules/",
+        "tests/",
+        "*.config.ts",
+        "*.config.js",
+        ".next/",
+        "public/",
       ],
       thresholds: {
         branches: 80,
@@ -525,39 +541,44 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './'),
+      "@": path.resolve(__dirname, "./"),
     },
   },
-})
+});
 ```
 
 ## Best Practices
 
 ### Test Organization
+
 - Group related tests in describe blocks
 - Use clear, descriptive test names
 - Follow AAA pattern (Arrange, Act, Assert)
 - Keep tests focused on single behavior
 
 ### Test Data
+
 - Use factories for complex objects
 - Avoid hardcoded test data
 - Clean up after tests
 - Use realistic data
 
 ### Mocking
+
 - Mock external dependencies
 - Avoid over-mocking
 - Verify mock calls when relevant
 - Reset mocks between tests
 
 ### Async Testing
+
 - Always await async operations
 - Use waitFor for DOM updates
 - Handle loading states
 - Test error scenarios
 
 ### Performance
+
 - Run tests in parallel when possible
 - Use test.skip for slow tests
 - Optimize test setup
@@ -572,7 +593,7 @@ export default defineConfig({
   "type": "node",
   "request": "launch",
   "name": "Debug Vitest Tests",
-  "runtimeExecutable": "npm",
+  "runtimeExecutable": "pnpm",
   "runtimeArgs": ["run", "test:debug"],
   "console": "integratedTerminal",
   "internalConsoleOptions": "neverOpen"
@@ -608,26 +629,26 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - uses: actions/setup-node@v3
         with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - run: npm ci
-      
+          node-version: "20"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
       - name: Unit Tests
-        run: npm run test:unit
-      
+        run: pnpm run test:unit
+
       - name: Integration Tests
-        run: npm run test:integration
-      
+        run: pnpm run test:integration
+
       - name: E2E Tests
-        run: npx playwright install && npm run test:e2e
-      
+        run: npx playwright install && pnpm run test:e2e
+
       - name: Upload Coverage
         uses: codecov/codecov-action@v3
         with:
@@ -639,35 +660,33 @@ jobs:
 ### Testing Streaming Responses
 
 ```typescript
-test('should handle streaming', async () => {
-  const stream = await chatStream('Hello')
-  const chunks = []
-  
+test("should handle streaming", async () => {
+  const stream = await chatStream("Hello");
+  const chunks = [];
+
   for await (const chunk of stream) {
-    chunks.push(chunk)
+    chunks.push(chunk);
   }
-  
-  expect(chunks).toContain(
-    expect.objectContaining({ type: 'text' })
-  )
-})
+
+  expect(chunks).toContain(expect.objectContaining({ type: "text" }));
+});
 ```
 
 ### Testing File Uploads
 
 ```typescript
-test('should upload file', async () => {
-  const file = new File(['test'], 'test.txt')
-  const formData = new FormData()
-  formData.append('file', file)
-  
-  const response = await fetch('/api/files', {
-    method: 'POST',
+test("should upload file", async () => {
+  const file = new File(["test"], "test.txt");
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("/api/files", {
+    method: "POST",
     body: formData,
-  })
-  
-  expect(response.ok).toBe(true)
-})
+  });
+
+  expect(response.ok).toBe(true);
+});
 ```
 
 ### Testing Auth Protected Routes
@@ -681,7 +700,7 @@ test('should require auth', async () => {
       </AuthProvider>
     ),
   })
-  
+
   expect(getByText('Please login')).toBeInTheDocument()
 })
 ```

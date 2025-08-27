@@ -20,7 +20,7 @@ export async function getSupabaseUser() {
 }
 
 export async function getUserProfile(): Promise<UserProfile | null> {
-  if (!isSupabaseEnabled) {
+  if (!isSupabaseEnabled()) {
     return {
       id: 'guest',
       email: 'guest@zola.chat',

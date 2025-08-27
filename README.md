@@ -7,11 +7,13 @@ RoboRail Assistant Chat is a sophisticated AI chat platform that supports GPT-5 
 ## 🚀 Core Features
 
 ### Models (incl. GPT-5)
+
 - **GPT-5 Mini**: Fast, efficient (default)
 - **GPT-5 Standard**: Balanced performance
 - **GPT-5 Pro**: Deep analysis
 
 ### Capabilities
+
 - 🔍 Optional file search (OpenAI vector stores)
 - 🧠 Reasoning effort (Low/Medium/High)
 - 📊 Observability hooks (LangSmith optional)
@@ -24,6 +26,7 @@ This scaffold is intentionally neutral. Add your own domain expertise via prompt
 ## 🛠️ Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - OpenAI API key with GPT-5 access
 - (Optional) LangSmith API key for observability
@@ -37,14 +40,14 @@ git clone https://github.com/your-org/roborail-assistant-chat.git
 cd roborail-assistant-chat
 
 # Install dependencies
-npm install
+pnpm install
 
 # Configure environment
 cp .env.example .env.local
 # Edit .env.local with your API keys
 
 # Run development server
-npm run dev
+pnpm run dev
 ```
 
 Visit `http://localhost:3000` to start using RoboRail Assistant Chat!
@@ -64,6 +67,7 @@ docker run -p 3000:3000 --env-file .env.local base-chat
 ## 💬 Example Prompts
 
 Try these generic starters:
+
 - "Brainstorm ideas for a weekend project"
 - "Summarize this article into bullet points"
 - "Explain this concept to a beginner"
@@ -99,6 +103,7 @@ MAX_REQUESTS_PER_MINUTE=60        # Rate limit threshold
 ### Reasoning Effort Levels
 
 Configure the default reasoning effort in your chat:
+
 - **Low**: Fast responses, basic analysis (~ 1-2 seconds)
 - **Medium**: Balanced depth and speed (~ 3-5 seconds) [Default]
 - **High**: Deep analysis, comprehensive reasoning (~ 5-10 seconds)
@@ -106,6 +111,7 @@ Configure the default reasoning effort in your chat:
 ## 📊 Observability with LangSmith (Optional)
 
 Base Chat includes hooks for LangSmith:
+
 - **Trace Analysis**: View complete execution traces
 - **Performance Metrics**: Token usage, latency, throughput
 - **User Feedback**: Correlate feedback with specific runs
@@ -117,12 +123,14 @@ Access your traces at: `https://smith.langchain.com/project/base-chat`
 ## 🗄️ Database Schema
 
 When using Supabase, Base Chat can manage:
+
 - Chat history and message storage
 - User feedback and ratings
 - File attachments and vector stores
 - Usage analytics and metrics
 
 Run migrations:
+
 ```bash
 npx supabase migration up
 ```
@@ -139,6 +147,7 @@ npx supabase migration up
 ## 🛠️ Development
 
 ### Tech Stack
+
 - **Frontend**: Next.js 15, React 19, TypeScript
 - **UI**: Tailwind CSS, shadcn/ui, Radix UI
 - **AI**: OpenAI (incl. GPT-5), Vercel AI SDK
@@ -190,6 +199,7 @@ Apache License 2.0 - See [LICENSE](./LICENSE) for details
 ## 🙏 Acknowledgments
 
 Built with:
+
 - [OpenAI GPT-5](https://openai.com) — Advanced language model
 - [LangSmith](https://smith.langchain.com) — LLM observability
 - [Vercel AI SDK](https://sdk.vercel.ai) — AI integration framework
@@ -199,6 +209,7 @@ Built with:
 ## ⚠️ Disclaimer
 
 This scaffold should not be used for:
+
 - Creating malicious code or exploits
 - Bypassing security measures
 - Unauthorized access or attacks

@@ -110,6 +110,14 @@ export function MultiModelSelector({
         )}
         key={model.id}
         onClick={() => handleModelToggle(model.id, isLocked)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleModelToggle(model.id, isLocked);
+          }
+        }}
+        role="button"
+        tabIndex={0}
       >
         <div className="flex items-center gap-3">
           <Checkbox

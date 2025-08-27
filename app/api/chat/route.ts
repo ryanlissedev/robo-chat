@@ -38,6 +38,7 @@ import { retrieveWithGpt41 } from '@/lib/retrieval/two-pass';
 import { performVectorRetrieval } from '@/lib/retrieval/vector-retrieval';
 import { fileSearchTool } from '@/lib/tools/file-search';
 import type { ProviderWithoutOllama } from '@/lib/user-keys';
+import { extractReasoningFromResponse, type ReasoningContext } from '@/lib/middleware/extract-reasoning-middleware';
 import logger from '@/lib/utils/logger';
 import {
   type CredentialSource,
@@ -646,7 +647,7 @@ export async function POST(req: Request) {
       enableSearch,
       message_group_id,
       reasoningEffort = 'medium',
-      verbosity,
+      verbosity = 'medium',
       context = 'chat', // Default to chat context
       personalityMode,
     } = requestData;
@@ -691,12 +692,24 @@ export async function POST(req: Request) {
       modelSupportsFileSearchTools,
     } = await getModelConfiguration(resolvedModel, model);
 
+    // Set GPT-5 defaults: low verbosity, low reasoning
+    let effectiveReasoningEffort = reasoningEffort;
+    let effectiveVerbosity = verbosity;
+
+    if (isGPT5Model) {
+      // Default to low reasoning effort for GPT-5 models
+      effectiveReasoningEffort =
+        reasoningEffort === 'medium' ? 'low' : reasoningEffort;
+      // Default to low verbosity for GPT-5 models
+      effectiveVerbosity = verbosity === 'medium' ? 'low' : verbosity;
+    }
+
     // Log request context
     logRequestContext({
       resolvedModel,
       enableSearch,
-      reasoningEffort,
-      verbosity,
+      reasoningEffort: effectiveReasoningEffort,
+      verbosity: effectiveVerbosity,
       isGPT5Model,
       modelSupportsFileSearchTools,
     });
@@ -734,7 +747,7 @@ export async function POST(req: Request) {
     const langsmithRunId = await createLangSmithRun({
       resolvedModel,
       messages,
-      reasoningEffort,
+      reasoningEffort: effectiveReasoningEffort,
       enableSearch,
       userId,
       chatId,
@@ -743,8 +756,8 @@ export async function POST(req: Request) {
     // Configure tools and model settings
     const tools = configureTools(enableSearch, modelSupportsFileSearchTools);
     const modelSettings = configureModelSettings(
-      reasoningEffort,
-      verbosity,
+      effectiveReasoningEffort,
+      effectiveVerbosity,
       isReasoningCapable
     );
 
@@ -920,6 +933,86 @@ export async function POST(req: Request) {
                 }
               }
 
+              // Extract reasoning traces for GPT-5 models
+              let reasoningContext: ReasoningContext | null = null;
+              if (isGPT5Model && assistantText) {
+                const usage = (response as ResponseWithUsage).usage;
+                reasoningContext = extractReasoningFromResponse(
+                  assistantText,
+                  undefined, // processingTime
+                  usage?.totalTokens
+                );
+
+                // Enhanced logging for reasoning - show actual content and summaries
+                if (reasoningContext.traces.length > 0) {
+                  logger.info(
+                    {
+                      at: 'api.chat.reasoningExtracted',
+                      chatId,
+                      userId,
+                      model: resolvedModel,
+                      traceCount: reasoningContext.traces.length,
+                      traceTypes: reasoningContext.traces.map((t) => t.type),
+                      summary: reasoningContext.summary,
+                      // Include actual reasoning content for debugging
+                      reasoningTraces: reasoningContext.traces.map((trace, index) => ({
+                        index,
+                        type: trace.type,
+                        contentPreview: getPreview(trace.content, 200), // Show first 200 chars of reasoning
+                        fullContentLength: trace.content?.length || 0,
+                      })),
+                      // Separate log for the full summary to make it easily searchable
+                      reasoningSummaryFull: reasoningContext.summary,
+                    },
+                    'Reasoning traces extracted from GPT-5 response - ENHANCED LOGGING'
+                  );
+                  
+                  // Log each reasoning trace separately for better visibility
+                  reasoningContext.traces.forEach((trace, index) => {
+                    logger.info(
+                      {
+                        at: 'api.chat.reasoningTrace',
+                        chatId,
+                        userId,
+                        model: resolvedModel,
+                        traceIndex: index,
+                        traceType: trace.type,
+                        reasoningContent: trace.content, // Full reasoning content for this trace
+                      },
+                      `Reasoning Trace ${index + 1}/${reasoningContext?.traces.length}: ${trace.type}`
+                    );
+                  });
+                } else {
+                  // Log when NO reasoning is found for debugging
+                  logger.info(
+                    {
+                      at: 'api.chat.noReasoningFound',
+                      chatId,
+                      userId,
+                      model: resolvedModel,
+                      assistantTextLength: assistantText.length,
+                      assistantTextPreview: getPreview(assistantText, 300),
+                      isGPT5Model,
+                      reasoningEffort: effectiveReasoningEffort,
+                    },
+                    'NO reasoning traces found in GPT-5 response - DEBUG INFO'
+                  );
+                }
+              } else if (isGPT5Model) {
+                // Log when GPT-5 model but no assistant text for debugging
+                logger.info(
+                  {
+                    at: 'api.chat.noAssistantText',
+                    chatId,
+                    userId,
+                    model: resolvedModel,
+                    isGPT5Model,
+                    reasoningEffort: effectiveReasoningEffort,
+                  },
+                  'GPT-5 model detected but no assistant text found for reasoning extraction'
+                );
+              }
+
               logger.info(
                 {
                   at: 'api.chat.assistantResponse',
@@ -927,6 +1020,7 @@ export async function POST(req: Request) {
                   userId,
                   model: resolvedModel,
                   preview: getPreview(assistantText),
+                  reasoningSummary: reasoningContext?.summary,
                 },
                 'Assistant response preview'
               );
@@ -1127,6 +1221,86 @@ export async function POST(req: Request) {
             }
           }
 
+          // Extract reasoning traces for GPT-5 models (main streaming path)
+          let reasoningContext: ReasoningContext | null = null;
+          if (isGPT5Model && assistantText) {
+            const usage = (response as ResponseWithUsage).usage;
+            reasoningContext = extractReasoningFromResponse(
+              assistantText,
+              undefined, // processingTime
+              usage?.totalTokens
+            );
+
+            // Enhanced logging for reasoning - show actual content and summaries
+            if (reasoningContext.traces.length > 0) {
+              logger.info(
+                {
+                  at: 'api.chat.reasoningExtracted',
+                  chatId,
+                  userId,
+                  model: resolvedModel,
+                  traceCount: reasoningContext.traces.length,
+                  traceTypes: reasoningContext.traces.map((t) => t.type),
+                  summary: reasoningContext.summary,
+                  // Include actual reasoning content for debugging
+                  reasoningTraces: reasoningContext.traces.map((trace, index) => ({
+                    index,
+                    type: trace.type,
+                    contentPreview: getPreview(trace.content, 200), // Show first 200 chars of reasoning
+                    fullContentLength: trace.content?.length || 0,
+                  })),
+                  // Separate log for the full summary to make it easily searchable
+                  reasoningSummaryFull: reasoningContext.summary,
+                },
+                'Reasoning traces extracted from GPT-5 response - ENHANCED LOGGING (Main Stream)'
+              );
+              
+              // Log each reasoning trace separately for better visibility
+              reasoningContext.traces.forEach((trace, index) => {
+                logger.info(
+                  {
+                    at: 'api.chat.reasoningTrace',
+                    chatId,
+                    userId,
+                    model: resolvedModel,
+                    traceIndex: index,
+                    traceType: trace.type,
+                    reasoningContent: trace.content, // Full reasoning content for this trace
+                  },
+                  `Reasoning Trace ${index + 1}/${reasoningContext?.traces.length}: ${trace.type} (Main Stream)`
+                );
+              });
+            } else {
+              // Log when NO reasoning is found for debugging
+              logger.info(
+                {
+                  at: 'api.chat.noReasoningFound',
+                  chatId,
+                  userId,
+                  model: resolvedModel,
+                  assistantTextLength: assistantText.length,
+                  assistantTextPreview: getPreview(assistantText, 300),
+                  isGPT5Model,
+                  reasoningEffort: effectiveReasoningEffort,
+                },
+                'NO reasoning traces found in GPT-5 response - DEBUG INFO (Main Stream)'
+              );
+            }
+          } else if (isGPT5Model) {
+            // Log when GPT-5 model but no assistant text for debugging
+            logger.info(
+              {
+                at: 'api.chat.noAssistantText',
+                chatId,
+                userId,
+                model: resolvedModel,
+                isGPT5Model,
+                reasoningEffort: effectiveReasoningEffort,
+              },
+              'GPT-5 model detected but no assistant text found for reasoning extraction (Main Stream)'
+            );
+          }
+
           logger.info(
             {
               at: 'api.chat.assistantResponse',
@@ -1134,6 +1308,7 @@ export async function POST(req: Request) {
               userId,
               model: resolvedModel,
               preview: getPreview(assistantText),
+              reasoningSummary: reasoningContext?.summary,
             },
             'Assistant response preview'
           );
@@ -1155,7 +1330,7 @@ export async function POST(req: Request) {
             message_group_id,
             model,
             langsmithRunId: actualRunId,
-            reasoningEffort,
+            reasoningEffort: effectiveReasoningEffort,
           });
         }
 
@@ -1195,7 +1370,7 @@ export async function POST(req: Request) {
                 totalTokens: usageMetrics.totalTokens,
                 inputTokens: usageMetrics.inputTokens,
                 outputTokens: usageMetrics.outputTokens,
-                reasoningEffort,
+                reasoningEffort: effectiveReasoningEffort,
                 enableSearch,
               },
             });

@@ -11,6 +11,17 @@ vi.mock('crypto', () => {
     default: {
       randomUUID: mockRandomUUID,
     },
+    randomBytes: vi.fn((size: number) => Buffer.alloc(size, 0)),
+    createCipheriv: vi.fn(() => ({
+      update: vi.fn(() => 'encrypted'),
+      final: vi.fn(() => ''),
+      getAuthTag: vi.fn(() => Buffer.from('auth-tag')),
+    })),
+    createDecipheriv: vi.fn(() => ({
+      setAuthTag: vi.fn(),
+      update: vi.fn(() => 'decrypted'),
+      final: vi.fn(() => ''),
+    })),
   };
 });
 

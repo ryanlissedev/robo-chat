@@ -1,9 +1,18 @@
 // Relax typing to avoid strict Postgrest generics issues during type-check
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/app/types/database.types';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyClient = SupabaseClient<any>;
+type AnyClient = SupabaseClient<Database>;
+
+type UserData = {
+  message_count?: number;
+  daily_message_count?: number;
+  daily_reset?: string;
+  anonymous?: boolean;
+  premium?: boolean;
+  daily_pro_message_count?: number;
+  daily_pro_reset?: string;
+};
 
 import { UsageLimitError } from '@/lib/api';
 import {
@@ -28,8 +37,7 @@ const isProModel = (modelId: string) => !isFreeModel(modelId);
  */
 export async function checkUsage(supabase: AnyClient, userId: string) {
   // Try to get user data, handling missing columns gracefully
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let userData: any | null;
+  let userData: UserData | null;
   let userDataError: Error | null;
 
   try {
@@ -40,7 +48,7 @@ export async function checkUsage(supabase: AnyClient, userId: string) {
       )
       .eq('id', userId)
       .maybeSingle();
-    userData = result.data;
+    userData = result.data as UserData | null;
     userDataError = result.error;
   } catch (error: unknown) {
     // If daily_reset column doesn't exist, try without it
@@ -53,11 +61,11 @@ export async function checkUsage(supabase: AnyClient, userId: string) {
         .select('message_count, daily_message_count, anonymous, premium')
         .eq('id', userId)
         .maybeSingle();
-      userData = result.data;
+      userData = result.data as UserData | null;
       userDataError = result.error;
       // Set default daily_reset if column doesn't exist
       if (userData) {
-        userData.daily_reset = null;
+        userData.daily_reset = undefined;
       }
     } else {
       throw error;
@@ -178,7 +186,7 @@ export async function incrementUsage(
     .from('users')
     .select('message_count, daily_message_count')
     .eq('id', userId)
-    .maybeSingle();
+    .maybeSingle() as { data: UserData | null; error: any };
 
   if (userDataError || !userData) {
     throw new Error(
@@ -210,8 +218,7 @@ export async function incrementUsage(
 
 export async function checkProUsage(supabase: AnyClient, userId: string) {
   // Try to get user data, handling missing columns gracefully
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let userData: any | null;
+  let userData: UserData | null;
   let userDataError: Error | null;
 
   try {
@@ -220,7 +227,7 @@ export async function checkProUsage(supabase: AnyClient, userId: string) {
       .select('daily_pro_message_count, daily_pro_reset')
       .eq('id', userId)
       .maybeSingle();
-    userData = result.data;
+    userData = result.data as UserData | null;
     userDataError = result.error;
   } catch (error: unknown) {
     // If pro columns don't exist, return default values
@@ -282,7 +289,7 @@ export async function incrementProUsage(supabase: AnyClient, userId: string) {
     .from('users')
     .select('daily_pro_message_count')
     .eq('id', userId)
-    .maybeSingle();
+    .maybeSingle() as { data: UserData | null; error: any };
 
   if (error || !data) {
     throw new Error('Failed to fetch user usage for increment');

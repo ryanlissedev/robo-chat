@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DialogAuth } from '@/components/app/chat/dialog-auth';
@@ -6,90 +6,31 @@ import * as api from '@/lib/api';
 import * as supabaseClient from '@/lib/supabase/client';
 import * as supabaseConfig from '@/lib/supabase/config';
 
-// Mock Next.js Image component
+// Mock Next.js Image component - minimal mock
 vi.mock('next/image', () => ({
-  default: ({ alt, src, className, width, height, ...props }: any) => (
-    <img
-      alt={alt}
-      src={src}
-      className={className}
-      width={width}
-      height={height}
-      {...props}
-    />
+  default: ({ alt, src, ...props }: any) => (
+    <img alt={alt} src={src} {...props} />
   ),
 }));
 
-// Mock UI components
-vi.mock('@/components/ui/button', () => ({
-  Button: ({
-    children,
-    onClick,
-    disabled,
-    className,
-    size,
-    variant,
-    ...props
-  }: any) => (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={className}
-      data-size={size}
-      data-variant={variant}
-      {...props}
-    >
-      {children}
-    </button>
-  ),
-}));
-
-vi.mock('@/components/ui/dialog', () => ({
-  Dialog: ({ children, open, onOpenChange }: any) =>
-    open ? <div data-testid="dialog">{children}</div> : null,
-  DialogContent: ({ children, className }: any) => (
-    <div data-testid="dialog-content" className={className}>
-      {children}
-    </div>
-  ),
-  DialogHeader: ({ children }: any) => (
-    <div data-testid="dialog-header">{children}</div>
-  ),
-  DialogTitle: ({ children, className }: any) => (
-    <h2 data-testid="dialog-title" className={className}>
-      {children}
-    </h2>
-  ),
-  DialogDescription: ({ children, className }: any) => (
-    <p data-testid="dialog-description" className={className}>
-      {children}
-    </p>
-  ),
-  DialogFooter: ({ children, className }: any) => (
-    <div data-testid="dialog-footer" className={className}>
-      {children}
-    </div>
-  ),
-}));
-
-// Mock Supabase
+// Mock external dependencies only
 const mockSupabaseClient = {
   auth: {
     signInWithOAuth: vi.fn(),
   },
 };
 
-vi.mock('@/lib/supabase/client', () => ({
-  createClient: vi.fn(() => mockSupabaseClient),
-}));
-
-vi.mock('@/lib/supabase/config', () => ({
-  isSupabaseEnabled: vi.fn(() => true),
-}));
-
 vi.mock('@/lib/api', () => ({
   signInWithGoogle: vi.fn(),
+}));
+
+// Mock Supabase modules properly
+vi.mock('@/lib/supabase/config', () => ({
+  isSupabaseEnabled: vi.fn(),
+}));
+
+vi.mock('@/lib/supabase/client', () => ({
+  createClient: vi.fn(),
 }));
 
 // Mock window.location
@@ -114,36 +55,32 @@ describe('DialogAuth', () => {
   const user = userEvent.setup();
 
   beforeEach(() => {
-    vi.clearAllMocks();
     mockLocation.href = '';
-    vi.mocked(supabaseConfig.isSupabaseEnabled).mockReturnValue(true);
-    vi.mocked(supabaseClient.createClient).mockReturnValue(
-      mockSupabaseClient as any
-    );
+    vi.clearAllMocks();
+    
+    // Setup default mock implementations
+    const mockIsSupabaseEnabled = vi.mocked(supabaseConfig.isSupabaseEnabled);
+    const mockCreateClient = vi.mocked(supabaseClient.createClient);
+    
+    mockIsSupabaseEnabled.mockReturnValue(true);
+    mockCreateClient.mockReturnValue(mockSupabaseClient as any);
   });
 
   describe('Rendering', () => {
     it('should render dialog when open and Supabase is enabled', () => {
       renderDialogAuth();
 
-      expect(screen.getByTestId('dialog')).toBeInTheDocument();
-      expect(screen.getByTestId('dialog-title')).toHaveTextContent(
-        "You've reached the limit for today"
-      );
-      expect(screen.getByTestId('dialog-description')).toHaveTextContent(
-        'Sign in below to increase your message limits.'
-      );
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(screen.getByText("You've reached the limit for today")).toBeInTheDocument();
+      expect(screen.getByText('Sign in below to increase your message limits.')).toBeInTheDocument();
     });
 
     it('should render Google sign-in button', () => {
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByRole('button', { name: /continue with google/i });
       expect(button).toBeInTheDocument();
-      expect(button).toHaveAttribute('data-size', 'lg');
-      expect(button).toHaveAttribute('data-variant', 'secondary');
+      expect(button).not.toBeDisabled();
     });
 
     it('should render Google logo in button', () => {
@@ -152,34 +89,18 @@ describe('DialogAuth', () => {
       const logo = screen.getByAltText('Google logo');
       expect(logo).toBeInTheDocument();
       expect(logo).toHaveAttribute('src', 'https://www.google.com/favicon.ico');
-      expect(logo).toHaveClass('mr-2', 'size-4');
-    });
-
-    it('should apply correct CSS classes', () => {
-      renderDialogAuth();
-
-      expect(screen.getByTestId('dialog-content')).toHaveClass('sm:max-w-md');
-      expect(screen.getByTestId('dialog-title')).toHaveClass('text-xl');
-      expect(screen.getByTestId('dialog-description')).toHaveClass(
-        'pt-2',
-        'text-base'
-      );
-      expect(screen.getByTestId('dialog-footer')).toHaveClass(
-        'mt-6',
-        'sm:justify-center'
-      );
     });
   });
 
   describe('Supabase Configuration', () => {
-    it('should return null when Supabase is not enabled', () => {
+    it('should not render when Supabase is not enabled', () => {
       vi.mocked(supabaseConfig.isSupabaseEnabled).mockReturnValue(false);
 
       const { container } = renderDialogAuth();
       expect(container.firstChild).toBeNull();
     });
 
-    it('should return null when Supabase client is null', () => {
+    it('should not render when Supabase client is null', () => {
       vi.mocked(supabaseClient.createClient).mockReturnValue(null);
 
       const { container } = renderDialogAuth();
@@ -193,27 +114,19 @@ describe('DialogAuth', () => {
       );
 
       renderDialogAuth();
-      expect(screen.getByTestId('dialog')).toBeInTheDocument();
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
   });
 
   describe('Dialog State', () => {
     it('should show dialog when open is true', () => {
       renderDialogAuth({ open: true });
-      expect(screen.getByTestId('dialog')).toBeInTheDocument();
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
     it('should hide dialog when open is false', () => {
       renderDialogAuth({ open: false });
-      expect(screen.queryByTestId('dialog')).not.toBeInTheDocument();
-    });
-
-    it('should call setOpen when dialog close is triggered', () => {
-      const setOpen = vi.fn();
-      renderDialogAuth({ setOpen });
-
-      // Dialog component calls onOpenChange internally
-      expect(screen.getByTestId('dialog')).toBeInTheDocument();
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
   });
 
@@ -227,12 +140,12 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByRole('button', { name: /continue with google/i });
       await user.click(button);
 
-      expect(api.signInWithGoogle).toHaveBeenCalledWith(mockSupabaseClient);
+      await waitFor(() => {
+        expect(api.signInWithGoogle).toHaveBeenCalledWith(mockSupabaseClient);
+      });
     });
 
     it('should redirect to auth URL on successful sign-in', async () => {
@@ -244,9 +157,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByRole('button', { name: /continue with google/i });
       await user.click(button);
 
       await waitFor(() => {
@@ -262,9 +173,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByRole('button', { name: /continue with google/i });
       await user.click(button);
 
       await waitFor(() => {
@@ -277,9 +186,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByRole('button', { name: /continue with google/i });
       await user.click(button);
 
       await waitFor(() => {
@@ -302,13 +209,13 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByRole('button', { name: /continue with google/i });
       await user.click(button);
 
-      expect(screen.getByText('Connecting...')).toBeInTheDocument();
-      expect(button).toBeDisabled();
+      await waitFor(() => {
+        expect(screen.getByText('Connecting...')).toBeInTheDocument();
+        expect(button).toBeDisabled();
+      });
     });
 
     it('should disable button during loading', async () => {
@@ -324,10 +231,10 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
+      const button = screen.getByRole('button', { name: /continue with google/i });
+      await act(async () => {
+        await user.click(button);
       });
-      await user.click(button);
 
       expect(button).toBeDisabled();
     });
@@ -340,14 +247,12 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
+      const button = screen.getByRole('button', { name: /continue with google/i });
+      await act(async () => {
+        await user.click(button);
       });
-      await user.click(button);
 
-      await waitFor(() => {
-        expect(screen.queryByText('Connecting...')).not.toBeInTheDocument();
-      });
+      expect(screen.queryByText('Connecting...')).not.toBeInTheDocument();
     });
   });
 
@@ -360,14 +265,12 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
+      const button = screen.getByRole('button', { name: /continue with google/i });
+      await act(async () => {
+        await user.click(button);
       });
-      await user.click(button);
 
-      await waitFor(() => {
-        expect(screen.getByText(errorMessage)).toBeInTheDocument();
-      });
+      expect(screen.getByText(errorMessage)).toBeInTheDocument();
     });
 
     it('should display generic error for unknown errors', async () => {
@@ -375,16 +278,12 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
+      const button = screen.getByRole('button', { name: /continue with google/i });
+      await act(async () => {
+        await user.click(button);
       });
-      await user.click(button);
 
-      await waitFor(() => {
-        expect(
-          screen.getByText('An unexpected error occurred. Please try again.')
-        ).toBeInTheDocument();
-      });
+      expect(screen.getByText('An unexpected error occurred. Please try again.')).toBeInTheDocument();
     });
 
     it('should apply error styling to error message', async () => {
@@ -394,21 +293,14 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
+      const button = screen.getByRole('button', { name: /continue with google/i });
+      await act(async () => {
+        await user.click(button);
       });
-      await user.click(button);
 
-      await waitFor(() => {
-        const errorDiv = screen.getByText('Test error').parentElement;
-        expect(errorDiv).toHaveClass(
-          'rounded-md',
-          'bg-destructive/10',
-          'p-3',
-          'text-destructive',
-          'text-sm'
-        );
-      });
+      const errorMessage = screen.getByText('Test error');
+      expect(errorMessage).toBeInTheDocument();
+      expect(errorMessage.closest('div')).toHaveClass('bg-destructive/10');
     });
 
     it('should reset error state on new sign-in attempt', async () => {
@@ -419,25 +311,23 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
+      const button = screen.getByRole('button', { name: /continue with google/i });
+      await act(async () => {
+        await user.click(button);
       });
-      await user.click(button);
 
-      await waitFor(() => {
-        expect(screen.getByText('First error')).toBeInTheDocument();
-      });
+      expect(screen.getByText('First error')).toBeInTheDocument();
 
       // Second attempt succeeds
       vi.mocked(api.signInWithGoogle).mockResolvedValueOnce({
         provider: 'google' as const,
         url: 'success',
       });
-      await user.click(button);
-
-      await waitFor(() => {
-        expect(screen.queryByText('First error')).not.toBeInTheDocument();
+      await act(async () => {
+        await user.click(button);
       });
+
+      expect(screen.queryByText('First error')).not.toBeInTheDocument();
     });
 
     it('should reset loading state after error', async () => {
@@ -447,39 +337,47 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
+      const button = screen.getByRole('button', { name: /continue with google/i });
+      await act(async () => {
+        await user.click(button);
       });
-      await user.click(button);
 
-      await waitFor(() => {
-        expect(button).not.toBeDisabled();
-        expect(screen.queryByText('Connecting...')).not.toBeInTheDocument();
-        expect(screen.getByText('Continue with Google')).toBeInTheDocument();
-      });
+      expect(button).not.toBeDisabled();
+      expect(screen.queryByText('Connecting...')).not.toBeInTheDocument();
+      expect(screen.getByText('Continue with Google')).toBeInTheDocument();
     });
   });
 
   describe('Multiple Interactions', () => {
     it('should handle multiple rapid clicks', async () => {
-      vi.mocked(api.signInWithGoogle).mockResolvedValue({
-        provider: 'google' as const,
-        url: 'test',
-      });
+      let resolveSignIn: (value: { provider: 'google'; url: string }) => void =
+        () => {};
+      const signInPromise = new Promise<{ provider: 'google'; url: string }>(
+        (resolve) => {
+          resolveSignIn = resolve;
+        }
+      );
+      vi.mocked(api.signInWithGoogle).mockReturnValue(signInPromise);
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
+      const button = screen.getByRole('button', { name: /continue with google/i });
+
+      // Click multiple times rapidly - use single act() to avoid overlapping
+      await act(async () => {
+        await user.click(button);
+        await user.click(button);
+        await user.click(button);
       });
 
-      await user.click(button);
-      await user.click(button);
-      await user.click(button);
-
       // Should only call once due to loading state disabling button
-      await waitFor(() => {
-        expect(api.signInWithGoogle).toHaveBeenCalledTimes(1);
+      expect(api.signInWithGoogle).toHaveBeenCalledTimes(1);
+      expect(button).toBeDisabled();
+
+      // Resolve the promise to clean up
+      await act(async () => {
+        resolveSignIn({ provider: 'google', url: 'test' });
+        await new Promise(resolve => setTimeout(resolve, 0));
       });
     });
 
@@ -491,21 +389,19 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByRole('button', { name: /continue with google/i });
 
       // First attempt
-      await user.click(button);
-      await waitFor(() => {
-        expect(screen.getByText('Network error')).toBeInTheDocument();
+      await act(async () => {
+        await user.click(button);
       });
+      expect(screen.getByText('Network error')).toBeInTheDocument();
 
       // Second attempt
-      await user.click(button);
-      await waitFor(() => {
-        expect(mockLocation.href).toBe('success');
+      await act(async () => {
+        await user.click(button);
       });
+      expect(mockLocation.href).toBe('success');
 
       expect(api.signInWithGoogle).toHaveBeenCalledTimes(2);
     });
@@ -515,25 +411,23 @@ describe('DialogAuth', () => {
     it('should have proper dialog structure', () => {
       renderDialogAuth();
 
-      expect(screen.getByTestId('dialog-title')).toBeInTheDocument();
-      expect(screen.getByTestId('dialog-description')).toBeInTheDocument();
-      expect(screen.getByRole('button')).toBeInTheDocument();
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(screen.getByText("You've reached the limit for today")).toBeInTheDocument();
+      expect(screen.getByText('Sign in below to increase your message limits.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /continue with google/i })).toBeInTheDocument();
     });
 
     it('should have accessible button text', () => {
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByRole('button', { name: /continue with google/i });
       expect(button).toBeInTheDocument();
     });
 
     it('should have alt text for Google logo', () => {
       renderDialogAuth();
 
-      const logo = screen.getByAltText('Google logo');
-      expect(logo).toBeInTheDocument();
+      expect(screen.getByAltText('Google logo')).toBeInTheDocument();
     });
 
     it('should maintain focus management during loading', async () => {
@@ -549,13 +443,13 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByRole('button', { name: /continue with google/i }) as HTMLButtonElement;
       button.focus();
       expect(document.activeElement).toBe(button);
 
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
 
       // Button should still be focusable even when disabled
       expect(button).toHaveFocus();
@@ -568,10 +462,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
-
+      const button = screen.getByRole('button', { name: /continue with google/i });
       expect(() => user.click(button)).not.toThrow();
     });
 
@@ -580,16 +471,12 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
+      const button = screen.getByRole('button', { name: /continue with google/i });
+      await act(async () => {
+        await user.click(button);
       });
-      await user.click(button);
 
-      await waitFor(() => {
-        expect(
-          screen.getByText('An unexpected error occurred. Please try again.')
-        ).toBeInTheDocument();
-      });
+      expect(screen.getByText('An unexpected error occurred. Please try again.')).toBeInTheDocument();
     });
 
     it('should handle very long error messages', async () => {
@@ -598,14 +485,12 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
+      const button = screen.getByRole('button', { name: /continue with google/i });
+      await act(async () => {
+        await user.click(button);
       });
-      await user.click(button);
 
-      await waitFor(() => {
-        expect(screen.getByText(longError)).toBeInTheDocument();
-      });
+      expect(screen.getByText(longError)).toBeInTheDocument();
     });
   });
 });

@@ -805,12 +805,10 @@ describe('Create Guest API Route', () => {
 
       mockCreateGuestServerClient.mockResolvedValue(mockSupabaseClient);
 
-      // Mock each user doesn't exist and gets created successfully
-      userIds.forEach((userId, _index) => {
-        const mockMaybeSingle = vi
-          .fn()
-          .mockResolvedValue({ data: null, error: null });
-        const mockSingle = vi.fn().mockResolvedValue({
+      // Create individual mock responses for each userId to avoid mock state conflicts
+      const mockResponses = userIds.map((userId) => ({
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        single: vi.fn().mockResolvedValue({
           data: {
             id: userId,
             email: `${userId}@anonymous.example`,
@@ -820,13 +818,20 @@ describe('Create Guest API Route', () => {
             created_at: new Date().toISOString(),
           },
           error: null,
-        });
+        }),
+      }));
 
-        mockSupabaseClient.from
-          .mockReturnValueOnce({
+      let callCount = 0;
+      mockSupabaseClient.from = vi.fn(() => {
+        const currentMock = mockResponses[Math.floor(callCount / 2)];
+        callCount++;
+
+        if (callCount % 2 === 1) {
+          // First call for each user - check if exists
+          return {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
-                maybeSingle: mockMaybeSingle,
+                maybeSingle: currentMock.maybeSingle,
               })),
             })),
             insert: vi.fn(() => ({
@@ -834,8 +839,10 @@ describe('Create Guest API Route', () => {
                 single: vi.fn(),
               })),
             })),
-          })
-          .mockReturnValueOnce({
+          };
+        } else {
+          // Second call for each user - create user
+          return {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 maybeSingle: vi.fn(),
@@ -843,41 +850,30 @@ describe('Create Guest API Route', () => {
             })),
             insert: vi.fn(() => ({
               select: vi.fn(() => ({
-                single: mockSingle,
+                single: currentMock.single,
               })),
             })),
-          });
-      });
+          };
+        }
+      }) as any;
 
-      const requests = userIds.map(
-        (userId) =>
-          new Request('http://localhost/api/create-guest', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ userId }),
-          })
-      );
-
-      const responses = await Promise.all(requests.map((req) => POST(req)));
-
-      // Handle potential race conditions in rapid requests
-      const successCount = responses.filter(
-        (response) => response.status === 200
-      ).length;
-      const errorCount = responses.filter(
-        (response) => response.status === 500
-      ).length;
-
-      // Either most succeed, or many fail due to race conditions
-      expect(successCount + errorCount).toBe(userIds.length);
-
-      // At least some should work, unless there are major race conditions
-      if (successCount < 2) {
-        // If very few succeeded, that's still acceptable for rapid concurrent requests
-        expect(errorCount).toBeGreaterThanOrEqual(3);
+      // Execute requests sequentially to avoid race conditions in test
+      const responses = [];
+      for (const userId of userIds) {
+        const request = new Request('http://localhost/api/create-guest', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId }),
+        });
+        responses.push(await POST(request));
       }
+
+      // All requests should succeed when executed sequentially
+      responses.forEach((response) => {
+        expect(response.status).toBe(200);
+      });
 
       const responseBodies = await Promise.all(
         responses.map((response) => response.json())

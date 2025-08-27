@@ -50,14 +50,14 @@ cd robo-chat
 git remote add upstream https://github.com/ORIGINAL_OWNER/robo-chat.git
 
 # Install dependencies
-npm install
+pnpm install
 
 # Set up environment
 cp .env.example .env.local
 # Configure your environment variables
 
 # Run tests to verify setup
-npm test
+pnpm test
 ```
 
 ## Contribution Workflow
@@ -65,13 +65,16 @@ npm test
 ### 1. Find an Issue
 
 #### Good First Issues
+
 Look for issues labeled:
+
 - `good first issue` - Perfect for beginners
 - `help wanted` - We need help with these
 - `documentation` - Documentation improvements
 - `bug` - Bug fixes needed
 
 #### Creating Issues
+
 If you find a bug or have a feature idea:
 
 ```markdown
@@ -81,6 +84,7 @@ If you find a bug or have a feature idea:
 Clear description of the bug
 
 **Steps to Reproduce**
+
 1. Go to...
 2. Click on...
 3. See error
@@ -92,6 +96,7 @@ What should happen
 What actually happens
 
 **Environment**
+
 - OS: [e.g., macOS 14]
 - Node: [e.g., 20.0.0]
 - Browser: [e.g., Chrome 120]
@@ -115,6 +120,7 @@ git checkout -b fix/issue-number-description
 ```
 
 #### Branch Naming Convention
+
 - `feature/` - New features
 - `fix/` - Bug fixes
 - `docs/` - Documentation
@@ -173,6 +179,7 @@ git commit -m "refactor(ui): simplify message component"
 ```
 
 Types:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation
@@ -185,22 +192,22 @@ Types:
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Run specific tests
-npm test -- chat
+pnpm test -- chat
 
 # Check types
-npm run type-check
+pnpm run type-check
 
 # Lint code
-npm run lint
+pnpm run lint
 
 # Format code
-npm run format
+pnpm run format
 
 # Build project
-npm run build
+pnpm run build
 ```
 
 #### Writing Tests
@@ -209,17 +216,17 @@ Add tests for new features:
 
 ```typescript
 // Example test for new feature
-describe('NewFeature', () => {
-  it('should work correctly', () => {
-    const result = newFeature(input)
-    expect(result).toBe(expected)
-  })
+describe("NewFeature", () => {
+  it("should work correctly", () => {
+    const result = newFeature(input);
+    expect(result).toBe(expected);
+  });
 
-  it('should handle edge cases', () => {
-    const result = newFeature(edgeCase)
-    expect(result).toBeDefined()
-  })
-})
+  it("should handle edge cases", () => {
+    const result = newFeature(edgeCase);
+    expect(result).toBeDefined();
+  });
+});
 ```
 
 ### 5. Submit Pull Request
@@ -227,9 +234,10 @@ describe('NewFeature', () => {
 #### PR Checklist
 
 Before submitting:
-- [ ] Tests pass (`npm test`)
-- [ ] Code is linted (`npm run lint`)
-- [ ] Types are correct (`npm run type-check`)
+
+- [ ] Tests pass (`pnpm test`)
+- [ ] Code is linted (`pnpm run lint`)
+- [ ] Types are correct (`pnpm run type-check`)
 - [ ] Documentation updated
 - [ ] Commits are clean
 - [ ] Branch is up-to-date
@@ -238,20 +246,24 @@ Before submitting:
 
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Testing
+
 - [ ] Unit tests pass
 - [ ] Integration tests pass
 - [ ] Manual testing completed
 
 ## Checklist
+
 - [ ] Code follows style guidelines
 - [ ] Self-review completed
 - [ ] Comments added for complex code
@@ -259,9 +271,11 @@ Brief description of changes
 - [ ] No new warnings
 
 ## Screenshots
+
 If applicable
 
 ## Related Issues
+
 Fixes #123
 ```
 
@@ -320,9 +334,9 @@ interface NewComponentProps {
  * @param title - The title to display
  * @param className - Optional CSS classes
  */
-export const NewComponent: FC<NewComponentProps> = ({ 
-  title, 
-  className 
+export const NewComponent: FC<NewComponentProps> = ({
+  title,
+  className
 }) => {
   return (
     <div className={cn('base-styles', className)}>
@@ -336,17 +350,17 @@ export const NewComponent: FC<NewComponentProps> = ({
 
 ```typescript
 // app/hooks/use-feature.ts
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react";
 
 export function useFeature(param: string) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     // Hook logic
-  }, [param])
-  
-  return { data, loading }
+  }, [param]);
+
+  return { data, loading };
 }
 ```
 
@@ -356,45 +370,36 @@ export function useFeature(param: string) {
 
 ```typescript
 // app/api/feature/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { getSession } from '@/lib/auth'
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { getSession } from "@/lib/auth";
 
 const schema = z.object({
   field: z.string(),
-})
+});
 
 export async function POST(request: NextRequest) {
   try {
     // Auth check
-    const session = await getSession()
+    const session = await getSession();
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    
+
     // Validate input
-    const body = await request.json()
-    const data = schema.parse(body)
-    
+    const body = await request.json();
+    const data = schema.parse(body);
+
     // Process request
-    const result = await processFeature(data)
-    
-    return NextResponse.json(result)
+    const result = await processFeature(data);
+
+    return NextResponse.json(result);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
-    
-    return NextResponse.json(
-      { error: 'Internal error' },
-      { status: 500 }
-    )
+
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
 ```
@@ -432,6 +437,7 @@ CREATE INDEX idx_features_user_id ON features(user_id);
 ### When to Update Docs
 
 Update documentation when you:
+
 - Add new features
 - Change APIs
 - Modify configuration
@@ -444,21 +450,27 @@ Update documentation when you:
 # Feature Name
 
 ## Overview
+
 Brief description of the feature
 
 ## Usage
+
 How to use the feature with examples
 
 ## API Reference
+
 Detailed API documentation
 
 ## Configuration
+
 Configuration options
 
 ## Examples
+
 Code examples
 
 ## Troubleshooting
+
 Common issues and solutions
 ```
 
@@ -467,6 +479,7 @@ Common issues and solutions
 ### Version Numbering
 
 We follow Semantic Versioning:
+
 - **MAJOR.MINOR.PATCH**
 - MAJOR: Breaking changes
 - MINOR: New features
@@ -503,6 +516,7 @@ We follow Semantic Versioning:
 ### Asking Questions
 
 When asking for help:
+
 1. Search existing issues/discussions
 2. Provide context and examples
 3. Include error messages
@@ -513,6 +527,7 @@ When asking for help:
 ### Contributors
 
 We recognize contributors in:
+
 - README.md contributors section
 - Release notes
 - Project website
@@ -520,6 +535,7 @@ We recognize contributors in:
 ### Types of Contributions
 
 We value all contributions:
+
 - 💻 Code contributions
 - 📖 Documentation improvements
 - 🐛 Bug reports

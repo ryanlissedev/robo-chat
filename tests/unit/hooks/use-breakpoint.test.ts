@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 
@@ -84,7 +84,7 @@ describe('useBreakpoint', () => {
     const changeHandler = vi.mocked(mockMQL.addEventListener).mock.calls[0][1];
     window.innerWidth = 600;
 
-    (global as any).act(() => {
+    act(() => {
       (changeHandler as Function)();
     });
 

@@ -9,6 +9,7 @@ Welcome to the team! This guide will help you get up to speed with our codebase 
 ### 1. Setup Your Development Environment
 
 #### Install Required Tools
+
 ```bash
 # Check if you have Node.js (we need v20+)
 node --version
@@ -26,17 +27,20 @@ git --version
 ```
 
 #### Get the Code
+
 ```bash
 # Clone the repository
 git clone https://github.com/[org]/robo-chat.git
 cd robo-chat
 
 # Install dependencies
-npm install
+pnpm install
 ```
 
 #### Setup VS Code (Recommended)
+
 Install these extensions for the best experience:
+
 - **ESLint** - Catches code issues
 - **Prettier** - Formats code automatically
 - **TypeScript** - TypeScript support
@@ -47,11 +51,13 @@ Install these extensions for the best experience:
 ### 2. Configure Your Environment
 
 Create your local environment file:
+
 ```bash
 cp .env.example .env.local
 ```
 
 Edit `.env.local` and add your keys:
+
 ```env
 # Start with these minimum settings
 NEXT_PUBLIC_SUPABASE_URL=ask-team-for-dev-url
@@ -65,7 +71,7 @@ OPENAI_API_KEY=your-openai-key-here
 
 ```bash
 # Start the development server
-npm run dev
+pnpm run dev
 
 # Open http://localhost:3000 in your browser
 ```
@@ -92,6 +98,7 @@ robo-chat/
 ### Key Concepts to Understand
 
 #### 1. React Components
+
 Components are reusable pieces of UI. Think of them like LEGO blocks!
 
 ```typescript
@@ -105,38 +112,42 @@ function WelcomeMessage({ name }: { name: string }) {
 ```
 
 #### 2. TypeScript
+
 TypeScript adds types to JavaScript, helping catch errors early.
 
 ```typescript
 // JavaScript (no types)
 function add(a, b) {
-  return a + b
+  return a + b;
 }
 
 // TypeScript (with types)
 function add(a: number, b: number): number {
-  return a + b
+  return a + b;
 }
 
 // TypeScript will warn if you try:
-add("hello", "world") // ❌ Error: Expected number, got string
+add("hello", "world"); // ❌ Error: Expected number, got string
 ```
 
 #### 3. Next.js App Router
+
 Next.js handles routing based on folder structure:
+
 - `app/page.tsx` → Homepage (`/`)
 - `app/about/page.tsx` → About page (`/about`)
 - `app/api/chat/route.ts` → API endpoint (`/api/chat`)
 
 #### 4. Async/Await
+
 We use async/await for handling promises (operations that take time):
 
 ```typescript
 // Fetching data
 async function getUser(id: string) {
-  const response = await fetch(`/api/users/${id}`)
-  const user = await response.json()
-  return user
+  const response = await fetch(`/api/users/${id}`);
+  const user = await response.json();
+  return user;
 }
 ```
 
@@ -191,10 +202,10 @@ Look at a simple API route:
 
 ```typescript
 // app/api/hello/route.ts
-import { NextResponse } from 'next/server'
+import { NextResponse } from "next/server";
 
 export async function GET() {
-  return NextResponse.json({ message: "Hello from API!" })
+  return NextResponse.json({ message: "Hello from API!" });
 }
 
 // Visit http://localhost:3000/api/hello to see the response
@@ -203,6 +214,7 @@ export async function GET() {
 ## Common Patterns You'll See
 
 ### 1. The useState Hook
+
 Manages component state (data that can change):
 
 ```typescript
@@ -210,7 +222,7 @@ import { useState } from 'react'
 
 function Counter() {
   const [count, setCount] = useState(0)
-  
+
   return (
     <button onClick={() => setCount(count + 1)}>
       Clicked {count} times
@@ -220,6 +232,7 @@ function Counter() {
 ```
 
 ### 2. The useEffect Hook
+
 Runs code when component mounts or updates:
 
 ```typescript
@@ -227,27 +240,28 @@ import { useEffect, useState } from 'react'
 
 function Timer() {
   const [seconds, setSeconds] = useState(0)
-  
+
   useEffect(() => {
     const timer = setInterval(() => {
       setSeconds(s => s + 1)
     }, 1000)
-    
+
     return () => clearInterval(timer) // Cleanup
   }, []) // Empty array = run once
-  
+
   return <div>Time: {seconds}s</div>
 }
 ```
 
 ### 3. Fetching Data
+
 Common pattern for loading data:
 
 ```typescript
 function UserProfile({ userId }: { userId: string }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
-  
+
   useEffect(() => {
     fetch(`/api/users/${userId}`)
       .then(res => res.json())
@@ -256,10 +270,10 @@ function UserProfile({ userId }: { userId: string }) {
         setLoading(false)
       })
   }, [userId])
-  
+
   if (loading) return <div>Loading...</div>
   if (!user) return <div>User not found</div>
-  
+
   return <div>Welcome, {user.name}!</div>
 }
 ```
@@ -267,22 +281,27 @@ function UserProfile({ userId }: { userId: string }) {
 ## Debugging Tips
 
 ### 1. Console Logging
+
 The simplest debugging tool:
 
 ```typescript
-console.log('Variable value:', myVariable)
-console.table(arrayOfObjects) // Nice table format
-console.error('Something went wrong!', error)
+console.log("Variable value:", myVariable);
+console.table(arrayOfObjects); // Nice table format
+console.error("Something went wrong!", error);
 ```
 
 ### 2. React DevTools
+
 Install the browser extension to inspect components:
+
 - See component props
 - View component state
 - Track re-renders
 
 ### 3. Network Tab
+
 In Chrome DevTools (F12):
+
 - See API calls
 - Check request/response data
 - Monitor performance
@@ -290,25 +309,27 @@ In Chrome DevTools (F12):
 ### 4. Common Errors and Solutions
 
 #### "Cannot read property of undefined"
+
 ```typescript
 // Problem
-user.name // Error if user is undefined
+user.name; // Error if user is undefined
 
 // Solution
-user?.name // Safe navigation
+user?.name; // Safe navigation
 ```
 
 #### "Too many re-renders"
+
 ```typescript
 // Problem
 useEffect(() => {
-  setState(value) // Causes infinite loop
-}) // Missing dependency array
+  setState(value); // Causes infinite loop
+}); // Missing dependency array
 
 // Solution
 useEffect(() => {
-  setState(value)
-}, []) // Add dependency array
+  setState(value);
+}, []); // Add dependency array
 ```
 
 ## Getting Help
@@ -331,11 +352,13 @@ useEffect(() => {
 ### Useful Resources
 
 #### Internal
+
 - **Team Wiki**: [Internal URL]
 - **Design System**: Check `app/components/ui/`
 - **API Docs**: See `docs/API_REFERENCE.md`
 
 #### External
+
 - **React Docs**: https://react.dev
 - **Next.js Tutorial**: https://nextjs.org/learn
 - **TypeScript Handbook**: https://www.typescriptlang.org/docs/
@@ -344,6 +367,7 @@ useEffect(() => {
 ## Your Learning Path
 
 ### Week 1: Basics
+
 - [ ] Complete environment setup
 - [ ] Make your first UI change
 - [ ] Create a simple component
@@ -351,6 +375,7 @@ useEffect(() => {
 - [ ] Run and write a simple test
 
 ### Week 2: Core Features
+
 - [ ] Understand the chat flow
 - [ ] Work with API routes
 - [ ] Handle user input
@@ -358,6 +383,7 @@ useEffect(() => {
 - [ ] Fix your first bug
 
 ### Week 3: Advanced Topics
+
 - [ ] Work with database queries
 - [ ] Implement error handling
 - [ ] Add loading states
@@ -365,6 +391,7 @@ useEffect(() => {
 - [ ] Deploy to staging
 
 ### Month 1: Contributing
+
 - [ ] Complete your first feature
 - [ ] Review someone's code
 - [ ] Write documentation
@@ -376,29 +403,34 @@ useEffect(() => {
 Before submitting your code:
 
 ### Functionality
+
 - [ ] Does it work as expected?
 - [ ] Have you tested edge cases?
 - [ ] Does it handle errors?
 
 ### Code Quality
+
 - [ ] Is it easy to understand?
 - [ ] Are variable names clear?
 - [ ] Is there any duplicate code?
 - [ ] Are there comments for complex parts?
 
 ### Testing
+
 - [ ] Did you write/update tests?
 - [ ] Do all tests pass?
 - [ ] Did you test manually?
 
 ### Style
-- [ ] Did you run the formatter? (`npm run format`)
-- [ ] Did you fix linting issues? (`npm run lint`)
+
+- [ ] Did you run the formatter? (`pnpm run format`)
+- [ ] Did you fix linting issues? (`pnpm run lint`)
 - [ ] Does it follow our patterns?
 
 ## Important Reminders
 
 ### Do's ✅
+
 - Ask questions - there are no stupid questions
 - Take breaks - fresh eyes catch bugs
 - Write tests - they save time later
@@ -406,6 +438,7 @@ Before submitting your code:
 - Learn from code reviews - they're learning opportunities
 
 ### Don'ts ❌
+
 - Don't commit secrets/passwords
 - Don't copy-paste without understanding
 - Don't ignore error messages
@@ -451,6 +484,7 @@ Before submitting your code:
 ## Your Mentor
 
 You've been assigned a mentor: **[Mentor Name]**
+
 - Slack: @mentor
 - Email: mentor@company.com
 - 1-on-1s: Every Tuesday at 2pm

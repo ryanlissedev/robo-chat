@@ -62,7 +62,7 @@ const FILE_ICONS = {
   default: File,
 };
 
-export function VectorStoreManager({}: VectorStoreManagerProps) {
+export function VectorStoreManager(_props: VectorStoreManagerProps) {
   const [vectorStores, setVectorStores] = useState<VectorStore[]>([]);
   const [selectedStore, setSelectedStore] = useState<VectorStore | null>(null);
   const [storeFiles, setStoreFiles] = useState<VectorStoreFile[]>([]);
@@ -307,6 +307,14 @@ export function VectorStoreManager({}: VectorStoreManagerProps) {
                   }`}
                   key={store.id}
                   onClick={() => setSelectedStore(store)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedStore(store);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
