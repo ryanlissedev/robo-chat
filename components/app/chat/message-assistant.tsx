@@ -19,16 +19,16 @@ import {
   MessageAction,
   MessageActions,
 } from '@/components/prompt-kit/message';
+import { toast } from '@/components/ui/toast';
 import { useUserPreferences } from '@/lib/user-preference-store/provider';
 import { cn } from '@/lib/utils';
 import { getSources } from './get-sources';
 import { MessageFeedback } from './message-feedback';
 import { QuoteButton } from './quote-button';
 import { SearchImages } from './search-images';
-import { ToolInvocation } from './tool-invocation';
 import type { ToolUIPart } from './tool-invocation';
+import { ToolInvocation } from './tool-invocation';
 import { useAssistantMessageSelection } from './useAssistantMessageSelection';
-import { toast } from '@/components/ui/toast';
 
 type MessageAssistantProps = {
   children: string;
@@ -74,7 +74,7 @@ export function MessageAssistant({
   // Filter for tool parts using the AI SDK's built-in tool part types
   const toolInvocationParts: ToolUIPart[] = useMemo(
     () => parts?.filter(isToolUIPart) || [],
-    [parts]
+    [parts, isToolUIPart]
   );
 
   // Show actionable toast when fileSearch tool fails
@@ -96,13 +96,24 @@ export function MessageAssistant({
 
     for (const part of fileSearchOutputs) {
       // Attempt to parse the output as JSON from text content or object
-      let parsed: unknown = undefined;
+      let parsed: unknown;
       const output = (part as { output?: unknown }).output;
       try {
-        if (output && typeof output === 'object' && 'content' in (output as Record<string, unknown>)) {
-          const content = (output as { content?: Array<{ type: string; text?: string }> }).content;
+        if (
+          output &&
+          typeof output === 'object' &&
+          'content' in (output as Record<string, unknown>)
+        ) {
+          const content = (
+            output as { content?: Array<{ type: string; text?: string }> }
+          ).content;
           const textNode = Array.isArray(content)
-            ? content.find((c) => c && typeof c === 'object' && (c as { type?: string }).type === 'text')
+            ? content.find(
+                (c) =>
+                  c &&
+                  typeof c === 'object' &&
+                  (c as { type?: string }).type === 'text'
+              )
             : undefined;
           if (textNode && typeof textNode.text === 'string') {
             try {
@@ -124,10 +135,15 @@ export function MessageAssistant({
         // ignore parse errors
       }
 
-      const result = parsed as { success?: boolean; error?: string; summary?: string } | undefined;
+      const result = parsed as
+        | { success?: boolean; error?: string; summary?: string }
+        | undefined;
       if (result && result.success === false) {
         hasShownFileSearchErrorRef.current = true;
-        const description = result.error || result.summary || 'File search failed. Please try again.';
+        const description =
+          result.error ||
+          result.summary ||
+          'File search failed. Please try again.';
         toast({
           title: 'File search failed',
           description,
@@ -169,8 +185,19 @@ export function MessageAssistant({
       )
       .flatMap((part) => {
         if ('output' in part) {
-          const result = part.output as { content?: { type: string; results?: { title: string; imageUrl: string; sourceUrl: string }[] }[] };
-          return result?.content?.[0]?.type === 'images' ? (result.content[0].results ?? []) : [];
+          const result = part.output as {
+            content?: {
+              type: string;
+              results?: {
+                title: string;
+                imageUrl: string;
+                sourceUrl: string;
+              }[];
+            }[];
+          };
+          return result?.content?.[0]?.type === 'images'
+            ? (result.content[0].results ?? [])
+            : [];
         }
         return [];
       }) ?? [];
@@ -236,13 +263,15 @@ export function MessageAssistant({
           <Sources>
             <SourcesTrigger count={sources.length} />
             <SourcesContent>
-              {sources.map((source: { url: string; title?: string }, index: number) => (
-                <Source
-                  href={source.url}
-                  key={index}
-                  title={source.title || source.url}
-                />
-              ))}
+              {sources.map(
+                (source: { url: string; title?: string }, index: number) => (
+                  <Source
+                    href={source.url}
+                    key={index}
+                    title={source.title || source.url}
+                  />
+                )
+              )}
             </SourcesContent>
           </Sources>
         )}

@@ -68,27 +68,30 @@ function canonicalHeaderName(key: string): string {
  * Redact sensitive headers from a Headers object
  * SECURITY: Replace API key values with [REDACTED] placeholder
  */
-export function redactSensitiveHeaders(headers: Headers): Record<string, string> {
+export function redactSensitiveHeaders(
+  headers: Headers
+): Record<string, string> {
   const redacted: Record<string, string> = {};
-  
+
   try {
     // Headers API normalizes keys to lowercase
     headers.forEach((value, key) => {
       // key is already lowercase from Headers API
-      
+
       // Check if this is a sensitive header (case-insensitive)
-      const isSensitive = SENSITIVE_HEADERS.some(
-        sensitiveHeader => sensitiveHeader.toLowerCase() === key
-      ) || 
-      key.includes('api-key') ||
-      key.includes('api_key') ||
-      key.includes('apikey') ||
-      key.includes('authorization') ||
-      key.includes('token') ||
-      key.includes('secret') ||
-      key.includes('password') ||
-      key.includes('credential');
-      
+      const isSensitive =
+        SENSITIVE_HEADERS.some(
+          (sensitiveHeader) => sensitiveHeader.toLowerCase() === key
+        ) ||
+        key.includes('api-key') ||
+        key.includes('api_key') ||
+        key.includes('apikey') ||
+        key.includes('authorization') ||
+        key.includes('token') ||
+        key.includes('secret') ||
+        key.includes('password') ||
+        key.includes('credential');
+
       if (isSensitive) {
         // Store with the lowercase key (Headers forEach lowercases keys)
         redacted[key] = REDACTION_PLACEHOLDER;
@@ -105,12 +108,10 @@ export function redactSensitiveHeaders(headers: Headers): Record<string, string>
         }
       }
     });
-  } catch (error) {
-    // If headers iteration fails, return empty object
-    console.warn('Failed to redact headers:', error);
+  } catch (_error) {
     return {};
   }
-  
+
   return redacted;
 }
 
@@ -119,7 +120,7 @@ export function redactSensitiveHeaders(headers: Headers): Record<string, string>
  * Recursively redacts sensitive keys from nested objects
  */
 export function redactSensitive(
-  obj: Record<string, unknown>, 
+  obj: Record<string, unknown>,
   keys: readonly string[] = SENSITIVE_KEYS,
   visited = new WeakSet()
 ): Record<string, unknown> {
@@ -134,31 +135,37 @@ export function redactSensitive(
   visited.add(obj);
 
   const redacted = { ...obj };
-  
+
   for (const [key, value] of Object.entries(redacted)) {
     // Check if this key should be redacted
-    const shouldRedact = keys.some(sensitiveKey => {
+    const shouldRedact = keys.some((sensitiveKey) => {
       // Case-insensitive match
-      return key.toLowerCase() === sensitiveKey.toLowerCase() ||
-             key.toLowerCase().includes(sensitiveKey.toLowerCase()) ||
-             sensitiveKey.toLowerCase().includes(key.toLowerCase());
+      return (
+        key.toLowerCase() === sensitiveKey.toLowerCase() ||
+        key.toLowerCase().includes(sensitiveKey.toLowerCase()) ||
+        sensitiveKey.toLowerCase().includes(key.toLowerCase())
+      );
     });
-    
+
     if (shouldRedact) {
       redacted[key] = REDACTION_PLACEHOLDER;
     } else if (value && typeof value === 'object' && !Array.isArray(value)) {
       // Recursively redact nested objects
-      redacted[key] = redactSensitive(value as Record<string, unknown>, keys, visited);
+      redacted[key] = redactSensitive(
+        value as Record<string, unknown>,
+        keys,
+        visited
+      );
     } else if (Array.isArray(value)) {
       // Handle arrays of objects
-      redacted[key] = value.map(item => 
+      redacted[key] = value.map((item) =>
         item && typeof item === 'object' && !Array.isArray(item)
           ? redactSensitive(item as Record<string, unknown>, keys, visited)
           : item
       );
     }
   }
-  
+
   return redacted;
 }
 
@@ -166,14 +173,16 @@ export function redactSensitive(
  * Remove sensitive data from log entries
  * Ensures log entries are safe to store or transmit
  */
-export function sanitizeLogEntry(entry: Record<string, unknown>): Record<string, unknown> {
+export function sanitizeLogEntry(
+  entry: Record<string, unknown>
+): Record<string, unknown> {
   if (!entry || typeof entry !== 'object') {
     return entry;
   }
 
   // Create a copy to work with
   const sanitized = { ...entry };
-  
+
   // Handle headers specifically first (before generic redaction)
   if (sanitized.headers && typeof sanitized.headers === 'object') {
     // If headers is a Headers object, convert to redacted plain object
@@ -181,20 +190,26 @@ export function sanitizeLogEntry(entry: Record<string, unknown>): Record<string,
       sanitized.headers = redactSensitiveHeaders(sanitized.headers);
     } else {
       // If it's already a plain object, redact it
-      sanitized.headers = redactSensitive(sanitized.headers as Record<string, unknown>);
+      sanitized.headers = redactSensitive(
+        sanitized.headers as Record<string, unknown>
+      );
     }
   }
-  
+
   // Handle error objects specifically
   if (sanitized.error && typeof sanitized.error === 'object') {
-    sanitized.error = redactSensitive(sanitized.error as Record<string, unknown>);
+    sanitized.error = redactSensitive(
+      sanitized.error as Record<string, unknown>
+    );
   }
-  
+
   // Handle context objects specifically
   if (sanitized.context && typeof sanitized.context === 'object') {
-    sanitized.context = redactSensitive(sanitized.context as Record<string, unknown>);
+    sanitized.context = redactSensitive(
+      sanitized.context as Record<string, unknown>
+    );
   }
-  
+
   // Now apply generic redaction to the entire entry, which should preserve our specific handling above
   return redactSensitive(sanitized);
 }
@@ -207,19 +222,19 @@ export function maskSensitiveValue(value: string | undefined | null): string {
   if (value === null || value === undefined) {
     return 'absent';
   }
-  
+
   if (typeof value !== 'string') {
     return 'present-non-string';
   }
-  
+
   if (value.length === 0) {
     return 'empty';
   }
-  
+
   if (value.length <= 4) {
     return `present-${value.length}chars`;
   }
-  
+
   // Show first 2 and last 2 characters with asterisks in between
   return `${value.substring(0, 2)}${'*'.repeat(value.length - 4)}${value.substring(value.length - 2)}`;
 }
@@ -230,14 +245,14 @@ export function maskSensitiveValue(value: string | undefined | null): string {
  */
 export function createHeaderSummary(headers: Headers): Record<string, string> {
   const summary: Record<string, string> = {};
-  
+
   try {
     headers.forEach((value, key) => {
       const lowerKey = key.toLowerCase();
       const isSensitive = SENSITIVE_HEADERS.some(
-        sensitiveHeader => sensitiveHeader.toLowerCase() === lowerKey
+        (sensitiveHeader) => sensitiveHeader.toLowerCase() === lowerKey
       );
-      
+
       if (isSensitive) {
         // For sensitive headers, use canonical casing as output key
         const canonical = canonicalHeaderName(lowerKey);
@@ -252,11 +267,10 @@ export function createHeaderSummary(headers: Headers): Record<string, string> {
         }
       }
     });
-  } catch (error) {
-    console.warn('Failed to create header summary:', error);
+  } catch (_error) {
     return { error: 'failed-to-process' };
   }
-  
+
   return summary;
 }
 
@@ -268,16 +282,19 @@ export function redactErrorData(error: unknown): Record<string, unknown> {
   if (!error) {
     return {};
   }
-  
+
   if (error instanceof Error) {
     const errorData: Record<string, unknown> = {
       name: error.name,
       message: error.message,
       stack: error.stack,
     };
-    
+
     // Add additional properties safely with type guards
-    const hasProp = <K extends string>(obj: unknown, key: K): obj is { [P in K]: unknown } =>
+    const hasProp = <K extends string>(
+      obj: unknown,
+      key: K
+    ): obj is { [P in K]: unknown } =>
       typeof obj === 'object' && obj !== null && key in obj;
 
     if (hasProp(error, 'cause')) {
@@ -289,13 +306,13 @@ export function redactErrorData(error: unknown): Record<string, unknown> {
     if (hasProp(error, 'apiKey')) {
       errorData.apiKey = (error as { apiKey: unknown }).apiKey;
     }
-    
+
     return redactSensitive(errorData);
   }
-  
+
   if (typeof error === 'object') {
     return redactSensitive(error as Record<string, unknown>);
   }
-  
+
   return { error: String(error) };
 }

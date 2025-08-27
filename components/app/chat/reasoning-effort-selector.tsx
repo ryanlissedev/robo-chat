@@ -91,9 +91,7 @@ export function ReasoningEffortSelector({
           >
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
-                <option.icon
-                  className={cn('h-5 w-5', option.color)}
-                />
+                <option.icon className={cn('h-5 w-5', option.color)} />
                 <span className="font-medium text-base">{option.label}</span>
               </div>
               <span className="pl-7 text-muted-foreground text-sm">

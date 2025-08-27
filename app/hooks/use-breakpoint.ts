@@ -10,7 +10,7 @@ export function useBreakpoint(breakpoint: number) {
     const onChange = () => {
       setIsBelowBreakpoint(window.innerWidth < breakpoint);
     };
-    
+
     // Modern browsers support addEventListener
     if ('addEventListener' in mql) {
       mql.addEventListener('change', onChange);
@@ -19,9 +19,9 @@ export function useBreakpoint(breakpoint: number) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (mql as any).addListener?.(onChange);
     }
-    
+
     setIsBelowBreakpoint(window.innerWidth < breakpoint);
-    
+
     return () => {
       if ('removeEventListener' in mql) {
         mql.removeEventListener('change', onChange);

@@ -95,13 +95,18 @@ vi.mock('@/app/types/ai-extended', () => {
   };
 });
 
+import { convertToModelMessages, streamText } from 'ai';
 // Import the actual modules for type checking
 import { validateAndTrackUsage } from '@/app/api/chat/api';
+import { createErrorResponse } from '@/app/api/chat/utils';
+import {
+  getMessageContent,
+  hasAttachments,
+  hasContent,
+  hasParts,
+} from '@/app/types/ai-extended';
 import { getAllModels } from '@/lib/models';
 import { performVectorRetrieval } from '@/lib/retrieval/vector-retrieval';
-import { convertToModelMessages, streamText } from 'ai';
-import { createErrorResponse } from '@/app/api/chat/utils';
-import { getMessageContent, hasContent, hasParts, hasAttachments } from '@/app/types/ai-extended';
 
 describe('POST /api/chat - TDD London School', () => {
   let mockValidateAndTrackUsage: Mock;
@@ -110,9 +115,9 @@ describe('POST /api/chat - TDD London School', () => {
   let mockStreamText: Mock;
   let mockCreateErrorResponse: Mock;
   let mockGetMessageContent: Mock;
-  let mockHasContent: Mock;
-  let mockHasParts: Mock;
-  let mockHasAttachments: Mock;
+  let _mockHasContent: Mock;
+  let _mockHasParts: Mock;
+  let _mockHasAttachments: Mock;
 
   beforeEach(() => {
     // Cast the imported functions as mocks
@@ -122,9 +127,9 @@ describe('POST /api/chat - TDD London School', () => {
     mockStreamText = streamText as Mock;
     mockCreateErrorResponse = createErrorResponse as Mock;
     mockGetMessageContent = getMessageContent as Mock;
-    mockHasContent = hasContent as any;
-    mockHasParts = hasParts as any;
-    mockHasAttachments = hasAttachments as any;
+    _mockHasContent = hasContent as any;
+    _mockHasParts = hasParts as any;
+    _mockHasAttachments = hasAttachments as any;
 
     // Setup default mocks
     mockValidateAndTrackUsage.mockResolvedValue({ from: vi.fn() });
@@ -302,7 +307,7 @@ describe('POST /api/chat - TDD London School', () => {
 
       // Assert - Verify message transformation
       expect(mockConvertToModelMessages).toHaveBeenCalled();
-      
+
       // Get the actual arguments to understand the transformation
       const actualArgs = mockConvertToModelMessages.mock.calls[0][0];
       expect(actualArgs).toEqual(
@@ -310,9 +315,9 @@ describe('POST /api/chat - TDD London School', () => {
           expect.objectContaining({
             role: 'user',
             parts: expect.arrayContaining([
-              expect.objectContaining({ type: 'text', text: 'Hello world' })
-            ])
-          })
+              expect.objectContaining({ type: 'text', text: 'Hello world' }),
+            ]),
+          }),
         ])
       );
     });
@@ -348,7 +353,7 @@ describe('POST /api/chat - TDD London School', () => {
 
       // Assert
       expect(mockConvertToModelMessages).toHaveBeenCalled();
-      
+
       const actualArgs = mockConvertToModelMessages.mock.calls[0][0];
       expect(actualArgs).toEqual(
         expect.arrayContaining([
@@ -356,9 +361,9 @@ describe('POST /api/chat - TDD London School', () => {
             role: 'user',
             parts: expect.arrayContaining([
               expect.objectContaining({ type: 'text', text: 'Hello' }),
-              expect.objectContaining({ type: 'text', text: 'World' })
-            ])
-          })
+              expect.objectContaining({ type: 'text', text: 'World' }),
+            ]),
+          }),
         ])
       );
     });
@@ -389,16 +394,16 @@ describe('POST /api/chat - TDD London School', () => {
 
       // Assert - Only valid messages should be processed
       expect(mockConvertToModelMessages).toHaveBeenCalled();
-      
+
       const actualArgs = mockConvertToModelMessages.mock.calls[0][0];
       expect(actualArgs).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             role: 'user',
             parts: expect.arrayContaining([
-              expect.objectContaining({ type: 'text', text: 'Valid message' })
-            ])
-          })
+              expect.objectContaining({ type: 'text', text: 'Valid message' }),
+            ]),
+          }),
         ])
       );
     });
@@ -417,7 +422,12 @@ describe('POST /api/chat - TDD London School', () => {
       const request = new Request('http://localhost', {
         method: 'POST',
         body: JSON.stringify({
-          messages: [{ role: 'user', parts: [{ type: 'text', text: 'Search for files' }] }],
+          messages: [
+            {
+              role: 'user',
+              parts: [{ type: 'text', text: 'Search for files' }],
+            },
+          ],
           chatId: 'chat-123',
           userId: 'user-123',
           model: 'gpt-5-mini',
@@ -432,12 +442,14 @@ describe('POST /api/chat - TDD London School', () => {
 
       // Assert - Should call streamText with some configuration (tools may be empty object)
       expect(mockStreamText).toHaveBeenCalled();
-      
+
       // Check that streamText was called with some tools configuration
       const streamTextCall = mockStreamText.mock.calls[0][0];
-      expect(streamTextCall).toEqual(expect.objectContaining({
-        tools: expect.any(Object)
-      }));
+      expect(streamTextCall).toEqual(
+        expect.objectContaining({
+          tools: expect.any(Object),
+        })
+      );
     });
 
     it('should not enable tools for models without fileSearchTools capability and should inject server-side retrieval context', async () => {
@@ -454,7 +466,9 @@ describe('POST /api/chat - TDD London School', () => {
       const request = new Request('http://localhost', {
         method: 'POST',
         body: JSON.stringify({
-          messages: [{ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }],
+          messages: [
+            { role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
+          ],
           chatId: 'chat-123',
           userId: 'user-123',
           model: 'some-model',
@@ -468,7 +482,7 @@ describe('POST /api/chat - TDD London School', () => {
       await POST(request);
 
       // Assert: fallback retrieval path was used by checking retrieval helper was called
-      expect((performVectorRetrieval as unknown as Mock)).toHaveBeenCalled();
+      expect(performVectorRetrieval as unknown as Mock).toHaveBeenCalled();
     });
   });
 

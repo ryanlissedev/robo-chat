@@ -30,7 +30,10 @@ export async function GET() {
     }
 
     // Create status object for all supported providers
-    const userProviders = data?.map((k) => k.provider) || [];
+    // Coerce data typing to avoid "never" inference issues
+    const userProviders = (
+      (data as unknown as Array<{ provider: string }>) || []
+    ).map((k) => k.provider);
     const providerStatus = SUPPORTED_PROVIDERS.reduce(
       (acc, provider) => {
         acc[provider] = userProviders.includes(provider);

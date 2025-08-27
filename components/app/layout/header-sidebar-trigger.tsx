@@ -39,4 +39,3 @@ export function HeaderSidebarTrigger({
     </Tooltip>
   );
 }
-

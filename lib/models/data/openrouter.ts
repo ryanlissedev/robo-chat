@@ -1,6 +1,6 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import type { ModelConfig } from '../types';
 import type { ModelSettings } from '@/lib/types/models';
+import type { ModelConfig } from '../types';
 
 type OpenRouterModelSettings = ModelSettings & {
   enableSearch?: boolean;

@@ -6,7 +6,10 @@ import { useVoiceStore } from '../store/voice-store';
 interface UseVoiceIntegrationProps {
   userId?: string;
   autoIndexTranscripts?: boolean;
-  onTranscriptIndexed?: (result: { vectorStoreId: string; fileId: string }) => void;
+  onTranscriptIndexed?: (result: {
+    vectorStoreId: string;
+    fileId: string;
+  }) => void;
   onIndexError?: (error: Error) => void;
 }
 
@@ -29,28 +32,29 @@ export function useVoiceIntegration({
     if (userId) {
       setUserId(userId);
     }
-    
+
     updateConfig({ autoIndexTranscripts });
   }, [userId, autoIndexTranscripts, setUserId, updateConfig]);
 
   // Manual transcript indexing
   const indexTranscriptManually = async (
-    transcript: string, 
+    transcript: string,
     metadata?: Record<string, unknown>
   ) => {
     try {
       await indexTranscript(transcript, metadata);
-      
+
       if (onTranscriptIndexed && vectorStoreId) {
-        onTranscriptIndexed({ 
+        onTranscriptIndexed({
           vectorStoreId,
-          fileId: 'indexed' // API returns actual fileId
+          fileId: 'indexed', // API returns actual fileId
         });
       }
     } catch (error) {
-      console.error('Manual transcript indexing failed:', error);
       if (onIndexError) {
-        onIndexError(error instanceof Error ? error : new Error('Unknown indexing error'));
+        onIndexError(
+          error instanceof Error ? error : new Error('Unknown indexing error')
+        );
       }
     }
   };
@@ -60,21 +64,15 @@ export function useVoiceIntegration({
     if (!userId) {
       throw new Error('User ID required for transcript search');
     }
+    const response = await fetch(
+      `/api/voice/transcripts?userId=${encodeURIComponent(userId)}&query=${encodeURIComponent(query)}`
+    );
 
-    try {
-      const response = await fetch(
-        `/api/voice/transcripts?userId=${encodeURIComponent(userId)}&query=${encodeURIComponent(query)}`
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to search transcripts: ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Transcript search failed:', error);
-      throw error;
+    if (!response.ok) {
+      throw new Error(`Failed to search transcripts: ${response.statusText}`);
     }
+
+    return await response.json();
   };
 
   return {

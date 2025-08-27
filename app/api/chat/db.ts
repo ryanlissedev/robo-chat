@@ -177,7 +177,8 @@ async function ensureChatExistsInDatabase(
 export async function storeAssistantMessage(
   params: StoreAssistantMessageParams
 ): Promise<void> {
-  const { supabase, chatId, messages, userId, message_group_id, model } = params;
+  const { supabase, chatId, messages, userId, message_group_id, model } =
+    params;
   const processed = processMessages(messages);
 
   // Merge tool parts at the end
@@ -189,7 +190,10 @@ export async function storeAssistantMessage(
   const chatExists = await ensureChatExistsInDatabase(supabase, chatId, userId);
   if (!chatExists) {
     // If we can't ensure chat exists, skip saving to avoid foreign key constraint
-    logWarning('Chat does not exist and cannot be created. Skipping message save.', { chatId });
+    logWarning(
+      'Chat does not exist and cannot be created. Skipping message save.',
+      { chatId }
+    );
     return;
   }
 

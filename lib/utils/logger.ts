@@ -1,5 +1,5 @@
 import pino from 'pino';
-import { sanitizeLogEntry, redactErrorData } from '@/lib/utils/redaction';
+import { redactErrorData, sanitizeLogEntry } from '@/lib/utils/redaction';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
@@ -62,49 +62,47 @@ const hasCode = (val: unknown): val is { code?: string } =>
 if (typeof process !== 'undefined') {
   // Handle uncaught exceptions related to worker threads
   const originalUncaughtException = process.listeners('uncaughtException');
-  
+
   process.removeAllListeners('uncaughtException');
-  
+
   process.on('uncaughtException', (error: Error) => {
     // Check if this is a thread-stream/worker related error
-    if (error.message.includes('worker thread') || 
-        error.message.includes('thread-stream') ||
-        error.message.includes('worker.js') ||
-        (hasCode(error) && error.code === 'MODULE_NOT_FOUND' && error.message.includes('worker'))) {
-      
-      console.error('Logger worker thread error caught and handled:', error.message);
+    if (
+      error.message.includes('worker thread') ||
+      error.message.includes('thread-stream') ||
+      error.message.includes('worker.js') ||
+      (hasCode(error) &&
+        error.code === 'MODULE_NOT_FOUND' &&
+        error.message.includes('worker'))
+    ) {
       // Don't exit the process for logger errors
       return;
     }
-    
+
     // Re-emit for other uncaught exceptions
-    originalUncaughtException.forEach(listener => {
+    originalUncaughtException.forEach((listener) => {
       if (typeof listener === 'function') {
         listener.call(process, error, 'uncaughtException');
       }
     });
-    
+
     // If no other handlers, log and exit
     if (originalUncaughtException.length === 0) {
-      console.error('Uncaught Exception:', error);
       process.exit(1);
     }
   });
 
   // Handle unhandled promise rejections that might be related to worker threads
   process.on('unhandledRejection', (reason: unknown) => {
-    if (hasMessage(reason) && 
-        (reason.message?.includes('worker thread') || 
-         reason.message?.includes('thread-stream') ||
-         reason.message?.includes('worker.js'))) {
-      
-      console.error('Logger worker thread promise rejection caught and handled:', reason.message || reason);
+    if (
+      hasMessage(reason) &&
+      (reason.message?.includes('worker thread') ||
+        reason.message?.includes('thread-stream') ||
+        reason.message?.includes('worker.js'))
+    ) {
       // Don't exit the process for logger errors
       return;
     }
-    
-    // Log other unhandled rejections but don't crash
-    console.error('Unhandled Promise Rejection:', reason);
   });
 }
 
@@ -114,15 +112,21 @@ export const logError = (error: unknown, context?: Record<string, unknown>) => {
   // Sanitize error and context before logging
   const safeError = redactErrorData(error);
   const safeContext = context ? sanitizeLogEntry(context) : {};
-  
+
   if (error instanceof Error) {
     logger.error({ err: safeError, ...safeContext }, error.message);
   } else {
-    logger.error({ error: safeError, ...safeContext }, 'Unknown error occurred');
+    logger.error(
+      { error: safeError, ...safeContext },
+      'Unknown error occurred'
+    );
   }
 };
 
-export const logWarning = (message: string, context?: Record<string, unknown>) => {
+export const logWarning = (
+  message: string,
+  context?: Record<string, unknown>
+) => {
   const safeContext = context ? sanitizeLogEntry(context) : {};
   logger.warn(safeContext, message);
 };
@@ -132,12 +136,18 @@ export const logInfo = (message: string, context?: Record<string, unknown>) => {
   logger.info(safeContext, message);
 };
 
-export const logDebug = (message: string, context?: Record<string, unknown>) => {
+export const logDebug = (
+  message: string,
+  context?: Record<string, unknown>
+) => {
   const safeContext = context ? sanitizeLogEntry(context) : {};
   logger.debug(safeContext, message);
 };
 
-export const logTrace = (message: string, context?: Record<string, unknown>) => {
+export const logTrace = (
+  message: string,
+  context?: Record<string, unknown>
+) => {
   const safeContext = context ? sanitizeLogEntry(context) : {};
   logger.trace(safeContext, message);
 };

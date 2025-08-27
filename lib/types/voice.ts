@@ -5,7 +5,10 @@
 export interface VoiceSessionConfig {
   model?: string;
   voice?: string;
-  personalityMode?: 'safety-focused' | 'technical-expert' | 'friendly-assistant';
+  personalityMode?:
+    | 'safety-focused'
+    | 'technical-expert'
+    | 'friendly-assistant';
   safetyProtocols?: boolean;
   temperature?: number;
   maxTokens?: number;

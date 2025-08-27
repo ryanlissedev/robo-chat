@@ -1,26 +1,44 @@
 /// <reference types="vitest/globals" />
-import { vi } from 'vitest';
+
 import React from 'react';
+import { vi } from 'vitest';
 
 /**
  * Mock component factory for React components with unknown props
  * Filters out unknown DOM props to prevent React warnings
  */
-export const createMockComponent = (displayName: string, knownProps: string[] = []) => {
+export const createMockComponent = (
+  displayName: string,
+  knownProps: string[] = []
+) => {
   const MockComponent = React.forwardRef<HTMLElement, any>((props, ref) => {
     // Filter out unknown props to prevent React warnings
     const domProps = Object.fromEntries(
-      Object.entries(props).filter(([key]) => 
-        knownProps.includes(key) || 
-        key.startsWith('data-') || 
-        key.startsWith('aria-') || 
-        ['className', 'style', 'id', 'role', 'tabIndex', 'onClick', 'onKeyDown', 'children'].includes(key)
+      Object.entries(props).filter(
+        ([key]) =>
+          knownProps.includes(key) ||
+          key.startsWith('data-') ||
+          key.startsWith('aria-') ||
+          [
+            'className',
+            'style',
+            'id',
+            'role',
+            'tabIndex',
+            'onClick',
+            'onKeyDown',
+            'children',
+          ].includes(key)
       )
     );
 
-    return React.createElement('div', { ...domProps, ref, 'data-testid': displayName.toLowerCase() });
+    return React.createElement('div', {
+      ...domProps,
+      ref,
+      'data-testid': displayName.toLowerCase(),
+    });
   });
-  
+
   MockComponent.displayName = displayName;
   return MockComponent;
 };
@@ -29,23 +47,23 @@ export const createMockComponent = (displayName: string, knownProps: string[] = 
  * Mock PromptInput component that handles custom props without warnings
  */
 export const MockPromptInput = createMockComponent('MockPromptInput', [
-  'value', 
-  'onValueChange', 
+  'value',
+  'onValueChange',
   'placeholder',
   'disabled',
-  'autoFocus'
+  'autoFocus',
 ]);
 
 /**
- * Mock PromptSystem component that handles custom props without warnings  
+ * Mock PromptSystem component that handles custom props without warnings
  */
 export const MockPromptSystem = createMockComponent('MockPromptSystem', [
   'value',
-  'onValueChange', 
+  'onValueChange',
   'onSuggestion',
   'suggestions',
   'isOpen',
-  'onOpenChange'
+  'onOpenChange',
 ]);
 
 /**
@@ -53,10 +71,10 @@ export const MockPromptSystem = createMockComponent('MockPromptSystem', [
  */
 export const MockButton = createMockComponent('MockButton', [
   'variant',
-  'size', 
+  'size',
   'disabled',
   'type',
-  'form'
+  'form',
 ]);
 
 /**
@@ -65,13 +83,13 @@ export const MockButton = createMockComponent('MockButton', [
 export const mockClipboardAPI = () => {
   const writeText = vi.fn(() => Promise.resolve());
   const readText = vi.fn(() => Promise.resolve(''));
-  
+
   Object.defineProperty(navigator, 'clipboard', {
     value: { writeText, readText },
     writable: true,
     configurable: true,
   });
-  
+
   return { writeText, readText };
 };
 
@@ -85,12 +103,12 @@ export const mockWindowAPIs = () => {
     media: query,
     onchange: null,
     addListener: vi.fn(),
-    removeListener: vi.fn(), 
+    removeListener: vi.fn(),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   }));
-  
+
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: mockMatchMedia,
@@ -103,7 +121,7 @@ export const mockWindowAPIs = () => {
   });
 
   Object.defineProperty(window, 'innerHeight', {
-    writable: true, 
+    writable: true,
     value: 768,
   });
 
@@ -116,12 +134,15 @@ export const mockWindowAPIs = () => {
 /**
  * Mock React component with proper prop filtering
  */
-export const mockReactComponent = (name: string, additionalProps: string[] = []) => {
+export const mockReactComponent = (
+  name: string,
+  additionalProps: string[] = []
+) => {
   const allProps = [
-    'children', 
-    'className', 
-    'style', 
-    'id', 
+    'children',
+    'className',
+    'style',
+    'id',
     'role',
     'tabIndex',
     'onClick',
@@ -129,18 +150,19 @@ export const mockReactComponent = (name: string, additionalProps: string[] = [])
     'onChange',
     'onFocus',
     'onBlur',
-    ...additionalProps
+    ...additionalProps,
   ];
-  
+
   return vi.fn((props: any) => {
     const filteredProps = Object.fromEntries(
-      Object.entries(props).filter(([key]) => 
-        allProps.includes(key) || 
-        key.startsWith('data-') || 
-        key.startsWith('aria-')
+      Object.entries(props).filter(
+        ([key]) =>
+          allProps.includes(key) ||
+          key.startsWith('data-') ||
+          key.startsWith('aria-')
       )
     );
-    
+
     return React.createElement('div', {
       ...filteredProps,
       'data-testid': `mock-${name.toLowerCase()}`,
@@ -155,12 +177,15 @@ export const suppressReactWarnings = (patterns: string[]) => {
   const originalError = console.error;
   console.error = (...args: any[]) => {
     const message = args[0];
-    if (typeof message === 'string' && patterns.some(pattern => message.includes(pattern))) {
+    if (
+      typeof message === 'string' &&
+      patterns.some((pattern) => message.includes(pattern))
+    ) {
       return; // Suppress the warning
     }
     originalError(...args);
   };
-  
+
   return () => {
     console.error = originalError;
   };
@@ -173,10 +198,10 @@ export const withSuppressedWarnings = (testFn: () => void | Promise<void>) => {
   return async () => {
     const restore = suppressReactWarnings([
       'Unknown event handler property',
-      'Invalid DOM property', 
+      'Invalid DOM property',
       'React does not recognize the',
     ]);
-    
+
     try {
       await testFn();
     } finally {

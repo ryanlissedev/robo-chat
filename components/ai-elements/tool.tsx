@@ -11,7 +11,7 @@ const CollapsibleContent = (props: CollapsibleContentProps) => (
   <div {...props} />
 );
 const CollapsibleTrigger = (props: CollapsibleTriggerProps) => (
-  <button {...props} />
+  <button type="button" {...props} />
 );
 
 import type { ToolUIPart } from 'ai';

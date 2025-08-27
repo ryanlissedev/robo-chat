@@ -1,6 +1,5 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { VoiceConfig } from '@/components/app/voice/store/voice-store';
 import { useVoiceStore } from '@/components/app/voice/store/voice-store';
 
 // Mock fetch globally
@@ -11,7 +10,9 @@ describe('Voice Store', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset store state before each test
-    useVoiceStore.getState().reset();
+    act(() => {
+      useVoiceStore.getState().reset();
+    });
   });
 
   afterEach(() => {
@@ -21,31 +22,38 @@ describe('Voice Store', () => {
   describe('Initial State', () => {
     it('should have correct initial state', () => {
       const { result } = renderHook(() => useVoiceStore());
-      const state = result.current;
 
-      expect(state.status).toBe('idle');
-      expect(state.isRecording).toBe(false);
-      expect(state.sessionId).toBeNull();
-      expect(state.transcriptions).toEqual([]);
-      expect(state.currentTranscript).toBe('');
-      expect(state.finalTranscript).toBe('');
-      expect(state.error).toBeNull();
-      expect(state.vectorStoreId).toBeNull();
-      expect(state.indexingStatus).toBe('idle');
+      // Wrap all state reads in act() to prevent warnings
+      act(() => {
+        const state = result.current;
+
+        expect(state.status).toBe('idle');
+        expect(state.isRecording).toBe(false);
+        expect(state.sessionId).toBeNull();
+        expect(state.transcriptions).toEqual([]);
+        expect(state.currentTranscript).toBe('');
+        expect(state.finalTranscript).toBe('');
+        expect(state.error).toBeNull();
+        expect(state.vectorStoreId).toBeNull();
+        expect(state.indexingStatus).toBe('idle');
+      });
     });
 
     it('should have correct default configuration', () => {
       const { result } = renderHook(() => useVoiceStore());
-      const { config } = result.current;
 
-      expect(config).toEqual({
-        model: 'gpt-4o-realtime-preview',
-        voice: 'nova',
-        language: 'en-US',
-        enableVAD: true,
-        noiseSuppressionLevel: 'medium',
-        echoReduction: true,
-        autoIndexTranscripts: true,
+      act(() => {
+        const { config } = result.current;
+
+        expect(config).toEqual({
+          model: 'gpt-4o-realtime-preview',
+          voice: 'nova',
+          language: 'en-US',
+          enableVAD: true,
+          noiseSuppressionLevel: 'medium',
+          echoReduction: true,
+          autoIndexTranscripts: true,
+        });
       });
     });
   });
@@ -58,9 +66,11 @@ describe('Voice Store', () => {
         result.current.updateConfig({ voice: 'alloy', enableVAD: false });
       });
 
-      expect(result.current.config.voice).toBe('alloy');
-      expect(result.current.config.enableVAD).toBe(false);
-      expect(result.current.config.model).toBe('gpt-4o-realtime-preview'); // Should remain unchanged
+      act(() => {
+        expect(result.current.config.voice).toBe('alloy');
+        expect(result.current.config.enableVAD).toBe(false);
+        expect(result.current.config.model).toBe('gpt-4o-realtime-preview'); // Should remain unchanged
+      });
     });
   });
 
@@ -77,9 +87,11 @@ describe('Voice Store', () => {
         await result.current.startSession();
       });
 
-      expect(result.current.sessionId).toBe('test-session-123');
-      expect(result.current.status).toBe('connected');
-      expect(result.current.error).toBeNull();
+      act(() => {
+        expect(result.current.sessionId).toBe('test-session-123');
+        expect(result.current.status).toBe('connected');
+        expect(result.current.error).toBeNull();
+      });
     });
 
     it('should handle session start failure', async () => {
@@ -94,18 +106,17 @@ describe('Voice Store', () => {
       await act(async () => {
         try {
           await result.current.startSession();
-        } catch (error) {
-          // Expected to throw an error
-          console.log('Voice session start failed:', error);
-        }
+        } catch (_error) {}
       });
 
-      expect(result.current.status).toBe('error');
-      expect(result.current.error).toEqual({
-        code: 'SESSION_START_FAILED',
-        message: expect.stringContaining('Failed to start session'),
-        timestamp: expect.any(Number),
-        details: expect.any(Object),
+      act(() => {
+        expect(result.current.status).toBe('error');
+        expect(result.current.error).toEqual({
+          code: 'SESSION_START_FAILED',
+          message: expect.stringContaining('Failed to start session'),
+          timestamp: expect.any(Number),
+          details: expect.any(Object),
+        });
       });
     });
 
@@ -130,10 +141,12 @@ describe('Voice Store', () => {
         result.current.stopSession();
       });
 
-      expect(result.current.sessionId).toBeNull();
-      expect(result.current.status).toBe('idle');
-      expect(result.current.isRecording).toBe(false);
-      expect(result.current.currentTranscript).toBe('');
+      act(() => {
+        expect(result.current.sessionId).toBeNull();
+        expect(result.current.status).toBe('idle');
+        expect(result.current.isRecording).toBe(false);
+        expect(result.current.currentTranscript).toBe('');
+      });
     });
   });
 
@@ -150,22 +163,24 @@ describe('Voice Store', () => {
         result.current.startRecording();
       });
 
-      expect(result.current.isRecording).toBe(true);
-      expect(result.current.status).toBe('recording');
-      expect(result.current.currentTranscript).toBe('');
+      act(() => {
+        expect(result.current.isRecording).toBe(true);
+        expect(result.current.status).toBe('recording');
+        expect(result.current.currentTranscript).toBe('');
+      });
     });
 
     it('should not start recording when not connected', () => {
       const { result } = renderHook(() => useVoiceStore());
 
-      expect(result.current.status).toBe('idle');
-
       act(() => {
-        result.current.startRecording();
-      });
+        expect(result.current.status).toBe('idle');
 
-      expect(result.current.isRecording).toBe(false);
-      expect(result.current.status).toBe('idle');
+        result.current.startRecording();
+
+        expect(result.current.isRecording).toBe(false);
+        expect(result.current.status).toBe('idle');
+      });
     });
 
     it('should stop recording', () => {
@@ -173,9 +188,9 @@ describe('Voice Store', () => {
 
       // Set recording state
       act(() => {
-        useVoiceStore.setState({ 
-          status: 'recording', 
-          isRecording: true 
+        useVoiceStore.setState({
+          status: 'recording',
+          isRecording: true,
         });
       });
 
@@ -183,8 +198,10 @@ describe('Voice Store', () => {
         result.current.stopRecording();
       });
 
-      expect(result.current.isRecording).toBe(false);
-      expect(result.current.status).toBe('connected');
+      act(() => {
+        expect(result.current.isRecording).toBe(false);
+        expect(result.current.status).toBe('connected');
+      });
     });
   });
 
@@ -196,7 +213,9 @@ describe('Voice Store', () => {
         result.current.updateCurrentTranscript('Hello world');
       });
 
-      expect(result.current.currentTranscript).toBe('Hello world');
+      act(() => {
+        expect(result.current.currentTranscript).toBe('Hello world');
+      });
     });
 
     it('should add transcription entry', () => {
@@ -214,7 +233,9 @@ describe('Voice Store', () => {
         result.current.addTranscription(entry);
       });
 
-      expect(result.current.transcriptions).toContain(entry);
+      act(() => {
+        expect(result.current.transcriptions).toContain(entry);
+      });
     });
 
     it('should finalize transcript without auto-indexing when user not set', async () => {
@@ -228,19 +249,21 @@ describe('Voice Store', () => {
         await result.current.finalizeTranscript();
       });
 
-      expect(result.current.finalTranscript).toBe('Final transcript');
-      expect(result.current.currentTranscript).toBe('');
-      // Should not make API call without userId
-      expect(mockFetch).not.toHaveBeenCalled();
+      act(() => {
+        expect(result.current.finalTranscript).toBe('Final transcript');
+        expect(result.current.currentTranscript).toBe('');
+        // Should not make API call without userId
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
     });
 
     it('should finalize transcript with auto-indexing when enabled', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ 
-          success: true, 
-          vectorStoreId: 'vs-123', 
-          fileId: 'file-456' 
+        json: async () => ({
+          success: true,
+          vectorStoreId: 'vs-123',
+          fileId: 'file-456',
         }),
       });
 
@@ -250,12 +273,12 @@ describe('Voice Store', () => {
       act(() => {
         result.current.setUserId('test-user');
         result.current.updateCurrentTranscript('Auto-indexed transcript');
-        useVoiceStore.setState({ 
+        useVoiceStore.setState({
           sessionId: 'test-session',
-          config: { 
-            ...result.current.config, 
-            autoIndexTranscripts: true 
-          }
+          config: {
+            ...result.current.config,
+            autoIndexTranscripts: true,
+          },
         });
       });
 
@@ -263,31 +286,35 @@ describe('Voice Store', () => {
         await result.current.finalizeTranscript();
       });
 
-      expect(result.current.finalTranscript).toBe('Auto-indexed transcript');
-      expect(result.current.currentTranscript).toBe('');
-      // Verify the API call was made
-      expect(mockFetch).toHaveBeenCalledTimes(1);
-      expect(mockFetch).toHaveBeenCalledWith('/api/voice/transcripts', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: expect.any(String),
-      });
+      act(() => {
+        expect(result.current.finalTranscript).toBe('Auto-indexed transcript');
+        expect(result.current.currentTranscript).toBe('');
+        // Verify the API call was made
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+        expect(mockFetch).toHaveBeenCalledWith('/api/voice/transcripts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: expect.any(String),
+        });
 
-      // Verify the request body content separately
-      const callArgs = mockFetch.mock.calls[0];
-      const requestBody = JSON.parse(callArgs[1].body);
-      
-      expect(requestBody.transcript).toBe('Auto-indexed transcript');
-      expect(requestBody.userId).toBe('test-user');
-      expect(requestBody.sessionId).toBe('test-session');
-      expect(requestBody.metadata.sessionId).toBe('test-session');
-      expect(requestBody.metadata.personalityMode).toBe('safety-focused');
-      expect(requestBody.metadata.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
-      expect(requestBody.metadata.language).toBe('en-US');
-      expect(requestBody.metadata.voice).toBe('nova');
+        // Verify the request body content separately
+        const callArgs = mockFetch.mock.calls[0];
+        const requestBody = JSON.parse(callArgs[1].body);
+
+        expect(requestBody.transcript).toBe('Auto-indexed transcript');
+        expect(requestBody.userId).toBe('test-user');
+        expect(requestBody.sessionId).toBe('test-session');
+        expect(requestBody.metadata.sessionId).toBe('test-session');
+        expect(requestBody.metadata.personalityMode).toBe('safety-focused');
+        expect(requestBody.metadata.timestamp).toMatch(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+        );
+        expect(requestBody.metadata.language).toBe('en-US');
+        expect(requestBody.metadata.voice).toBe('nova');
+      });
     });
 
     it('should clear transcriptions', () => {
@@ -310,9 +337,11 @@ describe('Voice Store', () => {
         result.current.clearTranscriptions();
       });
 
-      expect(result.current.transcriptions).toEqual([]);
-      expect(result.current.currentTranscript).toBe('');
-      expect(result.current.finalTranscript).toBe('');
+      act(() => {
+        expect(result.current.transcriptions).toEqual([]);
+        expect(result.current.currentTranscript).toBe('');
+        expect(result.current.finalTranscript).toBe('');
+      });
     });
   });
 
@@ -324,7 +353,9 @@ describe('Voice Store', () => {
         result.current.setUserId('test-user-123');
       });
 
-      expect(result.current.userId).toBe('test-user-123');
+      act(() => {
+        expect(result.current.userId).toBe('test-user-123');
+      });
     });
 
     it('should index transcript successfully', async () => {
@@ -351,21 +382,23 @@ describe('Voice Store', () => {
         });
       });
 
-      expect(result.current.indexingStatus).toBe('completed');
-      expect(result.current.vectorStoreId).toBe('vs-abc123');
+      act(() => {
+        expect(result.current.indexingStatus).toBe('completed');
+        expect(result.current.vectorStoreId).toBe('vs-abc123');
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/voice/transcripts', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          transcript: 'Test transcript',
-          userId: 'test-user',
-          sessionId: 'test-session',
-          metadata: { custom: 'metadata' },
-        }),
+        expect(mockFetch).toHaveBeenCalledWith('/api/voice/transcripts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            transcript: 'Test transcript',
+            userId: 'test-user',
+            sessionId: 'test-session',
+            metadata: { custom: 'metadata' },
+          }),
+        });
       });
     });
 
@@ -386,14 +419,16 @@ describe('Voice Store', () => {
         try {
           await result.current.indexTranscript('Test transcript');
         } catch (error) {
-          // Expected to throw an error
-          console.log('Transcript indexing failed:', error);
           expect(error).toBeInstanceOf(Error);
-          expect((error as Error).message).toMatch(/Failed to index transcript.*Invalid request data/);
+          expect((error as Error).message).toMatch(
+            /Failed to index transcript.*Invalid request data/
+          );
         }
       });
 
-      expect(result.current.indexingStatus).toBe('failed');
+      act(() => {
+        expect(result.current.indexingStatus).toBe('failed');
+      });
     });
 
     it('should require userId for transcript indexing', async () => {
@@ -405,7 +440,9 @@ describe('Voice Store', () => {
         });
       }).rejects.toThrow('User ID required for transcript indexing');
 
-      expect(result.current.indexingStatus).toBe('failed');
+      act(() => {
+        expect(result.current.indexingStatus).toBe('failed');
+      });
     });
   });
 
@@ -423,8 +460,10 @@ describe('Voice Store', () => {
         result.current.setError(error);
       });
 
-      expect(result.current.error).toEqual(error);
-      expect(result.current.status).toBe('error');
+      act(() => {
+        expect(result.current.error).toEqual(error);
+        expect(result.current.status).toBe('error');
+      });
     });
 
     it('should clear error state', () => {
@@ -444,8 +483,10 @@ describe('Voice Store', () => {
         result.current.setError(null);
       });
 
-      expect(result.current.error).toBeNull();
-      expect(result.current.lastErrorTime).toBe(0);
+      act(() => {
+        expect(result.current.error).toBeNull();
+        expect(result.current.lastErrorTime).toBe(0);
+      });
     });
   });
 
@@ -457,8 +498,10 @@ describe('Voice Store', () => {
         result.current.updateAudioLevels(0.8, 0.6);
       });
 
-      expect(result.current.inputLevel).toBe(0.8);
-      expect(result.current.outputLevel).toBe(0.6);
+      act(() => {
+        expect(result.current.inputLevel).toBe(0.8);
+        expect(result.current.outputLevel).toBe(0.6);
+      });
     });
 
     it('should update visualization data', () => {
@@ -470,7 +513,9 @@ describe('Voice Store', () => {
         result.current.updateVisualizationData(testData);
       });
 
-      expect(result.current.visualizationData).toBe(testData);
+      act(() => {
+        expect(result.current.visualizationData).toBe(testData);
+      });
     });
   });
 
@@ -482,7 +527,9 @@ describe('Voice Store', () => {
         result.current.setPersonalityMode('technical-expert');
       });
 
-      expect(result.current.personalityMode).toBe('technical-expert');
+      act(() => {
+        expect(result.current.personalityMode).toBe('technical-expert');
+      });
     });
 
     it('should set safety protocols', () => {
@@ -492,7 +539,9 @@ describe('Voice Store', () => {
         result.current.setSafetyProtocols(false);
       });
 
-      expect(result.current.safetyProtocols).toBe(false);
+      act(() => {
+        expect(result.current.safetyProtocols).toBe(false);
+      });
     });
   });
 
@@ -505,7 +554,7 @@ describe('Voice Store', () => {
         result.current.setUserId('test-user');
         result.current.updateCurrentTranscript('Test');
         result.current.setPersonalityMode('friendly-assistant');
-        useVoiceStore.setState({ 
+        useVoiceStore.setState({
           status: 'connected',
           sessionId: 'test-session',
           isRecording: true,
@@ -518,12 +567,14 @@ describe('Voice Store', () => {
       });
 
       // Check initial state
-      expect(result.current.status).toBe('idle');
-      expect(result.current.sessionId).toBeNull();
-      expect(result.current.isRecording).toBe(false);
-      expect(result.current.currentTranscript).toBe('');
-      expect(result.current.userId).toBeUndefined();
-      expect(result.current.personalityMode).toBe('safety-focused');
+      act(() => {
+        expect(result.current.status).toBe('idle');
+        expect(result.current.sessionId).toBeNull();
+        expect(result.current.isRecording).toBe(false);
+        expect(result.current.currentTranscript).toBe('');
+        expect(result.current.userId).toBeUndefined();
+        expect(result.current.personalityMode).toBe('safety-focused');
+      });
     });
   });
 });

@@ -1,7 +1,7 @@
 'use client';
 
-import { Check, FolderIcon, X } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Check, FolderIcon, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -242,7 +242,6 @@ export function SidebarProjectItem({ project }: SidebarProjectItemProps) {
         <div className="flex items-center rounded-md bg-accent py-1 pr-1 pl-2">
           <FolderIcon className="mr-2 flex-shrink-0 text-primary" size={20} />
           <input
-            autoFocus
             className="max-h-full w-full bg-transparent text-primary text-sm focus:outline-none"
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}

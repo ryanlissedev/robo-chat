@@ -11,64 +11,77 @@ export * from './test-builders';
 
 // Import specific functions for internal use
 import {
-  createMockEnvironment,
-  createMockSupabaseClient,
-  createMockLocalStorage,
-  resetAllMocks,
   cleanupMockEnvironment,
-  createMockUser,
-  createMockSession,
-  createMockChatMessage,
   createMockApiResponse,
-  createMockStreamingResponse,
+  createMockChatMessage,
+  createMockEnvironment,
+  createMockError,
   createMockFile,
   createMockFileList,
-  createMockError,
-  createMockWebSocket
+  createMockLocalStorage,
+  createMockSession,
+  createMockStreamingResponse,
+  createMockSupabaseClient,
+  createMockUser,
+  createMockWebSocket,
+  resetAllMocks,
 } from './mock-factories';
 
 import {
-  UserBuilder,
-  SessionBuilder,
   ChatMessageBuilder,
   ConversationBuilder,
-  FileUploadBuilder
+  FileUploadBuilder,
+  SessionBuilder,
+  UserBuilder,
 } from './test-builders';
 
+export {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+export { userEvent } from '@testing-library/user-event';
+// Re-export commonly used testing utilities
+export {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  test,
+  vi,
+} from 'vitest';
 // Export custom matchers (they auto-register when imported)
 export * from './custom-matchers';
-
-// Re-export commonly used testing utilities
-export { vi, expect, describe, it, test, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
-export { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-export { userEvent } from '@testing-library/user-event';
-
+// Export mock factories with shorter names for convenience
+export {
+  cleanupMockEnvironment,
+  createMockApiResponse as mockApiResponse,
+  createMockChatMessage as mockMessage,
+  createMockEnvironment as mockEnvironment,
+  createMockError as mockError,
+  createMockFile as mockFile,
+  createMockFileList as mockFileList,
+  createMockLocalStorage as mockLocalStorage,
+  createMockSession as mockSession,
+  createMockStreamingResponse as mockStreamingResponse,
+  createMockSupabaseClient as mockSupabase,
+  createMockUser as mockUser,
+  createMockWebSocket as mockWebSocket,
+  resetAllMocks,
+} from './mock-factories';
 // Export test data builders with shorter names for convenience
 export {
-  UserBuilder as User,
-  SessionBuilder as Session, 
   ChatMessageBuilder as Message,
   ConversationBuilder as Conversation,
   FileUploadBuilder as FileUpload,
+  SessionBuilder as Session,
+  UserBuilder as User,
 } from './test-builders';
-
-// Export mock factories with shorter names for convenience
-export {
-  createMockSupabaseClient as mockSupabase,
-  createMockUser as mockUser,
-  createMockSession as mockSession,
-  createMockChatMessage as mockMessage,
-  createMockApiResponse as mockApiResponse,
-  createMockStreamingResponse as mockStreamingResponse,
-  createMockFile as mockFile,
-  createMockFileList as mockFileList,
-  createMockError as mockError,
-  createMockLocalStorage as mockLocalStorage,
-  createMockWebSocket as mockWebSocket,
-  createMockEnvironment as mockEnvironment,
-  resetAllMocks,
-  cleanupMockEnvironment,
-} from './mock-factories';
 
 // Test setup utilities
 export const setupTest = {
@@ -86,17 +99,17 @@ export const setupTest = {
   /**
    * Set up authenticated test environment
    */
-  withAuth: (userOverrides = {}) => {
+  withAuth: (_userOverrides = {}) => {
     const user = UserBuilder.create().build();
     const session = SessionBuilder.withUser(user).build();
-    const supabase = createMockSupabaseClient({ 
-      user, 
-      session, 
-      isAuthenticated: true 
+    const supabase = createMockSupabaseClient({
+      user,
+      session,
+      isAuthenticated: true,
     });
-    
+
     createMockEnvironment();
-    
+
     return { user, session, supabase };
   },
 
@@ -105,13 +118,13 @@ export const setupTest = {
    */
   withConversation: (messageCount = 5) => {
     const conversation = ConversationBuilder.simple().build();
-    const messages = Array.from({ length: messageCount }, (_, i) => 
+    const messages = Array.from({ length: messageCount }, (_, i) =>
       ChatMessageBuilder.create()
         .withRole(i % 2 === 0 ? 'user' : 'assistant')
         .withContent(`Message ${i + 1}`)
         .build()
     );
-    
+
     return { conversation: { ...conversation, messages }, messages };
   },
 
@@ -122,10 +135,10 @@ export const setupTest = {
     resetAllMocks();
     cleanupMockEnvironment([
       'NODE_ENV',
-      'NEXT_PUBLIC_SUPABASE_URL', 
+      'NEXT_PUBLIC_SUPABASE_URL',
       'NEXT_PUBLIC_SUPABASE_ANON_KEY',
       'SUPABASE_SERVICE_ROLE_KEY',
-      'ENCRYPTION_KEY'
+      'ENCRYPTION_KEY',
     ]);
   },
 };
@@ -136,21 +149,21 @@ export const assertions = {
    * Assert that an async function throws with specific error
    */
   async toThrowAsync<T>(
-    asyncFn: () => Promise<T>, 
+    asyncFn: () => Promise<T>,
     expectedError?: string | RegExp | Error
   ): Promise<void> {
     let error: Error | null = null;
-    
+
     try {
       await asyncFn();
     } catch (e) {
       error = e as Error;
     }
-    
+
     if (!error) {
       throw new Error('Expected function to throw, but it did not');
     }
-    
+
     if (expectedError) {
       if (typeof expectedError === 'string') {
         expect(error.message).toContain(expectedError);
@@ -166,13 +179,16 @@ export const assertions = {
    * Assert that a promise resolves within timeout
    */
   async toResolveWithin<T>(
-    promise: Promise<T>, 
+    promise: Promise<T>,
     timeout: number = 5000
   ): Promise<T> {
-    const timeoutPromise = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error(`Promise did not resolve within ${timeout}ms`)), timeout)
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Promise did not resolve within ${timeout}ms`)),
+        timeout
+      )
     );
-    
+
     return Promise.race([promise, timeoutPromise]);
   },
 
@@ -182,28 +198,30 @@ export const assertions = {
   async toResolveInOrder<T>(promises: Array<Promise<T>>): Promise<T[]> {
     const results: T[] = [];
     const startTimes: number[] = [];
-    
+
     // Start all promises and record start times
     const promisesWithTiming = promises.map((promise, index) => {
       startTimes[index] = Date.now();
-      return promise.then(result => {
+      return promise.then((result) => {
         results[index] = result;
         return { result, index, resolveTime: Date.now() };
       });
     });
-    
+
     const resolveOrder: number[] = [];
     for await (const { index } of promisesWithTiming) {
       resolveOrder.push(index);
     }
-    
+
     // Verify they resolved in order
     for (let i = 1; i < resolveOrder.length; i++) {
       if (resolveOrder[i] < resolveOrder[i - 1]) {
-        throw new Error(`Promises resolved out of order: expected ${resolveOrder[i - 1]} before ${resolveOrder[i]}`);
+        throw new Error(
+          `Promises resolved out of order: expected ${resolveOrder[i - 1]} before ${resolveOrder[i]}`
+        );
       }
     }
-    
+
     return results;
   },
 };
@@ -213,11 +231,13 @@ export const perfUtils = {
   /**
    * Measure execution time of a function
    */
-  async measure<T>(fn: () => Promise<T> | T): Promise<{ result: T; duration: number }> {
+  async measure<T>(
+    fn: () => Promise<T> | T
+  ): Promise<{ result: T; duration: number }> {
     const start = Date.now();
     const result = await fn();
     const duration = Date.now() - start;
-    
+
     return { result, duration };
   },
 
@@ -225,15 +245,17 @@ export const perfUtils = {
    * Assert that function executes within time limit
    */
   async expectWithinTime<T>(
-    fn: () => Promise<T> | T, 
+    fn: () => Promise<T> | T,
     maxDuration: number
   ): Promise<T> {
     const { result, duration } = await this.measure(fn);
-    
+
     if (duration > maxDuration) {
-      throw new Error(`Function took ${duration.toFixed(2)}ms, expected less than ${maxDuration}ms`);
+      throw new Error(
+        `Function took ${duration.toFixed(2)}ms, expected less than ${maxDuration}ms`
+      );
     }
-    
+
     return result;
   },
 
@@ -241,20 +263,21 @@ export const perfUtils = {
    * Run function multiple times and get average execution time
    */
   async benchmark<T>(
-    fn: () => Promise<T> | T, 
+    fn: () => Promise<T> | T,
     iterations: number = 10
   ): Promise<{ averageDuration: number; results: T[] }> {
     const results: T[] = [];
     const durations: number[] = [];
-    
+
     for (let i = 0; i < iterations; i++) {
       const { result, duration } = await this.measure(fn);
       results.push(result);
       durations.push(duration);
     }
-    
-    const averageDuration = durations.reduce((sum, d) => sum + d, 0) / durations.length;
-    
+
+    const averageDuration =
+      durations.reduce((sum, d) => sum + d, 0) / durations.length;
+
     return { averageDuration, results };
   },
 };
@@ -268,7 +291,7 @@ export const memory = {
     if (typeof process !== 'undefined' && process.memoryUsage) {
       return process.memoryUsage();
     }
-    
+
     // Fallback for browser environment
     return {
       rss: 0,
@@ -288,22 +311,23 @@ export const memory = {
   ): Promise<T> {
     const initialMemory = this.getUsage();
     const result = await fn();
-    
+
     // Force garbage collection if available
     if (global.gc) {
       global.gc();
     }
-    
+
     const finalMemory = this.getUsage();
-    const heapIncreaseMB = (finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024;
-    
+    const heapIncreaseMB =
+      (finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024;
+
     if (heapIncreaseMB > maxHeapUsedMB) {
       throw new Error(
         `Memory usage increased by ${heapIncreaseMB.toFixed(2)}MB, ` +
-        `expected less than ${maxHeapUsedMB}MB`
+          `expected less than ${maxHeapUsedMB}MB`
       );
     }
-    
+
     return result;
   },
 };
@@ -314,8 +338,11 @@ export const generators = {
    * Generate random string of specified length
    */
   randomString(length: number = 10): string {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return Array.from({ length }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+    const chars =
+      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.from({ length }, () =>
+      chars.charAt(Math.floor(Math.random() * chars.length))
+    ).join('');
   },
 
   /**
@@ -330,8 +357,8 @@ export const generators = {
    */
   randomUUID(): string {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
   },
@@ -347,7 +374,9 @@ export const generators = {
    * Generate random date within range
    */
   randomDate(start: Date = new Date(2020, 0, 1), end: Date = new Date()): Date {
-    return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+    return new Date(
+      start.getTime() + Math.random() * (end.getTime() - start.getTime())
+    );
   },
 };
 

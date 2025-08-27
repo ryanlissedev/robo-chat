@@ -63,7 +63,7 @@ export function FeedbackForm({ authUserId, onClose }: FeedbackFormProps) {
       const { error } = await supabase.from('feedback').insert({
         message: feedback,
         user_id: authUserId,
-      });
+      } as never);
 
       if (error) {
         toast({
@@ -142,6 +142,7 @@ export function FeedbackForm({ authUserId, onClose }: FeedbackFormProps) {
               className="h-full w-full resize-none rounded-md bg-transparent px-4 py-3.5 text-foreground text-sm outline-hidden"
               disabled={status === 'submitting'}
               onChange={(e) => setFeedback(e.target.value)}
+              value={feedback}
             />
             <div
               className="flex justify-between pt-2 pr-3 pb-3 pl-2"

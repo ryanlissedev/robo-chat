@@ -133,7 +133,6 @@ export function MessageUser({
           }}
         >
           <textarea
-            autoFocus
             className="w-full resize-none bg-transparent outline-none"
             onChange={(e) => setEditInput(e.target.value)}
             onKeyDown={(e) => {

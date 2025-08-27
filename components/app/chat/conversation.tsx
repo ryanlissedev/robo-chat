@@ -1,13 +1,17 @@
 import type { UIMessage as MessageType } from '@ai-sdk/react';
 import { useRef } from 'react';
 import {
+  type ExtendedUIMessage,
+  getMessageContent,
+  hasAttachments,
+} from '@/app/types/ai-extended';
+import {
   ChatContainerContent,
   ChatContainerRoot,
 } from '@/components/prompt-kit/chat-container';
 import { Loader } from '@/components/prompt-kit/loader';
 import { ScrollButton } from '@/components/prompt-kit/scroll-button';
 import { Message } from './message';
-import { ExtendedUIMessage, hasAttachments, getMessageContent } from '@/app/types/ai-extended';
 
 type ConversationProps = {
   messages: MessageType[];
@@ -53,10 +57,14 @@ export function Conversation({
               isLast && messages.length > initialMessageCount.current;
 
             const extendedMessage = message as ExtendedUIMessage;
-            
+
             return (
               <Message
-                attachments={hasAttachments(extendedMessage) ? extendedMessage.experimental_attachments : undefined}
+                attachments={
+                  hasAttachments(extendedMessage)
+                    ? extendedMessage.experimental_attachments
+                    : undefined
+                }
                 hasScrollAnchor={hasScrollAnchor}
                 id={message.id}
                 isLast={isLast}

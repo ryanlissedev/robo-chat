@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
+import dynamic from 'next/dynamic';
+import { useEffect, useState } from 'react';
 import { API_ROUTE_CSRF } from '@/lib/routes';
 
 const GuestKeyPortal = dynamic(
-  () => import('@/components/common/credentials/GuestKeyPortal').then((m) => m.GuestKeyPortal),
+  () =>
+    import('@/components/common/credentials/GuestKeyPortal').then(
+      (m) => m.GuestKeyPortal
+    ),
   { ssr: false }
 );
 

@@ -3,7 +3,13 @@
  */
 
 export interface LogContext {
-  [key: string]: string | number | boolean | null | undefined | Record<string, unknown>;
+  [key: string]:
+    | string
+    | number
+    | boolean
+    | null
+    | undefined
+    | Record<string, unknown>;
 }
 
 export interface LoggerInterface {

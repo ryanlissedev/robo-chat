@@ -73,10 +73,10 @@ export function FileItem({ file, onRemove }: FileItemProps) {
         <Tooltip>
           <TooltipTrigger asChild>
             <button
+              type="button"
               aria-label="Remove file"
               className="-translate-y-1/2 absolute top-1 right-1 z-10 inline-flex size-6 translate-x-1/2 items-center justify-center rounded-full border-[3px] border-background bg-black text-white shadow-none transition-colors"
               onClick={handleRemove}
-              type="button"
             >
               <X className="size-3" />
             </button>

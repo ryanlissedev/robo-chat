@@ -1,8 +1,8 @@
+import { type LanguageModel, streamText } from 'ai';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
-import { streamText, type LanguageModel } from 'ai';
-import { fileSearchTool } from '@/lib/tools/file-search';
-import { getModelInfo } from '@/lib/models';
 import { RETRIEVAL_RETRIEVER_MODEL_ID } from '@/lib/config';
+import { getModelInfo } from '@/lib/models';
+import { fileSearchTool } from '@/lib/tools/file-search';
 import logger from '@/lib/utils/logger';
 import { performVectorRetrieval, type RetrievedDoc } from './vector-retrieval';
 
@@ -35,12 +35,17 @@ export async function retrieveWithGpt41(
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!modelConfig?.apiSdk || !apiKey) {
-    logger.info({ at: 'retrieval.twoPass.fallback', reason: 'no retriever model or api key' });
+    logger.info({
+      at: 'retrieval.twoPass.fallback',
+      reason: 'no retriever model or api key',
+    });
     return performVectorRetrieval(query, { topK: options?.topK ?? 5 });
   }
 
   try {
-    const model = modelConfig.apiSdk(apiKey, { enableSearch: false }) as LanguageModel;
+    const model = modelConfig.apiSdk(apiKey, {
+      enableSearch: false,
+    }) as LanguageModel;
     const retrieved = await new Promise<RetrievedDoc[]>((resolve) => {
       const results: RetrievedDoc[] = [];
       streamText({
@@ -57,8 +62,7 @@ export async function retrieveWithGpt41(
         onFinish: async ({ response }) => {
           try {
             const msgs = (response.messages || []) as Array<
-              | { toolInvocations?: Array<unknown> }
-              | Record<string, unknown>
+              { toolInvocations?: Array<unknown> } | Record<string, unknown>
             >;
             const last = msgs[msgs.length - 1] as {
               toolInvocations?: Array<{

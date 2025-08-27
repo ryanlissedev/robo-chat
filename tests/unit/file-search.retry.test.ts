@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Hoisted mocks to ensure stable references
 const enhancedRetrievalMock = vi.fn();
@@ -8,9 +8,11 @@ vi.mock('@/lib/retrieval/query-rewriting', () => ({
 vi.mock('openai', () => ({
   __esModule: true,
   default: class OpenAI {
-    vectorStores = { list: vi.fn().mockResolvedValue({ data: [] }), create: vi.fn().mockResolvedValue({ id: 'vs_mock', name: 'Mock' }) };
+    vectorStores = {
+      list: vi.fn().mockResolvedValue({ data: [] }),
+      create: vi.fn().mockResolvedValue({ id: 'vs_mock', name: 'Mock' }),
+    };
     files = { create: vi.fn() };
-    constructor(..._args: any[]) {}
   },
 }));
 
@@ -29,9 +31,18 @@ describe('fileSearchTool retry/backoff', () => {
     let calls = 0;
     const retriable = Object.assign(new Error('Server error'), { status: 500 });
     enhancedRetrievalMock
-      .mockImplementationOnce(() => { calls++; return Promise.reject(retriable); })
-      .mockImplementationOnce(() => { calls++; return Promise.reject(retriable); })
-      .mockImplementationOnce(() => { calls++; return Promise.resolve([] as any); });
+      .mockImplementationOnce(() => {
+        calls++;
+        return Promise.reject(retriable);
+      })
+      .mockImplementationOnce(() => {
+        calls++;
+        return Promise.reject(retriable);
+      })
+      .mockImplementationOnce(() => {
+        calls++;
+        return Promise.resolve([] as any);
+      });
 
     const { fileSearchTool } = await import('@/lib/tools/file-search');
     const exec = (fileSearchTool as any).execute as Function;
@@ -54,9 +65,13 @@ describe('fileSearchTool retry/backoff', () => {
   it('does not retry on non-retriable error and returns failure payload', async () => {
     enhancedRetrievalMock.mockReset();
     let calls = 0;
-    const nonRetriable = Object.assign(new Error('Bad request'), { status: 400 });
-    enhancedRetrievalMock
-      .mockImplementationOnce(() => { calls++; return Promise.reject(nonRetriable); });
+    const nonRetriable = Object.assign(new Error('Bad request'), {
+      status: 400,
+    });
+    enhancedRetrievalMock.mockImplementationOnce(() => {
+      calls++;
+      return Promise.reject(nonRetriable);
+    });
 
     const { fileSearchTool } = await import('@/lib/tools/file-search');
     const exec = (fileSearchTool as any).execute as Function;

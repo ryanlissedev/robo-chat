@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         encrypted_key: encrypted,
         iv,
         updated_at: new Date().toISOString(),
-      })
+      } as never)
       .eq('user_id', user.id)
       .eq('provider', provider);
 

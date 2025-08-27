@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+.next/
+.vercel/
+build/
+dist/
+out/
+coverage/
+
+# Generated files
+*.min.js
+*.bundle.js
+*.d.ts
+next-env.d.ts
+
+# Test results
+playwright-test-results/
+test-results/
+
+# Conductor and agent files
+.conductor/
+.swarm/
+.hive-mind/
+memory/
+coordination/
+
+# Logs and temporary files
+logs/
+*.log
+*.tsbuildinfo
+
+# Environment files
+.env*
+
+# Lock files
+bun.lockb
+bun.lock
+package-lock.json
+yarn.lock
+
+# Vercel generated files
+.vercel/output/
+
+# Other temporary directories
+.cache/
+.tmp/
+temp/
+
+# Log files and results
+coverage-results.json
+test-results.json
+*.ndjson
+
+# Memory and coordination files
+memories.json

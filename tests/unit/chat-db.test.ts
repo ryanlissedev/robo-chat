@@ -15,10 +15,12 @@ describe('storeAssistantMessage - TDD London School', () => {
   beforeEach(() => {
     // Mock Supabase client using London School approach
     mockInsert = vi.fn().mockResolvedValue({ error: null });
-    mockSingle = vi.fn().mockResolvedValue({ data: { id: 'test-chat-id' }, error: null });
+    mockSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { id: 'test-chat-id' }, error: null });
     mockEq = vi.fn().mockReturnValue({ single: mockSingle });
     mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
-    
+
     // Mock the from method to return different objects based on table name
     mockFrom = vi.fn().mockImplementation((table: string) => {
       if (table === 'chats') {
@@ -29,7 +31,7 @@ describe('storeAssistantMessage - TDD London School', () => {
       }
       return { insert: mockInsert, select: mockSelect };
     });
-    
+
     mockSupabase = { from: mockFrom } as unknown as SupabaseClient<Database>;
   });
 
@@ -186,13 +188,18 @@ describe('storeAssistantMessage - TDD London School', () => {
 
     it('should skip saving when chat does not exist and cannot be created', async () => {
       // Arrange - Mock chat not existing
-      mockSingle.mockResolvedValue({ data: null, error: { message: 'No rows returned' } });
-      
+      mockSingle.mockResolvedValue({
+        data: null,
+        error: { message: 'No rows returned' },
+      });
+
       // Act
       await storeAssistantMessage({
         supabase: mockSupabase,
         chatId: 'non-existent-chat-id',
-        messages: [{ role: 'assistant', content: [{ type: 'text', text: 'Hello' }] }],
+        messages: [
+          { role: 'assistant', content: [{ type: 'text', text: 'Hello' }] },
+        ],
       });
 
       // Assert - Should not attempt to insert message

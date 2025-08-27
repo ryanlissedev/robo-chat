@@ -1,6 +1,9 @@
 import OpenAI from 'openai';
+import {
+  enhancedRetrieval,
+  type RetrievalPipelineConfig,
+} from '@/lib/retrieval/query-rewriting';
 import logger from '@/lib/utils/logger';
-import { enhancedRetrieval, type RetrievalPipelineConfig } from '@/lib/retrieval/query-rewriting';
 
 export type RetrievedDoc = {
   fileId: string;
@@ -21,7 +24,10 @@ async function getDefaultVectorStoreId(openai: OpenAI): Promise<string | null> {
     const stores = await openai.vectorStores.list({ limit: 1 });
     if (stores.data.length > 0) return stores.data[0].id;
   } catch (err) {
-    logger.error({ at: 'retrieval.vector.getDefaultVectorStoreId', err }, 'Failed to list vector stores');
+    logger.error(
+      { at: 'retrieval.vector.getDefaultVectorStoreId', err },
+      'Failed to list vector stores'
+    );
   }
   return null;
 }
@@ -34,7 +40,11 @@ export async function performVectorRetrieval(
     fileTypes?: string[];
     reranking?: boolean;
     rerankingMethod?: 'semantic' | 'cross-encoder' | 'diversity';
-    rewriteStrategy?: 'expansion' | 'refinement' | 'decomposition' | 'multi-perspective';
+    rewriteStrategy?:
+      | 'expansion'
+      | 'refinement'
+      | 'decomposition'
+      | 'multi-perspective';
   } = {}
 ): Promise<RetrievedDoc[]> {
   const {
@@ -48,7 +58,10 @@ export async function performVectorRetrieval(
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    logger.warn({ at: 'retrieval.vector.apiKey.missing' }, 'OPENAI_API_KEY is not set; returning empty retrieval results');
+    logger.warn(
+      { at: 'retrieval.vector.apiKey.missing' },
+      'OPENAI_API_KEY is not set; returning empty retrieval results'
+    );
     return [];
   }
 
@@ -60,7 +73,10 @@ export async function performVectorRetrieval(
     storeId = await getDefaultVectorStoreId(openai);
   }
   if (!storeId) {
-    logger.info({ at: 'retrieval.vector.store.none' }, 'No vector store available');
+    logger.info(
+      { at: 'retrieval.vector.store.none' },
+      'No vector store available'
+    );
     return [];
   }
 
@@ -74,7 +90,12 @@ export async function performVectorRetrieval(
   };
 
   try {
-    const results = await enhancedRetrieval(query, storeId, openai, retrievalConfig);
+    const results = await enhancedRetrieval(
+      query,
+      storeId,
+      openai,
+      retrievalConfig
+    );
 
     const mapped: RetrievedDoc[] = results.map((r, i) => {
       const anyR = r as unknown as {
@@ -87,7 +108,10 @@ export async function performVectorRetrieval(
       };
 
       const fileId = anyR.file_id || anyR.id || `doc-${i + 1}`;
-      const fileName = anyR.file_name || (anyR.metadata?.title as string) || `Document ${i + 1}`;
+      const fileName =
+        anyR.file_name ||
+        (anyR.metadata?.title as string) ||
+        `Document ${i + 1}`;
 
       return {
         fileId,
@@ -101,7 +125,10 @@ export async function performVectorRetrieval(
 
     return mapped.sort((a, b) => b.score - a.score).slice(0, topK);
   } catch (err) {
-    logger.error({ at: 'retrieval.vector.error', err }, 'performVectorRetrieval failed');
+    logger.error(
+      { at: 'retrieval.vector.error', err },
+      'performVectorRetrieval failed'
+    );
     return [];
   }
 }

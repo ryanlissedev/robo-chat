@@ -3,9 +3,14 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useEffect } from 'react';
-import type { UserProfile } from '@/lib/user/types';
 import { isSupabaseEnabled } from '@/lib/supabase/config';
-import { fetchUserProfile, signOutUser, subscribeToUserUpdates, updateUserProfile } from '@/lib/user/api';
+import {
+  fetchUserProfile,
+  signOutUser,
+  subscribeToUserUpdates,
+  updateUserProfile,
+} from '@/lib/user/api';
+import type { UserProfile } from '@/lib/user/types';
 
 type UserContextType = {
   user: UserProfile | null;

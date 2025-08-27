@@ -149,7 +149,6 @@ function CommandItemDelete({
       <div className="flex flex-1 items-center">
         <span className="line-clamp-1 font-normal text-base">{chat.title}</span>
         <input
-          autoFocus
           className="sr-only hidden"
           onKeyDown={(e) => {
             if (e.key === 'Escape') {

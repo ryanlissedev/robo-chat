@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import { LayoutApp } from '@/components/app/layout/layout-app';
 import { ProjectView } from '@/app/p/[projectId]/project-view';
+import { LayoutApp } from '@/components/app/layout/layout-app';
 import { MessagesProvider } from '@/lib/chat-store/messages/provider';
 import { isSupabaseEnabled } from '@/lib/supabase/config';
 import { createClient } from '@/lib/supabase/server';
@@ -12,7 +12,7 @@ type Props = {
 export default async function Page({ params }: Props) {
   const { projectId } = await params;
 
-  if (isSupabaseEnabled) {
+  if (isSupabaseEnabled()) {
     const supabase = await createClient();
     if (supabase) {
       const { data: userData, error: userError } =

@@ -15,7 +15,7 @@ export interface ReasoningUIPart {
 }
 
 /**
- * Source URL UI part for AI SDK v5 compatibility  
+ * Source URL UI part for AI SDK v5 compatibility
  */
 export interface SourceUrlUIPart {
   type: 'source-url';
@@ -29,10 +29,10 @@ export interface SourceUrlUIPart {
 export interface ExtendedUIMessage extends UIMessage {
   // v4 compatibility - content string
   content?: string;
-  
+
   // Experimental attachments for file handling
   experimental_attachments?: Attachment[];
-  
+
   // Custom properties for chat functionality
   model?: string;
   provider?: string;
@@ -40,7 +40,7 @@ export interface ExtendedUIMessage extends UIMessage {
     type: 'text';
     text: string;
   }>;
-  
+
   // v5 compatibility - add missing properties
   createdAt?: Date;
   updatedAt?: Date;
@@ -78,22 +78,33 @@ export interface LegacyToolInvocationUIPart {
 /**
  * Type guard to check if a message has content property
  */
-export function hasContent(message: ExtendedUIMessage): message is ExtendedUIMessage & { content: string } {
+export function hasContent(
+  message: ExtendedUIMessage
+): message is ExtendedUIMessage & { content: string } {
   return typeof message.content === 'string';
 }
 
 /**
  * Type guard to check if a message has parts property
  */
-export function hasParts(message: ExtendedUIMessage): message is ExtendedUIMessage & { parts: NonNullable<ExtendedUIMessage['parts']> } {
+export function hasParts(
+  message: ExtendedUIMessage
+): message is ExtendedUIMessage & {
+  parts: NonNullable<ExtendedUIMessage['parts']>;
+} {
   return Array.isArray(message.parts) && message.parts.length > 0;
 }
 
 /**
  * Type guard to check if a message has experimental attachments
  */
-export function hasAttachments(message: ExtendedUIMessage): message is ExtendedUIMessage & { experimental_attachments: Attachment[] } {
-  return Array.isArray(message.experimental_attachments) && message.experimental_attachments.length > 0;
+export function hasAttachments(
+  message: ExtendedUIMessage
+): message is ExtendedUIMessage & { experimental_attachments: Attachment[] } {
+  return (
+    Array.isArray(message.experimental_attachments) &&
+    message.experimental_attachments.length > 0
+  );
 }
 
 /**
@@ -103,19 +114,23 @@ export function getMessageContent(message: ExtendedUIMessage): string {
   if (hasContent(message)) {
     return message.content;
   }
-  
+
   if (hasParts(message)) {
-    const textParts = message.parts.filter(part => part.type === 'text' && 'text' in part);
-    return textParts.map(part => 'text' in part ? part.text : '').join('');
+    const textParts = message.parts.filter(
+      (part) => part.type === 'text' && 'text' in part
+    );
+    return textParts.map((part) => ('text' in part ? part.text : '')).join('');
   }
-  
+
   return '';
 }
 
 /**
  * Safely extracts reasoning from a message
  */
-export function getMessageReasoning(message: ExtendedUIMessage): Array<{ type: 'text'; text: string }> | undefined {
+export function getMessageReasoning(
+  message: ExtendedUIMessage
+): Array<{ type: 'text'; text: string }> | undefined {
   return message.reasoning;
 }
 

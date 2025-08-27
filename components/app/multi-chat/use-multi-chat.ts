@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useChat, type Message, type UseChatHelpers } from '@ai-sdk/react';
+import {
+  type UIMessage as Message,
+  type UseChatHelpers,
+  useChat,
+} from '@ai-sdk/react';
 import { useMemo } from 'react';
 import { toast } from '@/components/ui/toast';
 
@@ -14,7 +18,7 @@ type ModelChat = {
   model: ModelConfig;
   messages: Message[];
   isLoading: boolean;
-  sendMessage: (message: string | Message, options?: any) => void;
+  sendMessage: UseChatHelpers<Message>['sendMessage'];
   stop: () => void;
 };
 
@@ -23,20 +27,22 @@ const MAX_MODELS = 10;
 
 export function useMultiChat(models: ModelConfig[]): ModelChat[] {
   // Create a fixed number of useChat hooks to avoid conditional hook calls
-  const chatHooks: UseChatHelpers[] = Array.from({ length: MAX_MODELS }, (_, index) =>
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useChat({
-      onError: (error) => {
-        const model = models[index];
-        if (model) {
-          toast({
-            title: `Error with ${model.name}`,
-            description: error.message,
-            status: 'error',
-          });
-        }
-      },
-    })
+  const chatHooks: Array<UseChatHelpers<Message>> = Array.from(
+    { length: MAX_MODELS },
+    (_, index) =>
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      useChat({
+        onError: (error) => {
+          const model = models[index];
+          if (model) {
+            toast({
+              title: `Error with ${model.name}`,
+              description: error.message,
+              status: 'error',
+            });
+          }
+        },
+      })
   );
 
   // Map only the provided models to their corresponding chat hooks
@@ -47,11 +53,10 @@ export function useMultiChat(models: ModelConfig[]): ModelChat[] {
       return {
         model,
         messages: chatHook.messages,
-        isLoading: chatHook.isLoading,
-        sendMessage: (message: string | Message, options?: any) => {
-          // v5 uses sendMessage instead of append
-          return chatHook.sendMessage(message, options);
-        },
+        // In AI SDK v5, use status to infer loading
+        isLoading:
+          chatHook.status === 'submitted' || chatHook.status === 'streaming',
+        sendMessage: chatHook.sendMessage,
         stop: chatHook.stop,
       };
     });
@@ -60,8 +65,7 @@ export function useMultiChat(models: ModelConfig[]): ModelChat[] {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     models,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    ...chatHooks.flatMap((chat) => [chat.messages, chat.isLoading]),
+    ...chatHooks.flatMap((chat) => [chat.messages, (chat as any).status]),
   ]);
 
   return activeChatInstances;

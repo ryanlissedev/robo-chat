@@ -1,7 +1,7 @@
 'use client';
 
-import { GripVertical, Minus, Plus, Star } from 'lucide-react';
 import { AnimatePresence, motion, Reorder } from 'framer-motion';
+import { GripVertical, Minus, Plus, Star } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useModel } from '@/lib/model-store/provider';
 import type { ModelConfig } from '@/lib/models/types';

@@ -6,7 +6,7 @@ import { isSupabaseEnabled } from '@/lib/supabase/config';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function Page() {
-  if (isSupabaseEnabled) {
+  if (isSupabaseEnabled()) {
     const supabase = await createClient();
     if (supabase) {
       const { data: userData, error: userError } =

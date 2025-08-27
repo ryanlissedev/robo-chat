@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ButtonFileUpload } from '@/components/app/chat-input/button-file-upload';
+import { isSupabaseEnabled } from '@/lib/supabase/config';
 
 // Mock Lucide React icons
 vi.mock('lucide-react', () => ({
@@ -12,7 +13,7 @@ vi.mock('lucide-react', () => ({
 // Mock prompt-kit components
 vi.mock('@/components/prompt-kit/file-upload', () => ({
   FileUpload: ({ children, onFilesAdded, accept, multiple, disabled }: any) => (
-    <div 
+    <div
       data-testid="file-upload"
       data-accept={accept}
       data-multiple={multiple}
@@ -39,8 +40,17 @@ vi.mock('@/components/prompt-kit/file-upload', () => ({
 
 // Mock UI components
 vi.mock('@/components/ui/button', () => ({
-  Button: ({ children, onClick, className, disabled, size, variant, ...props }: any) => (
+  Button: ({
+    children,
+    onClick,
+    className,
+    disabled,
+    size,
+    variant,
+    ...props
+  }: any) => (
     <button
+      type="button"
       onClick={onClick}
       className={className}
       disabled={disabled}
@@ -56,7 +66,9 @@ vi.mock('@/components/ui/button', () => ({
 vi.mock('@/components/ui/popover', () => ({
   Popover: ({ children }: any) => <div data-testid="popover">{children}</div>,
   PopoverContent: ({ children, className }: any) => (
-    <div data-testid="popover-content" className={className}>{children}</div>
+    <div data-testid="popover-content" className={className}>
+      {children}
+    </div>
   ),
   PopoverTrigger: ({ children, asChild }: any) => (
     <div data-testid="popover-trigger">{children}</div>
@@ -87,7 +99,7 @@ vi.mock('@/lib/models', () => ({
 }));
 
 vi.mock('@/lib/supabase/config', () => ({
-  isSupabaseEnabled: true,
+  isSupabaseEnabled: vi.fn(() => true),
 }));
 
 vi.mock('@/lib/utils', () => ({
@@ -96,7 +108,9 @@ vi.mock('@/lib/utils', () => ({
 
 // Mock PopoverContentAuth
 vi.mock('@/components/app/chat-input/popover-content-auth', () => ({
-  PopoverContentAuth: () => <div data-testid="popover-content-auth">Auth Required</div>,
+  PopoverContentAuth: () => (
+    <div data-testid="popover-content-auth">Auth Required</div>
+  ),
 }));
 
 const defaultProps = {
@@ -115,13 +129,13 @@ describe('ButtonFileUpload', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset Supabase config
-    vi.mocked(require('@/lib/supabase/config')).isSupabaseEnabled = true;
+    vi.mocked(isSupabaseEnabled).mockReturnValue(true);
   });
 
   describe('Supabase disabled', () => {
     it('should return null when Supabase is disabled', () => {
-      vi.mocked(require('@/lib/supabase/config')).isSupabaseEnabled = false;
-      
+      vi.mocked(isSupabaseEnabled).mockReturnValue(false);
+
       const { container } = renderButtonFileUpload();
       expect(container.firstChild).toBeNull();
     });
@@ -130,7 +144,7 @@ describe('ButtonFileUpload', () => {
   describe('Model without vision support', () => {
     it('should show popover with message when model has no vision support', () => {
       renderButtonFileUpload({ model: 'gpt-4' }); // No vision support
-      
+
       expect(screen.getByTestId('popover')).toBeInTheDocument();
       expect(screen.getByTestId('tooltip')).toBeInTheDocument();
       expect(screen.getByTestId('paperclip-icon')).toBeInTheDocument();
@@ -139,24 +153,33 @@ describe('ButtonFileUpload', () => {
 
     it('should display model limitation message', () => {
       renderButtonFileUpload({ model: 'gpt-4' });
-      
+
       expect(screen.getByTestId('popover-content')).toBeInTheDocument();
-      expect(screen.getByText('This model does not support file uploads.')).toBeInTheDocument();
-      expect(screen.getByText('Please select another model.')).toBeInTheDocument();
+      expect(
+        screen.getByText('This model does not support file uploads.')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('Please select another model.')
+      ).toBeInTheDocument();
     });
 
     it('should have proper button styling for non-vision model', () => {
       renderButtonFileUpload({ model: 'gpt-4' });
-      
+
       const button = screen.getByLabelText('Add files');
-      expect(button).toHaveClass('size-9', 'rounded-full', 'border', 'border-border');
+      expect(button).toHaveClass(
+        'size-9',
+        'rounded-full',
+        'border',
+        'border-border'
+      );
       expect(button).toHaveAttribute('data-variant', 'secondary');
       expect(button).toHaveAttribute('data-size', 'sm');
     });
 
     it('should show tooltip with "Add files" text', () => {
       renderButtonFileUpload({ model: 'gpt-4' });
-      
+
       expect(screen.getByTestId('tooltip-content')).toBeInTheDocument();
       expect(screen.getByText('Add files')).toBeInTheDocument();
     });
@@ -164,32 +187,32 @@ describe('ButtonFileUpload', () => {
 
   describe('Unauthenticated user', () => {
     it('should show auth popover when user is not authenticated', () => {
-      renderButtonFileUpload({ 
+      renderButtonFileUpload({
         isUserAuthenticated: false,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       expect(screen.getByTestId('popover')).toBeInTheDocument();
       expect(screen.getByTestId('popover-content-auth')).toBeInTheDocument();
       expect(screen.getByText('Auth Required')).toBeInTheDocument();
     });
 
     it('should show paperclip icon for unauthenticated user', () => {
-      renderButtonFileUpload({ 
+      renderButtonFileUpload({
         isUserAuthenticated: false,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       expect(screen.getByTestId('paperclip-icon')).toBeInTheDocument();
       expect(screen.getByLabelText('Add files')).toBeInTheDocument();
     });
 
     it('should have proper styling for unauthenticated state', () => {
-      renderButtonFileUpload({ 
+      renderButtonFileUpload({
         isUserAuthenticated: false,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       const button = screen.getByLabelText('Add files');
       expect(button).toHaveClass('size-9', 'rounded-full');
       expect(button).toHaveAttribute('data-variant', 'secondary');
@@ -200,9 +223,9 @@ describe('ButtonFileUpload', () => {
     it('should render FileUpload component', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       expect(screen.getByTestId('file-upload')).toBeInTheDocument();
       expect(screen.getByTestId('file-upload-trigger')).toBeInTheDocument();
       expect(screen.getByTestId('file-upload-content')).toBeInTheDocument();
@@ -211,11 +234,14 @@ describe('ButtonFileUpload', () => {
     it('should have correct file upload attributes', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       const fileUpload = screen.getByTestId('file-upload');
-      expect(fileUpload).toHaveAttribute('data-accept', '.txt,.md,image/jpeg,image/png,image/gif,image/webp,image/svg,image/heic,image/heif');
+      expect(fileUpload).toHaveAttribute(
+        'data-accept',
+        '.txt,.md,image/jpeg,image/png,image/gif,image/webp,image/svg,image/heic,image/heif'
+      );
       expect(fileUpload).toHaveAttribute('data-multiple', 'true');
       expect(fileUpload).toHaveAttribute('data-disabled', 'false');
     });
@@ -225,23 +251,23 @@ describe('ButtonFileUpload', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
         model: 'gpt-4-vision',
-        onFileUpload
+        onFileUpload,
       });
-      
+
       const fileInput = screen.getByTestId('file-input');
       const mockFile = new File(['test'], 'test.txt', { type: 'text/plain' });
-      
+
       await user.upload(fileInput, mockFile);
-      
+
       expect(onFileUpload).toHaveBeenCalledWith([mockFile]);
     });
 
     it('should render upload button with paperclip icon', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       expect(screen.getByTestId('paperclip-icon')).toBeInTheDocument();
       expect(screen.getByLabelText('Add files')).toBeInTheDocument();
     });
@@ -249,9 +275,9 @@ describe('ButtonFileUpload', () => {
     it('should have proper button styling when authenticated', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       const button = screen.getByLabelText('Add files');
       expect(button).toHaveClass('size-9', 'rounded-full');
       expect(button).toHaveAttribute('data-size', 'sm');
@@ -262,25 +288,27 @@ describe('ButtonFileUpload', () => {
     it('should render file upload content with drop zone', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       expect(screen.getByTestId('file-up-icon')).toBeInTheDocument();
       expect(screen.getByText('Drop files here')).toBeInTheDocument();
-      expect(screen.getByText('Drop any files here to add it to the conversation')).toBeInTheDocument();
+      expect(
+        screen.getByText('Drop any files here to add it to the conversation')
+      ).toBeInTheDocument();
     });
   });
 
   describe('Model support detection', () => {
     it('should work with different vision-enabled models', () => {
       const visionModels = ['gpt-4-vision', 'claude-3'];
-      
-      visionModels.forEach(model => {
+
+      visionModels.forEach((model) => {
         const { unmount } = renderButtonFileUpload({
           isUserAuthenticated: true,
-          model
+          model,
         });
-        
+
         expect(screen.getByTestId('file-upload')).toBeInTheDocument();
         unmount();
       });
@@ -288,14 +316,16 @@ describe('ButtonFileUpload', () => {
 
     it('should show limitation message for non-vision models', () => {
       const nonVisionModels = ['gpt-4', 'claude-2'];
-      
-      nonVisionModels.forEach(model => {
+
+      nonVisionModels.forEach((model) => {
         const { unmount } = renderButtonFileUpload({
           isUserAuthenticated: true,
-          model
+          model,
         });
-        
-        expect(screen.getByText('This model does not support file uploads.')).toBeInTheDocument();
+
+        expect(
+          screen.getByText('This model does not support file uploads.')
+        ).toBeInTheDocument();
         unmount();
       });
     });
@@ -303,11 +333,13 @@ describe('ButtonFileUpload', () => {
     it('should handle unknown models gracefully', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: 'unknown-model'
+        model: 'unknown-model',
       });
-      
+
       // Should show limitation message for unknown models
-      expect(screen.getByText('This model does not support file uploads.')).toBeInTheDocument();
+      expect(
+        screen.getByText('This model does not support file uploads.')
+      ).toBeInTheDocument();
     });
   });
 
@@ -317,17 +349,17 @@ describe('ButtonFileUpload', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
         model: 'gpt-4-vision',
-        onFileUpload
+        onFileUpload,
       });
-      
+
       const fileInput = screen.getByTestId('file-input');
       const files = [
         new File(['test1'], 'test1.txt', { type: 'text/plain' }),
-        new File(['test2'], 'test2.jpg', { type: 'image/jpeg' })
+        new File(['test2'], 'test2.jpg', { type: 'image/jpeg' }),
       ];
-      
+
       await user.upload(fileInput, files);
-      
+
       expect(onFileUpload).toHaveBeenCalledWith(files);
     });
 
@@ -336,26 +368,26 @@ describe('ButtonFileUpload', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
         model: 'gpt-4-vision',
-        onFileUpload
+        onFileUpload,
       });
-      
+
       const fileInput = screen.getByTestId('file-input');
       const imageFile = new File(['image'], 'test.png', { type: 'image/png' });
-      
+
       await user.upload(fileInput, imageFile);
-      
+
       expect(onFileUpload).toHaveBeenCalledWith([imageFile]);
     });
 
     it('should accept specified file types', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       const fileUpload = screen.getByTestId('file-upload');
       const acceptedTypes = fileUpload.getAttribute('data-accept');
-      
+
       expect(acceptedTypes).toContain('.txt');
       expect(acceptedTypes).toContain('.md');
       expect(acceptedTypes).toContain('image/jpeg');
@@ -372,9 +404,9 @@ describe('ButtonFileUpload', () => {
     it('should disable upload when user is not authenticated', () => {
       renderButtonFileUpload({
         isUserAuthenticated: false,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       // In this case, it shows auth popover instead of disabled upload
       expect(screen.getByTestId('popover-content-auth')).toBeInTheDocument();
     });
@@ -382,9 +414,9 @@ describe('ButtonFileUpload', () => {
     it('should show opacity when user is not authenticated in FileUpload mode', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       const button = screen.getByLabelText('Add files');
       expect(button.className).not.toContain('opacity-50');
     });
@@ -394,9 +426,9 @@ describe('ButtonFileUpload', () => {
     it('should have proper ARIA labels', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       const button = screen.getByLabelText('Add files');
       expect(button).toHaveAttribute('aria-label', 'Add files');
     });
@@ -404,9 +436,9 @@ describe('ButtonFileUpload', () => {
     it('should have button type attribute', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       const button = screen.getByLabelText('Add files');
       expect(button).toHaveAttribute('type', 'button');
     });
@@ -414,12 +446,12 @@ describe('ButtonFileUpload', () => {
     it('should be focusable', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       const button = screen.getByLabelText('Add files');
       button.focus();
-      
+
       expect(document.activeElement).toBe(button);
     });
 
@@ -429,13 +461,13 @@ describe('ButtonFileUpload', () => {
         { isUserAuthenticated: false, model: 'gpt-4-vision' },
         { isUserAuthenticated: true, model: 'gpt-4' },
       ];
-      
-      states.forEach((props, index) => {
+
+      states.forEach((props, _index) => {
         const { unmount } = renderButtonFileUpload(props);
-        
+
         expect(screen.getByTestId('tooltip')).toBeInTheDocument();
         expect(screen.getByText('Add files')).toBeInTheDocument();
-        
+
         unmount();
       });
     });
@@ -445,16 +477,18 @@ describe('ButtonFileUpload', () => {
     it('should have proper drop zone styling', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       const content = screen.getByTestId('file-upload-content');
       expect(content).toBeInTheDocument();
-      
+
       // Check for drop zone elements
       expect(screen.getByTestId('file-up-icon')).toBeInTheDocument();
       expect(screen.getByText('Drop files here')).toBeInTheDocument();
-      expect(screen.getByText('Drop any files here to add it to the conversation')).toBeInTheDocument();
+      expect(
+        screen.getByText('Drop any files here to add it to the conversation')
+      ).toBeInTheDocument();
     });
 
     it('should apply consistent button styling across states', () => {
@@ -463,15 +497,15 @@ describe('ButtonFileUpload', () => {
         { isUserAuthenticated: false, model: 'gpt-4-vision' },
         { isUserAuthenticated: true, model: 'gpt-4' },
       ];
-      
+
       states.forEach((props) => {
         const { unmount } = renderButtonFileUpload(props);
-        
+
         const button = screen.getByLabelText('Add files');
         expect(button).toHaveClass('size-9', 'rounded-full');
         expect(button).toHaveAttribute('data-variant', 'secondary');
         expect(button).toHaveAttribute('data-size', 'sm');
-        
+
         unmount();
       });
     });
@@ -483,7 +517,7 @@ describe('ButtonFileUpload', () => {
         renderButtonFileUpload({
           isUserAuthenticated: true,
           model: 'gpt-4-vision',
-          onFileUpload: undefined as any
+          onFileUpload: undefined as any,
         });
       }).not.toThrow();
     });
@@ -491,19 +525,21 @@ describe('ButtonFileUpload', () => {
     it('should handle empty model string', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: ''
+        model: '',
       });
-      
+
       // Should show limitation message for empty model
-      expect(screen.getByText('This model does not support file uploads.')).toBeInTheDocument();
+      expect(
+        screen.getByText('This model does not support file uploads.')
+      ).toBeInTheDocument();
     });
 
     it('should handle null model', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: null as any
+        model: null as any,
       });
-      
+
       // Should not crash
       expect(screen.getByTestId('popover')).toBeInTheDocument();
     });
@@ -513,23 +549,23 @@ describe('ButtonFileUpload', () => {
     it('should work with all supported image formats', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       const fileUpload = screen.getByTestId('file-upload');
       const acceptedTypes = fileUpload.getAttribute('data-accept');
-      
+
       const expectedFormats = [
         'image/jpeg',
-        'image/png', 
+        'image/png',
         'image/gif',
         'image/webp',
         'image/svg',
         'image/heic',
-        'image/heif'
+        'image/heif',
       ];
-      
-      expectedFormats.forEach(format => {
+
+      expectedFormats.forEach((format) => {
         expect(acceptedTypes).toContain(format);
       });
     });
@@ -537,12 +573,12 @@ describe('ButtonFileUpload', () => {
     it('should work with text file formats', () => {
       renderButtonFileUpload({
         isUserAuthenticated: true,
-        model: 'gpt-4-vision'
+        model: 'gpt-4-vision',
       });
-      
+
       const fileUpload = screen.getByTestId('file-upload');
       const acceptedTypes = fileUpload.getAttribute('data-accept');
-      
+
       expect(acceptedTypes).toContain('.txt');
       expect(acceptedTypes).toContain('.md');
     });

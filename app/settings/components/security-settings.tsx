@@ -1,8 +1,13 @@
 'use client';
 
-import { clientLogger } from '@/lib/utils/client-logger';
-
-import { CheckCircle, Eye, Key, Lock, Shield, AlertTriangle,  } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle,
+  Eye,
+  Key,
+  Lock,
+  Shield,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -17,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { createClient } from '@/lib/supabase/client';
+import { clientLogger } from '@/lib/utils/client-logger';
 
 type SecurityConfig = {
   // Content Filtering
@@ -77,7 +83,10 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
 
       if (error) {
         // Handle case where table doesn't exist yet or no data found
-        if (error.code === '42P01' || error.message.includes('does not exist')) {
+        if (
+          error.code === '42P01' ||
+          error.message.includes('does not exist')
+        ) {
           clientLogger.warn('user_security_settings table does not exist yet');
           return;
         }
@@ -89,8 +98,8 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         return;
       }
 
-      if (data && data.config) {
-        setConfig(data.config as SecurityConfig);
+      if ((data as any)?.config) {
+        setConfig((data as any).config as SecurityConfig);
       }
     } catch (error: unknown) {
       clientLogger.error('Failed to load security settings', error);
@@ -99,7 +108,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
 
   useEffect(() => {
     loadSettings();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadSettings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveSettings = async () => {
     if (!supabase) {
@@ -109,21 +118,28 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
 
     setLoading(true);
     try {
-      const { error } = await supabase.from('user_security_settings').upsert(
-        {
-          user_id: userId,
-          config,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'user_id',
-        }
-      );
+      const { error } = await (supabase as any)
+        .from('user_security_settings')
+        .upsert(
+          {
+            user_id: userId,
+            config,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'user_id',
+          }
+        );
 
       if (error) {
         // Handle case where table doesn't exist yet
-        if (error.code === '42P01' || error.message.includes('does not exist')) {
-          toast.error('Security settings storage not yet configured. Please contact support.');
+        if (
+          error.code === '42P01' ||
+          error.message.includes('does not exist')
+        ) {
+          toast.error(
+            'Security settings storage not yet configured. Please contact support.'
+          );
           return;
         }
         throw error;
@@ -138,7 +154,10 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
     }
   };
 
-  const updateConfig = <K extends keyof SecurityConfig>(key: K, value: SecurityConfig[K]) => {
+  const updateConfig = <K extends keyof SecurityConfig>(
+    key: K,
+    value: SecurityConfig[K]
+  ) => {
     setConfig({ ...config, [key]: value });
   };
 

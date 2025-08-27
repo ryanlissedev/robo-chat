@@ -2,8 +2,8 @@
 
 import { MoreHorizontal, Pencil, Trash } from 'lucide-react';
 import { useState } from 'react';
-import { DialogDeleteProject } from '@/components/app/layout/sidebar/dialog-delete-project';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
+import { DialogDeleteProject } from '@/components/app/layout/sidebar/dialog-delete-project';
 import {
   DropdownMenu,
   DropdownMenuContent,

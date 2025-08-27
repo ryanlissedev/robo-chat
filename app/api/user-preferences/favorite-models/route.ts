@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .update({
         favorite_models,
-      })
+      } as never)
       .eq('id', user.id)
       .select('favorite_models')
       .single();
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      favorite_models: data.favorite_models,
+      favorite_models: (data as any).favorite_models,
     });
   } catch {
     return NextResponse.json(
@@ -107,7 +107,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      favorite_models: data.favorite_models || [],
+      favorite_models: (data as any).favorite_models || [],
     });
   } catch {
     return NextResponse.json(

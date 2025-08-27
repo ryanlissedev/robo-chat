@@ -1,22 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatInput } from '@/components/app/chat-input/chat-input';
+import * as modelSelectorModule from '@/components/common/model-selector/base';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import * as modelsModule from '@/lib/models';
 
-vi.mock('@/lib/models', async () => {
-  return {
-    getModelInfo: vi.fn(),
-  };
-});
-
-vi.mock('@/components/common/model-selector/base', () => {
-  return {
-    ModelSelector: () => <div data-testid="model-selector" />,
-  };
-});
-
-const { getModelInfo } = await import('@/lib/models');
+// Create mock functions after vi is available
+let mockGetModelInfo: ReturnType<typeof vi.fn>;
+let _mockModelSelector: ReturnType<typeof vi.fn>;
 
 function renderChatInput(selectedModel: string) {
   return render(
@@ -44,11 +36,18 @@ function renderChatInput(selectedModel: string) {
 
 describe('ChatInput reasoning selector gating', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
+    // Set up mocks using spyOn
+    mockGetModelInfo = vi.spyOn(modelsModule, 'getModelInfo');
+    _mockModelSelector = vi
+      .spyOn(modelSelectorModule, 'ModelSelector')
+      .mockImplementation(() =>
+        React.createElement('div', { 'data-testid': 'model-selector' })
+      );
+    vi.clearAllMocks();
   });
 
   it('shows ReasoningEffortSelector when model has reasoningText', () => {
-    (getModelInfo as any).mockReturnValue({ id: 'model-x', reasoningText: true });
+    mockGetModelInfo.mockReturnValue({ id: 'model-x', reasoningText: true });
 
     renderChatInput('model-x');
 
@@ -57,7 +56,7 @@ describe('ChatInput reasoning selector gating', () => {
   });
 
   it('hides ReasoningEffortSelector when model lacks reasoningText', () => {
-    (getModelInfo as any).mockReturnValue({ id: 'model-y', reasoningText: false });
+    mockGetModelInfo.mockReturnValue({ id: 'model-y', reasoningText: false });
 
     renderChatInput('model-y');
 

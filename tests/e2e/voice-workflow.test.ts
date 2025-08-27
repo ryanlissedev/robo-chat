@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import type { Page } from '@playwright/test';
 import { mockApiResponse, waitForPageReady } from './fixtures';
 
 test.describe('Voice Workflow Integration', () => {
@@ -667,9 +666,7 @@ test.describe('Voice Workflow Integration', () => {
       await expect(page.locator('[data-testid="chat-message"]')).toHaveCount(4); // 2 pairs
 
       // Should maintain conversation context
-      const lastMessage = page
-        .locator('[data-testid="chat-message"]')
-        .last();
+      const lastMessage = page.locator('[data-testid="chat-message"]').last();
       await expect(lastMessage).toBeVisible();
     });
 
@@ -800,10 +797,8 @@ test.describe('Voice Workflow Integration', () => {
       });
 
       // Should display both voice response and code block
-      await expect(
-        page.locator('[data-testid="code-block"]')
-      ).toBeVisible();
-      
+      await expect(page.locator('[data-testid="code-block"]')).toBeVisible();
+
       // Voice should handle non-code parts appropriately
       const audioPlayer = page.locator('[data-testid="audio-player"]');
       if (await audioPlayer.isVisible()) {
@@ -824,9 +819,9 @@ test.describe('Voice Workflow Integration', () => {
       await voiceButton.click();
 
       // Should show loading states appropriately
-      await expect(
-        page.locator('[data-testid="voice-loading"]')
-      ).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('[data-testid="voice-loading"]')).toBeVisible({
+        timeout: 10000,
+      });
 
       // Should eventually timeout or show error
       await expect(
@@ -891,9 +886,7 @@ test.describe('Voice Workflow Integration', () => {
 
       // Should be able to continue with text
       await page.fill('[data-testid="chat-input"]', 'Fallback to text mode');
-      await expect(
-        page.locator('[data-testid="send-button"]')
-      ).toBeEnabled();
+      await expect(page.locator('[data-testid="send-button"]')).toBeEnabled();
     });
   });
 });

@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       encrypted_key: encrypted,
       iv,
       updated_at: new Date().toISOString(),
-    });
+    } as never);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -61,8 +61,8 @@ export async function POST(request: Request) {
           .select('favorite_models')
           .eq('id', authData.user.id)
           .single();
-
-        const currentFavorites = userData?.favorite_models || [];
+        // Coerce to any to avoid TS inferring never
+        const currentFavorites = (userData as any)?.favorite_models || [];
 
         // Get models for this provider
         const providerModels = await getModelsForProvider(provider);
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
           // Update user's favorite models
           const { error: favoritesError } = await supabase
             .from('users')
-            .update({ favorite_models: updatedFavorites })
+            .update({ favorite_models: updatedFavorites } as never)
             .eq('id', authData.user.id);
 
           if (favoritesError) {

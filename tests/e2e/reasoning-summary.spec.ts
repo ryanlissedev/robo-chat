@@ -86,7 +86,9 @@ test.describe('Reasoning Summary UI', () => {
         }
       });
 
-      test('shows reasoning panel while streaming and allows toggling after completion', async ({ page }) => {
+      test('shows reasoning panel while streaming and allows toggling after completion', async ({
+        page,
+      }) => {
         let controller: ReadableStreamDefaultController<Uint8Array>;
 
         await page.route('**/api/chat', async (route) => {
@@ -125,11 +127,18 @@ test.describe('Reasoning Summary UI', () => {
             },
           });
 
-          await route.fulfill({ status: 200, contentType: 'text/plain', body: stream as any });
+          await route.fulfill({
+            status: 200,
+            contentType: 'text/plain',
+            body: stream as any,
+          });
         });
 
         // Send a message to trigger streaming
-        await page.fill('[data-testid="chat-input"]', 'Explain how to sort an array.');
+        await page.fill(
+          '[data-testid="chat-input"]',
+          'Explain how to sort an array.'
+        );
         await page.click('[data-testid="send-button"]');
 
         // While streaming, the Reasoning trigger should appear with "Thinking..." and auto-open.
@@ -145,13 +154,17 @@ test.describe('Reasoning Summary UI', () => {
         await page.waitForTimeout(1200);
 
         // The assistant message should contain the final text
-        const assistant = page.locator('[data-testid="chat-message"][data-role="assistant"]').last();
+        const assistant = page
+          .locator('[data-testid="chat-message"][data-role="assistant"]')
+          .last();
         await expect(assistant).toContainText('Answer:');
         await expect(assistant).toContainText('done.');
 
         // The reasoning content should be viewable by toggling (if collapsed after auto-close)
         // Try to locate a trigger – either still "Thinking..." (duration 0) or a duration text
-        const anyTrigger = page.locator('button:has-text("Thinking..."), button:has-text("Thought for")');
+        const anyTrigger = page.locator(
+          'button:has-text("Thinking..."), button:has-text("Thought for")'
+        );
         if (await anyTrigger.count()) {
           await anyTrigger.first().click();
           // Expect the reasoning text snippet to be visible within the message container

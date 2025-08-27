@@ -31,12 +31,12 @@ export interface LangSmithError {
   code?: number;
 }
 
-export type APIError = 
-  | OpenAIError 
-  | AnthropicError 
-  | MistralError 
-  | GoogleAIError 
-  | LangSmithError 
+export type APIError =
+  | OpenAIError
+  | AnthropicError
+  | MistralError
+  | GoogleAIError
+  | LangSmithError
   | Error;
 
 export interface APITestResult {

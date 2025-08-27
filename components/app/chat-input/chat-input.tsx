@@ -1,14 +1,13 @@
 'use client';
 
-import { ArrowUp, Square } from 'lucide-react';
-import { AudioWaveform } from 'lucide-react';
+import { ArrowUp, AudioWaveform, Square } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ModelSelector } from '@/components/common/model-selector/base';
 import { VoiceButton } from '@/components/app/voice/button/voice-button';
+import { useVoiceIntegration } from '@/components/app/voice/hooks/use-voice-integration';
 import { TranscriptionPanel } from '@/components/app/voice/panel/transcription-panel';
 import { useVoiceStore } from '@/components/app/voice/store/voice-store';
-import { useVoiceIntegration } from '@/components/app/voice/hooks/use-voice-integration';
 import { RealtimeAudioModal } from '@/components/audio/RealtimeAudioModal';
+import { ModelSelector } from '@/components/common/model-selector/base';
 import {
   PromptInput,
   PromptInputAction,
@@ -72,7 +71,10 @@ export function ChatInput({
   onReasoningEffortChange,
 }: ChatInputProps) {
   // Search is always enabled regardless of model webSearch capability
-  const isOnlyWhitespace = useCallback((text: string) => !/[^\s]/.test(text), []);
+  const isOnlyWhitespace = useCallback(
+    (text: string) => !/[^\s]/.test(text),
+    []
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Always show reasoning effort selector
@@ -190,23 +192,22 @@ export function ChatInput({
   // Voice functionality
   const {} = useVoiceStore();
   const [showTranscriptionPanel, setShowTranscriptionPanel] = useState(false);
-  
+
   // Voice integration with vector store indexing
   const {} = useVoiceIntegration({
     userId: isUserAuthenticated ? userId : undefined,
     autoIndexTranscripts: true,
-    onTranscriptIndexed: (result) => {
-      console.log('Transcript indexed to vector store:', result);
-    },
-    onIndexError: (error) => {
-      console.error('Transcript indexing failed:', error);
-    }
+    onTranscriptIndexed: (_result) => {},
+    onIndexError: (_error) => {},
   });
 
-  const handleVoiceTranscript = useCallback((transcript: string) => {
-    onValueChange(value ? `${value}\n${transcript}` : transcript);
-    setShowTranscriptionPanel(false);
-  }, [value, onValueChange]);
+  const handleVoiceTranscript = useCallback(
+    (transcript: string) => {
+      onValueChange(value ? `${value}\n${transcript}` : transcript);
+      setShowTranscriptionPanel(false);
+    },
+    [value, onValueChange]
+  );
 
   const handleCloseTranscription = useCallback(() => {
     setShowTranscriptionPanel(false);
@@ -281,9 +282,7 @@ export function ChatInput({
                 >
                   <Button
                     aria-label={
-                      status === 'streaming'
-                        ? 'Stop'
-                        : 'Send message'
+                      status === 'streaming' ? 'Stop' : 'Send message'
                     }
                     className="size-10 rounded-full transition-all duration-300 ease-out"
                     disabled={

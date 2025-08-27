@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
+import { type NextRequest, NextResponse } from 'next/server';
 import type { VoiceSession } from '@/lib/types/voice';
 
 // In-memory session storage (use Redis/database in production)
@@ -15,7 +15,6 @@ setInterval(() => {
   for (const [sessionId, session] of sessions.entries()) {
     if (now.getTime() - session.lastActiveAt.getTime() > SESSION_TIMEOUT) {
       sessions.delete(sessionId);
-      console.log(`Cleaned up expired session: ${sessionId}`);
     }
   }
 }, CLEANUP_INTERVAL);
@@ -23,15 +22,19 @@ setInterval(() => {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     if (!body || typeof body !== 'object') {
       return NextResponse.json(
         { error: 'Invalid request body' },
         { status: 400 }
       );
     }
-    
-    const { config, personalityMode = 'safety-focused', safetyProtocols = true } = body;
+
+    const {
+      config,
+      personalityMode = 'safety-focused',
+      safetyProtocols = true,
+    } = body;
 
     // Validate config
     if (!config || typeof config !== 'object') {
@@ -42,18 +45,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate personalityMode
-    const validPersonalityModes = ['safety-focused', 'technical-expert', 'friendly-assistant'];
-    const validatedPersonalityMode = validPersonalityModes.includes(personalityMode) 
-      ? personalityMode 
+    const validPersonalityModes = [
+      'safety-focused',
+      'technical-expert',
+      'friendly-assistant',
+    ];
+    const validatedPersonalityMode = validPersonalityModes.includes(
+      personalityMode
+    )
+      ? personalityMode
       : 'safety-focused';
 
     // Validate safetyProtocols
-    const validatedSafetyProtocols = typeof safetyProtocols === 'boolean' ? safetyProtocols : true;
+    const validatedSafetyProtocols =
+      typeof safetyProtocols === 'boolean' ? safetyProtocols : true;
 
     // Create new session
     const sessionId = randomUUID();
     const now = new Date();
-    
+
     const session: VoiceSession = {
       id: sessionId,
       status: 'active',
@@ -66,8 +76,6 @@ export async function POST(request: NextRequest) {
 
     sessions.set(sessionId, session);
 
-    console.log(`Created voice session: ${sessionId} with personality: ${validatedPersonalityMode}`);
-
     return NextResponse.json({
       sessionId,
       status: 'created',
@@ -76,13 +84,12 @@ export async function POST(request: NextRequest) {
       safetyProtocols: session.safetyProtocols,
       createdAt: session.createdAt,
     });
-
   } catch (error) {
-    console.error('Failed to create voice session:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error occurred';
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to create voice session',
         details: errorMessage,
       },
@@ -106,10 +113,7 @@ export async function GET(request: NextRequest) {
     const session = sessions.get(sessionId);
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Session not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
     // Update last active time
@@ -124,9 +128,7 @@ export async function GET(request: NextRequest) {
       createdAt: session.createdAt,
       lastActiveAt: session.lastActiveAt,
     });
-
-  } catch (error) {
-    console.error('Failed to get voice session:', error);
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to get voice session' },
       { status: 500 }
@@ -137,14 +139,14 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     if (!body || typeof body !== 'object') {
       return NextResponse.json(
         { error: 'Invalid request body' },
         { status: 400 }
       );
     }
-    
+
     const { sessionId } = body;
 
     if (!sessionId || typeof sessionId !== 'string' || !sessionId.trim()) {
@@ -157,10 +159,7 @@ export async function DELETE(request: NextRequest) {
     const session = sessions.get(sessionId);
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Session not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
     // Mark session as inactive
@@ -171,11 +170,8 @@ export async function DELETE(request: NextRequest) {
     setTimeout(() => {
       if (sessions.has(sessionId)) {
         sessions.delete(sessionId);
-        console.log(`Cleaned up voice session from memory: ${sessionId}`);
       }
     }, 5000);
-
-    console.log(`Deactivated voice session: ${sessionId}`);
 
     return NextResponse.json({
       sessionId,
@@ -183,13 +179,12 @@ export async function DELETE(request: NextRequest) {
       message: 'Voice session terminated successfully',
       cleanupDelay: 5000,
     });
-
   } catch (error) {
-    console.error('Failed to delete voice session:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error occurred';
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to delete voice session',
         details: errorMessage,
       },
@@ -201,14 +196,14 @@ export async function DELETE(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     if (!body || typeof body !== 'object') {
       return NextResponse.json(
         { error: 'Invalid request body' },
         { status: 400 }
       );
     }
-    
+
     const { sessionId, config, personalityMode, safetyProtocols } = body;
 
     if (!sessionId || typeof sessionId !== 'string' || !sessionId.trim()) {
@@ -221,10 +216,7 @@ export async function PATCH(request: NextRequest) {
     const session = sessions.get(sessionId);
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Session not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
     let hasUpdates = false;
@@ -236,13 +228,19 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (personalityMode && typeof personalityMode === 'string') {
-      const validPersonalityModes = ['safety-focused', 'technical-expert', 'friendly-assistant'];
+      const validPersonalityModes = [
+        'safety-focused',
+        'technical-expert',
+        'friendly-assistant',
+      ];
       if (validPersonalityModes.includes(personalityMode)) {
         session.personalityMode = personalityMode;
         hasUpdates = true;
       } else {
         return NextResponse.json(
-          { error: `Invalid personality mode. Valid options: ${validPersonalityModes.join(', ')}` },
+          {
+            error: `Invalid personality mode. Valid options: ${validPersonalityModes.join(', ')}`,
+          },
           { status: 400 }
         );
       }
@@ -255,7 +253,6 @@ export async function PATCH(request: NextRequest) {
 
     if (hasUpdates) {
       session.lastActiveAt = new Date();
-      console.log(`Updated voice session: ${sessionId}`);
     }
 
     return NextResponse.json({
@@ -267,13 +264,12 @@ export async function PATCH(request: NextRequest) {
       lastActiveAt: session.lastActiveAt,
       updated: hasUpdates,
     });
-
   } catch (error) {
-    console.error('Failed to update voice session:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error occurred';
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to update voice session',
         details: errorMessage,
       },
@@ -281,4 +277,3 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
-

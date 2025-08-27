@@ -92,14 +92,7 @@ export function useChatCore({
   // Manage input state separately for v5
   const [inputValue, setInputValue] = useState(draftValue);
 
-  const {
-    messages,
-    status,
-    error,
-    stop,
-    setMessages,
-    sendMessage,
-  } = useChat({
+  const { messages, status, error, stop, setMessages, sendMessage } = useChat({
     onFinish: ({ message }) => cacheAndAddMessage(message),
     onError: handleError,
   });
@@ -158,7 +151,6 @@ export function useChatCore({
     setFiles([]);
 
     try {
-
       // Use BDD scenario for message submission
       const context: MessageSubmissionContext = {
         input: currentInput,
@@ -194,9 +186,13 @@ export function useChatCore({
       // In v5, use sendMessage which handles everything including optimistic updates
       // v5 expects an object with text property. Optionally attach guest BYOK headers (session scope).
       try {
-        const { headersForModel } = await import('@/lib/security/guest-headers');
+        const { headersForModel } = await import(
+          '@/lib/security/guest-headers'
+        );
         const extraHeaders = await headersForModel(selectedModel);
-        const merged = extraHeaders ? { ...requestOptions, headers: extraHeaders } : requestOptions;
+        const merged = extraHeaders
+          ? { ...requestOptions, headers: extraHeaders }
+          : requestOptions;
         await sendMessage({ text: currentInput }, merged);
       } catch {
         await sendMessage({ text: currentInput }, requestOptions);

@@ -3,17 +3,17 @@
  * Ensures sensitive data is properly redacted from logs and API responses
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
-  redactSensitiveHeaders,
-  redactSensitive,
-  sanitizeLogEntry,
-  maskSensitiveValue,
   createHeaderSummary,
+  maskSensitiveValue,
+  REDACTION_PLACEHOLDER,
   redactErrorData,
+  redactSensitive,
+  redactSensitiveHeaders,
   SENSITIVE_HEADERS,
   SENSITIVE_KEYS,
-  REDACTION_PLACEHOLDER,
+  sanitizeLogEntry,
 } from '@/lib/utils/redaction';
 
 describe('Redaction Utilities', () => {
@@ -29,7 +29,7 @@ describe('Redaction Utilities', () => {
 
       // Headers API normalizes keys to lowercase
       expect(result['x-provider-api-key']).toBe(REDACTION_PLACEHOLDER);
-      expect(result['authorization']).toBe(REDACTION_PLACEHOLDER);
+      expect(result.authorization).toBe(REDACTION_PLACEHOLDER);
       expect(result['content-type']).toBe('application/json');
       expect(result['user-agent']).toBe('test-agent');
     });
@@ -43,7 +43,7 @@ describe('Redaction Utilities', () => {
       const result = redactSensitiveHeaders(headers);
 
       expect(result['x-provider-api-key']).toBe(REDACTION_PLACEHOLDER);
-      expect(result['authorization']).toBe(REDACTION_PLACEHOLDER);
+      expect(result.authorization).toBe(REDACTION_PLACEHOLDER);
       expect(result['X-API-KEY']).toBe(REDACTION_PLACEHOLDER);
     });
 
@@ -55,18 +55,20 @@ describe('Redaction Utilities', () => {
 
     it('should handle headers iteration failure gracefully', () => {
       // Mock console.error to suppress error output during test
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
       // Create a mock headers object that throws on forEach
       const mockHeaders = {
         forEach: () => {
           throw new Error('Headers iteration failed');
-        }
+        },
       } as unknown as Headers;
 
       const result = redactSensitiveHeaders(mockHeaders);
       expect(result).toEqual({});
-      
+
       // Restore console.error
       consoleSpy.mockRestore();
     });
@@ -80,8 +82,8 @@ describe('Redaction Utilities', () => {
         normalField: 'normal value',
         user: {
           name: 'John',
-          token: 'token123'
-        }
+          token: 'token123',
+        },
       };
 
       const result = redactSensitive(obj);
@@ -98,19 +100,21 @@ describe('Redaction Utilities', () => {
         config: {
           apiKey: 'sk-123',
           settings: {
-            OPENAI_API_KEY: 'key-456'
-          }
+            OPENAI_API_KEY: 'key-456',
+          },
         },
         users: [
           { name: 'Alice', password: 'secret1' },
-          { name: 'Bob', secret: 'secret2' }
-        ]
+          { name: 'Bob', secret: 'secret2' },
+        ],
       };
 
       const result = redactSensitive(obj);
 
       expect((result.config as any).apiKey).toBe(REDACTION_PLACEHOLDER);
-      expect((result.config as any).settings.OPENAI_API_KEY).toBe(REDACTION_PLACEHOLDER);
+      expect((result.config as any).settings.OPENAI_API_KEY).toBe(
+        REDACTION_PLACEHOLDER
+      );
       expect((result.users as any)[0].name).toBe('Alice');
       expect((result.users as any)[0].password).toBe(REDACTION_PLACEHOLDER);
       expect((result.users as any)[1].secret).toBe(REDACTION_PLACEHOLDER);
@@ -120,7 +124,7 @@ describe('Redaction Utilities', () => {
       const obj = {
         customSecret: 'secret123',
         normalField: 'normal',
-        apiKey: 'key123'
+        apiKey: 'key123',
       };
 
       const result = redactSensitive(obj, ['customSecret']);
@@ -143,7 +147,7 @@ describe('Redaction Utilities', () => {
         api_key: 'key2',
         ApiKey: 'key3',
         APIKEY: 'key4',
-        normalField: 'normal'
+        normalField: 'normal',
       };
 
       const result = redactSensitive(obj);
@@ -162,18 +166,20 @@ describe('Redaction Utilities', () => {
         message: 'API request',
         headers: new Headers([
           ['X-Provider-Api-Key', 'sk-123'],
-          ['Content-Type', 'application/json']
+          ['Content-Type', 'application/json'],
         ]),
         error: new Error('Authentication failed'),
         context: {
           userId: 'user123',
-          apiKey: 'secret-key'
-        }
+          apiKey: 'secret-key',
+        },
       };
 
       const result = sanitizeLogEntry(logEntry);
 
-      expect((result.headers as any)['X-Provider-Api-Key']).toBe(REDACTION_PLACEHOLDER);
+      expect((result.headers as any)['X-Provider-Api-Key']).toBe(
+        REDACTION_PLACEHOLDER
+      );
       expect((result.headers as any)['Content-Type']).toBe('application/json');
       expect((result.context as any).userId).toBe('user123');
       expect((result.context as any).apiKey).toBe(REDACTION_PLACEHOLDER);
@@ -183,13 +189,15 @@ describe('Redaction Utilities', () => {
       const logEntry = {
         headers: {
           'X-Provider-Api-Key': 'sk-123',
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       };
 
       const result = sanitizeLogEntry(logEntry);
 
-      expect((result.headers as any)['X-Provider-Api-Key']).toBe(REDACTION_PLACEHOLDER);
+      expect((result.headers as any)['X-Provider-Api-Key']).toBe(
+        REDACTION_PLACEHOLDER
+      );
       expect((result.headers as any)['Content-Type']).toBe('application/json');
     });
 
@@ -213,7 +221,7 @@ describe('Redaction Utilities', () => {
 
     it('should mask longer values correctly', () => {
       const result = maskSensitiveValue('sk-1234567890abcdef');
-      const expected = 'sk' + '*'.repeat('sk-1234567890abcdef'.length - 4) + 'ef';
+      const expected = `sk${'*'.repeat('sk-1234567890abcdef'.length - 4)}ef`;
       expect(result).toBe(expected);
       expect(result).toMatch(/^sk\*+ef$/);
     });
@@ -234,22 +242,24 @@ describe('Redaction Utilities', () => {
 
       expect(result['X-Provider-Api-Key']).toMatch(/^sk\*+ef$/);
       expect(result['Content-Type']).toBe('application/json');
-      expect(result['Authorization']).toMatch(/^Be\*+23$/);
+      expect(result.Authorization).toMatch(/^Be\*+23$/);
     });
 
     it('should handle headers processing failure', () => {
       // Mock console.error to suppress error output during test
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
       const mockHeaders = {
         forEach: () => {
           throw new Error('Headers processing failed');
-        }
+        },
       } as unknown as Headers;
 
       const result = createHeaderSummary(mockHeaders);
       expect(result).toEqual({ error: 'failed-to-process' });
-      
+
       // Restore console.error
       consoleSpy.mockRestore();
     });
@@ -270,8 +280,8 @@ describe('Redaction Utilities', () => {
         message: 'Auth failed',
         apiKey: 'sk-123',
         details: {
-          token: 'secret-token'
-        }
+          token: 'secret-token',
+        },
       };
 
       const result = redactErrorData(error);
@@ -357,15 +367,15 @@ describe('Redaction Utilities', () => {
     it('should handle mixed case and special characters in keys', () => {
       const obj = {
         'API-KEY': 'secret1',
-        'api_key_test': 'secret2',
+        api_key_test: 'secret2',
         'X-Provider-Api-Key': 'secret3',
-        'normal-field': 'normal'
+        'normal-field': 'normal',
       };
 
       const result = redactSensitive(obj);
 
       expect(result['API-KEY']).toBe(REDACTION_PLACEHOLDER);
-      expect(result['api_key_test']).toBe(REDACTION_PLACEHOLDER);
+      expect(result.api_key_test).toBe(REDACTION_PLACEHOLDER);
       expect(result['X-Provider-Api-Key']).toBe(REDACTION_PLACEHOLDER);
       expect(result['normal-field']).toBe('normal');
     });

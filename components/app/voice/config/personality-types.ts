@@ -1,4 +1,7 @@
-export type PersonalityMode = 'safety-focused' | 'technical-expert' | 'friendly-assistant';
+export type PersonalityMode =
+  | 'safety-focused'
+  | 'technical-expert'
+  | 'friendly-assistant';
 
 export interface PersonalityConfig {
   id: PersonalityMode;
@@ -74,7 +77,7 @@ export interface PersonalityTransition {
   context?: string;
 }
 
-export type PersonalityEventType = 
+export type PersonalityEventType =
   | 'mode_changed'
   | 'safety_protocol_triggered'
   | 'confirmation_requested'

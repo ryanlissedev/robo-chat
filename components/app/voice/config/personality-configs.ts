@@ -1,10 +1,11 @@
-import { PersonalityConfig, PersonalityMode } from './personality-types';
+import type { PersonalityConfig, PersonalityMode } from './personality-types';
 
 export const PERSONALITY_CONFIGS: Record<PersonalityMode, PersonalityConfig> = {
   'safety-focused': {
     id: 'safety-focused',
     name: 'Safety Guardian',
-    description: 'Prioritizes railway safety above all else with rigorous protocol adherence',
+    description:
+      'Prioritizes railway safety above all else with rigorous protocol adherence',
     shortDescription: 'Safety-first approach with strict protocols',
     icon: '🛡️',
     color: '#dc2626',
@@ -41,7 +42,8 @@ SAFETY-FIRST PRINCIPLES:
         'Ensure proper communication protocols are followed',
         'Verify weather and environmental conditions',
       ],
-      responseStyle: 'Authoritative, precise, and methodical with safety warnings clearly highlighted',
+      responseStyle:
+        'Authoritative, precise, and methodical with safety warnings clearly highlighted',
       priorities: [
         'Personal safety of all personnel',
         'Public safety and protection',
@@ -76,7 +78,8 @@ SAFETY-FIRST PRINCIPLES:
   'technical-expert': {
     id: 'technical-expert',
     name: 'Technical Specialist',
-    description: 'Deep technical expertise with detailed system knowledge and precise solutions',
+    description:
+      'Deep technical expertise with detailed system knowledge and precise solutions',
     shortDescription: 'Expert-level technical guidance and solutions',
     icon: '⚙️',
     color: '#2563eb',
@@ -116,7 +119,8 @@ AREAS OF SPECIALIZATION:
         'Highlight critical system dependencies',
         'Recommend proper testing and validation procedures',
       ],
-      responseStyle: 'Detailed, technical, and comprehensive with systematic approach to problem-solving',
+      responseStyle:
+        'Detailed, technical, and comprehensive with systematic approach to problem-solving',
       priorities: [
         'Technical accuracy and precision',
         'System reliability and performance',
@@ -151,7 +155,8 @@ AREAS OF SPECIALIZATION:
   'friendly-assistant': {
     id: 'friendly-assistant',
     name: 'Helpful Companion',
-    description: 'Approachable and supportive with clear explanations and encouraging guidance',
+    description:
+      'Approachable and supportive with clear explanations and encouraging guidance',
     shortDescription: 'Friendly, clear, and encouraging support',
     icon: '🤝',
     color: '#059669',
@@ -190,7 +195,8 @@ COMMUNICATION STYLE:
         'Provide clear explanations of why safety measures matter',
         'Make safety training engaging and memorable',
       ],
-      responseStyle: 'Warm, encouraging, and educational with patient step-by-step guidance',
+      responseStyle:
+        'Warm, encouraging, and educational with patient step-by-step guidance',
       priorities: [
         'User understanding and confidence',
         'Clear communication and learning',
@@ -201,9 +207,9 @@ COMMUNICATION STYLE:
       ],
       examples: [
         'Great question! Let me walk you through this step by step...',
-        'I understand this can seem complex at first, but we\'ll break it down together...',
-        'You\'re doing well! Now, let\'s look at the next part of the process...',
-        'That\'s exactly right! This shows you understand the important safety principle here...',
+        "I understand this can seem complex at first, but we'll break it down together...",
+        "You're doing well! Now, let's look at the next part of the process...",
+        "That's exactly right! This shows you understand the important safety principle here...",
       ],
     },
     features: {
@@ -247,8 +253,12 @@ export function getPersonalityModes(): PersonalityMode[] {
   return Object.keys(PERSONALITY_CONFIGS) as PersonalityMode[];
 }
 
-export function getPersonalityByName(name: string): PersonalityConfig | undefined {
-  return Object.values(PERSONALITY_CONFIGS).find(config => config.name === name);
+export function getPersonalityByName(
+  name: string
+): PersonalityConfig | undefined {
+  return Object.values(PERSONALITY_CONFIGS).find(
+    (config) => config.name === name
+  );
 }
 
 export function validatePersonalityMode(mode: string): mode is PersonalityMode {
@@ -256,17 +266,17 @@ export function validatePersonalityMode(mode: string): mode is PersonalityMode {
 }
 
 export function getVoiceInstructions(
-  mode: PersonalityMode, 
+  mode: PersonalityMode,
   customInstructions?: string,
   safetyProtocolsEnabled: boolean = true
 ): string {
   const config = getPersonalityConfig(mode);
   const baseInstructions = config.instructions.systemPrompt;
-  
-  const safetyProtocols = safetyProtocolsEnabled 
-    ? `\n\nSAFETY PROTOCOLS ENABLED:\n${config.instructions.safetyProtocols.map(p => `- ${p}`).join('\n')}`
+
+  const safetyProtocols = safetyProtocolsEnabled
+    ? `\n\nSAFETY PROTOCOLS ENABLED:\n${config.instructions.safetyProtocols.map((p) => `- ${p}`).join('\n')}`
     : '';
-    
+
   const voiceGuidelines = `\n\nVOICE INTERACTION GUIDELINES:
 - Speak clearly and at an appropriate pace
 - Use natural pauses for complex information
@@ -276,7 +286,7 @@ export function getVoiceInstructions(
 - Keep responses concise but complete
 - Use active voice and direct statements`;
 
-  const customSection = customInstructions 
+  const customSection = customInstructions
     ? `\n\nCUSTOM INSTRUCTIONS:\n${customInstructions}`
     : '';
 

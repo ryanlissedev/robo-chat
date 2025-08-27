@@ -1,4 +1,11 @@
-import { BookOpen, Code, Lightbulb, NotepadText, Paintbrush, Sparkle } from 'lucide-react';
+import {
+  BookOpen,
+  Code,
+  Lightbulb,
+  NotepadText,
+  Paintbrush,
+  Sparkle,
+} from 'lucide-react';
 
 export const NON_AUTH_DAILY_MESSAGE_LIMIT = 10_000; // Temporarily increased for testing
 export const AUTH_DAILY_MESSAGE_LIMIT = 1000;

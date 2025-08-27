@@ -16,7 +16,7 @@ const CollapsibleContent = (props: CollapsibleContentProps) => (
   <div {...props} />
 );
 const CollapsibleTrigger = (props: CollapsibleTriggerProps) => (
-  <button {...props} />
+  <button type="button" {...props} />
 );
 
 import { ChevronDownIcon } from 'lucide-react';

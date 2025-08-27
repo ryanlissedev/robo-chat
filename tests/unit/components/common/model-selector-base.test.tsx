@@ -1,73 +1,38 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as useBreakpointHook from '@/app/hooks/use-breakpoint';
+import * as useKeyShortcutHook from '@/app/hooks/use-key-shortcut';
 import { ModelSelector } from '@/components/common/model-selector/base';
-import { 
-  renderWithProviders, 
-  mockApiEndpoints, 
-  mockModels, 
-  mockUserKeyStatus,
-  createTestQueryClient
+import * as modelStoreProvider from '@/lib/model-store/provider';
+import * as webCrypto from '@/lib/security/web-crypto';
+import * as userPreferenceStoreProvider from '@/lib/user-preference-store/provider';
+import * as userStoreProvider from '@/lib/user-store/provider';
+import {
+  mockApiEndpoints,
+  mockModels,
+  renderWithProviders,
 } from '@/tests/test-utils';
 
-// Hoist mock functions to avoid initialization errors
-const { 
-  mockUseModel, 
-  mockUseUserPreferences,
-  mockGetMemoryCredential,
-  mockGetSessionCredential,
-  mockUseBreakpoint,
-  mockUseKeyShortcut,
-  mockUseUser
-} = vi.hoisted(() => ({
-  mockUseModel: vi.fn(() => ({
-    models: mockModels,
-    isLoading: false,
-    favoriteModels: ['test-model'],
-  })),
-  mockUseUserPreferences: vi.fn(() => ({
-    isModelHidden: vi.fn().mockReturnValue(false),
-  })),
-  mockGetMemoryCredential: vi.fn().mockReturnValue(null),
-  mockGetSessionCredential: vi.fn().mockResolvedValue(null),
-  mockUseBreakpoint: vi.fn().mockReturnValue(false), // Desktop by default
-  mockUseKeyShortcut: vi.fn(),
-  mockUseUser: vi.fn(() => ({
-    user: null,
-    isAuthenticated: false,
-  })),
-}));
+// Mock functions will be set up via vi.mocked in beforeEach
 
 // Mock the model store provider
-vi.mock('@/lib/model-store/provider', () => ({
-  useModel: mockUseModel,
-}));
+vi.mock('@/lib/model-store/provider');
 
 // Mock the user preferences provider
-vi.mock('@/lib/user-preference-store/provider', () => ({
-  useUserPreferences: mockUseUserPreferences,
-}));
+vi.mock('@/lib/user-preference-store/provider');
 
 // Mock the security module
-vi.mock('@/lib/security/web-crypto', () => ({
-  getMemoryCredential: mockGetMemoryCredential,
-  getSessionCredential: mockGetSessionCredential,
-}));
+vi.mock('@/lib/security/web-crypto');
 
 // Mock the breakpoint hook
-vi.mock('@/app/hooks/use-breakpoint', () => ({
-  useBreakpoint: mockUseBreakpoint,
-}));
+vi.mock('@/app/hooks/use-breakpoint');
 
 // Mock the key shortcut hook
-vi.mock('@/app/hooks/use-key-shortcut', () => ({
-  useKeyShortcut: mockUseKeyShortcut,
-}));
+vi.mock('@/app/hooks/use-key-shortcut');
 
 // Mock the user store provider
-vi.mock('@/lib/user-store/provider', () => ({
-  useUser: mockUseUser,
-}));
+vi.mock('@/lib/user-store/provider');
 
 // Mock providers data
 vi.mock('@/lib/providers', () => ({
@@ -92,17 +57,37 @@ describe('ModelSelector', () => {
     user = userEvent.setup();
     vi.clearAllMocks();
     mockApiEndpoints();
+
+    // Set up default mock returns
+    vi.mocked(useBreakpointHook.useBreakpoint).mockReturnValue(false);
+    vi.mocked(useKeyShortcutHook.useKeyShortcut).mockImplementation(() => {});
+    vi.mocked(modelStoreProvider.useModel).mockReturnValue({
+      models: mockModels,
+      isLoading: false,
+      favoriteModels: ['test-model'],
+    });
+    vi.mocked(userPreferenceStoreProvider.useUserPreferences).mockReturnValue({
+      isModelHidden: vi.fn().mockReturnValue(false),
+    });
+    vi.mocked(webCrypto.getMemoryCredential).mockReturnValue(null);
+    vi.mocked(webCrypto.getSessionCredential).mockResolvedValue(null);
+    vi.mocked(userStoreProvider.useUser).mockReturnValue({
+      user: null,
+      isAuthenticated: false,
+    });
   });
 
   it('should render with selected model', () => {
     renderWithProviders(<ModelSelector {...defaultProps} />);
 
     expect(screen.getByTestId('model-selector-trigger')).toBeInTheDocument();
-    expect(screen.getByTestId('selected-model-name')).toHaveTextContent('Test Model');
+    expect(screen.getByTestId('selected-model-name')).toHaveTextContent(
+      'Test Model'
+    );
   });
 
   it('should render loading state', () => {
-    mockUseModel.mockReturnValue({
+    vi.mocked(modelStoreProvider.useModel).mockReturnValue({
       models: [],
       isLoading: true,
       favoriteModels: [],
@@ -115,14 +100,11 @@ describe('ModelSelector', () => {
   });
 
   it('should show "Select model" when no model is selected', () => {
-    renderWithProviders(
-      <ModelSelector
-        {...defaultProps}
-        selectedModelId=""
-      />
-    );
+    renderWithProviders(<ModelSelector {...defaultProps} selectedModelId="" />);
 
-    expect(screen.getByTestId('selected-model-name')).toHaveTextContent('Select model');
+    expect(screen.getByTestId('selected-model-name')).toHaveTextContent(
+      'Select model'
+    );
   });
 
   it('should open dropdown on desktop', async () => {
@@ -143,7 +125,9 @@ describe('ModelSelector', () => {
     await user.click(trigger);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Search models...')).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText('Search models...')
+      ).toBeInTheDocument();
     });
   });
 
@@ -153,7 +137,7 @@ describe('ModelSelector', () => {
       { ...mockModels[0], id: 'claude-model', name: 'Claude Model' },
     ];
 
-    mockUseModel.mockReturnValue({
+    vi.mocked(modelStoreProvider.useModel).mockReturnValue({
       models: multipleModels,
       isLoading: false,
       favoriteModels: [],
@@ -188,7 +172,7 @@ describe('ModelSelector', () => {
       accessible: true,
     };
 
-    mockUseModel.mockReturnValue({
+    vi.mocked(modelStoreProvider.useModel).mockReturnValue({
       models: [modelWithCreds],
       isLoading: false,
       favoriteModels: [],
@@ -208,7 +192,9 @@ describe('ModelSelector', () => {
       expect(screen.getByTestId('model-selector-content')).toBeInTheDocument();
     });
 
-    const modelButton = await screen.findByRole('button', { name: /select model test model/i });
+    const modelButton = await screen.findByRole('button', {
+      name: /select model test model/i,
+    });
     await user.click(modelButton);
 
     expect(setSelectedModelId).toHaveBeenCalledWith('test-model');
@@ -222,7 +208,7 @@ describe('ModelSelector', () => {
       credentialInfo: { envAvailable: false },
     };
 
-    mockUseModel.mockReturnValue({
+    vi.mocked(modelStoreProvider.useModel).mockReturnValue({
       models: [accessibleModel],
       isLoading: false,
       favoriteModels: [],
@@ -239,7 +225,9 @@ describe('ModelSelector', () => {
 
     // Should show model items with badges (provider and credential status)
     await waitFor(() => {
-      const modelButton = screen.getByRole('button', { name: /select model test model/i });
+      const modelButton = screen.getByRole('button', {
+        name: /select model test model/i,
+      });
       expect(modelButton).toBeInTheDocument();
       // Model should have provider badge and credential badge text
       expect(modelButton.textContent).toMatch(/Test Model/);
@@ -247,7 +235,7 @@ describe('ModelSelector', () => {
   });
 
   it('should handle mobile view', () => {
-    mockUseBreakpoint.mockReturnValue(true); // Mobile
+    vi.mocked(useBreakpointHook.useBreakpoint).mockReturnValue(true); // Mobile
 
     renderWithProviders(<ModelSelector {...defaultProps} />);
 
@@ -256,7 +244,7 @@ describe('ModelSelector', () => {
   });
 
   it('should open mobile drawer', async () => {
-    mockUseBreakpoint.mockReturnValue(true); // Mobile
+    vi.mocked(useBreakpointHook.useBreakpoint).mockReturnValue(true); // Mobile
 
     renderWithProviders(<ModelSelector {...defaultProps} />);
 
@@ -301,13 +289,15 @@ describe('ModelSelector', () => {
       accessible: false, // Locked model
     };
 
-    mockUseModel.mockReturnValue({
+    vi.mocked(modelStoreProvider.useModel).mockReturnValue({
       models: [proModel],
       isLoading: false,
       favoriteModels: [],
     });
 
-    renderWithProviders(<ModelSelector {...defaultProps} selectedModelId="pro-model" />);
+    renderWithProviders(
+      <ModelSelector {...defaultProps} selectedModelId="pro-model" />
+    );
 
     const trigger = screen.getByTestId('model-selector-trigger');
     await user.click(trigger);
@@ -318,7 +308,7 @@ describe('ModelSelector', () => {
   });
 
   it('should handle guest BYOK credentials', async () => {
-    mockGetMemoryCredential.mockReturnValue('mock-credential');
+    vi.mocked(webCrypto.getMemoryCredential).mockReturnValue('mock-credential');
 
     renderWithProviders(<ModelSelector {...defaultProps} />);
 
@@ -326,10 +316,13 @@ describe('ModelSelector', () => {
     await user.click(trigger);
 
     // Wait for async credential check to complete and then look for text
-    await waitFor(() => {
-      const elements = screen.queryAllByText('Guest BYOK');
-      return elements.length > 0;
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        const elements = screen.queryAllByText('Guest BYOK');
+        return elements.length > 0;
+      },
+      { timeout: 3000 }
+    );
   });
 
   it('should show no results message when search returns empty', async () => {
@@ -347,7 +340,7 @@ describe('ModelSelector', () => {
   });
 
   it('should show loading message when models are loading', async () => {
-    mockUseModel.mockReturnValue({
+    vi.mocked(modelStoreProvider.useModel).mockReturnValue({
       models: [],
       isLoading: true,
       favoriteModels: [],
@@ -365,10 +358,7 @@ describe('ModelSelector', () => {
 
   it('should apply custom className', () => {
     renderWithProviders(
-      <ModelSelector
-        {...defaultProps}
-        className="custom-class"
-      />
+      <ModelSelector {...defaultProps} className="custom-class" />
     );
 
     const trigger = screen.getByTestId('model-selector-trigger');
@@ -393,7 +383,14 @@ describe('ModelSelector', () => {
     renderWithProviders(
       <div>
         <ModelSelector {...defaultProps} />
-        <button data-testid="outside-element" type="button" style={{ pointerEvents: 'auto' }}>Outside</button>
+        <button
+          type="button"
+          data-testid="outside-element"
+          type="button"
+          style={{ pointerEvents: 'auto' }}
+        >
+          Outside
+        </button>
       </div>
     );
 
@@ -408,7 +405,9 @@ describe('ModelSelector', () => {
     await user.keyboard('{Escape}');
 
     await waitFor(() => {
-      expect(screen.queryByTestId('model-selector-content')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('model-selector-content')
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -429,7 +428,8 @@ describe('ModelSelector', () => {
     // Reopen dropdown
     await user.click(trigger);
 
-    const newSearchInput = await screen.findByPlaceholderText('Search models...');
+    const newSearchInput =
+      await screen.findByPlaceholderText('Search models...');
     expect(newSearchInput).toHaveValue('');
   });
 });

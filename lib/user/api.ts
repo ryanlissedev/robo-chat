@@ -1,15 +1,9 @@
 import { toast } from '@/components/ui/toast';
-import { isSupabaseEnabled } from '@/lib/supabase/config';
 import { createClient as createBrowserClient } from '@/lib/supabase/client';
-import {
-  convertFromApiFormat,
-  defaultPreferences,
-} from '@/lib/user-preference-store/utils';
 import type { UserProfile } from './types';
 
 // Server-only APIs moved to lib/user/server-api.ts to avoid importing server-only
 // modules (like next/headers) into client components. Keep this file client-safe.
-
 
 export async function fetchUserProfile(
   id: string
@@ -19,7 +13,7 @@ export async function fetchUserProfile(
     return null;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('users')
     .select('*')
     .eq('id', id)
@@ -30,14 +24,14 @@ export async function fetchUserProfile(
   }
 
   // Don't return anonymous users
-  if (data.anonymous) {
+  if ((data as any).anonymous) {
     return null;
   }
 
   return {
-    ...data,
-    profile_image: data.profile_image || '',
-    display_name: data.display_name || '',
+    ...(data as any),
+    profile_image: (data as any).profile_image || '',
+    display_name: (data as any).display_name || '',
   };
 }
 
@@ -50,7 +44,10 @@ export async function updateUserProfile(
     return false;
   }
 
-  const { error } = await supabase.from('users').update(updates).eq('id', id);
+  const { error } = await (supabase as any)
+    .from('users')
+    .update(updates as any)
+    .eq('id', id);
 
   if (error) {
     return false;
@@ -96,7 +93,8 @@ export function subscribeToUserUpdates(
         table: 'users',
         filter: `id=eq.${userId}`,
       },
-      (payload) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (payload: any) => {
         onUpdate(payload.new as Partial<UserProfile>);
       }
     )

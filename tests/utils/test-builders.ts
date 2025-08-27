@@ -3,7 +3,7 @@
  * Uses the Builder pattern to create complex objects with sensible defaults
  */
 
-import type { User, Session } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 
 // ============================================================================
 // Base Builder Class
@@ -127,7 +127,10 @@ export class UserBuilder extends BaseBuilder<User> {
     return new UserBuilder()
       .withEmail('admin@example.com')
       .withRole('admin')
-      .withAppMetadata({ role: 'admin', permissions: ['read', 'write', 'delete'] });
+      .withAppMetadata({
+        role: 'admin',
+        permissions: ['read', 'write', 'delete'],
+      });
   }
 
   static guest(): UserBuilder {
@@ -156,12 +159,14 @@ export class SessionBuilder extends BaseBuilder<Session> {
   private withDefaults(): this {
     const now = Math.floor(Date.now() / 1000);
     this.data = {
-      access_token: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${Buffer.from(JSON.stringify({
-        sub: 'user_123',
-        aud: 'authenticated',
-        exp: now + 3600,
-        iat: now,
-      })).toString('base64')}.signature`,
+      access_token: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${Buffer.from(
+        JSON.stringify({
+          sub: 'user_123',
+          aud: 'authenticated',
+          exp: now + 3600,
+          iat: now,
+        })
+      ).toString('base64')}.signature`,
       token_type: 'bearer',
       expires_in: 3600,
       expires_at: now + 3600,
@@ -273,7 +278,8 @@ export class ChatMessageBuilder extends BaseBuilder<ChatMessage> {
   }
 
   withTimestamp(timestamp: string | Date): this {
-    this.data.timestamp = typeof timestamp === 'string' ? timestamp : timestamp.toISOString();
+    this.data.timestamp =
+      typeof timestamp === 'string' ? timestamp : timestamp.toISOString();
     return this;
   }
 
@@ -312,7 +318,9 @@ export class ChatMessageBuilder extends BaseBuilder<ChatMessage> {
   }
 
   asAssistant(): this {
-    return this.withRole('assistant').withContent('Hello! How can I help you today?');
+    return this.withRole('assistant').withContent(
+      'Hello! How can I help you today?'
+    );
   }
 
   asSystem(): this {
@@ -450,14 +458,16 @@ export class ConversationBuilder extends BaseBuilder<Conversation> {
       ChatMessageBuilder.user('Hello!').build(),
       ChatMessageBuilder.assistant('Hi there! How can I help you?').build(),
       ChatMessageBuilder.user('What is TypeScript?').build(),
-      ChatMessageBuilder.assistant('TypeScript is a typed superset of JavaScript...').build(),
+      ChatMessageBuilder.assistant(
+        'TypeScript is a typed superset of JavaScript...'
+      ).build(),
     ];
     return this.withMessages(messages);
   }
 
   withLongConversation(): this {
-    const messages = Array.from({ length: 20 }, (_, i) => 
-      i % 2 === 0 
+    const messages = Array.from({ length: 20 }, (_, i) =>
+      i % 2 === 0
         ? ChatMessageBuilder.user(`User message ${i + 1}`).build()
         : ChatMessageBuilder.assistant(`Assistant response ${i + 1}`).build()
     );
@@ -550,7 +560,8 @@ export class FileUploadBuilder extends BaseBuilder<FileUpload> {
 
   withContent(content: string | ArrayBuffer): this {
     this.data.content = content;
-    this.data.size = typeof content === 'string' ? content.length : content.byteLength;
+    this.data.size =
+      typeof content === 'string' ? content.length : content.byteLength;
     return this;
   }
 
@@ -570,11 +581,15 @@ export class FileUploadBuilder extends BaseBuilder<FileUpload> {
   }
 
   asImage(): this {
-    return this.withFilename('image.png').withMimetype('image/png').withSize(1024);
+    return this.withFilename('image.png')
+      .withMimetype('image/png')
+      .withSize(1024);
   }
 
   asDocument(): this {
-    return this.withFilename('document.pdf').withMimetype('application/pdf').withSize(2048);
+    return this.withFilename('document.pdf')
+      .withMimetype('application/pdf')
+      .withSize(2048);
   }
 
   asJSON(): this {

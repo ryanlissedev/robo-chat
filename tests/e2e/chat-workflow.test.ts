@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import type { Page } from '@playwright/test';
 import { mockApiResponse, waitForPageReady } from './fixtures';
 
 test.describe('Chat Workflow Integration', () => {
@@ -64,7 +63,9 @@ test.describe('Chat Workflow Integration', () => {
   });
 
   test.describe('Complete Chat Creation Flow', () => {
-    test('should create new chat and handle first message', async ({ page }) => {
+    test('should create new chat and handle first message', async ({
+      page,
+    }) => {
       // Mock chat creation API
       await page.route('**/api/create-chat', async (route) => {
         await route.fulfill({
@@ -196,7 +197,10 @@ test.describe('Chat Workflow Integration', () => {
         });
       });
 
-      await page.fill('[data-testid="chat-input"]', 'Can you help me with JavaScript?');
+      await page.fill(
+        '[data-testid="chat-input"]',
+        'Can you help me with JavaScript?'
+      );
       await page.click('[data-testid="send-button"]');
 
       await page.waitForTimeout(2000);
@@ -321,7 +325,7 @@ test.describe('Chat Workflow Integration', () => {
     test('should upload and process text file', async ({ page }) => {
       // Create a temporary test file
       const testFileContent = 'This is a test file for upload.';
-      const testFile = await page.evaluate(
+      const _testFile = await page.evaluate(
         (content) =>
           new File([content], 'test.txt', {
             type: 'text/plain',
@@ -354,9 +358,9 @@ test.describe('Chat Workflow Integration', () => {
 
       // Verify file appears in upload list
       await expect(page.locator('[data-testid="uploaded-file"]')).toBeVisible();
-      await expect(
-        page.locator('[data-testid="uploaded-file"]')
-      ).toContainText('test.txt');
+      await expect(page.locator('[data-testid="uploaded-file"]')).toContainText(
+        'test.txt'
+      );
     });
 
     test('should handle file upload errors', async ({ page }) => {
@@ -377,9 +381,7 @@ test.describe('Chat Workflow Integration', () => {
       });
 
       // Should show error notification
-      await expect(
-        page.locator('[data-testid="upload-error"]')
-      ).toBeVisible();
+      await expect(page.locator('[data-testid="upload-error"]')).toBeVisible();
       await expect(page.locator('[data-testid="upload-error"]')).toContainText(
         /too large|size/i
       );
@@ -413,7 +415,9 @@ test.describe('Chat Workflow Integration', () => {
       await page.click('[data-testid="remove-file-document.pdf"]');
 
       // Verify file is removed
-      await expect(page.locator('[data-testid="uploaded-file"]')).toHaveCount(0);
+      await expect(page.locator('[data-testid="uploaded-file"]')).toHaveCount(
+        0
+      );
     });
   });
 
@@ -471,7 +475,9 @@ test.describe('Chat Workflow Integration', () => {
         await page.click('[data-testid="send-button"]');
 
         // Verify branch navigation exists
-        const branchNavigation = page.locator('[data-testid="branch-navigation"]');
+        const branchNavigation = page.locator(
+          '[data-testid="branch-navigation"]'
+        );
         if (await branchNavigation.isVisible()) {
           await expect(branchNavigation).toBeVisible();
         }
@@ -514,7 +520,8 @@ test.describe('Chat Workflow Integration', () => {
             contentType: 'application/json',
             body: JSON.stringify({
               format: 'markdown',
-              content: '# Chat Export\n\n**User:** Export test\n**Assistant:** Export test response',
+              content:
+                '# Chat Export\n\n**User:** Export test\n**Assistant:** Export test response',
             }),
           });
         });
@@ -633,7 +640,9 @@ test.describe('Chat Workflow Integration', () => {
 
       // Should show typing/loading indicator
       await expect(
-        page.locator('[data-testid="typing-indicator"], [data-testid="message-loading"]')
+        page.locator(
+          '[data-testid="typing-indicator"], [data-testid="message-loading"]'
+        )
       ).toBeVisible();
 
       // Wait for response
@@ -641,7 +650,9 @@ test.describe('Chat Workflow Integration', () => {
 
       // Typing indicator should disappear
       await expect(
-        page.locator('[data-testid="typing-indicator"], [data-testid="message-loading"]')
+        page.locator(
+          '[data-testid="typing-indicator"], [data-testid="message-loading"]'
+        )
       ).toBeHidden();
     });
   });

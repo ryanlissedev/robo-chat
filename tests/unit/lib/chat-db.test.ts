@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { storeAssistantMessage } from '@/app/api/chat/db';
-import { logWarning } from '@/lib/utils/logger';
 import type {
   ContentPart,
   Message,
   StoreAssistantMessageParams,
   SupabaseClientType,
 } from '@/app/types/api.types';
+import { logWarning } from '@/lib/utils/logger';
 
 // Mock dependencies
 vi.mock('@/lib/utils/logger', () => ({
@@ -91,7 +91,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should handle empty content array', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [],
         },
@@ -139,7 +138,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should handle non-array content', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: 'Simple string content' as any,
         },
@@ -189,7 +187,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should combine multiple text parts', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [
             { type: 'text', text: 'First paragraph.' },
@@ -245,7 +242,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should handle text parts with empty strings', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [
             { type: 'text', text: 'Valid text' },
@@ -303,7 +299,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should process tool invocation with result state', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [
             {
@@ -375,7 +370,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should handle tool invocation without toolCallId', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [
             {
@@ -433,7 +427,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should merge tool invocations by toolCallId', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [
             {
@@ -491,7 +484,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
 
       const messageInsert = mockSupabaseClient.from('messages').insert as any;
       const call = messageInsert.mock.calls[0][0];
-      
+
       expect(call.parts).toHaveLength(1);
       expect(call.parts[0]).toMatchObject({
         type: 'tool-invocation',
@@ -509,7 +502,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should handle tool invocation with missing args', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [
             {
@@ -580,7 +572,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should process reasoning parts with text', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [
             {
@@ -641,7 +632,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should handle reasoning parts without text', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [
             {
@@ -701,7 +691,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should preserve step-start parts', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [
             {
@@ -763,7 +752,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should process tool results and create tool invocation parts', async () => {
       const messages: Message[] = [
         {
-
           role: 'tool',
           content: [
             {
@@ -829,7 +817,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should handle tool results with missing properties', async () => {
       const messages: Message[] = [
         {
-
           role: 'tool',
           content: [
             {
@@ -895,7 +882,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should proceed when chat exists', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [{ type: 'text', text: 'Test message' }],
         },
@@ -937,7 +923,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should create chat when it does not exist', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [{ type: 'text', text: 'Test message' }],
         },
@@ -956,9 +941,9 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
 
       mockSupabaseClient.from = vi.fn((table) => {
         if (table === 'chats') {
-          return { 
-            select: mockSelectForCheck, 
-            insert: mockInsertForChat 
+          return {
+            select: mockSelectForCheck,
+            insert: mockInsertForChat,
           };
         }
         return { insert: mockInsertForMessage };
@@ -989,7 +974,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should skip saving when chat creation fails', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [{ type: 'text', text: 'Test message' }],
         },
@@ -1003,15 +987,15 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
           }),
         })),
       }));
-      const mockInsertForChat = vi.fn().mockResolvedValue({ 
-        error: { message: 'Insert failed' } 
+      const mockInsertForChat = vi.fn().mockResolvedValue({
+        error: { message: 'Insert failed' },
       });
 
       mockSupabaseClient.from = vi.fn((table) => {
         if (table === 'chats') {
-          return { 
-            select: mockSelectForCheck, 
-            insert: mockInsertForChat 
+          return {
+            select: mockSelectForCheck,
+            insert: mockInsertForChat,
           };
         }
         return { insert: vi.fn() };
@@ -1034,16 +1018,15 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       );
 
       // Message insert should not be called
-      const messageTableCalls = vi.mocked(mockSupabaseClient.from).mock.calls.filter(
-        (call: any) => call[0] === 'messages'
-      );
+      const messageTableCalls = vi
+        .mocked(mockSupabaseClient.from)
+        .mock.calls.filter((call: any) => call[0] === 'messages');
       expect(messageTableCalls).toHaveLength(0);
     });
 
     it('should skip saving when userId is not provided and chat does not exist', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [{ type: 'text', text: 'Test message' }],
         },
@@ -1085,7 +1068,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should handle database errors during chat existence check', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [{ type: 'text', text: 'Test message' }],
         },
@@ -1142,19 +1124,18 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should throw error when message insertion fails', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [{ type: 'text', text: 'Test message' }],
         },
       ];
 
-      const mockInsertForMessage = vi.fn().mockResolvedValue({ 
-        error: { message: 'Database constraint violation' } 
+      const mockInsertForMessage = vi.fn().mockResolvedValue({
+        error: { message: 'Database constraint violation' },
       });
 
       mockSupabaseClient.from = vi.fn((table) => {
         if (table === 'chats') {
-          return { 
+          return {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
@@ -1163,7 +1144,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
                 }),
               })),
             })),
-            insert: vi.fn() 
+            insert: vi.fn(),
           };
         }
         return { insert: mockInsertForMessage };
@@ -1186,7 +1167,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should handle null error response', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [{ type: 'text', text: 'Test message' }],
         },
@@ -1196,7 +1176,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
 
       mockSupabaseClient.from = vi.fn((table) => {
         if (table === 'chats') {
-          return { 
+          return {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
@@ -1205,7 +1185,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
                 }),
               })),
             })),
-            insert: vi.fn() 
+            insert: vi.fn(),
           };
         }
         return { insert: mockInsertForMessage };
@@ -1228,7 +1208,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should handle mixed content types in correct order', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [
             { type: 'text', text: 'First text' },
@@ -1256,7 +1235,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
           ],
         },
         {
-
           role: 'tool',
           content: [
             {
@@ -1302,10 +1280,10 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
 
       expect(call.content).toBe('First text\n\nSecond text');
       expect(call.parts).toHaveLength(6); // 2 text + 1 reasoning + 1 step-start + 2 tool invocations
-      
+
       // Check that tool invocations are at the end
-      const toolInvocations = call.parts.filter((part: any) => 
-        part.type === 'tool-invocation'
+      const toolInvocations = call.parts.filter(
+        (part: any) => part.type === 'tool-invocation'
       );
       expect(toolInvocations).toHaveLength(2);
     });
@@ -1355,7 +1333,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
     it('should ignore unknown content types', async () => {
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [
             { type: 'text', text: 'Valid text' },
@@ -1410,14 +1387,15 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
 
   describe('storeAssistantMessage - Performance and Edge Cases', () => {
     it('should handle large number of content parts efficiently', async () => {
-      const largeContentArray: ContentPart[] = Array(1000).fill(null).map((_, i) => ({
-        type: 'text',
-        text: `Text part ${i}`,
-      }));
+      const largeContentArray: ContentPart[] = Array(1000)
+        .fill(null)
+        .map((_, i) => ({
+          type: 'text',
+          text: `Text part ${i}`,
+        }));
 
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: largeContentArray,
         },
@@ -1453,7 +1431,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
 
       const messageInsert = mockSupabaseClient.from('messages').insert as any;
       const call = messageInsert.mock.calls[0][0];
-      
+
       expect(call.parts).toHaveLength(1000);
       expect(call.content.split('\n\n')).toHaveLength(1000);
     });
@@ -1462,7 +1440,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       const veryLongText = 'A'.repeat(100000);
       const messages: Message[] = [
         {
-
           role: 'assistant',
           content: [{ type: 'text', text: veryLongText }],
         },
@@ -1521,7 +1498,6 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
 
       const messages: Message[] = [
         {
-
           role: 'tool',
           content: [
             {
@@ -1564,7 +1540,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
 
       const messageInsert = mockSupabaseClient.from('messages').insert as any;
       const call = messageInsert.mock.calls[0][0];
-      
+
       expect(call.parts[0].toolInvocation.result).toEqual(complexResult);
     });
   });

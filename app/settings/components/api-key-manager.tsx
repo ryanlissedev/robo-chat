@@ -1,9 +1,8 @@
 'use client';
 
-import { Check, Eye, EyeOff, Key, X, Info } from 'lucide-react';
+import { Check, Eye, EyeOff, Info, Key, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { clientLogger } from '@/lib/utils/client-logger';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,18 +21,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { createClient } from '@/lib/supabase/client';
 import {
-  setMemoryCredential,
+  clearAllGuestCredentialsFor,
   getMemoryCredential,
   getMemoryCredentialPlaintext,
-  setSessionCredential,
-  getSessionCredential,
-  setPersistentCredential,
   getPersistentCredential,
-  clearAllGuestCredentialsFor,
+  getSessionCredential,
   maskKey,
+  setMemoryCredential,
+  setPersistentCredential,
+  setSessionCredential,
 } from '@/lib/security/web-crypto';
+import { createClient } from '@/lib/supabase/client';
+import { clientLogger } from '@/lib/utils/client-logger';
 
 type ApiKey = {
   id: string;
@@ -135,13 +135,16 @@ const STORAGE_SCOPES = [
   {
     value: 'persistent' as StorageScope,
     label: 'Persistent',
-    description: 'Key is encrypted and stored permanently (requires passphrase)',
+    description:
+      'Key is encrypted and stored permanently (requires passphrase)',
   },
 ] as const;
 
 export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
   const [apiKeys, setApiKeys] = useState<Record<string, ApiKey>>({});
-  const [guestCredentials, setGuestCredentials] = useState<Record<string, GuestCredential>>({});
+  const [guestCredentials, setGuestCredentials] = useState<
+    Record<string, GuestCredential>
+  >({});
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [newKeys, setNewKeys] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
@@ -155,7 +158,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
     if (isGuest) {
       // Load guest credentials from local storage
       const guestCreds: Record<string, GuestCredential> = {};
-      
+
       for (const provider of API_PROVIDERS) {
         // Check tab storage first
         const memCred = getMemoryCredential(provider.id);
@@ -168,7 +171,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
           };
           continue;
         }
-        
+
         // Check session storage
         try {
           const sessCred = await getSessionCredential(provider.id);
@@ -178,21 +181,20 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
               plaintext: sessCred.plaintext,
               scope: 'session',
             };
-            continue;
           }
         } catch {
           // Session storage failed, continue to persistent
         }
-        
+
         // Persistent storage requires passphrase, skip for now
       }
-      
+
       setGuestCredentials(guestCreds);
       return;
     }
-    
+
     if (!supabase) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('user_api_keys')
@@ -201,7 +203,10 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
 
       if (error) {
         // Handle case where table doesn't exist yet
-        if (error.code === '42P01' || error.message.includes('does not exist')) {
+        if (
+          error.code === '42P01' ||
+          error.message.includes('does not exist')
+        ) {
           clientLogger.warn('user_api_keys table does not exist yet');
           return;
         }
@@ -209,8 +214,8 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
       }
 
       const keysMap: Record<string, ApiKey> = {};
-      data?.forEach((key) => {
-        keysMap[key.provider] = key;
+      ((data as any[]) || []).forEach((key: any) => {
+        keysMap[key.provider] = key as ApiKey;
       });
       setApiKeys(keysMap);
     } catch (error) {
@@ -246,7 +251,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
         }
 
         let result: { masked: string };
-        
+
         switch (storageScope) {
           case 'request':
             // For request-only, we don't store it anywhere
@@ -286,7 +291,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
         // Mask the key for storage (show only first 3 and last 4 characters)
         const maskedKey = `${key.substring(0, 3)}...${key.substring(key.length - 4)}`;
 
-        const { error } = await supabase.from('user_api_keys').upsert(
+        const { error } = await (supabase as any).from('user_api_keys').upsert(
           {
             user_id: userId,
             provider,
@@ -301,8 +306,13 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
 
         if (error) {
           // Handle case where table doesn't exist yet
-          if (error.code === '42P01' || error.message.includes('does not exist')) {
-            toast.error('API key storage not yet configured. Please contact support.');
+          if (
+            error.code === '42P01' ||
+            error.message.includes('does not exist')
+          ) {
+            toast.error(
+              'API key storage not yet configured. Please contact support.'
+            );
             return;
           }
           throw error;
@@ -338,7 +348,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
       if (isGuest) {
         // Clear guest storage
         clearAllGuestCredentialsFor(provider);
-        
+
         const newGuestCredentials = { ...guestCredentials };
         delete newGuestCredentials[provider];
         setGuestCredentials(newGuestCredentials);
@@ -359,7 +369,10 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
 
         if (error) {
           // Handle case where table doesn't exist yet
-          if (error.code === '42P01' || error.message.includes('does not exist')) {
+          if (
+            error.code === '42P01' ||
+            error.message.includes('does not exist')
+          ) {
             clientLogger.warn('user_api_keys table does not exist yet');
             return;
           }
@@ -404,7 +417,10 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
     }
   };
 
-  const loadPersistentCredential = async (provider: string, passphraseInput: string) => {
+  const loadPersistentCredential = async (
+    provider: string,
+    passphraseInput: string
+  ) => {
     try {
       const result = await getPersistentCredential(provider, passphraseInput);
       if (result) {
@@ -435,13 +451,17 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
               Storage Settings (Guest Mode)
             </CardTitle>
             <CardDescription>
-              Choose how your API keys are stored. Keys are never sent to our servers in guest mode.
+              Choose how your API keys are stored. Keys are never sent to our
+              servers in guest mode.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="storage-scope">Storage Scope</Label>
-              <Select value={storageScope} onValueChange={(value: StorageScope) => setStorageScope(value)}>
+              <Select
+                value={storageScope}
+                onValueChange={(value: StorageScope) => setStorageScope(value)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -450,14 +470,16 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
                     <SelectItem key={scope.value} value={scope.value}>
                       <div className="flex flex-col">
                         <span>{scope.label}</span>
-                        <span className="text-muted-foreground text-xs">{scope.description}</span>
+                        <span className="text-muted-foreground text-xs">
+                          {scope.description}
+                        </span>
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
+
             {storageScope === 'persistent' && (
               <div className="space-y-2">
                 <Label htmlFor="passphrase">Encryption Passphrase</Label>
@@ -476,19 +498,26 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
                     size="icon"
                     onClick={() => setShowPassphrase(!showPassphrase)}
                   >
-                    {showPassphrase ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassphrase ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
                 <p className="text-muted-foreground text-xs">
-                  Your keys will be encrypted with this passphrase and stored in your browser&apos;s localStorage.
+                  Your keys will be encrypted with this passphrase and stored in
+                  your browser&apos;s localStorage.
                 </p>
               </div>
             )}
-            
+
             <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
               <Info className="h-4 w-4 mt-0.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
               <p className="text-blue-800 dark:text-blue-200 text-sm">
-                {isGuest ? 'Guest mode: All keys are stored locally in your browser' : 'Authenticated: Keys are stored securely on our servers'}
+                {isGuest
+                  ? 'Guest mode: All keys are stored locally in your browser'
+                  : 'Authenticated: Keys are stored securely on our servers'}
               </p>
             </div>
           </CardContent>
@@ -496,9 +525,13 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
       )}
 
       {API_PROVIDERS.map((provider) => {
-        const hasKey = isGuest ? !!guestCredentials[provider.id] : !!apiKeys[provider.id];
+        const hasKey = isGuest
+          ? !!guestCredentials[provider.id]
+          : !!apiKeys[provider.id];
         const isShowing = showKeys[provider.id];
-        const maskedKey = isGuest ? guestCredentials[provider.id]?.masked : apiKeys[provider.id]?.masked_key;
+        const maskedKey = isGuest
+          ? guestCredentials[provider.id]?.masked
+          : apiKeys[provider.id]?.masked_key;
 
         return (
           <Card key={provider.id}>
@@ -517,7 +550,9 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
                     {hasKey && (
                       <Badge className="ml-2" variant="secondary">
                         <Check className="mr-1 h-3 w-3" />
-                        {isGuest && guestCredentials[provider.id] ? `Stored (${guestCredentials[provider.id].scope})` : 'Configured'}
+                        {isGuest && guestCredentials[provider.id]
+                          ? `Stored (${guestCredentials[provider.id].scope})`
+                          : 'Configured'}
                       </Badge>
                     )}
                   </CardTitle>
@@ -530,9 +565,7 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between rounded-lg bg-muted p-3">
                     <span className="font-mono text-sm">
-                      {isShowing
-                        ? '••••••••••••••••'
-                        : maskedKey}
+                      {isShowing ? '••••••••••••••••' : maskedKey}
                     </span>
                     <div className="flex gap-2">
                       <Button
@@ -577,36 +610,46 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
                       ).toLocaleDateString()}
                     </p>
                   )}
-                  {isGuest && guestCredentials[provider.id]?.scope === 'persistent' && (
-                    <div className="space-y-2">
-                      <Label htmlFor={`load-${provider.id}`}>Load from persistent storage:</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id={`load-${provider.id}`}
-                          type="password"
-                          placeholder="Enter passphrase"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              loadPersistentCredential(provider.id, e.currentTarget.value);
-                              e.currentTarget.value = '';
-                            }
-                          }}
-                        />
-                        <Button
-                          size="sm"
-                          onClick={(e) => {
-                            const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                            if (input?.value) {
-                              loadPersistentCredential(provider.id, input.value);
-                              input.value = '';
-                            }
-                          }}
-                        >
-                          Load
-                        </Button>
+                  {isGuest &&
+                    guestCredentials[provider.id]?.scope === 'persistent' && (
+                      <div className="space-y-2">
+                        <Label htmlFor={`load-${provider.id}`}>
+                          Load from persistent storage:
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id={`load-${provider.id}`}
+                            type="password"
+                            placeholder="Enter passphrase"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                loadPersistentCredential(
+                                  provider.id,
+                                  e.currentTarget.value
+                                );
+                                e.currentTarget.value = '';
+                              }
+                            }}
+                          />
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              const input = e.currentTarget
+                                .previousElementSibling as HTMLInputElement;
+                              if (input?.value) {
+                                loadPersistentCredential(
+                                  provider.id,
+                                  input.value
+                                );
+                                input.value = '';
+                              }
+                            }}
+                          >
+                            Load
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -657,15 +700,23 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
         <CardContent className="space-y-2 text-muted-foreground text-sm">
           {isGuest ? (
             <>
-              <p>• <strong>Guest Mode:</strong> Keys are stored locally in your browser only</p>
+              <p>
+                • <strong>Guest Mode:</strong> Keys are stored locally in your
+                browser only
+              </p>
               <p>• Keys are never transmitted to our servers</p>
-              <p>• Persistent keys are encrypted with AES-256-GCM using your passphrase</p>
+              <p>
+                • Persistent keys are encrypted with AES-256-GCM using your
+                passphrase
+              </p>
               <p>• Tab/Session keys use ephemeral encryption keys</p>
               <p>• Request-only keys are discarded immediately after use</p>
             </>
           ) : (
             <>
-              <p>• Your API keys are encrypted and stored securely on our servers</p>
+              <p>
+                • Your API keys are encrypted and stored securely on our servers
+              </p>
               <p>• Keys are never sent to third parties</p>
               <p>• All database communications are encrypted</p>
             </>

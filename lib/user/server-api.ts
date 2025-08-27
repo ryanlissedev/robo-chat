@@ -1,6 +1,9 @@
-import { createClient as createServerClient } from '@/lib/supabase/server';
 import { isSupabaseEnabled } from '@/lib/supabase/config';
-import { convertFromApiFormat, defaultPreferences } from '@/lib/user-preference-store/utils';
+import { createClient as createServerClient } from '@/lib/supabase/server';
+import {
+  convertFromApiFormat,
+  defaultPreferences,
+} from '@/lib/user-preference-store/utils';
 import type { UserProfile } from './types';
 
 export async function getSupabaseUser() {
@@ -40,41 +43,45 @@ export async function getUserProfile(): Promise<UserProfile | null> {
     } as UserProfile;
   }
 
-  const { data: userProfileData } = await supabase
+  const { data: userProfileData } = await (supabase as any)
     .from('users')
     .select('*, user_preferences(*)')
     .eq('id', user.id)
     .single();
 
-  if (userProfileData?.anonymous) {
+  if ((userProfileData as any)?.anonymous) {
     return {
-      id: userProfileData.id,
-      email: userProfileData.email || 'guest@zola.chat',
-      display_name: userProfileData.display_name || 'Guest',
-      profile_image: userProfileData.profile_image || '',
+      id: (userProfileData as any).id,
+      email: (userProfileData as any).email || 'guest@zola.chat',
+      display_name: (userProfileData as any).display_name || 'Guest',
+      profile_image: (userProfileData as any).profile_image || '',
       anonymous: true,
       preferences: defaultPreferences,
     } as UserProfile;
   }
 
-  const formattedPreferences = userProfileData?.user_preferences
+  const formattedPreferences = (userProfileData as any)?.user_preferences
     ? convertFromApiFormat({
-        layout: userProfileData.user_preferences.layout ?? undefined,
+        layout: (userProfileData as any).user_preferences.layout ?? undefined,
         prompt_suggestions:
-          userProfileData.user_preferences.prompt_suggestions ?? undefined,
+          (userProfileData as any).user_preferences.prompt_suggestions ??
+          undefined,
         show_tool_invocations:
-          userProfileData.user_preferences.show_tool_invocations ?? undefined,
+          (userProfileData as any).user_preferences.show_tool_invocations ??
+          undefined,
         show_conversation_previews:
-          userProfileData.user_preferences.show_conversation_previews ?? undefined,
+          (userProfileData as any).user_preferences
+            .show_conversation_previews ?? undefined,
         multi_model_enabled:
-          userProfileData.user_preferences.multi_model_enabled ?? undefined,
+          (userProfileData as any).user_preferences.multi_model_enabled ??
+          undefined,
         hidden_models:
-          userProfileData.user_preferences.hidden_models ?? undefined,
+          (userProfileData as any).user_preferences.hidden_models ?? undefined,
       })
     : undefined;
 
   return {
-    ...userProfileData,
+    ...(userProfileData as any),
     profile_image: user.user_metadata?.avatar_url ?? '',
     display_name: user.user_metadata?.name ?? '',
     preferences: formattedPreferences ?? defaultPreferences,

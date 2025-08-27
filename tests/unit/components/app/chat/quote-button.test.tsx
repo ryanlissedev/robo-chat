@@ -1,8 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { QuoteButton } from '@/components/app/chat/quote-button';
-import { createRef } from 'react';
 
 // Mock Lucide React icons
 vi.mock('lucide-react', () => ({
@@ -16,40 +15,36 @@ vi.mock('lucide-react', () => ({
 // Mock UI components
 vi.mock('@/components/ui/button', () => ({
   Button: ({ children, onClick, className, ...props }: any) => (
-    <button
-      onClick={onClick}
-      className={className}
-      {...props}
-    >
+    <button type="button" onClick={onClick} className={className} {...props}>
       {children}
     </button>
   ),
 }));
 
 // Store click outside callbacks for manual triggering in tests
-let clickOutsideCallbacks = new Map();
+const clickOutsideCallbacks = new Map();
 
 // Mock motion primitives
 vi.mock('@/components/motion-primitives/useClickOutside', () => ({
   default: (ref: any, callback: () => void) => {
     // Store callback immediately, and also set up a watcher for when ref.current changes
     const storeCallback = () => {
-      if (ref && ref.current) {
+      if (ref?.current) {
         clickOutsideCallbacks.set(ref.current, callback);
       }
     };
-    
+
     // Store immediately if ref is available
     storeCallback();
-    
+
     // Also check periodically for when ref.current gets set (React refs are async)
     const interval = setInterval(() => {
-      if (ref && ref.current) {
+      if (ref?.current) {
         clickOutsideCallbacks.set(ref.current, callback);
         clearInterval(interval);
       }
     }, 10);
-    
+
     // Clear interval after a reasonable timeout
     setTimeout(() => clearInterval(interval), 1000);
   },
@@ -100,21 +95,23 @@ describe('QuoteButton', () => {
   describe('Rendering', () => {
     it('should render quote button with icon', () => {
       renderQuoteButton();
-      
-      expect(screen.getByRole('button', { name: 'Ask follow up' })).toBeInTheDocument();
+
+      expect(
+        screen.getByRole('button', { name: 'Ask follow up' })
+      ).toBeInTheDocument();
       expect(screen.getByTestId('quote-icon')).toBeInTheDocument();
     });
 
     it('should have proper ARIA label', () => {
       renderQuoteButton();
-      
+
       const button = screen.getByRole('button');
       expect(button).toHaveAttribute('aria-label', 'Ask follow up');
     });
 
     it('should apply correct CSS classes', () => {
       renderQuoteButton();
-      
+
       const container = screen.getByRole('button').parentElement;
       expect(container).toHaveClass(
         'absolute',
@@ -123,7 +120,7 @@ describe('QuoteButton', () => {
         'gap-2',
         'rounded-full'
       );
-      
+
       const button = screen.getByRole('button');
       expect(button).toHaveClass(
         'flex',
@@ -143,14 +140,14 @@ describe('QuoteButton', () => {
       const mockElement = {
         getBoundingClientRect: mockGetBoundingClientRect,
       } as unknown as HTMLElement;
-      
+
       const messageContainerRef = { current: mockElement };
 
-      renderQuoteButton({ 
+      renderQuoteButton({
         mousePosition: { x: 150, y: 250 },
-        messageContainerRef 
+        messageContainerRef,
       });
-      
+
       const container = screen.getByRole('button').parentElement;
       expect(container).toHaveStyle({
         top: '140px', // 250 - 50 - 60 (buttonHeight) = 140px
@@ -163,7 +160,7 @@ describe('QuoteButton', () => {
       const messageContainerRef = { current: null };
 
       renderQuoteButton({ messageContainerRef });
-      
+
       const container = screen.getByRole('button').parentElement;
       expect(container).toHaveStyle({
         top: '0px',
@@ -176,14 +173,14 @@ describe('QuoteButton', () => {
       const mockElement = {
         getBoundingClientRect: mockGetBoundingClientRect,
       } as unknown as HTMLElement;
-      
+
       const messageContainerRef = { current: mockElement };
 
-      const { rerender } = renderQuoteButton({ 
+      const { rerender } = renderQuoteButton({
         mousePosition: { x: 300, y: 400 },
-        messageContainerRef 
+        messageContainerRef,
       });
-      
+
       let container = screen.getByRole('button').parentElement;
       expect(container).toHaveStyle({
         top: '290px', // 400 - 50 - 60 = 290px
@@ -192,13 +189,13 @@ describe('QuoteButton', () => {
 
       // Test with different position
       rerender(
-        <QuoteButton 
+        <QuoteButton
           {...defaultProps}
           mousePosition={{ x: 50, y: 100 }}
           messageContainerRef={messageContainerRef}
         />
       );
-      
+
       container = screen.getByRole('button').parentElement;
       expect(container).toHaveStyle({
         top: '-10px', // 100 - 50 - 60 = -10px
@@ -211,46 +208,46 @@ describe('QuoteButton', () => {
     it('should call onQuote when button is clicked', async () => {
       const onQuote = vi.fn();
       renderQuoteButton({ onQuote });
-      
+
       const button = screen.getByRole('button');
       await user.click(button);
-      
+
       expect(onQuote).toHaveBeenCalledTimes(1);
     });
 
     it('should handle multiple rapid clicks', async () => {
       const onQuote = vi.fn();
       renderQuoteButton({ onQuote });
-      
+
       const button = screen.getByRole('button');
-      
+
       await user.click(button);
       await user.click(button);
       await user.click(button);
-      
+
       expect(onQuote).toHaveBeenCalledTimes(3);
     });
 
     it('should handle keyboard interactions', async () => {
       const onQuote = vi.fn();
       renderQuoteButton({ onQuote });
-      
+
       const button = screen.getByRole('button');
       button.focus();
-      
+
       await user.keyboard('{Enter}');
       expect(onQuote).toHaveBeenCalledTimes(1);
-      
+
       await user.keyboard(' ');
       expect(onQuote).toHaveBeenCalledTimes(2);
     });
 
     it('should be focusable', () => {
       renderQuoteButton();
-      
+
       const button = screen.getByRole('button');
       button.focus();
-      
+
       expect(document.activeElement).toBe(button);
     });
   });
@@ -259,13 +256,13 @@ describe('QuoteButton', () => {
     it('should call onDismiss when clicking outside', async () => {
       const onDismiss = vi.fn();
       renderQuoteButton({ onDismiss });
-      
+
       // Get the button's container (which has the buttonRef)
       const container = screen.getByRole('button').parentElement;
-      
+
       // Wait a bit for the ref to be set and callback to be stored
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
       // Trigger the click outside callback that should be stored for this element
       const callback = clickOutsideCallbacks.get(container);
       if (callback) {
@@ -280,23 +277,23 @@ describe('QuoteButton', () => {
     it('should not call onDismiss when clicking on the button itself', async () => {
       const onDismiss = vi.fn();
       renderQuoteButton({ onDismiss });
-      
+
       const button = screen.getByRole('button');
       await user.click(button);
-      
+
       expect(onDismiss).not.toHaveBeenCalled();
     });
   });
 
   describe('Props Handling', () => {
     it('should handle undefined callbacks gracefully', async () => {
-      renderQuoteButton({ 
+      renderQuoteButton({
         onQuote: undefined,
-        onDismiss: undefined 
+        onDismiss: undefined,
       });
-      
+
       const button = screen.getByRole('button');
-      
+
       // Should not throw when clicking
       expect(() => user.click(button)).not.toThrow();
     });
@@ -305,14 +302,14 @@ describe('QuoteButton', () => {
       const mockElement = {
         getBoundingClientRect: mockGetBoundingClientRect,
       } as unknown as HTMLElement;
-      
+
       const messageContainerRef = { current: mockElement };
 
-      renderQuoteButton({ 
+      renderQuoteButton({
         mousePosition: { x: -10, y: -20 },
-        messageContainerRef 
+        messageContainerRef,
       });
-      
+
       const container = screen.getByRole('button').parentElement;
       expect(container).toHaveStyle({
         top: '-130px', // -20 - 50 - 60 = -130px
@@ -324,14 +321,14 @@ describe('QuoteButton', () => {
       const mockElement = {
         getBoundingClientRect: mockGetBoundingClientRect,
       } as unknown as HTMLElement;
-      
+
       const messageContainerRef = { current: mockElement };
 
-      renderQuoteButton({ 
+      renderQuoteButton({
         mousePosition: { x: 9999, y: 9999 },
-        messageContainerRef 
+        messageContainerRef,
       });
-      
+
       const container = screen.getByRole('button').parentElement;
       expect(container).toHaveStyle({
         top: '9889px', // 9999 - 50 - 60 = 9889px
@@ -343,21 +340,21 @@ describe('QuoteButton', () => {
   describe('Accessibility', () => {
     it('should have proper button role', () => {
       renderQuoteButton();
-      
+
       const button = screen.getByRole('button');
       expect(button.tagName).toBe('BUTTON');
     });
 
     it('should have descriptive aria-label', () => {
       renderQuoteButton();
-      
+
       const button = screen.getByRole('button');
       expect(button).toHaveAttribute('aria-label', 'Ask follow up');
     });
 
     it('should support screen reader navigation', () => {
       renderQuoteButton();
-      
+
       const button = screen.getByRole('button');
       expect(button).toBeVisible();
       expect(button).not.toHaveAttribute('aria-hidden');
@@ -367,14 +364,14 @@ describe('QuoteButton', () => {
   describe('Visual States', () => {
     it('should maintain proper z-index for overlay positioning', () => {
       renderQuoteButton();
-      
+
       const container = screen.getByRole('button').parentElement;
       expect(container).toHaveClass('z-50');
     });
 
     it('should apply consistent styling', () => {
       renderQuoteButton();
-      
+
       const button = screen.getByRole('button');
       expect(button).toHaveClass(
         'size-10',
@@ -386,7 +383,7 @@ describe('QuoteButton', () => {
 
     it('should render icon with proper size', () => {
       renderQuoteButton();
-      
+
       const icon = screen.getByTestId('quote-icon');
       // The icon should receive the size-4 class from the parent component
       expect(icon).toBeInTheDocument();
@@ -399,49 +396,51 @@ describe('QuoteButton', () => {
       const mockElement = {
         getBoundingClientRect: mockGetBoundingClientRect,
       } as unknown as HTMLElement;
-      
+
       const messageContainerRef = { current: mockElement };
 
       const { rerender } = renderQuoteButton({ messageContainerRef });
-      
+
       expect(mockGetBoundingClientRect).toHaveBeenCalled();
       const callCount = mockGetBoundingClientRect.mock.calls.length;
-      
+
       // Re-render with same props
       rerender(
-        <QuoteButton 
+        <QuoteButton
           {...defaultProps}
           messageContainerRef={messageContainerRef}
         />
       );
-      
+
       // Should have been called again for new render
-      expect(mockGetBoundingClientRect.mock.calls.length).toBeGreaterThan(callCount);
+      expect(mockGetBoundingClientRect.mock.calls.length).toBeGreaterThan(
+        callCount
+      );
     });
 
     it('should handle rapid position updates', () => {
       const mockElement = {
         getBoundingClientRect: mockGetBoundingClientRect,
       } as unknown as HTMLElement;
-      
+
       const messageContainerRef = { current: mockElement };
 
-      const { rerender } = renderQuoteButton({ 
+      const { rerender } = renderQuoteButton({
         mousePosition: { x: 100, y: 100 },
-        messageContainerRef 
+        messageContainerRef,
       });
-      
+
       // Rapidly change positions
       for (let i = 0; i < 10; i++) {
         rerender(
-          <QuoteButton 
+          <QuoteButton
             {...defaultProps}
             mousePosition={{ x: 100 + i * 10, y: 100 + i * 10 }}
             messageContainerRef={messageContainerRef}
           />
         );
       }
-      
+
       // Should still render correctly
       expect(screen.getByRole('button')).toBeInTheDocument();
     });
@@ -454,7 +453,7 @@ describe('QuoteButton', () => {
           throw new Error('getBoundingClientRect failed');
         }),
       } as unknown as HTMLElement;
-      
+
       const messageContainerRef = { current: mockElement };
 
       expect(() => renderQuoteButton({ messageContainerRef })).toThrow();
@@ -473,14 +472,14 @@ describe('QuoteButton', () => {
           y: 0,
         }),
       } as HTMLElement;
-      
+
       const messageContainerRef = { current: mockElement };
 
-      renderQuoteButton({ 
+      renderQuoteButton({
         mousePosition: { x: 100, y: 100 },
-        messageContainerRef 
+        messageContainerRef,
       });
-      
+
       const container = screen.getByRole('button').parentElement;
       expect(container).toHaveStyle({
         top: '40px', // 100 - 0 - 60 = 40px

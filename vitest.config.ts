@@ -15,8 +15,8 @@ export default defineConfig({
   test: {
     // Allow CSS imports to be processed by Vite in tests
     css: true,
-    globals: true, // Ensure vi, describe, it, etc are available globally
-    environment: 'happy-dom',
+
+    environment: 'jsdom',
     // Enhanced timeout configuration
     testTimeout: 15000, // 15 seconds for individual tests
     hookTimeout: 10000, // 10 seconds for hooks
@@ -45,8 +45,11 @@ export default defineConfig({
       'playwright-tests/**',
     ],
     coverage: getCoverageConfig(
-      process.env.NODE_ENV === 'production' ? 'production' : 
-      process.env.CI === '1' ? 'ci' : 'development'
+      process.env.NODE_ENV === 'production'
+        ? 'production'
+        : process.env.CI === '1'
+          ? 'ci'
+          : 'development'
     ),
     // Pool configuration for better performance and stability
     pool: 'threads',
@@ -75,8 +78,14 @@ export default defineConfig({
       // Some environments mis-resolve ai/react; ensure explicit mapping.
       // Do NOT alias bare 'ai' here to avoid breaking non-react imports.
       // Mock CSS imports that cause resolution issues
-      'tailwindcss/tailwind.css': path.resolve(__dirname, 'tests/mocks/empty.css'),
-      'katex/dist/katex.min.css': path.resolve(__dirname, 'tests/mocks/empty.css'),
+      'tailwindcss/tailwind.css': path.resolve(
+        __dirname,
+        'tests/mocks/empty.css'
+      ),
+      'katex/dist/katex.min.css': path.resolve(
+        __dirname,
+        'tests/mocks/empty.css'
+      ),
     },
   },
   define: {

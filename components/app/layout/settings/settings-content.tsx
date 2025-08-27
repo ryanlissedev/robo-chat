@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Settings, Key, Paintbrush, Cable, X } from 'lucide-react';
+import { Box, Cable, Key, Paintbrush, Settings, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawerClose } from '@/components/ui/drawer';
@@ -99,7 +99,7 @@ export function SettingsContent({ isDrawer = false }: SettingsContentProps) {
             {/* Mobile tabs content */}
             <TabsContent className="space-y-6 px-6" value="general">
               <UserProfile />
-              {isSupabaseEnabled && <AccountManagement />}
+              {isSupabaseEnabled() && <AccountManagement />}
             </TabsContent>
 
             <TabsContent className="space-y-6 px-6" value="appearance">
@@ -182,7 +182,7 @@ export function SettingsContent({ isDrawer = false }: SettingsContentProps) {
             <div className="flex-1 overflow-auto px-6 pt-4">
               <TabsContent className="mt-0 space-y-6" value="general">
                 <UserProfile />
-                {isSupabaseEnabled && <AccountManagement />}
+                {isSupabaseEnabled() && <AccountManagement />}
               </TabsContent>
 
               <TabsContent className="mt-0 space-y-6" value="appearance">

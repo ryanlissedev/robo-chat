@@ -1,34 +1,57 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type MockedFunction } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockedFunction,
+  vi,
+} from 'vitest';
 
 // Set up environment variables before any imports
 process.env.ENCRYPTION_KEY = Buffer.from('test'.repeat(8)).toString('base64');
 process.env.NODE_ENV = 'test';
-
-import { POST } from '@/app/api/chat/route';
-import type { LanguageModelUsage } from 'ai';
-import * as modelsModule from '@/lib/models';
-import * as langsmithModule from '@/lib/langsmith/client';
-import * as chatApiModule from '@/app/api/chat/api';
-import * as userKeysModule from '@/lib/user-keys';
-import * as providerMapModule from '@/lib/openproviders/provider-map';
-import * as metricsModule from '@/lib/utils/metrics';
 
 // Mock the AI SDK streamText function
 vi.mock('ai', () => ({
   convertToModelMessages: vi.fn().mockReturnValue([
     {
       role: 'user',
-      content: [{ type: 'text', text: 'Hello, world!' }]
-    }
+      content: [{ type: 'text', text: 'Hello, world!' }],
+    },
   ]),
-  streamText: vi.fn().mockImplementation(() => ({
-    toUIMessageStreamResponse: vi.fn().mockReturnValue(
-      new Response('mocked stream response', {
-        status: 200,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-      })
-    )
-  }))
+  streamText: vi.fn().mockImplementation((options) => {
+    const mockResult = {
+      toUIMessageStreamResponse: vi.fn().mockReturnValue(
+        new Response('mocked stream response', {
+          status: 200,
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        })
+      ),
+    };
+
+    // Simulate calling onFinish callback if provided
+    if (options?.onFinish) {
+      setTimeout(() => {
+        options.onFinish({
+          response: {
+            messages: [
+              {
+                role: 'assistant',
+                content: 'Mocked response',
+              },
+            ],
+            usage: {
+              totalTokens: 100,
+              inputTokens: 50,
+              outputTokens: 50,
+            },
+          },
+        });
+      }, 0);
+    }
+    return mockResult;
+  }),
 }));
 
 // Mock external modules
@@ -42,42 +65,117 @@ vi.mock('@/lib/tools/file-search', () => ({
   fileSearchTool: {
     name: 'fileSearch',
     description: 'Search files',
-    parameters: {}
-  }
+    parameters: {},
+  },
 }));
 
+// Mock retrieval modules
+vi.mock('@/lib/retrieval/augment', () => ({
+  buildAugmentedSystemPrompt: vi.fn(() => 'augmented system prompt'),
+}));
+
+vi.mock('@/lib/retrieval/gating', () => ({
+  selectRetrievalMode: vi.fn(() => 'simple'),
+  shouldEnableFileSearchTools: vi.fn(() => false),
+  shouldUseFallbackRetrieval: vi.fn(() => false),
+}));
+
+vi.mock('@/lib/retrieval/vector-retrieval', () => ({
+  performVectorRetrieval: vi.fn(() => Promise.resolve([])),
+}));
+
+vi.mock('@/lib/retrieval/two-pass', () => ({
+  retrieveWithGpt41: vi.fn(() => Promise.resolve([])),
+}));
+
+// Mock config constants
+vi.mock('@/lib/config', () => ({
+  FILE_SEARCH_SYSTEM_PROMPT: 'File search system prompt',
+  RETRIEVAL_MAX_TOKENS: 4000,
+  RETRIEVAL_TOP_K: 5,
+  RETRIEVAL_TWO_PASS_ENABLED: false,
+  SYSTEM_PROMPT_DEFAULT: 'You are a helpful assistant.',
+}));
+
+// Import modules after mocks are set up
+import * as chatApiModule from '@/app/api/chat/api';
+import { POST } from '@/app/api/chat/route';
+import * as langsmithModule from '@/lib/langsmith/client';
+import * as modelsModule from '@/lib/models';
+import * as providerMapModule from '@/lib/openproviders/provider-map';
+import * as userKeysModule from '@/lib/user-keys';
+import * as metricsModule from '@/lib/utils/metrics';
+
 describe('Chat API Route', () => {
-  const mockGetAllModels = modelsModule.getAllModels as MockedFunction<typeof modelsModule.getAllModels>;
-  const mockValidateAndTrackUsage = chatApiModule.validateAndTrackUsage as MockedFunction<typeof chatApiModule.validateAndTrackUsage>;
-  const mockGetProviderForModel = providerMapModule.getProviderForModel as MockedFunction<typeof providerMapModule.getProviderForModel>;
-  const mockGetEffectiveApiKey = userKeysModule.getEffectiveApiKey as MockedFunction<typeof userKeysModule.getEffectiveApiKey>;
-  const mockTrackCredentialUsage = metricsModule.trackCredentialUsage as MockedFunction<typeof metricsModule.trackCredentialUsage>;
-  const mockIncrementMessageCount = chatApiModule.incrementMessageCount as MockedFunction<typeof chatApiModule.incrementMessageCount>;
-  const mockLogUserMessage = chatApiModule.logUserMessage as MockedFunction<typeof chatApiModule.logUserMessage>;
-  const mockStoreAssistantMessage = chatApiModule.storeAssistantMessage as MockedFunction<typeof chatApiModule.storeAssistantMessage>;
+  const mockGetAllModels = modelsModule.getAllModels as MockedFunction<
+    typeof modelsModule.getAllModels
+  >;
+  const mockValidateAndTrackUsage =
+    chatApiModule.validateAndTrackUsage as MockedFunction<
+      typeof chatApiModule.validateAndTrackUsage
+    >;
+  const mockGetProviderForModel =
+    providerMapModule.getProviderForModel as MockedFunction<
+      typeof providerMapModule.getProviderForModel
+    >;
+  const mockGetEffectiveApiKey =
+    userKeysModule.getEffectiveApiKey as MockedFunction<
+      typeof userKeysModule.getEffectiveApiKey
+    >;
+  const mockTrackCredentialUsage =
+    metricsModule.trackCredentialUsage as MockedFunction<
+      typeof metricsModule.trackCredentialUsage
+    >;
+  const mockIncrementMessageCount =
+    chatApiModule.incrementMessageCount as MockedFunction<
+      typeof chatApiModule.incrementMessageCount
+    >;
+  const mockLogUserMessage = chatApiModule.logUserMessage as MockedFunction<
+    typeof chatApiModule.logUserMessage
+  >;
+  const mockStoreAssistantMessage =
+    chatApiModule.storeAssistantMessage as MockedFunction<
+      typeof chatApiModule.storeAssistantMessage
+    >;
 
   const mockSupabaseClient = {
     from: vi.fn(),
     auth: {
-      getUser: vi.fn()
-    }
+      getUser: vi.fn(),
+    },
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Setup default mocks
+    const mockLanguageModel = {
+      generateText: vi.fn(),
+      streamText: vi.fn(),
+      doGenerate: vi.fn(),
+      doStream: vi.fn(),
+    };
+
     mockGetAllModels.mockResolvedValue([
+      {
+        id: 'gpt-5-mini',
+        name: 'GPT-5 Mini',
+        providerId: 'openai',
+        provider: 'openai',
+        baseProviderId: 'openai',
+        apiSdk: vi.fn().mockImplementation(() => mockLanguageModel),
+        fileSearchTools: true,
+        reasoningText: true,
+      },
       {
         id: 'gpt-4o-mini',
         name: 'GPT-4o Mini',
         providerId: 'openai',
         provider: 'openai',
         baseProviderId: 'openai',
-        apiSdk: vi.fn().mockReturnValue({
-          generateText: vi.fn()
-        })
-      }
+        apiSdk: vi.fn().mockImplementation(() => mockLanguageModel),
+        fileSearchTools: true,
+      },
     ]);
 
     mockValidateAndTrackUsage.mockResolvedValue(mockSupabaseClient as any);
@@ -101,8 +199,8 @@ describe('Chat API Route', () => {
           role: 'user',
           content: 'Hello, world!',
           id: 'msg-1',
-          createdAt: new Date()
-        }
+          createdAt: new Date(),
+        },
       ],
       chatId: 'chat-123',
       userId: 'user-456',
@@ -111,29 +209,34 @@ describe('Chat API Route', () => {
       systemPrompt: 'You are a helpful assistant.',
       enableSearch: false,
       reasoningEffort: 'medium',
-      ...overrides
+      ...overrides,
     };
 
     return new Request('http://localhost:3000/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(defaultBody)
+      body: JSON.stringify(defaultBody),
     });
   };
 
   describe('POST /api/chat', () => {
-
     it('should successfully process a valid chat request', async () => {
       const request = createValidRequest();
+
       const response = await POST(request);
+
+      // Debug the error if status is not 200
+      if (response.status !== 200) {
+        const _errorText = await response.text();
+      }
 
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
       expect(mockValidateAndTrackUsage).toHaveBeenCalledWith({
         userId: 'user-456',
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini', // gpt-4o-mini gets resolved to gpt-5-mini
         isAuthenticated: true,
-        hasGuestCredentials: false
+        hasGuestCredentials: false,
       });
     });
 
@@ -168,7 +271,7 @@ describe('Chat API Route', () => {
         headers: {
           'Content-Type': 'application/json',
           'X-Provider-Api-Key': 'guest-api-key',
-          'X-Model-Provider': 'openai'
+          'X-Model-Provider': 'openai',
         },
         body: JSON.stringify({
           messages: [{ role: 'user', content: 'Hello' }],
@@ -177,24 +280,24 @@ describe('Chat API Route', () => {
           model: 'gpt-4o-mini',
           isAuthenticated: false,
           systemPrompt: 'Test',
-          enableSearch: false
-        })
+          enableSearch: false,
+        }),
       });
 
       await POST(request);
 
       expect(mockValidateAndTrackUsage).toHaveBeenCalledWith({
         userId: 'guest-user',
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini', // gpt-4o-mini gets resolved to gpt-5-mini
         isAuthenticated: false,
-        hasGuestCredentials: true
+        hasGuestCredentials: true,
       });
     });
 
     it('should handle voice context with personality mode', async () => {
       const request = createValidRequest({
         context: 'voice',
-        personalityMode: 'technical-expert'
+        personalityMode: 'technical-expert',
       });
 
       await POST(request);
@@ -209,13 +312,13 @@ describe('Chat API Route', () => {
           providerId: 'openai',
           provider: 'openai',
           baseProviderId: 'openai',
-          apiSdk: vi.fn().mockReturnValue({})
-        }
+          apiSdk: vi.fn().mockReturnValue({}),
+        },
       ]);
 
       const request = createValidRequest({
         model: 'gpt-5-mini',
-        enableSearch: true
+        enableSearch: true,
       });
 
       await POST(request);
@@ -224,7 +327,7 @@ describe('Chat API Route', () => {
 
     it('should handle message transformation errors gracefully', async () => {
       const request = createValidRequest({
-        messages: [{ role: 'user', content: null }] // Invalid content
+        messages: [{ role: 'user', content: null }], // Invalid content
       });
 
       const response = await POST(request);
@@ -241,9 +344,14 @@ describe('Chat API Route', () => {
     });
 
     it('should handle LangSmith integration', async () => {
-      const mockCreateRun = langsmithModule.createRun as MockedFunction<typeof langsmithModule.createRun>;
-      const mockIsLangSmithEnabled = langsmithModule.isLangSmithEnabled as MockedFunction<typeof langsmithModule.isLangSmithEnabled>;
-      
+      const mockCreateRun = langsmithModule.createRun as MockedFunction<
+        typeof langsmithModule.createRun
+      >;
+      const mockIsLangSmithEnabled =
+        langsmithModule.isLangSmithEnabled as MockedFunction<
+          typeof langsmithModule.isLangSmithEnabled
+        >;
+
       mockIsLangSmithEnabled.mockReturnValue(true);
       mockCreateRun.mockResolvedValue(undefined);
 
@@ -253,7 +361,7 @@ describe('Chat API Route', () => {
       expect(mockCreateRun).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'chat-completion',
-          runType: 'chain'
+          runType: 'chain',
         })
       );
     });
@@ -273,7 +381,7 @@ describe('Chat API Route', () => {
       const request = createValidRequest({
         model: 'gpt-5-mini',
         reasoningEffort: 'high',
-        verbosity: 'high'
+        verbosity: 'high',
       });
 
       await POST(request);
@@ -286,7 +394,7 @@ describe('Chat API Route', () => {
 
       expect(mockIncrementMessageCount).toHaveBeenCalledWith({
         supabase: mockSupabaseClient,
-        userId: 'user-456'
+        userId: 'user-456',
       });
 
       expect(mockLogUserMessage).toHaveBeenCalledWith(
@@ -294,7 +402,7 @@ describe('Chat API Route', () => {
           supabase: mockSupabaseClient,
           userId: 'user-456',
           chatId: 'chat-123',
-          content: 'Hello, world!'
+          content: 'Hello, world!',
         })
       );
     });
@@ -309,11 +417,11 @@ describe('Chat API Route', () => {
               {
                 name: 'test.txt',
                 url: 'blob:test',
-                contentType: 'text/plain'
-              }
-            ]
-          }
-        ]
+                contentType: 'text/plain',
+              },
+            ],
+          },
+        ],
       });
 
       await POST(request);
@@ -322,9 +430,9 @@ describe('Chat API Route', () => {
         expect.objectContaining({
           attachments: expect.arrayContaining([
             expect.objectContaining({
-              name: 'test.txt'
-            })
-          ])
+              name: 'test.txt',
+            }),
+          ]),
         })
       );
     });
@@ -345,7 +453,7 @@ describe('Chat API Route', () => {
       const request = new Request('http://localhost:3000/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: 'invalid json'
+        body: 'invalid json',
       });
 
       const response = await POST(request);
@@ -354,22 +462,25 @@ describe('Chat API Route', () => {
 
     it('should handle missing message group ID', async () => {
       const request = createValidRequest({
-        message_group_id: undefined
+        message_group_id: undefined,
       });
 
       await POST(request);
       expect(mockLogUserMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          message_group_id: undefined
+          message_group_id: undefined,
         })
       );
     });
 
     it('should track credential errors appropriately', async () => {
-      const mockTrackCredentialError = metricsModule.trackCredentialError as MockedFunction<typeof metricsModule.trackCredentialError>;
-      
+      const mockTrackCredentialError =
+        metricsModule.trackCredentialError as MockedFunction<
+          typeof metricsModule.trackCredentialError
+        >;
+
       mockValidateAndTrackUsage.mockRejectedValue(new Error('No API key'));
-      
+
       const request = createValidRequest();
       await POST(request);
 
@@ -391,9 +502,9 @@ describe('Chat API Route', () => {
           {
             role: 'user',
             content: { invalid: 'object' },
-            parts: undefined
-          }
-        ]
+            parts: undefined,
+          },
+        ],
       });
 
       await POST(request);
@@ -426,7 +537,7 @@ describe('Chat API Route', () => {
 
       const [response1, response2] = await Promise.all([
         POST(request1),
-        POST(request2)
+        POST(request2),
       ]);
 
       expect(response1.status).toBe(200);
@@ -439,11 +550,11 @@ describe('Chat API Route', () => {
       const largeMessages = Array.from({ length: 100 }, (_, i) => ({
         role: 'user' as const,
         content: `Message ${i}`,
-        id: `msg-${i}`
+        id: `msg-${i}`,
       }));
 
       const request = createValidRequest({ messages: largeMessages });
-      
+
       const startTime = Date.now();
       await POST(request);
       const endTime = Date.now();

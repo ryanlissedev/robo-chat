@@ -1,7 +1,6 @@
-import { render } from '@testing-library/react';
-import { renderHook } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, renderHook } from '@testing-library/react';
 import { useRef } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import useClickOutside from '@/app/hooks/use-click-outside';
 
 // Test component to help test the hook
@@ -17,7 +16,9 @@ function TestComponent({
     <div>
       <div ref={ref} data-testid="inside-element">
         Inside Element
-        <button data-testid="nested-button">Nested Button</button>
+        <button type="button" data-testid="nested-button">
+          Nested Button
+        </button>
       </div>
       <div data-testid="outside-element">Outside Element</div>
     </div>
@@ -41,7 +42,7 @@ describe('useClickOutside', () => {
     );
 
     const outsideElement = getByTestId('outside-element');
-    
+
     // Simulate mousedown on outside element
     const mouseEvent = new MouseEvent('mousedown', {
       bubbles: true,
@@ -65,7 +66,7 @@ describe('useClickOutside', () => {
     );
 
     const insideElement = getByTestId('inside-element');
-    
+
     // Simulate mousedown on inside element
     const mouseEvent = new MouseEvent('mousedown', {
       bubbles: true,
@@ -88,7 +89,7 @@ describe('useClickOutside', () => {
     );
 
     const nestedButton = getByTestId('nested-button');
-    
+
     // Simulate mousedown on nested element
     const mouseEvent = new MouseEvent('mousedown', {
       bubbles: true,
@@ -111,7 +112,7 @@ describe('useClickOutside', () => {
     );
 
     const outsideElement = getByTestId('outside-element');
-    
+
     // Simulate touchstart on outside element
     const touchEvent = new TouchEvent('touchstart', {
       bubbles: true,
@@ -131,7 +132,7 @@ describe('useClickOutside', () => {
 
   it('should handle null ref gracefully', () => {
     const mockHandlerForNull = vi.fn();
-    
+
     renderHook(() => {
       const nullRef = { current: null };
       useClickOutside(nullRef, mockHandlerForNull);
@@ -151,10 +152,8 @@ describe('useClickOutside', () => {
 
   it('should clean up event listeners on unmount', () => {
     const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener');
-    
-    const { unmount } = render(
-      <TestComponent onClickOutside={mockHandler} />
-    );
+
+    const { unmount } = render(<TestComponent onClickOutside={mockHandler} />);
 
     unmount();
 
@@ -253,7 +252,9 @@ describe('useClickOutside', () => {
   });
 
   it('should handle ref changes', () => {
-    let currentRef = { current: null as HTMLDivElement | null } as React.RefObject<HTMLDivElement>;
+    const currentRef = {
+      current: null as HTMLDivElement | null,
+    } as React.RefObject<HTMLDivElement>;
 
     const { rerender } = renderHook(
       ({ ref }) => useClickOutside(ref, mockHandler),

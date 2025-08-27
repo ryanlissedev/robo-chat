@@ -1,7 +1,7 @@
-import { createClient } from '@/lib/supabase/client';
+import { type NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { NextRequest, NextResponse } from 'next/server';
 import { decryptApiKey } from '@/lib/security/encryption';
+import { createClient } from '@/lib/supabase/client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       .eq('provider', 'openai')
       .single();
 
-    if (keyError || !keyData?.encrypted_key) {
+    if (keyError || !(keyData as any)?.encrypted_key) {
       return NextResponse.json(
         { error: 'OpenAI API key not found' },
         { status: 401 }
@@ -41,8 +41,9 @@ export async function POST(request: NextRequest) {
     let apiKey: string;
     try {
       apiKey = decryptApiKey(
-        keyData.encrypted_key,
-        keyData.iv,
+        (keyData as unknown as { encrypted_key: string; iv: string })
+          .encrypted_key,
+        (keyData as unknown as { encrypted_key: string; iv: string }).iv,
         '', // auth_tag doesn't exist in schema
         userId
       );
@@ -84,18 +85,24 @@ ${transcript}`;
         purpose: 'assistants',
       });
 
-      if (!fileResponse || typeof fileResponse.id !== 'string' || !fileResponse.id.trim()) {
-        throw new Error('Failed to create OpenAI file - invalid response or missing file ID');
+      if (
+        !fileResponse ||
+        typeof fileResponse.id !== 'string' ||
+        !fileResponse.id.trim()
+      ) {
+        throw new Error(
+          'Failed to create OpenAI file - invalid response or missing file ID'
+        );
       }
-      
+
       uploadedFile = { id: fileResponse.id };
     } catch (error) {
-      console.error('OpenAI file creation failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error occurred';
       return NextResponse.json(
-        { 
-          error: 'Failed to upload transcript file', 
-          details: errorMessage 
+        {
+          error: 'Failed to upload transcript file',
+          details: errorMessage,
         },
         { status: 500 }
       );
@@ -103,7 +110,6 @@ ${transcript}`;
 
     // Ensure uploadedFile exists before proceeding
     if (!uploadedFile || !uploadedFile.id) {
-      console.error('Missing uploaded file data');
       return NextResponse.json(
         { error: 'File upload completed but file data is missing' },
         { status: 500 }
@@ -120,10 +126,9 @@ ${transcript}`;
         file_id: uploadedFile.id,
         metadata: metadata || {},
         created_at: new Date().toISOString(),
-      });
+      } as never);
 
     if (insertError) {
-      console.error('Failed to store transcript metadata:', insertError);
       // Don't fail the entire request if DB insert fails - file is already uploaded
       return NextResponse.json({
         success: true,
@@ -138,9 +143,7 @@ ${transcript}`;
       fileId: uploadedFile.id,
       message: 'Transcript stored successfully',
     });
-
-  } catch (error) {
-    console.error('Transcript indexing error:', error);
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to index transcript' },
       { status: 500 }
@@ -179,7 +182,6 @@ export async function GET(request: NextRequest) {
       .limit(10);
 
     if (searchError) {
-      console.error('Transcript search error:', searchError);
       return NextResponse.json(
         {
           error: 'Search failed',
@@ -192,15 +194,13 @@ export async function GET(request: NextRequest) {
 
     // Ensure transcripts is an array
     const results = Array.isArray(transcripts) ? transcripts : [];
-    
+
     return NextResponse.json({
       results: results,
       message: `Found ${results.length} matching transcripts`,
       total: results.length,
     });
-
-  } catch (error) {
-    console.error('Transcript search error:', error);
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to search transcripts' },
       { status: 500 }

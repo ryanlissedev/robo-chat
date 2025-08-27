@@ -267,6 +267,7 @@ export default function TestChatPage() {
         )}
 
         <button
+          type="button"
           className={`rounded-lg px-6 py-3 font-semibold text-white transition-colors ${
             isRunning
               ? 'cursor-not-allowed bg-gray-400'

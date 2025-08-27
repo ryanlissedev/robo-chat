@@ -1,3 +1,5 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/app/types/database.types';
 import { createClient } from '@/lib/supabase/server';
 import { createGuestServerClient } from '@/lib/supabase/server-guest';
 import { isSupabaseEnabled } from '../supabase/config';
@@ -11,8 +13,8 @@ import { isSupabaseEnabled } from '../supabase/config';
 export async function validateUserIdentity(
   userId: string,
   isAuthenticated: boolean
-) {
-  if (!isSupabaseEnabled) {
+): Promise<SupabaseClient<Database> | null> {
+  if (!isSupabaseEnabled()) {
     return null;
   }
 
@@ -41,12 +43,12 @@ export async function validateUserIdentity(
 
     if (isRateLimitDisabled || isDevelopment) {
       // Skip database validation for guest users when rate limiting is disabled
-      return supabase;
+      return supabase as unknown as SupabaseClient<Database>;
     }
 
     // For guest users with temporary IDs, skip database validation
     if (userId.startsWith('guest-') || userId.startsWith('temp-guest-')) {
-      return supabase;
+      return supabase as unknown as SupabaseClient<Database>;
     }
 
     // Only validate database record for persistent guest users
@@ -70,10 +72,10 @@ export async function validateUserIdentity(
         } as never);
       } catch {
         // If creation fails, still allow the request for guest users
-        return supabase;
+        return supabase as unknown as SupabaseClient<Database>;
       }
     }
   }
 
-  return supabase;
+  return supabase as unknown as SupabaseClient<Database>;
 }

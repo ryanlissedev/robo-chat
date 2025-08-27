@@ -1,6 +1,6 @@
 'use client';
 
-import { MessageCircle, Check, X } from 'lucide-react';
+import { Check, MessageCircle, X } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
@@ -152,7 +152,6 @@ export function ProjectChatItem({ chat, formatDate }: ProjectChatItemProps) {
             size={16}
           />
           <input
-            autoFocus
             className="flex-1 bg-transparent font-medium text-primary text-sm focus:outline-none"
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}

@@ -9,8 +9,8 @@ import {
 } from 'idb-keyval';
 
 let dbInitPromise: Promise<void> | null = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const stores: Record<string, any> = {};
+// Store instances for different databases
+const stores: Record<string, ReturnType<typeof createStore>> = {};
 
 const isClient = typeof window !== 'undefined';
 const DB_NAME = 'roborail-chats-db';

@@ -4,7 +4,6 @@ import { getMessageContent } from '@/app/types/ai-extended';
 // Constants
 const DEFAULT_ERROR_STATUS_CODE = 500;
 
-
 /**
  * Clean messages when switching between agents with different tool capabilities.
  * This removes tool invocations and tool-related content from messages when tools are not available

@@ -1,9 +1,18 @@
 'use client';
 
-import { ChevronDown, CheckCircle, Code, Link, Nut, Loader2, Wrench } from 'lucide-react';
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { useMemo, useState } from 'react';
+import {
+  CheckCircle,
+  ChevronDown,
+  Code,
+  Link,
+  Loader2,
+  Nut,
+  Wrench,
+} from 'lucide-react';
+import type React from 'react';
+import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 // Type for AI SDK tool parts
@@ -166,7 +175,13 @@ function SingleToolView({
       );
 
       // Return the most informative one
-      return outputTool || inputAvailableTool || inputStreamingTool || errorTool || group[0];
+      return (
+        outputTool ||
+        inputAvailableTool ||
+        inputStreamingTool ||
+        errorTool ||
+        group[0]
+      );
     })
     .filter(Boolean) as ToolUIPart[];
 
@@ -212,16 +227,21 @@ function SingleToolCard({
   className?: string;
 }) {
   const [isExpanded, setIsExpanded] = useState(defaultOpen);
-  
+
   // Extract properties from AI SDK tool part structure
   const toolCallId = toolData.toolCallId;
-  const toolName = 'toolName' in toolData ? (toolData.toolName as string) : toolData.type.replace('tool-', '');
+  const toolName =
+    'toolName' in toolData
+      ? (toolData.toolName as string)
+      : toolData.type.replace('tool-', '');
   const state = 'state' in toolData ? toolData.state : 'input-streaming';
-  const args: Record<string, unknown> = 'input' in toolData ? toolData.input as Record<string, unknown> : {};
+  const args: Record<string, unknown> =
+    'input' in toolData ? (toolData.input as Record<string, unknown>) : {};
   const isLoading = state === 'input-streaming' || state === 'input-available';
   const isCompleted = state === 'output-available';
   const hasError = state === 'output-error';
-  const result = isCompleted && 'output' in toolData ? toolData.output : undefined;
+  const result =
+    isCompleted && 'output' in toolData ? toolData.output : undefined;
 
   // Parse the result JSON if available
   const { parsedResult, parseError } = useMemo(() => {
@@ -239,8 +259,10 @@ function SingleToolCard({
         result !== null &&
         'content' in result
       ) {
-        const textContent = Array.isArray(result.content) 
-          ? result.content.find((item: { type: string }) => item.type === 'text')
+        const textContent = Array.isArray(result.content)
+          ? result.content.find(
+              (item: { type: string }) => item.type === 'text'
+            )
           : null;
         if (!textContent?.text) {
           return { parsedResult: null, parseError: null };
@@ -263,24 +285,25 @@ function SingleToolCard({
   }, [isCompleted, result]);
 
   // Format the arguments for display
-  const formattedArgs: React.ReactNode = args && typeof args === 'object' && args !== null
-    ? Object.entries(args).map(([key, value]) => (
-        <div className="mb-1" key={key}>
-          <span className="font-medium text-muted-foreground">{key}:</span>{' '}
-          <span className="font-mono">
-            {typeof value === 'object'
-              ? value === null
-                ? 'null'
-                : Array.isArray(value)
-                  ? value.length === 0
-                    ? '[]'
+  const formattedArgs: React.ReactNode =
+    args && typeof args === 'object' && args !== null
+      ? Object.entries(args).map(([key, value]) => (
+          <div className="mb-1" key={key}>
+            <span className="font-medium text-muted-foreground">{key}:</span>{' '}
+            <span className="font-mono">
+              {typeof value === 'object'
+                ? value === null
+                  ? 'null'
+                  : Array.isArray(value)
+                    ? value.length === 0
+                      ? '[]'
+                      : JSON.stringify(value)
                     : JSON.stringify(value)
-                  : JSON.stringify(value)
-              : String(value)}
-          </span>
-        </div>
-      ))
-    : null;
+                : String(value)}
+            </span>
+          </div>
+        ))
+      : null;
 
   // Render generic results based on their structure
   const renderResults = (): React.ReactNode => {
@@ -464,16 +487,19 @@ function SingleToolCard({
           >
             <div className="space-y-3 px-3 pt-3 pb-3">
               {/* Arguments section */}
-              {args && typeof args === 'object' && args !== null && Object.keys(args).length > 0 && (
-                <div>
-                  <div className="mb-1 font-medium text-muted-foreground text-xs">
-                    Arguments
+              {args &&
+                typeof args === 'object' &&
+                args !== null &&
+                Object.keys(args).length > 0 && (
+                  <div>
+                    <div className="mb-1 font-medium text-muted-foreground text-xs">
+                      Arguments
+                    </div>
+                    <div className="rounded border bg-background p-2 text-sm">
+                      {formattedArgs}
+                    </div>
                   </div>
-                  <div className="rounded border bg-background p-2 text-sm">
-                    {formattedArgs}
-                  </div>
-                </div>
-              )}
+                )}
 
               {/* Result section */}
               {isCompleted && (

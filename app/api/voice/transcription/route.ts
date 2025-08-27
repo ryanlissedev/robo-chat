@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
+import { type NextRequest, NextResponse } from 'next/server';
 
 interface TranscriptionEntry {
   id: string;
@@ -24,17 +24,17 @@ const TRANSCRIPTION_RETENTION = 2 * 60 * 60 * 1000; // 2 hours
 setInterval(() => {
   const now = Date.now();
   for (const [sessionId, entries] of transcriptions.entries()) {
-    const filteredEntries = entries.filter(entry => 
-      now - entry.timestamp < TRANSCRIPTION_RETENTION
+    const filteredEntries = entries.filter(
+      (entry) => now - entry.timestamp < TRANSCRIPTION_RETENTION
     );
-    
+
     if (filteredEntries.length === 0) {
       transcriptions.delete(sessionId);
     } else {
       transcriptions.set(sessionId, filteredEntries);
     }
   }
-  
+
   // Cleanup session transcriptions
   for (const [sessionId, entry] of sessionTranscriptions.entries()) {
     if (now - entry.timestamp > TRANSCRIPTION_RETENTION) {
@@ -46,14 +46,14 @@ setInterval(() => {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { 
-      sessionId, 
-      text, 
-      confidence = 0, 
-      isInterim = false, 
+    const {
+      sessionId,
+      text,
+      confidence = 0,
+      isInterim = false,
       speakerId,
       audioLevel,
-      metadata 
+      metadata,
     } = body;
 
     if (!sessionId || !text) {
@@ -86,8 +86,6 @@ export async function POST(request: NextRequest) {
       transcriptions.set(sessionId, existing);
     }
 
-    console.log(`Stored transcription for session ${sessionId}: ${text.substring(0, 50)}...`);
-
     return NextResponse.json({
       id: transcriptionEntry.id,
       sessionId,
@@ -95,9 +93,7 @@ export async function POST(request: NextRequest) {
       stored: !isInterim,
       confidence: transcriptionEntry.confidence,
     });
-
-  } catch (error) {
-    console.error('Failed to store transcription:', error);
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to store transcription' },
       { status: 500 }
@@ -110,8 +106,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('sessionId');
     const includeInterim = searchParams.get('includeInterim') === 'true';
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const since = searchParams.get('since') ? parseInt(searchParams.get('since')!) : 0;
+    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    const since = searchParams.get('since')
+      ? parseInt(searchParams.get('since')!, 10)
+      : 0;
 
     if (!sessionId) {
       return NextResponse.json(
@@ -122,36 +120,37 @@ export async function GET(request: NextRequest) {
 
     // Get transcriptions for session
     let entries = transcriptions.get(sessionId) || [];
-    
+
     // Include interim transcription if requested
     if (includeInterim) {
       const interim = sessionTranscriptions.get(sessionId);
-      if (interim && interim.isInterim) {
+      if (interim?.isInterim) {
         entries = [...entries, interim];
       }
     }
 
     // Filter by timestamp
     if (since > 0) {
-      entries = entries.filter(entry => entry.timestamp > since);
+      entries = entries.filter((entry) => entry.timestamp > since);
     }
 
     // Sort by timestamp (newest first) and limit
-    entries = entries
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, limit);
+    entries = entries.sort((a, b) => b.timestamp - a.timestamp).slice(0, limit);
 
     // Calculate statistics
     const stats = {
       totalEntries: entries.length,
-      averageConfidence: entries.length > 0 
-        ? entries.reduce((sum, entry) => sum + entry.confidence, 0) / entries.length 
-        : 0,
-      timespan: entries.length > 0 
-        ? entries[0].timestamp - entries[entries.length - 1].timestamp
-        : 0,
-      interimCount: entries.filter(entry => entry.isInterim).length,
-      finalCount: entries.filter(entry => !entry.isInterim).length,
+      averageConfidence:
+        entries.length > 0
+          ? entries.reduce((sum, entry) => sum + entry.confidence, 0) /
+            entries.length
+          : 0,
+      timespan:
+        entries.length > 0
+          ? entries[0].timestamp - entries[entries.length - 1].timestamp
+          : 0,
+      interimCount: entries.filter((entry) => entry.isInterim).length,
+      finalCount: entries.filter((entry) => !entry.isInterim).length,
     };
 
     return NextResponse.json({
@@ -160,9 +159,7 @@ export async function GET(request: NextRequest) {
       stats,
       hasMore: (transcriptions.get(sessionId)?.length || 0) > limit,
     });
-
-  } catch (error) {
-    console.error('Failed to get transcriptions:', error);
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to get transcriptions' },
       { status: 500 }
@@ -185,17 +182,19 @@ export async function DELETE(request: NextRequest) {
     if (transcriptionId) {
       // Delete specific transcription
       const entries = transcriptions.get(sessionId) || [];
-      const filteredEntries = entries.filter(entry => entry.id !== transcriptionId);
-      
+      const filteredEntries = entries.filter(
+        (entry) => entry.id !== transcriptionId
+      );
+
       if (filteredEntries.length === entries.length) {
         return NextResponse.json(
           { error: 'Transcription not found' },
           { status: 404 }
         );
       }
-      
+
       transcriptions.set(sessionId, filteredEntries);
-      
+
       // Also remove from session transcriptions if it matches
       const sessionEntry = sessionTranscriptions.get(sessionId);
       if (sessionEntry?.id === transcriptionId) {
@@ -217,9 +216,7 @@ export async function DELETE(request: NextRequest) {
         status: 'all_deleted',
       });
     }
-
-  } catch (error) {
-    console.error('Failed to delete transcriptions:', error);
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to delete transcriptions' },
       { status: 500 }
@@ -241,7 +238,9 @@ export async function PATCH(request: NextRequest) {
 
     // Find and update transcription
     const entries = transcriptions.get(sessionId) || [];
-    const entryIndex = entries.findIndex(entry => entry.id === transcriptionId);
+    const entryIndex = entries.findIndex(
+      (entry) => entry.id === transcriptionId
+    );
 
     if (entryIndex === -1) {
       return NextResponse.json(
@@ -251,7 +250,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const entry = entries[entryIndex];
-    
+
     // Update fields
     if (text !== undefined) {
       entry.text = text.trim();
@@ -283,13 +282,10 @@ export async function PATCH(request: NextRequest) {
       confidence: entry.confidence,
       metadata: entry.metadata,
     });
-
-  } catch (error) {
-    console.error('Failed to update transcription:', error);
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to update transcription' },
       { status: 500 }
     );
   }
 }
-

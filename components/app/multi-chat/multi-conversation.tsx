@@ -1,8 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import { getMessageContent } from '@/app/types/ai-extended';
-import { useEffect, useState } from 'react';
 import {
   ChatContainerContent,
   ChatContainerRoot,
@@ -44,6 +44,7 @@ function ResponseCard({ response, group }: ResponseCardProps) {
     <div className="relative">
       <div className="pointer-events-auto relative rounded border bg-background p-3">
         {/* <button
+          type="button"
           className="bg-background absolute top-2 right-2 z-30 cursor-grab p-1 active:cursor-grabbing"
           type="button"
           onPointerDown={(e) => dragControls.start(e)}
@@ -60,7 +61,11 @@ function ResponseCard({ response, group }: ResponseCardProps) {
 
         {response.message ? (
           <Message
-            attachments={'experimental_attachments' in response.message ? response.message.experimental_attachments : undefined}
+            attachments={
+              'experimental_attachments' in response.message
+                ? response.message.experimental_attachments
+                : undefined
+            }
             className="bg-transparent p-0 px-0"
             hasScrollAnchor={false}
             id={response.message.id}
@@ -70,7 +75,10 @@ function ResponseCard({ response, group }: ResponseCardProps) {
             onReload={() => group.onReload(response.model)}
             parts={
               response.message.parts || [
-                { type: 'text', text: getMessageContent(response.message) || '' },
+                {
+                  type: 'text',
+                  text: getMessageContent(response.message) || '',
+                },
               ]
             }
             status={response.isLoading ? 'streaming' : 'ready'}
@@ -135,14 +143,21 @@ export function MultiModelConversation({
                   <div className="mb-10 w-full space-y-3" key={groupIndex}>
                     <div className="mx-auto w-full max-w-3xl">
                       <Message
-                        attachments={'experimental_attachments' in group.userMessage ? group.userMessage.experimental_attachments : undefined}
+                        attachments={
+                          'experimental_attachments' in group.userMessage
+                            ? group.userMessage.experimental_attachments
+                            : undefined
+                        }
                         id={group.userMessage.id}
                         onDelete={() => {}}
                         onEdit={() => {}}
                         onReload={() => {}}
                         parts={
                           group.userMessage.parts || [
-                            { type: 'text', text: getMessageContent(group.userMessage) },
+                            {
+                              type: 'text',
+                              text: getMessageContent(group.userMessage),
+                            },
                           ]
                         }
                         status="ready"

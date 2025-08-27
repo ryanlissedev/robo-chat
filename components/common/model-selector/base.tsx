@@ -86,7 +86,9 @@ async function checkGuestCredentials(providerId: string): Promise<boolean> {
     }
 
     // Check persistent credential (requires passphrase, so we check localStorage directly)
-    const persistentKey = localStorage.getItem(`guestByok:persistent:${providerId}`);
+    const persistentKey = localStorage.getItem(
+      `guestByok:persistent:${providerId}`
+    );
     if (persistentKey) {
       return true;
     }
@@ -119,7 +121,8 @@ function ModelItem({
 }) {
   const isLocked = !model.accessible;
   const providerMeta = PROVIDERS.find((p) => p.id === model.icon);
-  const providerId = model.baseProviderId || model.providerId || model.icon || 'unknown';
+  const providerId =
+    model.baseProviderId || model.providerId || model.icon || 'unknown';
   const providerName =
     PROVIDER_NAMES[providerId as keyof typeof PROVIDER_NAMES] || providerId;
 
@@ -166,7 +169,8 @@ function ModelItem({
   };
 
   const credentialStatus = getCredentialStatus();
-  const needsCredentials = !cred?.envAvailable && !cred?.userByokAvailable && !hasGuestCredentials;
+  const needsCredentials =
+    !cred?.envAvailable && !cred?.userByokAvailable && !hasGuestCredentials;
 
   const handleActivate = () => {
     if (isLocked) {
@@ -210,7 +214,6 @@ function ModelItem({
           key={model.id}
           onClick={handleActivate}
           onKeyDown={onKeyDown}
-          role="button"
           type="button"
         >
           <div className="flex items-center gap-3">
@@ -218,7 +221,10 @@ function ModelItem({
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">{model.name}</span>
-                <Badge variant="outline" className="h-auto px-1.5 py-0.5 text-[10px]">
+                <Badge
+                  variant="outline"
+                  className="h-auto px-1.5 py-0.5 text-[10px]"
+                >
                   {providerName}
                 </Badge>
               </div>
@@ -277,9 +283,7 @@ export function ModelSelector({
   const { isModelHidden } = useUserPreferences();
 
   const currentModel = models.find((model) => model.id === selectedModelId);
-  const currentProvider = PROVIDERS.find(
-    (p) => p.id === currentModel?.icon
-  );
+  const currentProvider = PROVIDERS.find((p) => p.id === currentModel?.icon);
   const isMobile = useBreakpoint(MOBILE_BREAKPOINT);
 
   const [hoveredModel, setHoveredModel] = useState<string | null>(null);

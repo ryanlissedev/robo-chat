@@ -23,18 +23,31 @@ type RetryOptions = {
 const isRetriableError = (err: unknown): boolean => {
   // Network-level errors
   const anyErr = err as { code?: string; status?: number; name?: string };
-  if (anyErr?.code && ['ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'ENETUNREACH', 'ECONNREFUSED'].includes(anyErr.code)) {
+  if (
+    anyErr?.code &&
+    [
+      'ECONNRESET',
+      'ETIMEDOUT',
+      'EAI_AGAIN',
+      'ENETUNREACH',
+      'ECONNREFUSED',
+    ].includes(anyErr.code)
+  ) {
     return true;
   }
   // OpenAI APIError has status
   if (typeof anyErr?.status === 'number') {
     const s = anyErr.status;
-    if (s === 408 || s === 425 || s === 429 || (s >= 500 && s <= 504)) return true;
+    if (s === 408 || s === 425 || s === 429 || (s >= 500 && s <= 504))
+      return true;
   }
   return false;
 };
 
-async function withRetry<T>(fn: () => Promise<T>, opts: RetryOptions = {}): Promise<T> {
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  opts: RetryOptions = {}
+): Promise<T> {
   const attempts = Math.max(1, opts.attempts ?? 3);
   const base = opts.baseDelayMs ?? 500;
   const cap = opts.maxDelayMs ?? 4_000;
@@ -46,7 +59,8 @@ async function withRetry<T>(fn: () => Promise<T>, opts: RetryOptions = {}): Prom
       lastErr = err;
       const retriable = isRetriableError(err);
       if (!retriable || i === attempts - 1) break;
-      const delay = Math.min(cap, base * Math.pow(2, i)) + Math.floor(Math.random() * 150);
+      const delay =
+        Math.min(cap, base * 2 ** i) + Math.floor(Math.random() * 150);
       await new Promise((res) => setTimeout(res, delay));
     }
   }
@@ -108,28 +122,36 @@ export const fileSearchTool = tool({
     enable_reranking = true,
     reranking_method = 'semantic',
   }) => {
-    logger.info({
-      at: 'fileSearchTool.execute.start',
-      query,
-      max_results,
-      file_types,
-      vector_store_id,
-      enable_rewriting,
-      rewrite_strategy,
-      enable_reranking,
-      reranking_method,
-      timestamp: new Date().toISOString()
-    }, 'File search tool execution started');
-    
+    logger.info(
+      {
+        at: 'fileSearchTool.execute.start',
+        query,
+        max_results,
+        file_types,
+        vector_store_id,
+        enable_rewriting,
+        rewrite_strategy,
+        enable_reranking,
+        reranking_method,
+        timestamp: new Date().toISOString(),
+      },
+      'File search tool execution started'
+    );
+
     try {
       // Get API key from environment
       const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) {
-        logger.error({
-          at: 'fileSearchTool.execute.apiKeyMissing',
-          timestamp: new Date().toISOString()
-        }, 'OpenAI API key not found');
-        throw new Error('OpenAI API key is required for file search. Set OPENAI_API_KEY environment variable.');
+        logger.error(
+          {
+            at: 'fileSearchTool.execute.apiKeyMissing',
+            timestamp: new Date().toISOString(),
+          },
+          'OpenAI API key not found'
+        );
+        throw new Error(
+          'OpenAI API key is required for file search. Set OPENAI_API_KEY environment variable.'
+        );
       }
 
       const openai = new OpenAI({ apiKey, ...OPENAI_CLIENT_DEFAULTS });
@@ -137,50 +159,69 @@ export const fileSearchTool = tool({
       // If no vector store ID provided, get the default one or create a new one
       let storeId: string | undefined = vector_store_id;
       if (!storeId) {
-        logger.info({
-          at: 'fileSearchTool.execute.vectorStore.lookup',
-          timestamp: new Date().toISOString()
-        }, 'Looking up default vector store');
-        
+        logger.info(
+          {
+            at: 'fileSearchTool.execute.vectorStore.lookup',
+            timestamp: new Date().toISOString(),
+          },
+          'Looking up default vector store'
+        );
+
         // Try to get the user's default vector store
-        const stores = await withRetry(() => openai.vectorStores.list({ limit: 1 }));
+        const stores = await withRetry(() =>
+          openai.vectorStores.list({ limit: 1 })
+        );
         if (stores.data.length > 0) {
           storeId = stores.data[0].id;
-          logger.info({
-            at: 'fileSearchTool.execute.vectorStore.found',
-            storeId,
-            storeName: stores.data[0].name,
-            timestamp: new Date().toISOString()
-          }, 'Using existing vector store');
+          logger.info(
+            {
+              at: 'fileSearchTool.execute.vectorStore.found',
+              storeId,
+              storeName: stores.data[0].name,
+              timestamp: new Date().toISOString(),
+            },
+            'Using existing vector store'
+          );
         } else {
           // Create a new vector store if none exists
-          logger.info({
-            at: 'fileSearchTool.execute.vectorStore.creating',
-            timestamp: new Date().toISOString()
-          }, 'Creating new vector store');
-          
-          const newStore = await withRetry(() => openai.vectorStores.create({
-            name: 'Base Chat Default Store',
-            metadata: {
-              created_by: 'Base Chat',
-              purpose: 'file_search',
+          logger.info(
+            {
+              at: 'fileSearchTool.execute.vectorStore.creating',
+              timestamp: new Date().toISOString(),
             },
-          }));
+            'Creating new vector store'
+          );
+
+          const newStore = await withRetry(() =>
+            openai.vectorStores.create({
+              name: 'Base Chat Default Store',
+              metadata: {
+                created_by: 'Base Chat',
+                purpose: 'file_search',
+              },
+            })
+          );
           storeId = newStore.id;
-          
-          logger.info({
-            at: 'fileSearchTool.execute.vectorStore.created',
-            storeId: newStore.id,
-            storeName: newStore.name,
-            timestamp: new Date().toISOString()
-          }, 'Created new vector store');
+
+          logger.info(
+            {
+              at: 'fileSearchTool.execute.vectorStore.created',
+              storeId: newStore.id,
+              storeName: newStore.name,
+              timestamp: new Date().toISOString(),
+            },
+            'Created new vector store'
+          );
         }
       } else {
-        logger.info({
-          at: 'fileSearchTool.execute.vectorStore.provided',
-          storeId,
-          timestamp: new Date().toISOString()
-        }, 'Using provided vector store ID');
+        logger.info(
+          {
+            at: 'fileSearchTool.execute.vectorStore.provided',
+            storeId,
+            timestamp: new Date().toISOString(),
+          },
+          'Using provided vector store ID'
+        );
       }
 
       // Configure retrieval pipeline
@@ -200,44 +241,51 @@ export const fileSearchTool = tool({
         metadataFilters: file_types ? { fileTypes: file_types } : undefined,
       };
 
-      logger.info({
-        at: 'fileSearchTool.execute.retrieval.config',
-        retrievalConfig,
-        timestamp: new Date().toISOString()
-      }, 'Configured retrieval pipeline');
+      logger.info(
+        {
+          at: 'fileSearchTool.execute.retrieval.config',
+          retrievalConfig,
+          timestamp: new Date().toISOString(),
+        },
+        'Configured retrieval pipeline'
+      );
 
       // Use enhanced retrieval with query rewriting and reranking
       // Note: retrieval currently feature-gated; returns empty results if unsupported
-      logger.info({
-        at: 'fileSearchTool.execute.retrieval.calling',
-        query,
-        storeId,
-        timestamp: new Date().toISOString()
-      }, 'Calling enhanced retrieval');
-      
-      const results = await withRetry(() =>
-        enhancedRetrieval(
+      logger.info(
+        {
+          at: 'fileSearchTool.execute.retrieval.calling',
           query,
-          storeId as string,
-          openai,
-          retrievalConfig
-        )
+          storeId,
+          timestamp: new Date().toISOString(),
+        },
+        'Calling enhanced retrieval'
       );
-      
-      logger.info({
-        at: 'fileSearchTool.execute.retrieval.complete',
-        resultsCount: results.length,
-        hasResults: results.length > 0,
-        timestamp: new Date().toISOString()
-      }, 'Enhanced retrieval completed');
+
+      const results = await withRetry(() =>
+        enhancedRetrieval(query, storeId as string, openai, retrievalConfig)
+      );
+
+      logger.info(
+        {
+          at: 'fileSearchTool.execute.retrieval.complete',
+          resultsCount: results.length,
+          hasResults: results.length > 0,
+          timestamp: new Date().toISOString(),
+        },
+        'Enhanced retrieval completed'
+      );
 
       // Format results for output
-      logger.info({
-        at: 'fileSearchTool.execute.formatting.start',
-        rawResultsCount: results.length,
-        timestamp: new Date().toISOString()
-      }, 'Formatting search results');
-      
+      logger.info(
+        {
+          at: 'fileSearchTool.execute.formatting.start',
+          rawResultsCount: results.length,
+          timestamp: new Date().toISOString(),
+        },
+        'Formatting search results'
+      );
+
       const formattedResults = results.map((result, index) => ({
         rank: index + 1,
         file_id: result.file_id || result.id,
@@ -247,12 +295,16 @@ export const fileSearchTool = tool({
         metadata: result.metadata,
       }));
 
-      logger.info({
-        at: 'fileSearchTool.execute.formatting.complete',
-        formattedResultsCount: formattedResults.length,
-        topResultScore: formattedResults.length > 0 ? formattedResults[0].score : null,
-        timestamp: new Date().toISOString()
-      }, 'Formatted search results');
+      logger.info(
+        {
+          at: 'fileSearchTool.execute.formatting.complete',
+          formattedResultsCount: formattedResults.length,
+          topResultScore:
+            formattedResults.length > 0 ? formattedResults[0].score : null,
+          timestamp: new Date().toISOString(),
+        },
+        'Formatted search results'
+      );
 
       // Create a summary of the search results
       const summary =
@@ -261,7 +313,7 @@ export const fileSearchTool = tool({
           : 'No relevant documents found. Try rephrasing your query or uploading more documents.';
 
       // Extract sources from results for citation
-      const sources = formattedResults.map(result => ({
+      const sources = formattedResults.map((result) => ({
         id: result.file_id,
         name: result.file_name,
         score: result.score,
@@ -272,13 +324,17 @@ export const fileSearchTool = tool({
       // Generate thinking/reasoning trace
       const thinking = [
         `Searching for: "${query}"`,
-        enable_rewriting ? `Enhanced query with ${rewrite_strategy} strategy` : null,
+        enable_rewriting
+          ? `Enhanced query with ${rewrite_strategy} strategy`
+          : null,
         `Found ${formattedResults.length} relevant documents`,
         enable_reranking ? `Applied ${reranking_method} reranking` : null,
-        formattedResults.length > 0 ? 
-          `Top result: ${formattedResults[0].file_name} (score: ${formattedResults[0].score.toFixed(3)})` : 
-          'No matching documents found',
-      ].filter(Boolean).join('\n');
+        formattedResults.length > 0
+          ? `Top result: ${formattedResults[0].file_name} (score: ${formattedResults[0].score.toFixed(3)})`
+          : 'No matching documents found',
+      ]
+        .filter(Boolean)
+        .join('\n');
 
       const response = {
         success: true,
@@ -299,37 +355,49 @@ export const fileSearchTool = tool({
           reranking_method,
         },
       };
-      
-      logger.info({
-        at: 'fileSearchTool.execute.success',
-        response: {
-          success: response.success,
-          query: response.query,
-          enhanced_query: response.enhanced_query,
-          total_results: response.total_results,
-          summary: response.summary,
-          sources: response.sources,
-          thinking: response.thinking,
-          search_config: response.search_config
+
+      logger.info(
+        {
+          at: 'fileSearchTool.execute.success',
+          response: {
+            success: response.success,
+            query: response.query,
+            enhanced_query: response.enhanced_query,
+            total_results: response.total_results,
+            summary: response.summary,
+            sources: response.sources,
+            thinking: response.thinking,
+            search_config: response.search_config,
+          },
+          timestamp: new Date().toISOString(),
         },
-        timestamp: new Date().toISOString()
-      }, 'File search completed successfully');
-      
+        'File search completed successfully'
+      );
+
       return response;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to perform file search';
-      
-      logger.error({
-        at: 'fileSearchTool.execute.error',
-        query,
-        error: errorMessage,
-        errorDetails: error instanceof Error ? {
-          name: error.name,
-          stack: error.stack,
-        } : error,
-        timestamp: new Date().toISOString()
-      }, 'File search failed');
-      
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to perform file search';
+
+      logger.error(
+        {
+          at: 'fileSearchTool.execute.error',
+          query,
+          error: errorMessage,
+          errorDetails:
+            error instanceof Error
+              ? {
+                  name: error.name,
+                  stack: error.stack,
+                }
+              : error,
+          timestamp: new Date().toISOString(),
+        },
+        'File search failed'
+      );
+
       return {
         success: false,
         query,
@@ -351,22 +419,24 @@ export async function createVectorStore(
   const openai = new OpenAI({ apiKey, ...OPENAI_CLIENT_DEFAULTS });
 
   try {
-    const vectorStore = await withRetry(() => openai.vectorStores.create({
-      name,
-      file_ids: fileIds,
-      metadata: {
-        ...metadata,
-        created_at: new Date().toISOString(),
-        file_count: fileIds.length.toString(),
-      },
-      chunking_strategy: {
-        type: 'static',
-        static: {
-          max_chunk_size_tokens: 800,
-          chunk_overlap_tokens: 400,
+    const vectorStore = await withRetry(() =>
+      openai.vectorStores.create({
+        name,
+        file_ids: fileIds,
+        metadata: {
+          ...metadata,
+          created_at: new Date().toISOString(),
+          file_count: fileIds.length.toString(),
         },
-      },
-    }));
+        chunking_strategy: {
+          type: 'static',
+          static: {
+            max_chunk_size_tokens: 800,
+            chunk_overlap_tokens: 400,
+          },
+        },
+      })
+    );
 
     return vectorStore.id;
   } catch {
@@ -385,10 +455,12 @@ export async function uploadFileForSearch(
   const openai = new OpenAI({ apiKey, ...OPENAI_CLIENT_DEFAULTS });
 
   try {
-    const uploadedFile = await withRetry(() => openai.files.create({
-      file: file as File,
-      purpose,
-    }));
+    const uploadedFile = await withRetry(() =>
+      openai.files.create({
+        file: file as File,
+        purpose,
+      })
+    );
 
     // Store metadata for better search
     if (metadata) {

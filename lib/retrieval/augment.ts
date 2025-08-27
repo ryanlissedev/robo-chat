@@ -25,10 +25,15 @@ export function buildAugmentedSystemPrompt(
 
   for (const doc of docs) {
     if (budget <= 0) break;
-    const maxChars = Math.min(doc.content.length, Math.max(200, Math.floor(budget / 2)));
+    const maxChars = Math.min(
+      doc.content.length,
+      Math.max(200, Math.floor(budget / 2))
+    );
     const snippet = doc.content.slice(0, maxChars);
     budget -= Math.ceil(snippet.length / 4); // rough token estimate
-    snippets.push(`Source: ${doc.fileName} (${(doc.score * 100).toFixed(1)}%)\n${snippet}`);
+    snippets.push(
+      `Source: ${doc.fileName} (${(doc.score * 100).toFixed(1)}%)\n${snippet}`
+    );
   }
 
   const sourcesList = docs

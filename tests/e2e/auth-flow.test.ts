@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import type { Page } from '@playwright/test';
 import { mockApiResponse, waitForPageReady } from './fixtures';
 
 test.describe('Authentication Flow', () => {
@@ -152,9 +151,7 @@ test.describe('Authentication Flow', () => {
       await page.click('[data-testid="save-api-key-button"]');
 
       // Should show error message
-      await expect(
-        page.locator('[data-testid="api-key-error"]')
-      ).toBeVisible();
+      await expect(page.locator('[data-testid="api-key-error"]')).toBeVisible();
       await expect(page.locator('[data-testid="api-key-error"]')).toContainText(
         /invalid/i
       );
@@ -371,9 +368,9 @@ test.describe('Authentication Flow', () => {
       await expect(
         page.locator('[data-testid="rate-limit-dialog"]')
       ).toBeVisible();
-      await expect(page.locator('[data-testid="rate-limit-dialog"]')).toContainText(
-        /limit|exceeded/i
-      );
+      await expect(
+        page.locator('[data-testid="rate-limit-dialog"]')
+      ).toContainText(/limit|exceeded/i);
     });
 
     test('should display usage statistics for authenticated users', async ({

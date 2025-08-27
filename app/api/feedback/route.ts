@@ -146,7 +146,8 @@ export async function GET(req: Request) {
     return NextResponse.json({
       success: true,
       feedback: (data as unknown as { message?: string })?.message || null,
-      createdAt: (data as unknown as { created_at?: string })?.created_at || null,
+      createdAt:
+        (data as unknown as { created_at?: string })?.created_at || null,
     });
   } catch {
     return NextResponse.json(

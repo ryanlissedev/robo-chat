@@ -6,7 +6,7 @@ if (!ENCRYPTION_KEY) {
 }
 const ALGORITHM = 'aes-256-gcm';
 
-const key = Buffer.from(ENCRYPTION_KEY!, 'base64');
+const key = Buffer.from(ENCRYPTION_KEY, 'base64');
 
 if (key.length !== 32) {
   throw new Error('ENCRYPTION_KEY must be 32 bytes long');

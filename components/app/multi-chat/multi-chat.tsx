@@ -3,10 +3,10 @@
 import type { UIMessage as MessageType } from '@ai-sdk/react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useMemo, useState } from 'react';
-import { MultiModelConversation } from '@/components/app/multi-chat/multi-conversation';
-import { toast } from '@/components/ui/toast';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import { getMessageContent } from '@/app/types/ai-extended';
+import { MultiModelConversation } from '@/components/app/multi-chat/multi-conversation';
+import { toast } from '@/components/ui/toast';
 import { getOrCreateGuestUserId } from '@/lib/api';
 import { useChats } from '@/lib/chat-store/chats/provider';
 import { useMessages } from '@/lib/chat-store/messages/provider';
@@ -66,7 +66,9 @@ export function MultiChat() {
     }
 
     const lastUserMessage = userMessages.at(-1);
-    const lastUserIndex = lastUserMessage ? persistedMessages.indexOf(lastUserMessage) : -1;
+    const lastUserIndex = lastUserMessage
+      ? persistedMessages.indexOf(lastUserMessage)
+      : -1;
 
     const modelsInLastGroup: string[] = [];
     for (let i = lastUserIndex + 1; i < persistedMessages.length; i++) {
@@ -137,7 +139,9 @@ export function MultiChat() {
         }
 
         if (associatedUserMessage) {
-          const groupKey = getMessageContent(associatedUserMessage as ExtendedUIMessage);
+          const groupKey = getMessageContent(
+            associatedUserMessage as ExtendedUIMessage
+          );
           if (!groups[groupKey]) {
             groups[groupKey] = {
               userMessage: associatedUserMessage,
@@ -155,7 +159,9 @@ export function MultiChat() {
           userMessage: group.userMessage,
           responses: group.assistantMessages.map((msg, index) => {
             const model =
-              ('model' in msg && msg.model) ? msg.model as string : selectedModelIds[index] || `model-${index}`;
+              'model' in msg && msg.model
+                ? (msg.model as string)
+                : selectedModelIds[index] || `model-${index}`;
             const provider =
               models.find((m) => m.id === model)?.provider || 'unknown';
 
@@ -296,8 +302,8 @@ export function MultiChat() {
             },
           };
 
-          // v5 uses sendMessage with text property
-          chat.sendMessage({ text: prompt }, options);
+          // Send message using v5 API shape
+          chat.sendMessage({ text: prompt }, options as any);
         })
       );
 

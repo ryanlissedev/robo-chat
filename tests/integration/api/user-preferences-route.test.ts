@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET, PUT } from '@/app/api/user-preferences/route';
 
 const mockQuery = {
@@ -152,7 +152,9 @@ describe('User Preferences API Route', () => {
           hidden_models: ['model-1', 'model-2'],
         });
 
-        expect(mockSupabaseClient.from).toHaveBeenCalledWith('user_preferences');
+        expect(mockSupabaseClient.from).toHaveBeenCalledWith(
+          'user_preferences'
+        );
         expect(mockQuery.select).toHaveBeenCalledWith('*');
         expect(mockQuery.eq).toHaveBeenCalledWith('user_id', 'user-123');
         expect(mockQuery.single).toHaveBeenCalled();
@@ -266,7 +268,6 @@ describe('User Preferences API Route', () => {
   });
 
   describe('PUT /api/user-preferences', () => {
-
     describe('Authentication', () => {
       it('should return 500 when database connection fails', async () => {
         mockCreateClient.mockResolvedValue(null);
@@ -552,11 +553,14 @@ describe('User Preferences API Route', () => {
 
     describe('Exception Handling', () => {
       it('should return 500 when JSON parsing fails', async () => {
-        const request = new NextRequest('http://localhost:3000/api/user-preferences', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: 'invalid-json',
-        });
+        const request = new NextRequest(
+          'http://localhost:3000/api/user-preferences',
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: 'invalid-json',
+          }
+        );
 
         const response = await PUT(request);
         const json = await response.json();
@@ -692,10 +696,10 @@ describe('User Preferences API Route', () => {
         ];
 
         const responses = await Promise.all(
-          requests.map(request => PUT(request))
+          requests.map((request) => PUT(request))
         );
 
-        responses.forEach(response => {
+        responses.forEach((response) => {
           expect(response.status).toBe(200);
         });
 
@@ -720,10 +724,10 @@ describe('User Preferences API Route', () => {
         );
 
         const responses = await Promise.all(
-          rapidRequests.map(request => PUT(request))
+          rapidRequests.map((request) => PUT(request))
         );
 
-        responses.forEach(response => {
+        responses.forEach((response) => {
           expect(response.status).toBe(200);
         });
 
@@ -762,7 +766,10 @@ describe('User Preferences API Route', () => {
 
         const requests = Array.from({ length: 100 }, (_, i) =>
           createMockRequest({
-            hidden_models: Array.from({ length: 50 }, (_, j) => `model-${i}-${j}`),
+            hidden_models: Array.from(
+              { length: 50 },
+              (_, j) => `model-${i}-${j}`
+            ),
           })
         );
 
@@ -771,7 +778,7 @@ describe('User Preferences API Route', () => {
           error: null,
         });
 
-        await Promise.all(requests.map(request => PUT(request)));
+        await Promise.all(requests.map((request) => PUT(request)));
 
         // Force garbage collection if available
         if (global.gc) {
@@ -831,7 +838,11 @@ describe('User Preferences API Route', () => {
       });
 
       mockQuery.single.mockResolvedValueOnce({
-        data: { ...mockUserPreferences, user_id: 'user-1', layout: 'fullscreen' },
+        data: {
+          ...mockUserPreferences,
+          user_id: 'user-1',
+          layout: 'fullscreen',
+        },
         error: null,
       });
 

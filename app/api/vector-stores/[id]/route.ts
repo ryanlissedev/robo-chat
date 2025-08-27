@@ -7,7 +7,10 @@ export async function DELETE(
 ) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: 'OPENAI_API_KEY not set' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'OPENAI_API_KEY not set' },
+      { status: 500 }
+    );
   }
   const openai = new OpenAI({ apiKey });
   const { id } = await params;
@@ -15,7 +18,8 @@ export async function DELETE(
     await openai.vectorStores.delete(id);
     return NextResponse.json({ ok: true });
   } catch (e) {
-    const message = e instanceof Error ? e.message : 'Failed to delete vector store';
+    const message =
+      e instanceof Error ? e.message : 'Failed to delete vector store';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

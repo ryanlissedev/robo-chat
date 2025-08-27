@@ -47,7 +47,7 @@ export function ProModelDialog({
       const { error } = await supabase.from('feedback').insert({
         message: `I want access to ${currentModel}`,
         user_id: user.id,
-      });
+      } as never);
 
       if (error) {
         throw new Error(error.message);

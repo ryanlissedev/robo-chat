@@ -2,9 +2,10 @@
 process.env.ENCRYPTION_KEY = 'test-key-for-encryption-testing-32chars!!';
 process.env.OPENAI_API_KEY = 'sk-env-openai';
 process.env.DISABLE_RATE_LIMIT = 'true';
+
 // NODE_ENV is already set by test runner
 
-import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 // Mock encryption module first to prevent initialization errors
 vi.mock('@/lib/encryption', () => ({
@@ -57,15 +58,15 @@ vi.mock('@/lib/security/web-crypto', () => ({
 
 vi.mock('@/lib/models', () => ({
   getAllModels: vi.fn().mockResolvedValue([
-    { 
-      id: 'gpt-4o', 
+    {
+      id: 'gpt-4o',
       providerId: 'openai',
       apiSdk: vi.fn().mockReturnValue({
         doGenerate: vi.fn().mockResolvedValue({
           text: 'response',
-          usage: { promptTokens: 10, completionTokens: 10 }
-        })
-      }) 
+          usage: { promptTokens: 10, completionTokens: 10 },
+        }),
+      }),
     },
   ]),
 }));
@@ -80,9 +81,9 @@ vi.mock('@/app/api/chat/api', () => ({
 vi.mock('ai', () => ({
   convertToModelMessages: vi.fn().mockReturnValue([]),
   streamText: vi.fn().mockImplementation(() => {
-    const response = new Response('{}', { 
+    const response = new Response('{}', {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
     return {
       toUIMessageStreamResponse: () => response,
@@ -109,69 +110,88 @@ vi.mock('@/lib/utils/metrics', () => ({
 }));
 
 vi.mock('@/app/api/chat/utils', () => ({
-  createErrorResponse: vi.fn().mockReturnValue(new Response('{"error":"test error"}', { status: 500 })),
+  createErrorResponse: vi
+    .fn()
+    .mockReturnValue(new Response('{"error":"test error"}', { status: 500 })),
 }));
 
+import { getProviderForModel } from '@/lib/openproviders/provider-map';
+import { getEffectiveApiKey } from '@/lib/user-keys';
+import logger from '@/lib/utils/logger';
 // Import after all mocks are set up
 import { redactSensitiveHeaders } from '@/lib/utils/redaction';
-import { getEffectiveApiKey } from '@/lib/user-keys';
-import { getProviderForModel } from '@/lib/openproviders/provider-map';
-import logger from '@/lib/utils/logger';
 
 // We'll mock the POST function directly in each test
 const createMockPOST = () => {
   return vi.fn().mockImplementation(async (req: Request) => {
     const body = await req.json();
     const headers = req.headers;
-    
+
     // Simulate credential resolution logic
     const provider = getProviderForModel(body.model);
-    
+
     // 1. Authenticated user BYOK (highest priority)
     if (body.isAuthenticated && body.userId) {
-      const userKey = provider !== 'ollama' ? await getEffectiveApiKey(body.userId, provider as Exclude<typeof provider, 'ollama'>) : null;
+      const userKey =
+        provider !== 'ollama'
+          ? await getEffectiveApiKey(
+              body.userId,
+              provider as Exclude<typeof provider, 'ollama'>
+            )
+          : null;
       if (userKey) {
-        logger.info({
-          at: 'api.chat.resolveCredentials',
-          source: 'user-byok',
-          provider,
-          hasKey: true,
-        }, 'Using user-byok credentials');
-        return new Response('{"success": true}', { 
+        logger.info(
+          {
+            at: 'api.chat.resolveCredentials',
+            source: 'user-byok',
+            provider,
+            hasKey: true,
+          },
+          'Using user-byok credentials'
+        );
+        return new Response('{"success": true}', {
           status: 200,
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
         });
       }
     }
-    
+
     // 2. Guest header override
-    const guestProvider = headers.get('x-model-provider') || headers.get('X-Model-Provider');
-    const guestApiKey = headers.get('x-provider-api-key') || headers.get('X-Provider-Api-Key');
-    
+    const guestProvider =
+      headers.get('x-model-provider') || headers.get('X-Model-Provider');
+    const guestApiKey =
+      headers.get('x-provider-api-key') || headers.get('X-Provider-Api-Key');
+
     if (guestApiKey && guestProvider?.toLowerCase() === provider) {
-      logger.info({
-        at: 'api.chat.resolveCredentials',
-        source: 'guest-header',
-        provider,
-        hasKey: true,
-      }, 'Using guest-header credentials');
-      return new Response('{"success": true}', { 
+      logger.info(
+        {
+          at: 'api.chat.resolveCredentials',
+          source: 'guest-header',
+          provider,
+          hasKey: true,
+        },
+        'Using guest-header credentials'
+      );
+      return new Response('{"success": true}', {
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
     }
-    
+
     // 3. Environment fallback
-    logger.info({
-      at: 'api.chat.resolveCredentials',
-      source: 'environment',
-      provider,
-      hasKey: false
-    }, 'Using environment credentials');
-    
-    return new Response('{"success": true}', { 
+    logger.info(
+      {
+        at: 'api.chat.resolveCredentials',
+        source: 'environment',
+        provider,
+        hasKey: false,
+      },
+      'Using environment credentials'
+    );
+
+    return new Response('{"success": true}', {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
   });
 };
@@ -193,7 +213,10 @@ describe('Chat Route - Credential Resolution Through API', () => {
     POST = createMockPOST();
   });
 
-  const createRequest = (body: any, headers: Record<string, string> = {}): Request => {
+  const createRequest = (
+    body: any,
+    headers: Record<string, string> = {}
+  ): Request => {
     const url = 'http://localhost:3000/api/chat';
     const request = new Request(url, {
       method: 'POST',
@@ -210,11 +233,13 @@ describe('Chat Route - Credential Resolution Through API', () => {
     it('should accept guest credentials through headers', async () => {
       const request = createRequest(
         {
-          messages: [{ 
-            role: 'user', 
-            parts: [{ type: 'text', text: 'Hello' }],
-            content: 'Hello' 
-          }],
+          messages: [
+            {
+              role: 'user',
+              parts: [{ type: 'text', text: 'Hello' }],
+              content: 'Hello',
+            },
+          ],
           chatId: 'test-chat-1',
           userId: 'guest-user-1',
           model: 'gpt-4o',
@@ -230,10 +255,10 @@ describe('Chat Route - Credential Resolution Through API', () => {
       );
 
       const response = await POST(request);
-      
+
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
-      
+
       // Verify guest credentials were used (check logs)
       expect(mockLoggerInfo).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -245,11 +270,13 @@ describe('Chat Route - Credential Resolution Through API', () => {
 
     it('should handle missing guest headers gracefully', async () => {
       const request = createRequest({
-        messages: [{ 
-          role: 'user', 
-          parts: [{ type: 'text', text: 'Hello' }],
-          content: 'Hello' 
-        }],
+        messages: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', text: 'Hello' }],
+            content: 'Hello',
+          },
+        ],
         chatId: 'test-chat-2',
         userId: 'guest-user-2',
         model: 'gpt-4o',
@@ -259,10 +286,10 @@ describe('Chat Route - Credential Resolution Through API', () => {
       });
 
       const response = await POST(request);
-      
+
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
-      
+
       // Should fallback to environment
       expect(mockLoggerInfo).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -275,11 +302,13 @@ describe('Chat Route - Credential Resolution Through API', () => {
     it('should handle case-insensitive headers', async () => {
       const request = createRequest(
         {
-          messages: [{ 
-            role: 'user', 
-            parts: [{ type: 'text', text: 'Hello' }],
-            content: 'Hello' 
-          }],
+          messages: [
+            {
+              role: 'user',
+              parts: [{ type: 'text', text: 'Hello' }],
+              content: 'Hello',
+            },
+          ],
           chatId: 'test-chat-3',
           userId: 'guest-user-3',
           model: 'gpt-4o',
@@ -295,10 +324,10 @@ describe('Chat Route - Credential Resolution Through API', () => {
       );
 
       const response = await POST(request);
-      
+
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
-      
+
       // Verify guest credentials were used
       expect(mockLoggerInfo).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -311,11 +340,13 @@ describe('Chat Route - Credential Resolution Through API', () => {
     it('should convert provider to lowercase', async () => {
       const request = createRequest(
         {
-          messages: [{ 
-            role: 'user', 
-            parts: [{ type: 'text', text: 'Hello' }],
-            content: 'Hello' 
-          }],
+          messages: [
+            {
+              role: 'user',
+              parts: [{ type: 'text', text: 'Hello' }],
+              content: 'Hello',
+            },
+          ],
           chatId: 'test-chat-4',
           userId: 'guest-user-4',
           model: 'gpt-4o',
@@ -330,10 +361,10 @@ describe('Chat Route - Credential Resolution Through API', () => {
       );
 
       const response = await POST(request);
-      
+
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
-      
+
       // Check that provider was normalized
       expect(mockLoggerInfo).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -358,7 +389,7 @@ describe('Chat Route - Credential Resolution Through API', () => {
         'x-model-provider': 'openai',
         'x-provider-api-key': '[REDACTED]',
       });
-      
+
       const result = mockRedact(headers);
 
       expect(mockRedact).toHaveBeenCalledWith(headers);
@@ -368,11 +399,11 @@ describe('Chat Route - Credential Resolution Through API', () => {
 
     it('should handle empty headers', () => {
       const headers = new Headers({});
-      
+
       const mockRedact = redactSensitiveHeaders as Mock;
       mockRedact.mockClear();
       mockRedact.mockReturnValue({});
-      
+
       const result = mockRedact(headers);
 
       expect(mockRedact).toHaveBeenCalledWith(headers);
@@ -381,19 +412,19 @@ describe('Chat Route - Credential Resolution Through API', () => {
 
     it('should redact authorization headers', () => {
       const headers = new Headers({
-        'Authorization': 'Bearer token123',
+        Authorization: 'Bearer token123',
       });
 
       const mockRedact = redactSensitiveHeaders as Mock;
       mockRedact.mockClear();
       mockRedact.mockReturnValue({
-        'authorization': '[REDACTED]',
+        authorization: '[REDACTED]',
       });
-      
+
       const result = mockRedact(headers);
 
       expect(mockRedact).toHaveBeenCalledWith(headers);
-      expect(result['authorization']).toBe('[REDACTED]');
+      expect(result.authorization).toBe('[REDACTED]');
     });
 
     it('should preserve non-sensitive headers', () => {
@@ -406,7 +437,7 @@ describe('Chat Route - Credential Resolution Through API', () => {
       mockRedact.mockReturnValue({
         'content-type': 'application/json',
       });
-      
+
       const result = mockRedact(headers);
 
       expect(mockRedact).toHaveBeenCalledWith(headers);
@@ -421,11 +452,13 @@ describe('Chat Route - Credential Resolution Through API', () => {
 
       const request = createRequest(
         {
-          messages: [{ 
-            role: 'user', 
-            parts: [{ type: 'text', text: 'Hello' }],
-            content: 'Hello' 
-          }],
+          messages: [
+            {
+              role: 'user',
+              parts: [{ type: 'text', text: 'Hello' }],
+              content: 'Hello',
+            },
+          ],
           chatId: 'test-chat-5',
           userId: 'authenticated-user-1',
           model: 'gpt-4o',
@@ -441,10 +474,10 @@ describe('Chat Route - Credential Resolution Through API', () => {
       );
 
       const response = await POST(request);
-      
+
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
-      
+
       // Should use user BYOK
       expect(mockLoggerInfo).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -460,11 +493,13 @@ describe('Chat Route - Credential Resolution Through API', () => {
 
       const request = createRequest(
         {
-          messages: [{ 
-            role: 'user', 
-            parts: [{ type: 'text', text: 'Hello' }],
-            content: 'Hello' 
-          }],
+          messages: [
+            {
+              role: 'user',
+              parts: [{ type: 'text', text: 'Hello' }],
+              content: 'Hello',
+            },
+          ],
           chatId: 'test-chat-6',
           userId: 'authenticated-user-2',
           model: 'gpt-4o',
@@ -480,10 +515,10 @@ describe('Chat Route - Credential Resolution Through API', () => {
       );
 
       const response = await POST(request);
-      
+
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
-      
+
       // Should fallback to guest credentials
       expect(mockLoggerInfo).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -498,11 +533,13 @@ describe('Chat Route - Credential Resolution Through API', () => {
       mockGetEffectiveApiKey.mockResolvedValue(null);
 
       const request = createRequest({
-        messages: [{ 
-          role: 'user', 
-          parts: [{ type: 'text', text: 'Hello' }],
-          content: 'Hello' 
-        }],
+        messages: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', text: 'Hello' }],
+            content: 'Hello',
+          },
+        ],
         chatId: 'test-chat-7',
         userId: 'guest-user-7',
         model: 'gpt-4o',
@@ -512,10 +549,10 @@ describe('Chat Route - Credential Resolution Through API', () => {
       });
 
       const response = await POST(request);
-      
+
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
-      
+
       // Should fallback to environment
       expect(mockLoggerInfo).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -533,11 +570,13 @@ describe('Chat Route - Credential Resolution Through API', () => {
 
       const request = createRequest(
         {
-          messages: [{ 
-            role: 'user', 
-            parts: [{ type: 'text', text: 'Hello' }],
-            content: 'Hello' 
-          }],
+          messages: [
+            {
+              role: 'user',
+              parts: [{ type: 'text', text: 'Hello' }],
+              content: 'Hello',
+            },
+          ],
           chatId: 'test-chat-8',
           userId: 'guest-user-8',
           model: 'claude-3-opus',
@@ -553,10 +592,10 @@ describe('Chat Route - Credential Resolution Through API', () => {
       );
 
       const response = await POST(request);
-      
+
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
-      
+
       // Should fallback to environment since provider doesn't match
       expect(mockLoggerInfo).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -569,11 +608,13 @@ describe('Chat Route - Credential Resolution Through API', () => {
     it('should use guest credentials when provider matches', async () => {
       const request = createRequest(
         {
-          messages: [{ 
-            role: 'user', 
-            parts: [{ type: 'text', text: 'Hello' }],
-            content: 'Hello' 
-          }],
+          messages: [
+            {
+              role: 'user',
+              parts: [{ type: 'text', text: 'Hello' }],
+              content: 'Hello',
+            },
+          ],
           chatId: 'test-chat-9',
           userId: 'guest-user-9',
           model: 'gpt-4o',
@@ -589,10 +630,10 @@ describe('Chat Route - Credential Resolution Through API', () => {
       );
 
       const response = await POST(request);
-      
+
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
-      
+
       expect(mockLoggerInfo).toHaveBeenCalledWith(
         expect.objectContaining({
           source: 'guest-header',
@@ -607,11 +648,13 @@ describe('Chat Route - Credential Resolution Through API', () => {
     it('should never log actual API key values', async () => {
       const request = createRequest(
         {
-          messages: [{ 
-            role: 'user', 
-            parts: [{ type: 'text', text: 'Hello' }],
-            content: 'Hello' 
-          }],
+          messages: [
+            {
+              role: 'user',
+              parts: [{ type: 'text', text: 'Hello' }],
+              content: 'Hello',
+            },
+          ],
           chatId: 'test-chat-10',
           userId: 'guest-user-10',
           model: 'gpt-4o',
@@ -630,12 +673,12 @@ describe('Chat Route - Credential Resolution Through API', () => {
 
       // Check all logger calls to ensure no actual API key is logged
       const allLoggerCalls = mockLoggerInfo.mock.calls;
-      
+
       allLoggerCalls.forEach(([logData]) => {
         const logString = JSON.stringify(logData);
         expect(logString).not.toContain('sk-very-secret-key-123');
-        
-        if (logData.headers && logData.headers['X-Provider-Api-Key']) {
+
+        if (logData.headers?.['X-Provider-Api-Key']) {
           expect(logData.headers['X-Provider-Api-Key']).toBe('[REDACTED]');
         }
       });

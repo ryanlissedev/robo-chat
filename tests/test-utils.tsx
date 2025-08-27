@@ -92,6 +92,10 @@ export function createTestQueryClient() {
   });
 }
 
+import { ModelProvider } from '@/lib/model-store/provider';
+import { UserPreferencesProvider } from '@/lib/user-preference-store/provider';
+import { UserProvider } from '@/lib/user-store/provider';
+
 // Custom render function with providers
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
   queryClient?: QueryClient;
@@ -108,9 +112,13 @@ export function renderWithProviders(
   function Wrapper({ children }: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          {children}
-        </TooltipProvider>
+        <UserProvider initialUser={mockUserProfile}>
+          <UserPreferencesProvider>
+            <ModelProvider>
+              <TooltipProvider>{children}</TooltipProvider>
+            </ModelProvider>
+          </UserPreferencesProvider>
+        </UserProvider>
       </QueryClientProvider>
     );
   }
@@ -234,7 +242,6 @@ export const customMatchers = {
   toHaveAttribute: (expect as any).toHaveAttribute,
   toHaveValue: (expect as any).toHaveValue,
 };
-
 
 // Re-export everything from testing library
 export * from '@testing-library/react';

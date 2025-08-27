@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  rateLimit,
-  validateCSRFToken,
-  sanitizeInput,
-  trackApiKeyUsage,
-  securityHeaders,
-  validateOrigin,
+  clearRateLimitStore,
   detectSuspiciousApiKey,
   logSecurityEvent,
-  clearRateLimitStore,
+  rateLimit,
+  sanitizeInput,
+  securityHeaders,
+  trackApiKeyUsage,
+  validateCSRFToken,
+  validateOrigin,
 } from '@/lib/security/middleware';
 
 // Mock dependencies
@@ -115,7 +115,7 @@ describe('Security Middleware', () => {
       }
 
       // Verify rate limit is exceeded
-      let blockedResult = await rateLimit('general_api');
+      const blockedResult = await rateLimit('general_api');
       expect(blockedResult).toBeInstanceOf(Response);
 
       // Advance time beyond rate limit window (60 seconds)
@@ -415,7 +415,7 @@ describe('Security Middleware', () => {
     it('should limit object depth to prevent attacks', () => {
       const deepObject: any = {};
       let current = deepObject;
-      
+
       // Create deeply nested object (10 levels deep)
       for (let i = 0; i < 10; i++) {
         current.next = { level: i, data: `level-${i}` };
@@ -427,7 +427,7 @@ describe('Security Middleware', () => {
       // The sanitization should reject objects that are too deep
       // Since the entire chain is 10 levels deep (> 5), the 'next' property should be filtered out
       expect(result.next).toBeUndefined();
-      
+
       // Test with a shallower object that should be preserved (4 levels deep)
       const shallowObject: any = {};
       let currentShallow = shallowObject;
@@ -443,7 +443,7 @@ describe('Security Middleware', () => {
     it('should sanitize object keys', () => {
       const input = {
         'clean\x00key': 'value1',
-        'normal': 'value2',
+        normal: 'value2',
       };
       const result = sanitizeInput(input) as Record<string, string>;
 
@@ -529,8 +529,12 @@ describe('Security Middleware', () => {
         'max-age=31536000; includeSubDomains; preload'
       );
       expect(securedResponse.headers.get('X-Frame-Options')).toBe('SAMEORIGIN');
-      expect(securedResponse.headers.get('X-XSS-Protection')).toBe('1; mode=block');
-      expect(securedResponse.headers.get('X-Content-Type-Options')).toBe('nosniff');
+      expect(securedResponse.headers.get('X-XSS-Protection')).toBe(
+        '1; mode=block'
+      );
+      expect(securedResponse.headers.get('X-Content-Type-Options')).toBe(
+        'nosniff'
+      );
       expect(securedResponse.headers.get('Referrer-Policy')).toBe(
         'strict-origin-when-cross-origin'
       );
@@ -546,7 +550,9 @@ describe('Security Middleware', () => {
       const securedResponse = securityHeaders(response);
 
       expect(securedResponse.headers.get('Custom-Header')).toBe('custom-value');
-      expect(securedResponse.headers.get('Strict-Transport-Security')).toBeTruthy();
+      expect(
+        securedResponse.headers.get('Strict-Transport-Security')
+      ).toBeTruthy();
     });
 
     it('should return the same response object', () => {
@@ -672,7 +678,7 @@ describe('Security Middleware', () => {
         '1234567890',
       ];
 
-      testCases.forEach(key => {
+      testCases.forEach((key) => {
         const result = detectSuspiciousApiKey(key);
         expect(result.isSuspicious).toBe(true);
         expect(result.reason).toBeTruthy();
@@ -700,7 +706,7 @@ describe('Security Middleware', () => {
         'llm_api_key_random_string_12345',
       ];
 
-      legitimateKeys.forEach(key => {
+      legitimateKeys.forEach((key) => {
         const result = detectSuspiciousApiKey(key);
         expect(result.isSuspicious).toBe(false);
         expect(result.reason).toBeUndefined();
@@ -723,7 +729,8 @@ describe('Security Middleware', () => {
 
     it('should calculate entropy correctly', () => {
       // High entropy key
-      const highEntropyKey = 'sk-proj-1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const highEntropyKey =
+        'sk-proj-1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
       const highEntropyResult = detectSuspiciousApiKey(highEntropyKey);
       expect(highEntropyResult.isSuspicious).toBe(false);
 
@@ -770,11 +777,13 @@ describe('Security Middleware', () => {
       });
 
       // Make concurrent requests
-      const promises = Array(30).fill(null).map(() => rateLimit('general_api'));
+      const promises = Array(30)
+        .fill(null)
+        .map(() => rateLimit('general_api'));
       const results = await Promise.all(promises);
 
       // All should be allowed (within limit)
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result).toBeNull();
       });
     });
@@ -790,7 +799,7 @@ describe('Security Middleware', () => {
 
     it('should handle very large objects in sanitization', () => {
       const largeObject: any = {};
-      
+
       // Create object with many properties
       for (let i = 0; i < 1000; i++) {
         largeObject[`key${i}`] = `value${i}\x00dirty`;
@@ -855,13 +864,13 @@ describe('Security Middleware', () => {
   describe('Performance', () => {
     it('should handle rapid sanitization requests efficiently', () => {
       const input = 'test\x00input\x01with\x02control\x03chars';
-      
+
       const start = Date.now();
-      
+
       for (let i = 0; i < 1000; i++) {
         sanitizeInput(input);
       }
-      
+
       const end = Date.now();
       const duration = end - start;
 

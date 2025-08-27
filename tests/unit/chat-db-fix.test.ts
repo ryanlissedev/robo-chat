@@ -3,7 +3,7 @@
  * Tests that chat creation and message saving work correctly
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { storeAssistantMessage } from '@/app/api/chat/db';
 import type { StoreAssistantMessageParams } from '@/app/types/api.types';
 
@@ -17,8 +17,8 @@ vi.mock('@/lib/utils/logger', () => ({
 }));
 
 // Mock Supabase client
-const mockSelect = vi.fn();
-const mockEq = vi.fn();
+const _mockSelect = vi.fn();
+const _mockEq = vi.fn();
 const mockSingle = vi.fn();
 const mockInsert = vi.fn();
 
@@ -63,13 +63,15 @@ describe('Chat Database Fix', () => {
     });
 
     // Mock successful chat creation and message insertion
-    mockInsert.mockResolvedValueOnce({
-      data: { id: 'test-chat-id' },
-      error: null,
-    }).mockResolvedValueOnce({
-      data: { id: 'test-message-id' },
-      error: null,
-    });
+    mockInsert
+      .mockResolvedValueOnce({
+        data: { id: 'test-chat-id' },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: { id: 'test-message-id' },
+        error: null,
+      });
 
     const params: StoreAssistantMessageParams = {
       supabase: mockSupabase as any,
@@ -95,7 +97,7 @@ describe('Chat Database Fix', () => {
   it('should skip message saving if chat cannot be created', async () => {
     // Import the mocked logger
     const { logWarning } = await import('@/lib/utils/logger');
-    
+
     // Mock chat doesn't exist
     mockSingle.mockResolvedValueOnce({
       data: null,

@@ -5,8 +5,8 @@ import {
   getModelsWithAccessFlags,
   refreshModelsCache,
 } from '@/lib/models';
-import { createClient } from '@/lib/supabase/server';
 import type { ModelConfig } from '@/lib/models/types';
+import { createClient } from '@/lib/supabase/server';
 
 // Provider environment variable mappings
 const PROVIDER_ENV_MAPPING = {
@@ -21,19 +21,23 @@ const PROVIDER_ENV_MAPPING = {
 
 // Helper function to check if environment variables are available for a provider
 function checkEnvAvailable(providerId: string): boolean {
-  const envKeys = PROVIDER_ENV_MAPPING[providerId as keyof typeof PROVIDER_ENV_MAPPING];
+  const envKeys =
+    PROVIDER_ENV_MAPPING[providerId as keyof typeof PROVIDER_ENV_MAPPING];
   if (!envKeys) return false;
-  
+
   if (Array.isArray(envKeys)) {
-    return envKeys.some(key => Boolean(process.env[key]));
+    return envKeys.some((key) => Boolean(process.env[key]));
   }
-  
+
   return Boolean(process.env[envKeys as string]);
 }
 
 // Helper function to add credentialInfo to models
-function addCredentialInfo(models: ModelConfig[], userProviders: string[] = []): ModelConfig[] {
-  return models.map(model => ({
+function addCredentialInfo(
+  models: ModelConfig[],
+  userProviders: string[] = []
+): ModelConfig[] {
+  return models.map((model) => ({
     ...model,
     credentialInfo: {
       envAvailable: checkEnvAvailable(model.providerId),
@@ -50,7 +54,7 @@ export async function GET() {
     if (!supabase) {
       const allModels = await getAllModels();
       const models = addCredentialInfo(
-        allModels.map(model => ({ ...model, accessible: true }))
+        allModels.map((model) => ({ ...model, accessible: true }))
       );
       return new Response(JSON.stringify({ models }), {
         status: 200,
@@ -88,7 +92,10 @@ export async function GET() {
       });
     }
 
-    const userProviders = data?.map((k) => k.provider) || [];
+    const userProviders =
+      (data as unknown as Array<{ provider: string }>)?.map(
+        (k) => k.provider
+      ) || [];
 
     if (userProviders.length === 0) {
       const models = addCredentialInfo(await getModelsWithAccessFlags());

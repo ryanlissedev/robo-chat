@@ -1,10 +1,10 @@
 'use client';
 
-import { MessageCircle, Github, Search, PenTool, X } from 'lucide-react';
+import { Github, MessageCircle, PenTool, Search, X } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useMemo } from 'react';
-import { groupChatsByDate } from '@/components/app/history/utils';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
+import { groupChatsByDate } from '@/components/app/history/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Sidebar,

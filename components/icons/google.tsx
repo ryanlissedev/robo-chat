@@ -7,8 +7,11 @@ const Icon = (props: SVGProps<SVGSVGElement>) => (
     viewBox="0 0 221 221"
     width={221}
     xmlns="http://www.w3.org/2000/svg"
+    role="img"
+    aria-label="Google"
     {...props}
   >
+    <title>Google</title>
     <path
       d="M211.792 112.756c0-8.334-.691-14.411-2.173-20.719h-97.056v37.598h56.962c-1.141 9.337-7.339 23.407-21.124 32.864l-.193 1.253 30.682 23.297 2.118.202c19.54-17.661 30.784-43.666 30.784-74.495"
       fill="#4285F4"

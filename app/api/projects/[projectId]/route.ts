@@ -80,7 +80,7 @@ export async function PUT(
 
     const { data, error } = await supabase
       .from('projects')
-      .update({ name: name.trim() })
+      .update({ name: name.trim() } as never)
       .eq('id', projectId)
       .eq('user_id', authData.user.id)
       .select()

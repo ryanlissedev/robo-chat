@@ -2,6 +2,15 @@
 
 import { AudioWaveform, Settings, Volume2, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { VoiceButton } from '@/components/app/voice/button/voice-button';
+import { useVoiceIntegration } from '@/components/app/voice/hooks/use-voice-integration';
+import { useWebRTCConnection } from '@/components/app/voice/hooks/use-webrtc-connection';
+import type { VoiceConfig } from '@/components/app/voice/store/voice-store';
+import { useVoiceStore } from '@/components/app/voice/store/voice-store';
+import {
+  AudioVisualizer,
+  AudioVisualizerPresets,
+} from '@/components/app/voice/visualizer/audio-visualizer';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,13 +23,12 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { AudioVisualizer, AudioVisualizerPresets } from '@/components/app/voice/visualizer/audio-visualizer';
-import { VoiceButton } from '@/components/app/voice/button/voice-button';
-import { useVoiceStore } from '@/components/app/voice/store/voice-store';
-import type { VoiceConfig } from '@/components/app/voice/store/voice-store';
-import { useWebRTCConnection } from '@/components/app/voice/hooks/use-webrtc-connection';
-import { useVoiceIntegration } from '@/components/app/voice/hooks/use-voice-integration';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { clientLogger } from '@/lib/utils/client-logger';
 
@@ -41,7 +49,7 @@ export function RealtimeAudioModal({
 }: RealtimeAudioModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  
+
   const {
     status,
     isRecording,
@@ -63,10 +71,7 @@ export function RealtimeAudioModal({
   } = useVoiceStore();
 
   // WebRTC connection for real-time audio streaming
-  const {
-    isConnecting,
-    error: connectionError,
-  } = useWebRTCConnection();
+  const { isConnecting, error: connectionError } = useWebRTCConnection();
 
   // Voice integration with vector store indexing (invoked for side effects)
   useVoiceIntegration({
@@ -77,7 +82,7 @@ export function RealtimeAudioModal({
     },
     onIndexError: (error) => {
       clientLogger.error('Transcript indexing failed', error);
-    }
+    },
   });
 
   // Set user ID when authenticated
@@ -88,13 +93,16 @@ export function RealtimeAudioModal({
   }, [isUserAuthenticated, userId, setUserId]);
 
   // Handle modal open/close
-  const handleOpenChange = useCallback((open: boolean) => {
-    setIsOpen(open);
-    if (!open) {
-      stopSession();
-      setShowSettings(false);
-    }
-  }, [stopSession]);
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      setIsOpen(open);
+      if (!open) {
+        stopSession();
+        setShowSettings(false);
+      }
+    },
+    [stopSession]
+  );
 
   // Initialize session when modal opens
   useEffect(() => {
@@ -119,17 +127,26 @@ export function RealtimeAudioModal({
   }, [connectionError]);
 
   // Voice configuration handlers
-  const handleVoiceChange = useCallback((voice: VoiceConfig['voice']) => {
-    updateConfig({ voice });
-  }, [updateConfig]);
+  const handleVoiceChange = useCallback(
+    (voice: VoiceConfig['voice']) => {
+      updateConfig({ voice });
+    },
+    [updateConfig]
+  );
 
-  const handleLanguageChange = useCallback((language: string) => {
-    updateConfig({ language });
-  }, [updateConfig]);
+  const handleLanguageChange = useCallback(
+    (language: string) => {
+      updateConfig({ language });
+    },
+    [updateConfig]
+  );
 
-  const handlePersonalityChange = useCallback((mode: typeof personalityMode) => {
-    setPersonalityMode(mode);
-  }, [setPersonalityMode]);
+  const handlePersonalityChange = useCallback(
+    (mode: typeof personalityMode) => {
+      setPersonalityMode(mode);
+    },
+    [setPersonalityMode]
+  );
 
   // Get status display text and color
   const getStatusDisplay = useCallback(() => {
@@ -156,7 +173,10 @@ export function RealtimeAudioModal({
   const statusDisplay = getStatusDisplay();
   const hasTranscript = currentTranscript.trim().length > 0;
   const canRecord = status === 'connected' && !error;
-  const isProcessing = status === 'connecting' || status === 'processing' || status === 'transcribing';
+  const isProcessing =
+    status === 'connecting' ||
+    status === 'processing' ||
+    status === 'transcribing';
 
   return (
     <TooltipProvider>
@@ -166,15 +186,15 @@ export function RealtimeAudioModal({
             <Button
               variant="ghost"
               size="sm"
-              className={cn("rounded-full", className)}
+              className={cn('rounded-full', className)}
               aria-label="Open realtime audio modal"
             >
               <AudioWaveform className="size-5" />
             </Button>
           )}
         </DialogTrigger>
-        
-        <DialogContent 
+
+        <DialogContent
           className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6"
           hasCloseButton={false}
         >
@@ -184,7 +204,7 @@ export function RealtimeAudioModal({
                 <Volume2 className="size-6" />
                 Realtime Audio
               </DialogTitle>
-              
+
               <div className="flex items-center gap-2">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -202,7 +222,7 @@ export function RealtimeAudioModal({
                     <p>Voice settings</p>
                   </TooltipContent>
                 </Tooltip>
-                
+
                 <Button
                   onClick={() => setIsOpen(false)}
                   size="sm"
@@ -214,23 +234,28 @@ export function RealtimeAudioModal({
                 </Button>
               </div>
             </div>
-            
+
             <DialogDescription className="text-sm text-muted-foreground">
-              Real-time voice conversation with OpenAI&#39;s audio API. 
-              {!isUserAuthenticated && " Sign in to save transcripts."}
+              Real-time voice conversation with OpenAI&#39;s audio API.
+              {!isUserAuthenticated && ' Sign in to save transcripts.'}
             </DialogDescription>
-            
+
             {/* Status indicator */}
             <div className="flex items-center gap-2 text-sm">
-              <div className={cn("size-2 rounded-full", {
-                'bg-gray-400': status === 'idle',
-                'bg-blue-500 animate-pulse': status === 'connecting' || status === 'processing',
-                'bg-green-500': status === 'connected',
-                'bg-red-500': status === 'recording' || status === 'error',
-                'bg-yellow-500': status === 'transcribing',
-              })} />
+              <div
+                className={cn('size-2 rounded-full', {
+                  'bg-gray-400': status === 'idle',
+                  'bg-blue-500 animate-pulse':
+                    status === 'connecting' || status === 'processing',
+                  'bg-green-500': status === 'connected',
+                  'bg-red-500': status === 'recording' || status === 'error',
+                  'bg-yellow-500': status === 'transcribing',
+                })}
+              />
               <span className={statusDisplay.color}>{statusDisplay.text}</span>
-              {isConnecting && <span className="text-xs text-muted-foreground">(WebRTC)</span>}
+              {isConnecting && (
+                <span className="text-xs text-muted-foreground">(WebRTC)</span>
+              )}
             </div>
           </DialogHeader>
 
@@ -239,13 +264,17 @@ export function RealtimeAudioModal({
             {showSettings && (
               <div className="p-4 bg-gray-50 rounded-lg space-y-4">
                 <h3 className="font-medium text-sm">Voice Configuration</h3>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">Voice</label>
-                    <select 
-                      value={config.voice} 
-                      onChange={(e) => handleVoiceChange(e.target.value as typeof config.voice)}
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Voice
+                    </label>
+                    <select
+                      value={config.voice}
+                      onChange={(e) =>
+                        handleVoiceChange(e.target.value as typeof config.voice)
+                      }
                       className="w-full p-2 text-xs border rounded"
                       aria-label="Select voice"
                     >
@@ -257,11 +286,13 @@ export function RealtimeAudioModal({
                       <option value="shimmer">Shimmer</option>
                     </select>
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">Language</label>
-                    <select 
-                      value={config.language} 
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Language
+                    </label>
+                    <select
+                      value={config.language}
                       onChange={(e) => handleLanguageChange(e.target.value)}
                       className="w-full p-2 text-xs border rounded"
                       aria-label="Select language"
@@ -278,36 +309,52 @@ export function RealtimeAudioModal({
                     </select>
                   </div>
                 </div>
-                
+
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-medium text-muted-foreground">Safety Protocols</label>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Safety Protocols
+                    </label>
                     <Switch
                       checked={safetyProtocols}
                       onCheckedChange={setSafetyProtocols}
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-medium text-muted-foreground">Voice Activity Detection</label>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Voice Activity Detection
+                    </label>
                     <Switch
                       checked={config.enableVAD}
-                      onCheckedChange={(checked) => updateConfig({ enableVAD: checked })}
+                      onCheckedChange={(checked) =>
+                        updateConfig({ enableVAD: checked })
+                      }
                     />
                   </div>
                 </div>
 
                 <Separator />
-                
+
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Personality Mode</label>
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Personality Mode
+                  </label>
                   <div className="flex flex-wrap gap-2">
-                    {(['safety-focused', 'technical-expert', 'friendly-assistant'] as const).map((mode) => (
+                    {(
+                      [
+                        'safety-focused',
+                        'technical-expert',
+                        'friendly-assistant',
+                      ] as const
+                    ).map((mode) => (
                       <Button
                         key={mode}
                         onClick={() => handlePersonalityChange(mode)}
                         size="sm"
-                        variant={personalityMode === mode ? "default" : "outline"}
+                        variant={
+                          personalityMode === mode ? 'default' : 'outline'
+                        }
                         className="text-xs"
                       >
                         {mode === 'safety-focused' && '🛡️ Safety'}
@@ -358,7 +405,9 @@ export function RealtimeAudioModal({
               {canRecord ? (
                 <div className="text-sm text-muted-foreground">
                   <p className="font-medium">Click to start/stop recording</p>
-                  <p className="text-xs">Hold for continuous recording • Release to stop</p>
+                  <p className="text-xs">
+                    Hold for continuous recording • Release to stop
+                  </p>
                 </div>
               ) : isProcessing ? (
                 <div className="text-sm text-blue-600">
@@ -371,9 +420,9 @@ export function RealtimeAudioModal({
                 <div className="text-sm text-red-600 space-y-2">
                   <p className="font-medium">⚠️ Audio Error</p>
                   <p className="text-xs">{error.message}</p>
-                  <Button 
-                    onClick={() => reset()} 
-                    size="sm" 
+                  <Button
+                    onClick={() => reset()}
+                    size="sm"
                     variant="outline"
                     className="text-xs"
                   >
@@ -408,8 +457,10 @@ export function RealtimeAudioModal({
             {/* Footer info */}
             <div className="text-center pt-2">
               <p className="text-xs text-muted-foreground">
-                Powered by OpenAI Realtime API • 
-                {isUserAuthenticated ? " Transcripts auto-saved" : " Sign in to save transcripts"}
+                Powered by OpenAI Realtime API •
+                {isUserAuthenticated
+                  ? ' Transcripts auto-saved'
+                  : ' Sign in to save transcripts'}
               </p>
             </div>
           </div>

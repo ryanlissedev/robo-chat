@@ -70,7 +70,7 @@ export function ChatsProvider({
       const cached = await getCachedChats();
       // Kick off remote fetch; if it fails, fall back to cache
       try {
-        const fresh = await fetchAndCacheChats(userId!);
+        const fresh = await fetchAndCacheChats(userId ?? '');
         return fresh;
       } catch {
         return cached;

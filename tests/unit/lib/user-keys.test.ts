@@ -1,5 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getUserKey, getEffectiveApiKey, type Provider, type ProviderWithoutOllama } from '@/lib/user-keys';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  getEffectiveApiKey,
+  getUserKey,
+  type Provider,
+  type ProviderWithoutOllama,
+} from '@/lib/user-keys';
 
 // Mock dependencies
 vi.mock('@/lib/encryption', () => ({
@@ -38,10 +43,10 @@ const mockSupabaseClient = {
 describe('User Keys Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Setup default Supabase client mock
     vi.mocked(createClient).mockResolvedValue(mockSupabaseClient as any);
-    
+
     // Setup method chaining for Supabase queries
     mockSupabaseClient.from.mockReturnValue(mockSupabaseClient);
     mockSupabaseClient.select.mockReturnValue(mockSupabaseClient);
@@ -74,9 +79,17 @@ describe('User Keys Service', () => {
 
         expect(createClient).toHaveBeenCalledTimes(1);
         expect(mockSupabaseClient.from).toHaveBeenCalledWith('user_keys');
-        expect(mockSupabaseClient.select).toHaveBeenCalledWith('encrypted_key, iv');
-        expect(mockSupabaseClient.eq).toHaveBeenCalledWith('user_id', mockUserId);
-        expect(mockSupabaseClient.eq).toHaveBeenCalledWith('provider', mockProvider);
+        expect(mockSupabaseClient.select).toHaveBeenCalledWith(
+          'encrypted_key, iv'
+        );
+        expect(mockSupabaseClient.eq).toHaveBeenCalledWith(
+          'user_id',
+          mockUserId
+        );
+        expect(mockSupabaseClient.eq).toHaveBeenCalledWith(
+          'provider',
+          mockProvider
+        );
         expect(mockSupabaseClient.single).toHaveBeenCalledTimes(1);
         expect(decryptKey).toHaveBeenCalledWith(mockEncryptedKey, mockIv);
         expect(result).toBe(mockDecryptedKey);
@@ -109,14 +122,17 @@ describe('User Keys Service', () => {
 
           const result = await getUserKey(mockUserId, provider);
 
-          expect(mockSupabaseClient.eq).toHaveBeenCalledWith('provider', provider);
+          expect(mockSupabaseClient.eq).toHaveBeenCalledWith(
+            'provider',
+            provider
+          );
           expect(result).toBe(`${provider}-decrypted-key`);
         }
       });
 
       it('should handle special characters in user ID', async () => {
         const specialUserId = 'user@#$%^&*()_+-=[]{}|;:,.<>?/123';
-        
+
         mockSupabaseClient.single.mockResolvedValue({
           data: { encrypted_key: mockEncryptedKey, iv: mockIv },
           error: null,
@@ -125,13 +141,16 @@ describe('User Keys Service', () => {
 
         const result = await getUserKey(specialUserId, mockProvider);
 
-        expect(mockSupabaseClient.eq).toHaveBeenCalledWith('user_id', specialUserId);
+        expect(mockSupabaseClient.eq).toHaveBeenCalledWith(
+          'user_id',
+          specialUserId
+        );
         expect(result).toBe(mockDecryptedKey);
       });
 
       it('should handle unicode characters in user ID', async () => {
         const unicodeUserId = 'user-🚀-世界-مرحبا-123';
-        
+
         mockSupabaseClient.single.mockResolvedValue({
           data: { encrypted_key: mockEncryptedKey, iv: mockIv },
           error: null,
@@ -140,7 +159,10 @@ describe('User Keys Service', () => {
 
         const result = await getUserKey(unicodeUserId, mockProvider);
 
-        expect(mockSupabaseClient.eq).toHaveBeenCalledWith('user_id', unicodeUserId);
+        expect(mockSupabaseClient.eq).toHaveBeenCalledWith(
+          'user_id',
+          unicodeUserId
+        );
         expect(result).toBe(mockDecryptedKey);
       });
     });
@@ -181,7 +203,9 @@ describe('User Keys Service', () => {
       });
 
       it('should return null when database query throws exception', async () => {
-        mockSupabaseClient.single.mockRejectedValue(new Error('Connection timeout'));
+        mockSupabaseClient.single.mockRejectedValue(
+          new Error('Connection timeout')
+        );
 
         const result = await getUserKey(mockUserId, mockProvider);
 
@@ -216,7 +240,9 @@ describe('User Keys Service', () => {
       });
 
       it('should handle createClient throwing an exception', async () => {
-        vi.mocked(createClient).mockRejectedValue(new Error('Client creation failed'));
+        vi.mocked(createClient).mockRejectedValue(
+          new Error('Client creation failed')
+        );
 
         const result = await getUserKey(mockUserId, mockProvider);
 
@@ -243,9 +269,9 @@ describe('User Keys Service', () => {
           data: { iv: mockIv },
           error: null,
         });
-        
+
         // Mock decryptKey to throw when called with undefined encrypted_key
-        vi.mocked(decryptKey).mockImplementation((encrypted, iv) => {
+        vi.mocked(decryptKey).mockImplementation((encrypted, _iv) => {
           if (!encrypted) throw new Error('Missing encrypted_key');
           return mockDecryptedKey;
         });
@@ -260,9 +286,9 @@ describe('User Keys Service', () => {
           data: { encrypted_key: mockEncryptedKey },
           error: null,
         });
-        
+
         // Mock decryptKey to throw when called with undefined iv
-        vi.mocked(decryptKey).mockImplementation((encrypted, iv) => {
+        vi.mocked(decryptKey).mockImplementation((_encrypted, iv) => {
           if (!iv) throw new Error('Missing iv');
           return mockDecryptedKey;
         });
@@ -277,7 +303,7 @@ describe('User Keys Service', () => {
           data: 'invalid-data-format',
           error: null,
         });
-        
+
         // Mock decryptKey to throw when called with malformed data
         vi.mocked(decryptKey).mockImplementation((encrypted, iv) => {
           if (typeof encrypted !== 'string' || typeof iv !== 'string') {
@@ -294,7 +320,7 @@ describe('User Keys Service', () => {
       it('should handle very long encrypted keys', async () => {
         const longEncryptedKey = 'x'.repeat(10000);
         const longIv = 'y'.repeat(1000);
-        
+
         mockSupabaseClient.single.mockResolvedValue({
           data: { encrypted_key: longEncryptedKey, iv: longIv },
           error: null,
@@ -328,7 +354,9 @@ describe('User Keys Service', () => {
 
         await getUserKey(mockUserId, mockProvider);
 
-        expect(mockSupabaseClient.select).toHaveBeenCalledWith('encrypted_key, iv');
+        expect(mockSupabaseClient.select).toHaveBeenCalledWith(
+          'encrypted_key, iv'
+        );
       });
 
       it('should filter by user_id and provider', async () => {
@@ -339,8 +367,14 @@ describe('User Keys Service', () => {
 
         await getUserKey(mockUserId, mockProvider);
 
-        expect(mockSupabaseClient.eq).toHaveBeenCalledWith('user_id', mockUserId);
-        expect(mockSupabaseClient.eq).toHaveBeenCalledWith('provider', mockProvider);
+        expect(mockSupabaseClient.eq).toHaveBeenCalledWith(
+          'user_id',
+          mockUserId
+        );
+        expect(mockSupabaseClient.eq).toHaveBeenCalledWith(
+          'provider',
+          mockProvider
+        );
       });
 
       it('should call single to get one record', async () => {
@@ -359,7 +393,7 @@ describe('User Keys Service', () => {
       it('should pass correct parameters to decryptKey', async () => {
         const customEncryptedKey = 'custom-encrypted-data';
         const customIv = 'custom-iv-data';
-        
+
         mockSupabaseClient.single.mockResolvedValue({
           data: { encrypted_key: customEncryptedKey, iv: customIv },
           error: null,
@@ -402,7 +436,7 @@ describe('User Keys Service', () => {
     describe('Success Cases with User Keys', () => {
       it('should return user key when available for openai', async () => {
         const userKey = 'sk-user-openai-key';
-        
+
         mockSupabaseClient.single.mockResolvedValue({
           data: { encrypted_key: 'encrypted', iv: 'iv' },
           error: null,
@@ -427,7 +461,7 @@ describe('User Keys Service', () => {
 
         for (const provider of providers) {
           const userKey = `sk-user-${provider}-key`;
-          
+
           // Reset mocks for each iteration
           vi.clearAllMocks();
           vi.mocked(createClient).mockResolvedValue(mockSupabaseClient as any);
@@ -448,7 +482,7 @@ describe('User Keys Service', () => {
 
       it('should prioritize user key over environment variable', async () => {
         const userKey = 'sk-user-priority-key';
-        
+
         mockSupabaseClient.single.mockResolvedValue({
           data: { encrypted_key: 'encrypted', iv: 'iv' },
           error: null,
@@ -489,7 +523,10 @@ describe('User Keys Service', () => {
         };
 
         for (const [provider, expectedKey] of Object.entries(providerEnvMap)) {
-          const result = await getEffectiveApiKey(mockUserId, provider as ProviderWithoutOllama);
+          const result = await getEffectiveApiKey(
+            mockUserId,
+            provider as ProviderWithoutOllama
+          );
           expect(result).toBe(expectedKey);
         }
       });
@@ -548,9 +585,11 @@ describe('User Keys Service', () => {
         for (const provider of providers) {
           vi.clearAllMocks();
           const result = await getEffectiveApiKey(null, provider);
-          
-          expect(result).toBe((env as any)[provider.toUpperCase() + '_API_KEY'] || 
-                             (env as any)['GOOGLE_GENERATIVE_AI_API_KEY']);
+
+          expect(result).toBe(
+            (env as any)[`${provider.toUpperCase()}_API_KEY`] ||
+              (env as any).GOOGLE_GENERATIVE_AI_API_KEY
+          );
           expect(createClient).not.toHaveBeenCalled();
         }
       });
@@ -606,9 +645,9 @@ describe('User Keys Service', () => {
       });
 
       it('should handle very long user IDs', async () => {
-        const longUserId = 'user-' + 'x'.repeat(1000);
+        const longUserId = `user-${'x'.repeat(1000)}`;
         const userKey = 'sk-long-user-key';
-        
+
         mockSupabaseClient.single.mockResolvedValue({
           data: { encrypted_key: 'encrypted', iv: 'iv' },
           error: null,
@@ -623,7 +662,7 @@ describe('User Keys Service', () => {
       it('should handle special characters in user ID', async () => {
         const specialUserId = 'user@#$%^&*()_+-=[]{}|;:,.<>?';
         const userKey = 'sk-special-user-key';
-        
+
         mockSupabaseClient.single.mockResolvedValue({
           data: { encrypted_key: 'encrypted', iv: 'iv' },
           error: null,
@@ -691,40 +730,44 @@ describe('User Keys Service', () => {
     describe('Performance and Concurrency', () => {
       it('should handle multiple concurrent requests for same user', async () => {
         const userKey = 'sk-concurrent-key';
-        
+
         mockSupabaseClient.single.mockResolvedValue({
           data: { encrypted_key: 'encrypted', iv: 'iv' },
           error: null,
         });
         vi.mocked(decryptKey).mockReturnValue(userKey);
 
-        const promises = Array(10).fill(null).map(() => 
-          getEffectiveApiKey(mockUserId, 'openai')
-        );
+        const promises = Array(10)
+          .fill(null)
+          .map(() => getEffectiveApiKey(mockUserId, 'openai'));
 
         const results = await Promise.all(promises);
 
-        expect(results.every(result => result === userKey)).toBe(true);
+        expect(results.every((result) => result === userKey)).toBe(true);
       });
 
       it('should handle multiple concurrent requests for different users', async () => {
-        const users = Array(5).fill(null).map((_, i) => `user-${i}`);
-        
+        const users = Array(5)
+          .fill(null)
+          .map((_, i) => `user-${i}`);
+
         mockSupabaseClient.single.mockResolvedValue({
           data: { encrypted_key: 'encrypted', iv: 'iv' },
           error: null,
         });
-        
+
         vi.mocked(decryptKey).mockReturnValue('sk-key-for-encrypted');
 
-        const promises = users.map(userId => 
+        const promises = users.map((userId) =>
           getEffectiveApiKey(userId, 'openai')
         );
 
         const results = await Promise.all(promises);
 
         expect(results).toHaveLength(5);
-        expect(results.every(result => result?.startsWith('sk-key-for-'))).toBe(true);
+        expect(
+          results.every((result) => result?.startsWith('sk-key-for-'))
+        ).toBe(true);
       });
 
       it('should handle mixed user and guest requests', async () => {
@@ -736,9 +779,9 @@ describe('User Keys Service', () => {
 
         const promises = [
           getEffectiveApiKey('user-123', 'openai'), // Should get user key
-          getEffectiveApiKey(null, 'openai'),       // Should get env key
+          getEffectiveApiKey(null, 'openai'), // Should get env key
           getEffectiveApiKey('user-456', 'openai'), // Should get user key
-          getEffectiveApiKey(null, 'openai'),       // Should get env key
+          getEffectiveApiKey(null, 'openai'), // Should get env key
         ];
 
         const results = await Promise.all(promises);
@@ -753,7 +796,9 @@ describe('User Keys Service', () => {
     describe('Error Resilience', () => {
       it('should gracefully handle getUserKey failures', async () => {
         // Mock getUserKey to throw an error
-        vi.mocked(createClient).mockRejectedValue(new Error('Database connection failed'));
+        vi.mocked(createClient).mockRejectedValue(
+          new Error('Database connection failed')
+        );
 
         const result = await getEffectiveApiKey(mockUserId, 'openai');
 
@@ -773,7 +818,7 @@ describe('User Keys Service', () => {
             error: null,
           };
         });
-        
+
         vi.mocked(decryptKey).mockReturnValue('sk-user-key');
 
         // First call should fail and fall back to env
@@ -790,7 +835,7 @@ describe('User Keys Service', () => {
           data: { encrypted_key: 'corrupted-data', iv: 'corrupted-iv' },
           error: null,
         });
-        
+
         vi.mocked(decryptKey).mockImplementation(() => {
           throw new Error('Decryption failed - corrupted data');
         });
@@ -853,9 +898,9 @@ describe('User Keys Service', () => {
       // This is a compile-time test - if 'ollama' is assignable to ProviderWithoutOllama,
       // TypeScript will catch it. We can't test this at runtime, but we can document
       // the expectation.
-      
+
       // getEffectiveApiKey('test-user', 'ollama'); // This should cause a TypeScript error
-      
+
       // Instead, verify that ollama is not in the env key mapping
       const provider = 'ollama' as any;
       const envKeyMap: Record<ProviderWithoutOllama, string | undefined> = {

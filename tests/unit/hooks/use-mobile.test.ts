@@ -1,5 +1,5 @@
-import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMobile } from '@/app/hooks/use-mobile';
 
 // Mock window.matchMedia
@@ -144,8 +144,13 @@ describe('useMobile', () => {
     expect(result1.current).toBe(result2.current);
 
     // Each should set up its own event listener (modern browsers check addListener too)
-    expect(mockMQL.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
-    expect(mockMQL.addEventListener.mock.calls.length).toBeGreaterThanOrEqual(2);
+    expect(mockMQL.addEventListener).toHaveBeenCalledWith(
+      'change',
+      expect.any(Function)
+    );
+    expect(mockMQL.addEventListener.mock.calls.length).toBeGreaterThanOrEqual(
+      2
+    );
   });
 
   it('should return boolean type consistently', () => {

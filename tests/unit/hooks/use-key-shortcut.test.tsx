@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useKeyShortcut } from '@/app/hooks/use-key-shortcut';
 
 describe('useKeyShortcut', () => {
@@ -99,7 +99,7 @@ describe('useKeyShortcut', () => {
 
   it('should not trigger on input elements (common use case)', () => {
     const condition = (e: KeyboardEvent) => e.key === 'Enter';
-    
+
     renderHook(() => useKeyShortcut(condition, mockCallback));
 
     // Create an input element and focus it
@@ -145,7 +145,9 @@ describe('useKeyShortcut', () => {
     const condition = vi.fn().mockReturnValue(true);
     const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
 
-    const { unmount } = renderHook(() => useKeyShortcut(condition, mockCallback));
+    const { unmount } = renderHook(() =>
+      useKeyShortcut(condition, mockCallback)
+    );
 
     unmount();
 
@@ -217,7 +219,7 @@ describe('useKeyShortcut', () => {
   });
 
   it('should handle case-insensitive key comparisons', () => {
-    const condition = (e: KeyboardEvent) => 
+    const condition = (e: KeyboardEvent) =>
       (e.key === 'p' || e.key === 'P') && e.metaKey;
 
     renderHook(() => useKeyShortcut(condition, mockCallback));

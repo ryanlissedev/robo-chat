@@ -1,4 +1,3 @@
-import type { SupabaseClient } from '@supabase/ssr';
 import * as fileType from 'file-type';
 import { toast } from '@/components/ui/toast';
 import { DAILY_FILE_UPLOAD_LIMIT } from './config';
@@ -59,7 +58,8 @@ export async function validateFile(
 }
 
 export async function uploadFile(
-  supabase: SupabaseClient,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
   file: File
 ): Promise<string> {
   const fileExt = file.name.split('.').pop();
@@ -128,7 +128,7 @@ export async function processFiles(
   chatId: string,
   userId: string
 ): Promise<Attachment[]> {
-  const supabase = isSupabaseEnabled ? createClient() : null;
+  const supabase = isSupabaseEnabled() ? createClient() : null;
 
   // Process files in parallel for better performance
   const filePromises = files.map(async (file) => {

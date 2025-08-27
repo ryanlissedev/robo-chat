@@ -36,14 +36,14 @@ describe('Encryption Module', () => {
       // Check that the result has the expected structure
       expect(result).toHaveProperty('encrypted');
       expect(result).toHaveProperty('iv');
-      
+
       // Should be hex strings
       expect(result.encrypted).toMatch(/^[a-f0-9]+:[a-f0-9]+$/);
       expect(result.iv).toMatch(/^[a-f0-9]+$/);
-      
+
       // IV should be 16 bytes = 32 hex chars
       expect(result.iv).toHaveLength(32);
-      
+
       // Encrypted should have format: encrypted:authTag
       expect(result.encrypted).toContain(':');
     });
@@ -71,31 +71,31 @@ describe('Encryption Module', () => {
   describe('decryptKey', () => {
     it('should decrypt encrypted data back to original plaintext', () => {
       const plaintext = 'test-secret-key-123';
-      
+
       // Encrypt first
       const encrypted = encryptKey(plaintext);
-      
+
       // Then decrypt
       const decrypted = decryptKey(encrypted.encrypted, encrypted.iv);
-      
+
       expect(decrypted).toBe(plaintext);
     });
 
     it('should handle empty plaintext round-trip', () => {
       const plaintext = '';
-      
+
       const encrypted = encryptKey(plaintext);
       const decrypted = decryptKey(encrypted.encrypted, encrypted.iv);
-      
+
       expect(decrypted).toBe(plaintext);
     });
 
     it('should handle long plaintext', () => {
       const plaintext = 'very-long-api-key-with-many-characters-1234567890';
-      
+
       const encrypted = encryptKey(plaintext);
       const decrypted = decryptKey(encrypted.encrypted, encrypted.iv);
-      
+
       expect(decrypted).toBe(plaintext);
     });
   });
@@ -156,7 +156,7 @@ describe('Encryption Module', () => {
         'a',
       ];
 
-      testCases.forEach(plaintext => {
+      testCases.forEach((plaintext) => {
         const encrypted = encryptKey(plaintext);
         const decrypted = decryptKey(encrypted.encrypted, encrypted.iv);
         expect(decrypted).toBe(plaintext);

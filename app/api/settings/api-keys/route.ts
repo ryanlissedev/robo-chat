@@ -107,7 +107,7 @@ export async function POST(req: Request) {
       encrypted_key: encrypted,
       iv,
       updated_at: new Date().toISOString(),
-    });
+    } as never);
 
     if (upsertError) {
       return NextResponse.json(
@@ -224,7 +224,7 @@ export async function PATCH(req: Request) {
       .from('user_keys')
       .update({
         updated_at: new Date().toISOString(),
-      })
+      } as never)
       .eq('user_id', user.id)
       .eq('provider', provider);
 

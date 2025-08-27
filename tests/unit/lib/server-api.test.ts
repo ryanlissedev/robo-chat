@@ -1,8 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { validateUserIdentity } from '@/lib/server/api';
 import { createClient } from '@/lib/supabase/server';
 import { createGuestServerClient } from '@/lib/supabase/server-guest';
-import { isSupabaseEnabled } from '@/lib/supabase/config';
 
 // Mock dependencies
 vi.mock('@/lib/supabase/server', () => ({
@@ -51,10 +50,12 @@ describe('lib/server/api.ts - Server API Validation', () => {
     if (process.env.NODE_ENV !== undefined) {
       delete (process.env as any).NODE_ENV;
     }
-    
+
     // Default mock implementations
     vi.mocked(createClient).mockResolvedValue(mockSupabaseClient as any);
-    vi.mocked(createGuestServerClient).mockResolvedValue(mockSupabaseClient as any);
+    vi.mocked(createGuestServerClient).mockResolvedValue(
+      mockSupabaseClient as any
+    );
     mockIsSupabaseEnabled.value = true;
   });
 
@@ -78,9 +79,9 @@ describe('lib/server/api.ts - Server API Validation', () => {
     it('should throw error when authenticated client creation fails', async () => {
       vi.mocked(createClient).mockResolvedValue(null);
 
-      await expect(
-        validateUserIdentity(mockUserId, true)
-      ).rejects.toThrow('Failed to initialize Supabase client');
+      await expect(validateUserIdentity(mockUserId, true)).rejects.toThrow(
+        'Failed to initialize Supabase client'
+      );
     });
 
     it('should throw error when guest client creation fails', async () => {
@@ -96,9 +97,9 @@ describe('lib/server/api.ts - Server API Validation', () => {
     it('should validate authenticated user successfully', async () => {
       const mockAuthData = {
         data: {
-          user: { id: mockUserId }
+          user: { id: mockUserId },
         },
-        error: null
+        error: null,
       };
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
@@ -112,53 +113,53 @@ describe('lib/server/api.ts - Server API Validation', () => {
     it('should throw error when auth.getUser fails', async () => {
       const mockAuthError = {
         data: null,
-        error: { message: 'Auth error' }
+        error: { message: 'Auth error' },
       };
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthError);
 
-      await expect(
-        validateUserIdentity(mockUserId, true)
-      ).rejects.toThrow('Unable to get authenticated user');
+      await expect(validateUserIdentity(mockUserId, true)).rejects.toThrow(
+        'Unable to get authenticated user'
+      );
     });
 
     it('should throw error when no user data returned', async () => {
       const mockAuthData = {
         data: { user: null },
-        error: null
+        error: null,
       };
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
-      await expect(
-        validateUserIdentity(mockUserId, true)
-      ).rejects.toThrow('Unable to get authenticated user');
+      await expect(validateUserIdentity(mockUserId, true)).rejects.toThrow(
+        'Unable to get authenticated user'
+      );
     });
 
     it('should throw error when user ID does not match', async () => {
       const mockAuthData = {
         data: {
-          user: { id: 'different-user-id' }
+          user: { id: 'different-user-id' },
         },
-        error: null
+        error: null,
       };
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
-      await expect(
-        validateUserIdentity(mockUserId, true)
-      ).rejects.toThrow('User ID does not match authenticated user');
+      await expect(validateUserIdentity(mockUserId, true)).rejects.toThrow(
+        'User ID does not match authenticated user'
+      );
     });
 
     it('should handle missing user ID in auth data', async () => {
       const mockAuthData = {
         data: {
-          user: { id: null }
+          user: { id: null },
         },
-        error: null
+        error: null,
       };
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
-      await expect(
-        validateUserIdentity(mockUserId, true)
-      ).rejects.toThrow('Unable to get authenticated user');
+      await expect(validateUserIdentity(mockUserId, true)).rejects.toThrow(
+        'Unable to get authenticated user'
+      );
     });
   });
 
@@ -214,19 +215,22 @@ describe('lib/server/api.ts - Server API Validation', () => {
 
     it('should handle edge case with guest- at end of userId', async () => {
       const edgeGuestUserId = 'user-guest-123';
-      
+
       // Mock database operations for non-temp guest user
       const mockSelect = vi.fn(() => ({
         eq: vi.fn(() => ({
           eq: vi.fn(() => ({
             maybeSingle: vi.fn().mockResolvedValue({
               data: { id: edgeGuestUserId },
-              error: null
-            })
-          }))
-        }))
+              error: null,
+            }),
+          })),
+        })),
       }));
-      mockSupabaseClient.from.mockReturnValue({ select: mockSelect, insert: vi.fn() });
+      mockSupabaseClient.from.mockReturnValue({
+        select: mockSelect,
+        insert: vi.fn(),
+      });
 
       const result = await validateUserIdentity(edgeGuestUserId, false);
 
@@ -251,12 +255,15 @@ describe('lib/server/api.ts - Server API Validation', () => {
           eq: vi.fn(() => ({
             maybeSingle: vi.fn().mockResolvedValue({
               data: mockUserRecord,
-              error: null
-            })
-          }))
-        }))
+              error: null,
+            }),
+          })),
+        })),
       }));
-      mockSupabaseClient.from.mockReturnValue({ select: mockSelect, insert: vi.fn() });
+      mockSupabaseClient.from.mockReturnValue({
+        select: mockSelect,
+        insert: vi.fn(),
+      });
 
       const result = await validateUserIdentity(persistentGuestUserId, false);
 
@@ -270,15 +277,15 @@ describe('lib/server/api.ts - Server API Validation', () => {
           eq: vi.fn(() => ({
             maybeSingle: vi.fn().mockResolvedValue({
               data: null,
-              error: { message: 'No rows found' }
-            })
-          }))
-        }))
+              error: { message: 'No rows found' },
+            }),
+          })),
+        })),
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
-      mockSupabaseClient.from.mockReturnValue({ 
-        select: mockSelect, 
-        insert: mockInsert 
+      mockSupabaseClient.from.mockReturnValue({
+        select: mockSelect,
+        insert: mockInsert,
       });
 
       const result = await validateUserIdentity(persistentGuestUserId, false);
@@ -300,15 +307,15 @@ describe('lib/server/api.ts - Server API Validation', () => {
           eq: vi.fn(() => ({
             maybeSingle: vi.fn().mockResolvedValue({
               data: null,
-              error: { message: 'Database connection failed' }
-            })
-          }))
-        }))
+              error: { message: 'Database connection failed' },
+            }),
+          })),
+        })),
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
-      mockSupabaseClient.from.mockReturnValue({ 
-        select: mockSelect, 
-        insert: mockInsert 
+      mockSupabaseClient.from.mockReturnValue({
+        select: mockSelect,
+        insert: mockInsert,
       });
 
       const result = await validateUserIdentity(persistentGuestUserId, false);
@@ -323,15 +330,15 @@ describe('lib/server/api.ts - Server API Validation', () => {
           eq: vi.fn(() => ({
             maybeSingle: vi.fn().mockResolvedValue({
               data: null,
-              error: { message: 'No rows found' }
-            })
-          }))
-        }))
+              error: { message: 'No rows found' },
+            }),
+          })),
+        })),
       }));
       const mockInsert = vi.fn().mockRejectedValue(new Error('Insert failed'));
-      mockSupabaseClient.from.mockReturnValue({ 
-        select: mockSelect, 
-        insert: mockInsert 
+      mockSupabaseClient.from.mockReturnValue({
+        select: mockSelect,
+        insert: mockInsert,
       });
 
       const result = await validateUserIdentity(persistentGuestUserId, false);
@@ -343,12 +350,15 @@ describe('lib/server/api.ts - Server API Validation', () => {
     it('should validate user record with correct database query parameters', async () => {
       const mockMaybeSingle = vi.fn().mockResolvedValue({
         data: { id: persistentGuestUserId },
-        error: null
+        error: null,
       });
       const mockEqAnonymous = vi.fn(() => ({ maybeSingle: mockMaybeSingle }));
       const mockEqId = vi.fn(() => ({ eq: mockEqAnonymous }));
       const mockSelect = vi.fn(() => ({ eq: mockEqId }));
-      mockSupabaseClient.from.mockReturnValue({ select: mockSelect, insert: vi.fn() });
+      mockSupabaseClient.from.mockReturnValue({
+        select: mockSelect,
+        insert: vi.fn(),
+      });
 
       await validateUserIdentity(persistentGuestUserId, false);
 
@@ -362,48 +372,48 @@ describe('lib/server/api.ts - Server API Validation', () => {
     it('should handle empty userId string', async () => {
       const mockAuthData = {
         data: { user: { id: '' } },
-        error: null
+        error: null,
       };
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
-      await expect(
-        validateUserIdentity('', true)
-      ).rejects.toThrow('Unable to get authenticated user');
+      await expect(validateUserIdentity('', true)).rejects.toThrow(
+        'Unable to get authenticated user'
+      );
     });
 
     it('should handle null userId', async () => {
       const mockAuthData = {
         data: { user: { id: null } },
-        error: null
+        error: null,
       };
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
-      await expect(
-        validateUserIdentity(null as any, true)
-      ).rejects.toThrow('Unable to get authenticated user');
+      await expect(validateUserIdentity(null as any, true)).rejects.toThrow(
+        'Unable to get authenticated user'
+      );
     });
 
     it('should handle undefined user in auth response', async () => {
       const mockAuthData = {
         data: { user: undefined },
-        error: null
+        error: null,
       };
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
-      await expect(
-        validateUserIdentity(mockUserId, true)
-      ).rejects.toThrow('Unable to get authenticated user');
+      await expect(validateUserIdentity(mockUserId, true)).rejects.toThrow(
+        'Unable to get authenticated user'
+      );
     });
 
     it('should handle malformed auth response', async () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: null,
-        error: null
+        error: null,
       });
 
-      await expect(
-        validateUserIdentity(mockUserId, true)
-      ).rejects.toThrow('Unable to get authenticated user');
+      await expect(validateUserIdentity(mockUserId, true)).rejects.toThrow(
+        'Unable to get authenticated user'
+      );
     });
 
     it('should handle auth.getUser throwing an exception', async () => {
@@ -411,9 +421,9 @@ describe('lib/server/api.ts - Server API Validation', () => {
         new Error('Network error')
       );
 
-      await expect(
-        validateUserIdentity(mockUserId, true)
-      ).rejects.toThrow('Network error');
+      await expect(validateUserIdentity(mockUserId, true)).rejects.toThrow(
+        'Network error'
+      );
     });
   });
 
@@ -427,12 +437,15 @@ describe('lib/server/api.ts - Server API Validation', () => {
           eq: vi.fn(() => ({
             maybeSingle: vi.fn().mockResolvedValue({
               data: { id: persistentGuestUserId },
-              error: null
-            })
-          }))
-        }))
+              error: null,
+            }),
+          })),
+        })),
       }));
-      mockSupabaseClient.from.mockReturnValue({ select: mockSelect, insert: vi.fn() });
+      mockSupabaseClient.from.mockReturnValue({
+        select: mockSelect,
+        insert: vi.fn(),
+      });
 
       const result = await validateUserIdentity(persistentGuestUserId, false);
 
@@ -449,12 +462,15 @@ describe('lib/server/api.ts - Server API Validation', () => {
           eq: vi.fn(() => ({
             maybeSingle: vi.fn().mockResolvedValue({
               data: { id: persistentGuestUserId },
-              error: null
-            })
-          }))
-        }))
+              error: null,
+            }),
+          })),
+        })),
       }));
-      mockSupabaseClient.from.mockReturnValue({ select: mockSelect, insert: vi.fn() });
+      mockSupabaseClient.from.mockReturnValue({
+        select: mockSelect,
+        insert: vi.fn(),
+      });
 
       const result = await validateUserIdentity(persistentGuestUserId, false);
 
@@ -472,12 +488,15 @@ describe('lib/server/api.ts - Server API Validation', () => {
           eq: vi.fn(() => ({
             maybeSingle: vi.fn().mockResolvedValue({
               data: { id: persistentGuestUserId },
-              error: null
-            })
-          }))
-        }))
+              error: null,
+            }),
+          })),
+        })),
       }));
-      mockSupabaseClient.from.mockReturnValue({ select: mockSelect, insert: vi.fn() });
+      mockSupabaseClient.from.mockReturnValue({
+        select: mockSelect,
+        insert: vi.fn(),
+      });
 
       const result = await validateUserIdentity(persistentGuestUserId, false);
 
@@ -490,17 +509,17 @@ describe('lib/server/api.ts - Server API Validation', () => {
     it('should handle multiple concurrent validations for same user', async () => {
       const mockAuthData = {
         data: { user: { id: mockUserId } },
-        error: null
+        error: null,
       };
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
-      const promises = Array(10).fill(null).map(() => 
-        validateUserIdentity(mockUserId, true)
-      );
+      const promises = Array(10)
+        .fill(null)
+        .map(() => validateUserIdentity(mockUserId, true));
 
       const results = await Promise.all(promises);
 
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result).toBe(mockSupabaseClient);
       });
       expect(mockSupabaseClient.auth.getUser).toHaveBeenCalledTimes(10);
@@ -510,7 +529,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
       const users = ['user1', 'user2', 'user3'];
       const mockAuthData = (userId: string) => ({
         data: { user: { id: userId } },
-        error: null
+        error: null,
       });
 
       mockSupabaseClient.auth.getUser.mockImplementation(() => {
@@ -519,13 +538,13 @@ describe('lib/server/api.ts - Server API Validation', () => {
         return Promise.resolve(mockAuthData(userId));
       });
 
-      const promises = users.map(userId => 
+      const promises = users.map((userId) =>
         validateUserIdentity(userId, true)
       );
 
       const results = await Promise.all(promises);
 
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result).toBe(mockSupabaseClient);
       });
     });
@@ -535,7 +554,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
     it('should not leak memory with many validations', async () => {
       const mockAuthData = {
         data: { user: { id: mockUserId } },
-        error: null
+        error: null,
       };
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
@@ -551,7 +570,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
       const largeUserId = 'a'.repeat(1000);
       const mockAuthData = {
         data: { user: { id: largeUserId } },
-        error: null
+        error: null,
       };
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
@@ -565,13 +584,13 @@ describe('lib/server/api.ts - Server API Validation', () => {
     it('should handle typical authenticated user flow', async () => {
       const mockAuthData = {
         data: {
-          user: { 
+          user: {
             id: mockUserId,
             email: 'user@example.com',
-            created_at: '2024-01-01T00:00:00Z'
-          }
+            created_at: '2024-01-01T00:00:00Z',
+          },
         },
-        error: null
+        error: null,
       };
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
@@ -596,7 +615,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
       // First call as authenticated
       const mockAuthData = {
         data: { user: { id: mockUserId } },
-        error: null
+        error: null,
       };
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
@@ -605,7 +624,9 @@ describe('lib/server/api.ts - Server API Validation', () => {
 
       // Reset mocks
       vi.clearAllMocks();
-      vi.mocked(createGuestServerClient).mockResolvedValue(mockSupabaseClient as any);
+      vi.mocked(createGuestServerClient).mockResolvedValue(
+        mockSupabaseClient as any
+      );
 
       // Second call as guest
       const guestResult = await validateUserIdentity('guest-123', false);

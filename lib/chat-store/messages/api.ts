@@ -78,7 +78,9 @@ async function insertMessageToDb(chatId: string, message: MessageToInsert) {
     chat_id: chatId,
     role: message.role,
     content: message.content,
-    experimental_attachments: message.experimental_attachments?.filter(att => att.url && att.name && att.contentType),
+    experimental_attachments: message.experimental_attachments?.filter(
+      (att) => att.url && att.name && att.contentType
+    ),
     created_at: message.createdAt?.toISOString() || new Date().toISOString(),
     message_group_id: message.message_group_id || null,
     model: message.model || null,
@@ -95,7 +97,9 @@ async function insertMessagesToDb(chatId: string, messages: MessageToInsert[]) {
     chat_id: chatId,
     role: message.role,
     content: message.content,
-    experimental_attachments: message.experimental_attachments?.filter(att => att.url && att.name && att.contentType),
+    experimental_attachments: message.experimental_attachments?.filter(
+      (att) => att.url && att.name && att.contentType
+    ),
     created_at: message.createdAt?.toISOString() || new Date().toISOString(),
     message_group_id: message.message_group_id || null,
     model: message.model || null,

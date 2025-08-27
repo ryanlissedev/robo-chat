@@ -56,7 +56,9 @@ export default function SettingsPage() {
                 <VectorStoreManager userId={user.id} />
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-muted-foreground">Please log in to manage vector stores.</p>
+                  <p className="text-muted-foreground">
+                    Please log in to manage vector stores.
+                  </p>
                 </div>
               )}
             </TabsContent>
@@ -66,7 +68,9 @@ export default function SettingsPage() {
                 <RetrievalSettings userId={user.id} />
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-muted-foreground">Please log in to manage retrieval settings.</p>
+                  <p className="text-muted-foreground">
+                    Please log in to manage retrieval settings.
+                  </p>
                 </div>
               )}
             </TabsContent>
@@ -76,7 +80,9 @@ export default function SettingsPage() {
                 <SecuritySettings userId={user.id} />
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-muted-foreground">Please log in to manage security settings.</p>
+                  <p className="text-muted-foreground">
+                    Please log in to manage security settings.
+                  </p>
                 </div>
               )}
             </TabsContent>

@@ -1,32 +1,32 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the entire crypto module with proper default export
 vi.mock('node:crypto', async () => {
-  const actual = await vi.importActual('node:crypto') as any;
-  
+  const actual = (await vi.importActual('node:crypto')) as any;
+
   // Create mock implementations
   const mockCreateCipheriv = vi.fn();
   const mockCreateDecipheriv = vi.fn();
   const mockRandomBytes = vi.fn();
-  
+
   // Mock cipher with methods
   const mockCipher = {
     update: vi.fn(() => 'encrypted'),
     final: vi.fn(() => 'data'),
     getAuthTag: vi.fn(() => Buffer.from('auth-tag-hex', 'hex')),
   };
-  
+
   // Mock decipher with methods
   const mockDecipher = {
     setAuthTag: vi.fn(),
     update: vi.fn(() => 'decrypted'),
     final: vi.fn(() => 'text'),
   };
-  
+
   mockCreateCipheriv.mockReturnValue(mockCipher);
   mockCreateDecipheriv.mockReturnValue(mockDecipher);
   mockRandomBytes.mockReturnValue(Buffer.from('1234567890123456', 'hex'));
-  
+
   return {
     // Include all original exports as default
     default: actual,
@@ -39,10 +39,13 @@ vi.mock('node:crypto', async () => {
   };
 });
 
-import { encryptKey, decryptKey, maskKey } from '@/lib/encryption';
+import { decryptKey, encryptKey, maskKey } from '@/lib/encryption';
 
 describe('Encryption Utilities', () => {
-  const mockEncryptionKey = Buffer.from('abcdefghijklmnopqrstuvwxyz123456', 'utf8').toString('base64');
+  const mockEncryptionKey = Buffer.from(
+    'abcdefghijklmnopqrstuvwxyz123456',
+    'utf8'
+  ).toString('base64');
   const originalEnv = process.env.ENCRYPTION_KEY;
 
   beforeEach(() => {
@@ -127,7 +130,9 @@ describe('Encryption Utilities', () => {
         expect(maskKey('123456789')).toBe('1234*6789');
         expect(maskKey('1234567890')).toBe('1234**7890');
         expect(maskKey('12345678901')).toBe('1234***8901');
-        expect(maskKey('sk-1234567890abcdefghij')).toBe('sk-1***************ghij');
+        expect(maskKey('sk-1234567890abcdefghij')).toBe(
+          'sk-1***************ghij'
+        );
       });
 
       it('should handle API key format correctly', () => {
@@ -155,9 +160,9 @@ describe('Encryption Utilities', () => {
       });
 
       it('should handle very long keys', () => {
-        const longKey = 'sk-' + 'a'.repeat(100) + '1234';
+        const longKey = `sk-${'a'.repeat(100)}1234`;
         const masked = maskKey(longKey);
-        expect(masked).toBe('sk-a' + '*'.repeat(99) + '1234');
+        expect(masked).toBe(`sk-a${'*'.repeat(99)}1234`);
         expect(masked.length).toBe(longKey.length);
       });
 
@@ -226,10 +231,10 @@ describe('Encryption Utilities', () => {
           'abcdefghi',
           'abcdefghij',
           'sk-1234567890abcdefghijklmnopqrstuvwxyz',
-          'very-long-key-' + 'x'.repeat(100),
+          `very-long-key-${'x'.repeat(100)}`,
         ];
 
-        testKeys.forEach(key => {
+        testKeys.forEach((key) => {
           const masked = maskKey(key);
           expect(masked.length).toBe(key.length);
         });
@@ -244,7 +249,7 @@ describe('Encryption Utilities', () => {
           '123456789012345678901234567890123456789012345',
         ];
 
-        keys.forEach(key => {
+        keys.forEach((key) => {
           const masked = maskKey(key);
           const middleSection = masked.slice(4, -4);
           expect(middleSection).toMatch(/^\*+$/);
@@ -252,13 +257,9 @@ describe('Encryption Utilities', () => {
       });
 
       it('should always show first 4 chars for keys > 8 characters', () => {
-        const keys = [
-          'sk-1234567890',
-          'api-key-test',
-          '123456789012345',
-        ];
+        const keys = ['sk-1234567890', 'api-key-test', '123456789012345'];
 
-        keys.forEach(key => {
+        keys.forEach((key) => {
           if (key.length > 8) {
             const masked = maskKey(key);
             expect(masked.slice(0, 4)).toBe(key.slice(0, 4));
@@ -267,13 +268,9 @@ describe('Encryption Utilities', () => {
       });
 
       it('should always show last 4 chars for keys > 8 characters', () => {
-        const keys = [
-          'sk-1234567890',
-          'api-key-test',
-          '123456789012345',
-        ];
+        const keys = ['sk-1234567890', 'api-key-test', '123456789012345'];
 
-        keys.forEach(key => {
+        keys.forEach((key) => {
           if (key.length > 8) {
             const masked = maskKey(key);
             expect(masked.slice(-4)).toBe(key.slice(-4));
@@ -306,12 +303,12 @@ describe('Encryption Utilities', () => {
           'secret-api-key-do-not-reveal',
         ];
 
-        sensitiveKeys.forEach(key => {
+        sensitiveKeys.forEach((key) => {
           const masked = maskKey(key);
-          
+
           // Should not contain the full original key
           expect(masked).not.toBe(key);
-          
+
           // Should not contain obvious patterns from middle
           if (key.length > 8) {
             const middleOriginal = key.slice(4, -4);
@@ -324,46 +321,48 @@ describe('Encryption Utilities', () => {
         const key = 'sk-1234567890abcdefghijklmnopqrstuvwxyz';
         const masked1 = maskKey(key);
         const masked2 = maskKey(key);
-        
+
         expect(masked1).toBe(masked2);
       });
 
       it('should mask different keys differently', () => {
         const key1 = 'sk-1111111111111111111111111111111111111111';
         const key2 = 'sk-2222222222222222222222222222222222222222';
-        
+
         const masked1 = maskKey(key1);
         const masked2 = maskKey(key2);
-        
+
         // Should be different (different first/last chars)
         expect(masked1).not.toBe(masked2);
         // But same pattern
-        expect(masked1.replace(/[^*]/g, 'X')).toBe(masked2.replace(/[^*]/g, 'X'));
+        expect(masked1.replace(/[^*]/g, 'X')).toBe(
+          masked2.replace(/[^*]/g, 'X')
+        );
       });
     });
 
     describe('Performance and Efficiency', () => {
       it('should handle large number of masking operations efficiently', () => {
-        const keys = Array(1000).fill(null).map((_, i) => 
-          `sk-key-${i}-${'a'.repeat(20)}-${i}`
-        );
-        
+        const keys = Array(1000)
+          .fill(null)
+          .map((_, i) => `sk-key-${i}-${'a'.repeat(20)}-${i}`);
+
         const startTime = Date.now();
-        const masked = keys.map(key => maskKey(key));
+        const masked = keys.map((key) => maskKey(key));
         const endTime = Date.now();
-        
+
         expect(endTime - startTime).toBeLessThan(100); // Should complete in < 100ms
         expect(masked).toHaveLength(1000);
-        expect(masked.every(m => m.includes('*'))).toBe(true);
+        expect(masked.every((m) => m.includes('*'))).toBe(true);
       });
 
       it('should handle very long keys efficiently', () => {
-        const veryLongKey = 'sk-' + 'a'.repeat(10000) + 'end';
-        
+        const veryLongKey = `sk-${'a'.repeat(10000)}end`;
+
         const startTime = Date.now();
         const masked = maskKey(veryLongKey);
         const endTime = Date.now();
-        
+
         expect(endTime - startTime).toBeLessThan(10); // Should complete quickly
         expect(masked.startsWith('sk-a')).toBe(true);
         expect(masked.endsWith('end')).toBe(true);
@@ -383,18 +382,18 @@ describe('Encryption Utilities', () => {
         'xai-1234567890abcdefghijklmnopqrstuvwxyz',
       ];
 
-      realWorldKeys.forEach(key => {
+      realWorldKeys.forEach((key) => {
         const masked = maskKey(key);
-        
+
         // Should maintain recognizable prefix
         expect(masked.slice(0, 4)).toBe(key.slice(0, 4));
-        
+
         // Should maintain recognizable suffix
         expect(masked.slice(-4)).toBe(key.slice(-4));
-        
+
         // Should contain stars in middle
         expect(masked).toContain('*');
-        
+
         // Should be same length
         expect(masked.length).toBe(key.length);
       });
@@ -403,10 +402,10 @@ describe('Encryption Utilities', () => {
     it('should provide secure logging format', () => {
       const apiKey = 'sk-1234567890abcdefghijklmnopqrstuvwxyz';
       const masked = maskKey(apiKey);
-      
+
       // Simulate logging scenario
       const logMessage = `Using API key: ${masked}`;
-      
+
       expect(logMessage).toContain('sk-1');
       expect(logMessage).toContain('wxyz');
       expect(logMessage).toContain('*');
@@ -423,9 +422,9 @@ describe('Encryption Utilities', () => {
         SHORT_KEY: 'abc',
       };
 
-      Object.entries(envKeys).forEach(([name, key]) => {
+      Object.entries(envKeys).forEach(([_name, key]) => {
         const masked = maskKey(key as string);
-        
+
         if (!key) {
           expect(masked).toBe('');
         } else if (key.length <= 8) {

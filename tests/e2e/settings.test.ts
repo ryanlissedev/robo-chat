@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { mockApiRoutes, createTestUser, setupTestChat } from './fixtures';
+import { expect, test } from '@playwright/test';
+import { createTestUser, mockApiRoutes, setupTestChat } from './fixtures';
 
 test.describe('Settings and Preferences E2E', () => {
   test.beforeEach(async ({ page }) => {
@@ -19,30 +19,34 @@ test.describe('Settings and Preferences E2E', () => {
 
       // Wait for theme change
       await page.waitForTimeout(300);
-      
+
       // Verify theme changed
       const newTheme = await body.getAttribute('class');
       expect(newTheme).toMatch(/dark|light/);
 
       // Verify persistence across page reload
       await page.reload();
-      await expect(body).toHaveClass(new RegExp(newTheme?.includes('dark') ? 'dark' : 'light'));
+      await expect(body).toHaveClass(
+        new RegExp(newTheme?.includes('dark') ? 'dark' : 'light')
+      );
     });
 
-    test('should persist theme preference in localStorage', async ({ page }) => {
+    test('should persist theme preference in localStorage', async ({
+      page,
+    }) => {
       await page.locator('[data-testid="theme-toggle"]').click();
-      
-      const themeValue = await page.evaluate(() => 
+
+      const themeValue = await page.evaluate(() =>
         localStorage.getItem('theme-preference')
       );
-      
+
       expect(themeValue).toMatch(/dark|light/);
     });
   });
 
   test.describe('Model Preferences', () => {
     test('should save default model selection', async ({ page }) => {
-      const user = await createTestUser();
+      const _user = await createTestUser();
       await page.goto('/settings');
 
       // Mock settings API
@@ -76,7 +80,7 @@ test.describe('Settings and Preferences E2E', () => {
 
       // Configure temperature
       await page.fill('[data-testid="temperature-input"]', '0.7');
-      
+
       // Configure max tokens
       await page.fill('[data-testid="max-tokens-input"]', '2048');
 
@@ -108,7 +112,7 @@ test.describe('Settings and Preferences E2E', () => {
 
       await page.fill('[data-testid="chat-input"]', 'Test message');
       await page.press('[data-testid="chat-input"]', 'Enter');
-      
+
       expect(requestMade).toBe(true);
     });
   });
@@ -140,13 +144,17 @@ test.describe('Settings and Preferences E2E', () => {
       await page.click('[data-testid="validate-key-button"]');
 
       // Wait for validation
-      await expect(page.locator('[data-testid="validation-success"]')).toBeVisible();
-      
+      await expect(
+        page.locator('[data-testid="validation-success"]')
+      ).toBeVisible();
+
       // Save key
       await page.click('[data-testid="save-api-key"]');
-      
+
       // Verify key appears in list
-      await expect(page.locator('[data-testid="api-key-list"]')).toContainText('OpenAI');
+      await expect(page.locator('[data-testid="api-key-list"]')).toContainText(
+        'OpenAI'
+      );
     });
 
     test('should handle invalid API key gracefully', async ({ page }) => {
@@ -156,7 +164,10 @@ test.describe('Settings and Preferences E2E', () => {
       await page.route('**/api/validate-key', async (route) => {
         await route.fulfill({
           status: 400,
-          body: JSON.stringify({ valid: false, error: 'Invalid API key format' }),
+          body: JSON.stringify({
+            valid: false,
+            error: 'Invalid API key format',
+          }),
         });
       });
 
@@ -166,9 +177,9 @@ test.describe('Settings and Preferences E2E', () => {
       await page.click('[data-testid="validate-key-button"]');
 
       // Verify error message
-      await expect(page.locator('[data-testid="validation-error"]')).toContainText(
-        'Invalid API key format'
-      );
+      await expect(
+        page.locator('[data-testid="validation-error"]')
+      ).toContainText('Invalid API key format');
     });
 
     test('should delete API key with confirmation', async ({ page }) => {
@@ -179,9 +190,7 @@ test.describe('Settings and Preferences E2E', () => {
         await route.fulfill({
           status: 200,
           body: JSON.stringify({
-            keys: [
-              { id: 'key-1', provider: 'openai', masked: 'sk-...123' }
-            ]
+            keys: [{ id: 'key-1', provider: 'openai', masked: 'sk-...123' }],
           }),
         });
       });
@@ -192,7 +201,9 @@ test.describe('Settings and Preferences E2E', () => {
       await page.click('[data-testid="delete-key-button"]');
 
       // Confirm deletion
-      await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
+      await expect(
+        page.locator('[data-testid="delete-confirmation-dialog"]')
+      ).toBeVisible();
       await page.click('[data-testid="confirm-delete-button"]');
 
       // Verify key removed
@@ -208,17 +219,23 @@ test.describe('Settings and Preferences E2E', () => {
       await page.context().grantPermissions(['microphone']);
 
       // Configure voice settings
-      await page.selectOption('[data-testid="voice-provider-select"]', 'openai');
-      await page.selectOption('[data-testid="voice-model-select"]', 'whisper-1');
+      await page.selectOption(
+        '[data-testid="voice-provider-select"]',
+        'openai'
+      );
+      await page.selectOption(
+        '[data-testid="voice-model-select"]',
+        'whisper-1'
+      );
       await page.check('[data-testid="auto-transcription-toggle"]');
 
       // Test microphone
       await page.click('[data-testid="test-microphone-button"]');
-      
+
       // Verify microphone test
-      await expect(page.locator('[data-testid="microphone-status"]')).toContainText(
-        'Microphone working'
-      );
+      await expect(
+        page.locator('[data-testid="microphone-status"]')
+      ).toContainText('Microphone working');
 
       // Save voice settings
       await page.click('[data-testid="save-voice-settings"]');
@@ -238,9 +255,9 @@ test.describe('Settings and Preferences E2E', () => {
       await page.click('[data-testid="test-microphone-button"]');
 
       // Verify error handling
-      await expect(page.locator('[data-testid="microphone-error"]')).toContainText(
-        'Microphone access denied'
-      );
+      await expect(
+        page.locator('[data-testid="microphone-error"]')
+      ).toContainText('Microphone access denied');
     });
   });
 
@@ -280,12 +297,10 @@ test.describe('Settings and Preferences E2E', () => {
           status: 200,
           headers: {
             'content-type': 'application/json',
-            'content-disposition': 'attachment; filename="chat-history.json"'
+            'content-disposition': 'attachment; filename="chat-history.json"',
           },
           body: JSON.stringify({
-            chats: [
-              { id: 'chat-1', title: 'Test Chat', messages: [] }
-            ]
+            chats: [{ id: 'chat-1', title: 'Test Chat', messages: [] }],
           }),
         });
       });
@@ -299,7 +314,9 @@ test.describe('Settings and Preferences E2E', () => {
       expect(download.suggestedFilename()).toContain('chat-history');
     });
 
-    test('should clear all chat history with confirmation', async ({ page }) => {
+    test('should clear all chat history with confirmation', async ({
+      page,
+    }) => {
       await page.goto('/settings/data');
 
       // Mock clear history endpoint
@@ -316,7 +333,9 @@ test.describe('Settings and Preferences E2E', () => {
       await page.click('[data-testid="clear-history-button"]');
 
       // Confirm action
-      await expect(page.locator('[data-testid="clear-confirmation-dialog"]')).toBeVisible();
+      await expect(
+        page.locator('[data-testid="clear-confirmation-dialog"]')
+      ).toBeVisible();
       await page.fill('[data-testid="confirmation-input"]', 'DELETE');
       await page.click('[data-testid="confirm-clear-button"]');
 
@@ -339,7 +358,7 @@ test.describe('Settings and Preferences E2E', () => {
             messagesCount: 150,
             voiceMinutes: 45,
             apiCalls: 200,
-            period: 'current_month'
+            period: 'current_month',
           }),
         });
       });
@@ -347,10 +366,18 @@ test.describe('Settings and Preferences E2E', () => {
       await page.goto('/settings/usage');
 
       // Verify usage data displayed
-      await expect(page.locator('[data-testid="tokens-used"]')).toContainText('25,000');
-      await expect(page.locator('[data-testid="messages-count"]')).toContainText('150');
-      await expect(page.locator('[data-testid="voice-minutes"]')).toContainText('45');
-      await expect(page.locator('[data-testid="api-calls"]')).toContainText('200');
+      await expect(page.locator('[data-testid="tokens-used"]')).toContainText(
+        '25,000'
+      );
+      await expect(
+        page.locator('[data-testid="messages-count"]')
+      ).toContainText('150');
+      await expect(page.locator('[data-testid="voice-minutes"]')).toContainText(
+        '45'
+      );
+      await expect(page.locator('[data-testid="api-calls"]')).toContainText(
+        '200'
+      );
     });
 
     test('should switch usage time periods', async ({ page }) => {
@@ -377,7 +404,7 @@ test.describe('Settings and Preferences E2E', () => {
 
   test.describe('Account Settings', () => {
     test('should update user profile', async ({ page }) => {
-      const user = await createTestUser();
+      const _user = await createTestUser();
       await page.goto('/settings/account');
 
       // Mock profile update
@@ -407,7 +434,7 @@ test.describe('Settings and Preferences E2E', () => {
     });
 
     test('should change password with validation', async ({ page }) => {
-      const user = await createTestUser();
+      const _user = await createTestUser();
       await page.goto('/settings/account');
 
       // Mock password change
@@ -448,7 +475,7 @@ test.describe('Settings and Preferences E2E', () => {
     });
 
     test('should delete account with confirmation', async ({ page }) => {
-      const user = await createTestUser();
+      const _user = await createTestUser();
       await page.goto('/settings/account');
 
       // Mock account deletion
@@ -465,7 +492,9 @@ test.describe('Settings and Preferences E2E', () => {
       await page.click('[data-testid="delete-account-button"]');
 
       // Confirm deletion
-      await expect(page.locator('[data-testid="delete-account-dialog"]')).toBeVisible();
+      await expect(
+        page.locator('[data-testid="delete-account-dialog"]')
+      ).toBeVisible();
       await page.fill('[data-testid="confirmation-input"]', 'DELETE ACCOUNT');
       await page.click('[data-testid="confirm-delete-account"]');
 
@@ -476,7 +505,9 @@ test.describe('Settings and Preferences E2E', () => {
   });
 
   test.describe('Settings Persistence and Sync', () => {
-    test('should persist settings across browser sessions', async ({ page }) => {
+    test('should persist settings across browser sessions', async ({
+      page,
+    }) => {
       // Set some settings
       await page.goto('/settings');
       await page.selectOption('[data-testid="default-model-select"]', 'gpt-4');
@@ -488,9 +519,9 @@ test.describe('Settings and Preferences E2E', () => {
 
       // Verify settings persisted (for authenticated users)
       // Note: This would depend on server-side persistence
-      const user = await createTestUser();
+      const _user = await createTestUser();
       await page.goto('/settings');
-      
+
       // Mock settings retrieval
       await page.route('**/api/user/settings', async (route) => {
         if (route.request().method() === 'GET') {
@@ -505,12 +536,16 @@ test.describe('Settings and Preferences E2E', () => {
       });
 
       await page.reload();
-      await expect(page.locator('[data-testid="default-model-select"]')).toHaveValue('gpt-4');
+      await expect(
+        page.locator('[data-testid="default-model-select"]')
+      ).toHaveValue('gpt-4');
     });
 
-    test('should handle settings sync conflicts gracefully', async ({ page }) => {
-      const user = await createTestUser();
-      
+    test('should handle settings sync conflicts gracefully', async ({
+      page,
+    }) => {
+      const _user = await createTestUser();
+
       // Simulate settings conflict
       await page.route('**/api/user/settings', async (route) => {
         if (route.request().method() === 'POST') {
@@ -530,11 +565,15 @@ test.describe('Settings and Preferences E2E', () => {
       await page.click('[data-testid="save-settings"]');
 
       // Verify conflict resolution dialog
-      await expect(page.locator('[data-testid="conflict-resolution-dialog"]')).toBeVisible();
+      await expect(
+        page.locator('[data-testid="conflict-resolution-dialog"]')
+      ).toBeVisible();
       await page.click('[data-testid="keep-server-settings"]');
 
       // Verify settings updated
-      await expect(page.locator('[data-testid="default-model-select"]')).toHaveValue('claude-3');
+      await expect(
+        page.locator('[data-testid="default-model-select"]')
+      ).toHaveValue('claude-3');
     });
   });
 });

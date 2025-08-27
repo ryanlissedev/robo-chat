@@ -7,7 +7,10 @@ export async function GET(
 ) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: 'OPENAI_API_KEY not set' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'OPENAI_API_KEY not set' },
+      { status: 500 }
+    );
   }
   const openai = new OpenAI({ apiKey });
   const { id } = await params;
@@ -15,15 +18,22 @@ export async function GET(
     const files = await openai.vectorStores.files.list(id, { limit: 100 });
     return NextResponse.json({ files: files.data });
   } catch (e) {
-    const message = e instanceof Error ? e.message : 'Failed to list vector store files';
+    const message =
+      e instanceof Error ? e.message : 'Failed to list vector store files';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: 'OPENAI_API_KEY not set' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'OPENAI_API_KEY not set' },
+      { status: 500 }
+    );
   }
   const openai = new OpenAI({ apiKey });
   const { id } = await params;
@@ -36,11 +46,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     const uploaded = await openai.files.create({ file, purpose: 'assistants' });
-    const attached = await openai.vectorStores.files.create(id, { file_id: uploaded.id });
+    const attached = await openai.vectorStores.files.create(id, {
+      file_id: uploaded.id,
+    });
 
     return NextResponse.json({ file: attached });
   } catch (e) {
-    const message = e instanceof Error ? e.message : 'Failed to upload file to vector store';
+    const message =
+      e instanceof Error ? e.message : 'Failed to upload file to vector store';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

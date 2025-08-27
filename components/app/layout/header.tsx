@@ -2,10 +2,10 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import { HistoryTrigger } from '@/components/app/history/history-trigger';
 import { ButtonNewChat } from '@/components/app/layout/button-new-chat';
 import { UserMenu } from '@/components/app/layout/user-menu';
-import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import { APP_NAME } from '@/lib/config';
 import { useUserPreferences } from '@/lib/user-preference-store/provider';
 import { useUser } from '@/lib/user-store/provider';

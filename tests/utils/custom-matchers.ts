@@ -4,6 +4,7 @@
  */
 
 import { expect } from 'vitest';
+
 // Import removed - using plain objects instead of MatcherResult/ExpectationResult types
 
 // ============================================================================
@@ -50,34 +51,38 @@ const isValidEmail = (email: string): boolean => {
 };
 
 const isValidUUID = (uuid: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
 };
 
 const isValidTimestamp = (timestamp: string): boolean => {
   const date = new Date(timestamp);
-  return !isNaN(date.getTime()) && timestamp === date.toISOString();
+  return !Number.isNaN(date.getTime()) && timestamp === date.toISOString();
 };
 
 const isValidJWT = (token: string): boolean => {
   const parts = token.split('.');
   if (parts.length !== 3) return false;
-  
+
   try {
     // Validate base64url encoding
-    parts.forEach(part => {
-      const decoded = Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+    parts.forEach((part) => {
+      const decoded = Buffer.from(
+        part.replace(/-/g, '+').replace(/_/g, '/'),
+        'base64'
+      );
       if (!decoded) throw new Error('Invalid base64');
     });
-    
+
     // Validate header
     const header = JSON.parse(Buffer.from(parts[0], 'base64').toString());
     if (!header.alg || !header.typ) return false;
-    
+
     // Validate payload
     const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
     if (!payload.sub || !payload.aud) return false;
-    
+
     return true;
   } catch {
     return false;
@@ -97,11 +102,11 @@ const formatDuration = (ms: number): string => {
 expect.extend({
   toBeValidEmail(received: any) {
     const pass = typeof received === 'string' && isValidEmail(received);
-    
+
     return {
       pass,
-      message: () => 
-        pass 
+      message: () =>
+        pass
           ? `Expected ${received} not to be a valid email`
           : `Expected ${received} to be a valid email format`,
       actual: received,
@@ -111,11 +116,11 @@ expect.extend({
 
   toBeValidUUID(received: any) {
     const pass = typeof received === 'string' && isValidUUID(received);
-    
+
     return {
       pass,
-      message: () => 
-        pass 
+      message: () =>
+        pass
           ? `Expected ${received} not to be a valid UUID`
           : `Expected ${received} to be a valid UUID format`,
       actual: received,
@@ -125,11 +130,11 @@ expect.extend({
 
   toBeValidTimestamp(received: any) {
     const pass = typeof received === 'string' && isValidTimestamp(received);
-    
+
     return {
       pass,
-      message: () => 
-        pass 
+      message: () =>
+        pass
           ? `Expected ${received} not to be a valid timestamp`
           : `Expected ${received} to be a valid ISO timestamp`,
       actual: received,
@@ -139,11 +144,11 @@ expect.extend({
 
   toBeValidJWT(received: any) {
     const pass = typeof received === 'string' && isValidJWT(received);
-    
+
     return {
       pass,
-      message: () => 
-        pass 
+      message: () =>
+        pass
           ? `Expected ${received} not to be a valid JWT`
           : `Expected ${received} to be a valid JWT token`,
       actual: received,
@@ -153,11 +158,11 @@ expect.extend({
 
   toBeNonEmptyString(received: any) {
     const pass = typeof received === 'string' && received.trim().length > 0;
-    
+
     return {
       pass,
-      message: () => 
-        pass 
+      message: () =>
+        pass
           ? `Expected "${received}" not to be a non-empty string`
           : `Expected "${received}" to be a non-empty string`,
       actual: received,
@@ -166,14 +171,16 @@ expect.extend({
   },
 
   toBeEmptyOrNull(received: any) {
-    const pass = received === null || received === undefined || 
-                 (typeof received === 'string' && received.trim() === '') ||
-                 (Array.isArray(received) && received.length === 0);
-    
+    const pass =
+      received === null ||
+      received === undefined ||
+      (typeof received === 'string' && received.trim() === '') ||
+      (Array.isArray(received) && received.length === 0);
+
     return {
       pass,
-      message: () => 
-        pass 
+      message: () =>
+        pass
           ? `Expected ${received} not to be empty or null`
           : `Expected ${received} to be empty or null`,
       actual: received,
@@ -201,11 +208,11 @@ expect.extend({
     const startTime = start.getTime();
     const endTime = end.getTime();
     const pass = receivedTime >= startTime && receivedTime <= endTime;
-    
+
     return {
       pass,
-      message: () => 
-        pass 
+      message: () =>
+        pass
           ? `Expected ${received} not to be within ${start.toISOString()} and ${end.toISOString()}`
           : `Expected ${received} to be within ${start.toISOString()} and ${end.toISOString()}`,
       actual: received,
@@ -229,15 +236,30 @@ expect.extend({
       };
     }
 
-    const requiredFields = ['id', 'email', 'created_at', 'updated_at', 'aud', 'role'];
-    const missingFields = requiredFields.filter(field => !(field in received));
-    
+    const requiredFields = [
+      'id',
+      'email',
+      'created_at',
+      'updated_at',
+      'aud',
+      'role',
+    ];
+    const missingFields = requiredFields.filter(
+      (field) => !(field in received)
+    );
+
     const hasValidId = isValidUUID(received.id);
     const hasValidEmail = isValidEmail(received.email);
-    const hasValidTimestamps = isValidTimestamp(received.created_at) && isValidTimestamp(received.updated_at);
-    
-    const pass = missingFields.length === 0 && hasValidId && hasValidEmail && hasValidTimestamps;
-    
+    const hasValidTimestamps =
+      isValidTimestamp(received.created_at) &&
+      isValidTimestamp(received.updated_at);
+
+    const pass =
+      missingFields.length === 0 &&
+      hasValidId &&
+      hasValidEmail &&
+      hasValidTimestamps;
+
     return {
       pass,
       message: () => {
@@ -270,15 +292,32 @@ expect.extend({
       };
     }
 
-    const requiredFields = ['access_token', 'refresh_token', 'token_type', 'expires_in', 'expires_at', 'user'];
-    const missingFields = requiredFields.filter(field => !(field in received));
-    
-    const hasValidTokens = isValidJWT(received.access_token) && typeof received.refresh_token === 'string';
-    const hasValidExpiry = typeof received.expires_in === 'number' && typeof received.expires_at === 'number';
+    const requiredFields = [
+      'access_token',
+      'refresh_token',
+      'token_type',
+      'expires_in',
+      'expires_at',
+      'user',
+    ];
+    const missingFields = requiredFields.filter(
+      (field) => !(field in received)
+    );
+
+    const hasValidTokens =
+      isValidJWT(received.access_token) &&
+      typeof received.refresh_token === 'string';
+    const hasValidExpiry =
+      typeof received.expires_in === 'number' &&
+      typeof received.expires_at === 'number';
     const hasValidUser = received.user && typeof received.user === 'object';
-    
-    const pass = missingFields.length === 0 && hasValidTokens && hasValidExpiry && hasValidUser;
-    
+
+    const pass =
+      missingFields.length === 0 &&
+      hasValidTokens &&
+      hasValidExpiry &&
+      hasValidUser;
+
     return {
       pass,
       message: () => {
@@ -318,14 +357,23 @@ expect.extend({
     }
 
     const requiredFields = ['id', 'role', 'content', 'timestamp'];
-    const missingFields = requiredFields.filter(field => !(field in received));
-    
-    const hasValidRole = ['user', 'assistant', 'system'].includes(received.role);
-    const hasValidContent = typeof received.content === 'string' && received.content.length > 0;
+    const missingFields = requiredFields.filter(
+      (field) => !(field in received)
+    );
+
+    const hasValidRole = ['user', 'assistant', 'system'].includes(
+      received.role
+    );
+    const hasValidContent =
+      typeof received.content === 'string' && received.content.length > 0;
     const hasValidTimestamp = isValidTimestamp(received.timestamp);
-    
-    const pass = missingFields.length === 0 && hasValidRole && hasValidContent && hasValidTimestamp;
-    
+
+    const pass =
+      missingFields.length === 0 &&
+      hasValidRole &&
+      hasValidContent &&
+      hasValidTimestamp;
+
     return {
       pass,
       message: () => {
@@ -359,13 +407,16 @@ expect.extend({
     }
 
     const requiredFields = ['id', 'title', 'messages', 'createdAt'];
-    const missingFields = requiredFields.filter(field => !(field in received));
-    
+    const missingFields = requiredFields.filter(
+      (field) => !(field in received)
+    );
+
     const hasValidMessages = Array.isArray(received.messages);
     const hasValidTimestamp = isValidTimestamp(received.createdAt);
-    
-    const pass = missingFields.length === 0 && hasValidMessages && hasValidTimestamp;
-    
+
+    const pass =
+      missingFields.length === 0 && hasValidMessages && hasValidTimestamp;
+
     return {
       pass,
       message: () => {
@@ -403,13 +454,13 @@ expect.extend({
 
     const hasDataOrError = 'data' in received || 'error' in received;
     const hasValidStructure = typeof received === 'object' && received !== null;
-    
+
     const pass = hasValidStructure && hasDataOrError;
-    
+
     return {
       pass,
-      message: () => 
-        pass 
+      message: () =>
+        pass
           ? `Expected ${JSON.stringify(received)} not to be a valid API response`
           : `Expected API response to have 'data' or 'error' field`,
       actual: received,
@@ -428,15 +479,16 @@ expect.extend({
     }
 
     const hasError = 'error' in received && received.error;
-    const hasCorrectCode = hasError && 
+    const hasCorrectCode =
+      hasError &&
       (received.error.code === code || received.error.message?.includes(code));
-    
+
     const pass = hasError && hasCorrectCode;
-    
+
     return {
       pass,
-      message: () => 
-        pass 
+      message: () =>
+        pass
           ? `Expected error not to have code ${code}`
           : `Expected error to have code ${code}, got: ${received.error?.code || 'no code'}`,
       actual: received.error?.code || 'no error',
@@ -446,17 +498,18 @@ expect.extend({
 
   toHaveStreamingResponse(received: any) {
     const isResponse = received instanceof Response;
-    const hasCorrectHeaders = isResponse && 
-      received.headers.get('content-type')?.includes('text/stream') ||
+    const hasCorrectHeaders =
+      (isResponse &&
+        received.headers.get('content-type')?.includes('text/stream')) ||
       received.headers.get('content-type')?.includes('text/plain');
     const hasBody = isResponse && received.body;
-    
+
     const pass = isResponse && hasCorrectHeaders && hasBody;
-    
+
     return {
       pass,
-      message: () => 
-        pass 
+      message: () =>
+        pass
           ? `Expected response not to be a streaming response`
           : `Expected response to be a streaming response with correct headers and body`,
       actual: received,
@@ -491,7 +544,8 @@ expect.extend({
     } catch (error) {
       return {
         pass: false,
-        message: () => `Expected ${received} to be valid JSON, got error: ${error instanceof Error ? error.message : String(error)}`,
+        message: () =>
+          `Expected ${received} to be valid JSON, got error: ${error instanceof Error ? error.message : String(error)}`,
         actual: received,
         expected: 'valid JSON string',
       };
@@ -514,13 +568,14 @@ expect.extend({
     const hasBold = /\*\*[\s\S]*\*\*/.test(received);
     const hasItalic = /\*[\s\S]*\*/.test(received);
     const hasLinks = /\[[\s\S]*\]\([\s\S]*\)/.test(received);
-    
-    const pass = hasHeaders || hasCodeBlocks || hasBold || hasItalic || hasLinks;
-    
+
+    const pass =
+      hasHeaders || hasCodeBlocks || hasBold || hasItalic || hasLinks;
+
     return {
       pass,
-      message: () => 
-        pass 
+      message: () =>
+        pass
           ? `Expected ${received} not to contain valid markdown`
           : `Expected ${received} to contain valid markdown syntax`,
       actual: received,
@@ -539,14 +594,23 @@ expect.extend({
     }
 
     const requiredFields = ['filename', 'mimetype', 'size'];
-    const missingFields = requiredFields.filter(field => !(field in received));
-    
-    const hasValidFilename = typeof received.filename === 'string' && received.filename.length > 0;
-    const hasValidMimetype = typeof received.mimetype === 'string' && received.mimetype.includes('/');
-    const hasValidSize = typeof received.size === 'number' && received.size >= 0;
-    
-    const pass = missingFields.length === 0 && hasValidFilename && hasValidMimetype && hasValidSize;
-    
+    const missingFields = requiredFields.filter(
+      (field) => !(field in received)
+    );
+
+    const hasValidFilename =
+      typeof received.filename === 'string' && received.filename.length > 0;
+    const hasValidMimetype =
+      typeof received.mimetype === 'string' && received.mimetype.includes('/');
+    const hasValidSize =
+      typeof received.size === 'number' && received.size >= 0;
+
+    const pass =
+      missingFields.length === 0 &&
+      hasValidFilename &&
+      hasValidMimetype &&
+      hasValidSize;
+
     return {
       pass,
       message: () => {
@@ -592,12 +656,12 @@ expect.extend({
       /^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/, // JWT-style
     ];
 
-    const pass = patterns.some(pattern => pattern.test(received));
-    
+    const pass = patterns.some((pattern) => pattern.test(received));
+
     return {
       pass,
-      message: () => 
-        pass 
+      message: () =>
+        pass
           ? `Expected ${received} not to match API key pattern`
           : `Expected ${received} to match a valid API key pattern`,
       actual: received,
@@ -618,20 +682,21 @@ expect.extend({
     try {
       const decoded = Buffer.from(received, 'base64');
       const pass = decoded.length >= 32; // At least 256 bits
-      
+
       return {
         pass,
-        message: () => 
-          pass 
+        message: () =>
+          pass
             ? `Expected ${received} not to be a valid encryption key`
             : `Expected ${received} to be a valid base64-encoded encryption key (at least 32 bytes)`,
         actual: `${decoded.length} bytes`,
         expected: 'at least 32 bytes',
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         pass: false,
-        message: () => `Expected ${received} to be valid base64-encoded encryption key`,
+        message: () =>
+          `Expected ${received} to be valid base64-encoded encryption key`,
         actual: received,
         expected: 'base64-encoded encryption key',
       };
@@ -657,13 +722,14 @@ expect.extend({
     const hasPage = typeof received.page === 'number' && received.page >= 1;
     const hasLimit = typeof received.limit === 'number' && received.limit > 0;
     const hasTotal = typeof received.total === 'number' && received.total >= 0;
-    
+
     const pass = hasPage && hasLimit && hasTotal;
-    
+
     return {
       pass,
       message: () => {
-        if (!hasPage) return `Expected pagination to have valid page number (>= 1)`;
+        if (!hasPage)
+          return `Expected pagination to have valid page number (>= 1)`;
         if (!hasLimit) return `Expected pagination to have valid limit (> 0)`;
         if (!hasTotal) return `Expected pagination to have valid total (>= 0)`;
         return `Expected ${JSON.stringify(received)} not to have valid pagination`;
@@ -683,15 +749,16 @@ expect.extend({
       };
     }
 
-    const hasMetadata = 'metadata' in received && typeof received.metadata === 'object';
+    const hasMetadata =
+      'metadata' in received && typeof received.metadata === 'object';
     const metadataNotNull = hasMetadata && received.metadata !== null;
-    
+
     const pass = hasMetadata && metadataNotNull;
-    
+
     return {
       pass,
-      message: () => 
-        pass 
+      message: () =>
+        pass
           ? `Expected ${JSON.stringify(received)} not to have valid metadata`
           : `Expected object to have valid metadata field`,
       actual: received.metadata,

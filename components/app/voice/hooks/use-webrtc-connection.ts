@@ -25,7 +25,7 @@ interface WebRTCConnectionState {
 const defaultOptions: WebRTCConnectionOptions = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
+    { urls: 'stun:stun1.l.google.com:19302' },
   ],
   enableEchoCancellation: true,
   enableNoiseSuppression: true,
@@ -44,17 +44,22 @@ export function useWebRTCConnection(options: WebRTCConnectionOptions = {}) {
     updateVisualizationData,
   } = useVoiceStore();
 
-  const mergedOptions = useMemo(() => ({ ...defaultOptions, ...options }), [options]);
+  const mergedOptions = useMemo(
+    () => ({ ...defaultOptions, ...options }),
+    [options]
+  );
 
-  const [connectionState, setConnectionState] = useState<WebRTCConnectionState>({
-    connection: null,
-    dataChannel: null,
-    localStream: null,
-    remoteStream: null,
-    connectionState: 'new',
-    iceConnectionState: 'new',
-    error: null,
-  });
+  const [connectionState, setConnectionState] = useState<WebRTCConnectionState>(
+    {
+      connection: null,
+      dataChannel: null,
+      localStream: null,
+      remoteStream: null,
+      connectionState: 'new',
+      iceConnectionState: 'new',
+      error: null,
+    }
+  );
 
   const connectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
@@ -63,28 +68,30 @@ export function useWebRTCConnection(options: WebRTCConnectionOptions = {}) {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  // keep a ref to the latest connect function to avoid circular deps
+  const connectRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
   // Initialize audio context and analyser
-  const initializeAudioContext = useCallback(async (stream: MediaStream) => {
-    try {
-      const audioContext = new AudioContext({ sampleRate: mergedOptions.sampleRate });
+  const initializeAudioContext = useCallback(
+    async (stream: MediaStream) => {
+      const audioContext = new AudioContext({
+        sampleRate: mergedOptions.sampleRate,
+      });
       const analyser = audioContext.createAnalyser();
-      
+
       analyser.fftSize = 256;
       analyser.smoothingTimeConstant = 0.8;
-      
+
       const source = audioContext.createMediaStreamSource(stream);
       source.connect(analyser);
-      
+
       audioContextRef.current = audioContext;
       analyserRef.current = analyser;
-      
+
       return { audioContext, analyser };
-    } catch (error) {
-      console.error('Failed to initialize audio context:', error);
-      throw error;
-    }
-  }, [mergedOptions.sampleRate]);
+    },
+    [mergedOptions.sampleRate]
+  );
 
   // Get user media stream
   const getUserMedia = useCallback(async (): Promise<MediaStream> => {
@@ -102,68 +109,73 @@ export function useWebRTCConnection(options: WebRTCConnectionOptions = {}) {
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       localStreamRef.current = stream;
-      
+
       // Initialize audio processing
       await initializeAudioContext(stream);
-      
+
       return stream;
     } catch (error) {
-      console.error('Failed to get user media:', error);
-      throw new Error(`Microphone access denied: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Microphone access denied: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }, [mergedOptions, initializeAudioContext]);
 
   // Handle data channel messages
-  const handleDataChannelMessage = useCallback((data: string) => {
-    try {
-      const message = JSON.parse(data);
-      
-      switch (message.type) {
-        case 'transcript':
-          // Handle incoming transcript data
-          if (message.transcript) {
-            useVoiceStore.getState().updateCurrentTranscript(message.transcript);
-          }
-          break;
-          
-        case 'audio_levels':
-          // Handle audio level updates
-          if (message.inputLevel !== undefined) {
-            updateAudioLevels(message.inputLevel, message.outputLevel);
-          }
-          break;
-          
-        case 'error':
-          // Handle server-side errors
-          setError({
-            code: message.code || 'WEBRTC_ERROR',
-            message: message.message || 'WebRTC communication error',
-            timestamp: Date.now(),
-          });
-          break;
-      }
-    } catch (error) {
-      console.error('Failed to parse data channel message:', error);
-    }
-  }, [setError, updateAudioLevels]);
+  const handleDataChannelMessage = useCallback(
+    (data: string) => {
+      try {
+        const message = JSON.parse(data);
+
+        switch (message.type) {
+          case 'transcript':
+            // Handle incoming transcript data
+            if (message.transcript) {
+              useVoiceStore
+                .getState()
+                .updateCurrentTranscript(message.transcript);
+            }
+            break;
+
+          case 'audio_levels':
+            // Handle audio level updates
+            if (message.inputLevel !== undefined) {
+              updateAudioLevels(message.inputLevel, message.outputLevel);
+            }
+            break;
+
+          case 'error':
+            // Handle server-side errors
+            setError({
+              code: message.code || 'WEBRTC_ERROR',
+              message: message.message || 'WebRTC communication error',
+              timestamp: Date.now(),
+            });
+            break;
+        }
+      } catch (_error) {}
+    },
+    [setError, updateAudioLevels]
+  );
 
   // Handle connection failures
   const handleConnectionFailure = useCallback(() => {
     if (reconnectAttempts < 3) {
-      console.log(`Connection failed, attempting reconnect ${reconnectAttempts + 1}/3`);
-      setReconnectAttempts(prev => prev + 1);
-      
-      reconnectTimeoutRef.current = setTimeout(async () => {
-        try {
-          await connect();
-        } catch (error) {
-          console.error('Reconnection failed:', error);
-        }
-      }, 2000 * Math.pow(2, reconnectAttempts)); // Exponential backoff
+      setReconnectAttempts((prev) => prev + 1);
+
+      reconnectTimeoutRef.current = setTimeout(
+        async () => {
+          try {
+            await connectRef.current?.();
+          } catch (_error) {}
+        },
+        2000 * 2 ** reconnectAttempts
+      ); // Exponential backoff
     } else {
       setError({
         code: 'CONNECTION_FAILED',
-        message: 'Failed to establish WebRTC connection after multiple attempts',
+        message:
+          'Failed to establish WebRTC connection after multiple attempts',
         timestamp: Date.now(),
       });
     }
@@ -172,62 +184,61 @@ export function useWebRTCConnection(options: WebRTCConnectionOptions = {}) {
 
   // Create peer connection
   const createPeerConnection = useCallback((): RTCPeerConnection => {
-    try {
-      const pc = new RTCPeerConnection({
-        iceServers: mergedOptions.iceServers,
-        iceCandidatePoolSize: 10,
-      });
+    const pc = new RTCPeerConnection({
+      iceServers: mergedOptions.iceServers,
+      iceCandidatePoolSize: 10,
+    });
 
-      // Connection state handlers
-      pc.onconnectionstatechange = () => {
-        setConnectionState(prev => ({
-          ...prev,
-          connectionState: pc.connectionState,
-        }));
-      };
-
-      pc.oniceconnectionstatechange = () => {
-        setConnectionState(prev => ({
-          ...prev,
-          iceConnectionState: pc.iceConnectionState,
-        }));
-        
-        // Handle connection failures
-        if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-          handleConnectionFailure();
-        }
-      };
-
-      // Data channel for real-time communication
-      const dataChannel = pc.createDataChannel('voice-data', {
-        ordered: true,
-        maxRetransmits: 0,
-      });
-      
-      dataChannel.onopen = () => {
-        console.log('Data channel opened');
-      };
-      
-      dataChannel.onmessage = (event) => {
-        handleDataChannelMessage(event.data);
-      };
-
-      dataChannelRef.current = dataChannel;
-      connectionRef.current = pc;
-
-      setConnectionState(prev => ({
+    // Connection state handlers
+    pc.onconnectionstatechange = () => {
+      setConnectionState((prev) => ({
         ...prev,
-        connection: pc,
-        dataChannel,
+        connectionState: pc.connectionState,
+      }));
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      setConnectionState((prev) => ({
+        ...prev,
+        iceConnectionState: pc.iceConnectionState,
       }));
 
-      return pc;
-    } catch (error) {
-      console.error('Failed to create peer connection:', error);
-      throw error;
-    }
-  }, [mergedOptions.iceServers, handleConnectionFailure, handleDataChannelMessage]);
+      // Handle connection failures
+      if (
+        pc.iceConnectionState === 'failed' ||
+        pc.iceConnectionState === 'disconnected'
+      ) {
+        handleConnectionFailure();
+      }
+    };
 
+    // Data channel for real-time communication
+    const dataChannel = pc.createDataChannel('voice-data', {
+      ordered: true,
+      maxRetransmits: 0,
+    });
+
+    dataChannel.onopen = () => {};
+
+    dataChannel.onmessage = (event) => {
+      handleDataChannelMessage(event.data);
+    };
+
+    dataChannelRef.current = dataChannel;
+    connectionRef.current = pc;
+
+    setConnectionState((prev) => ({
+      ...prev,
+      connection: pc,
+      dataChannel,
+    }));
+
+    return pc;
+  }, [
+    mergedOptions.iceServers,
+    handleConnectionFailure,
+    handleDataChannelMessage,
+  ]);
 
   // Connect to remote peer
   const connect = useCallback(async (): Promise<void> => {
@@ -243,9 +254,9 @@ export function useWebRTCConnection(options: WebRTCConnectionOptions = {}) {
 
       const pc = createPeerConnection();
       const stream = await getUserMedia();
-      
+
       // Add tracks to peer connection
-      stream.getTracks().forEach(track => {
+      stream.getTracks().forEach((track) => {
         pc.addTrack(track, stream);
       });
 
@@ -269,23 +280,21 @@ export function useWebRTCConnection(options: WebRTCConnectionOptions = {}) {
       }
 
       const { answer } = await response.json();
-      
+
       // Set remote description
       await pc.setRemoteDescription({
         type: 'answer',
         sdp: answer,
       });
 
-      setConnectionState(prev => ({
+      setConnectionState((prev) => ({
         ...prev,
         localStream: stream,
       }));
 
       // Reset reconnect attempts on successful connection
       setReconnectAttempts(0);
-
     } catch (error) {
-      console.error('Connection failed:', error);
       setError({
         code: 'CONNECTION_FAILED',
         message: error instanceof Error ? error.message : 'Failed to connect',
@@ -294,6 +303,11 @@ export function useWebRTCConnection(options: WebRTCConnectionOptions = {}) {
       throw error;
     }
   }, [sessionId, config, createPeerConnection, getUserMedia, setError]);
+
+  // keep connect ref updated
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   // Disconnect and cleanup
   const disconnect = useCallback(() => {
@@ -317,7 +331,7 @@ export function useWebRTCConnection(options: WebRTCConnectionOptions = {}) {
 
     // Stop local stream
     if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => {
+      localStreamRef.current.getTracks().forEach((track) => {
         track.stop();
       });
       localStreamRef.current = null;
@@ -346,7 +360,10 @@ export function useWebRTCConnection(options: WebRTCConnectionOptions = {}) {
 
   // Send data through data channel
   const sendData = useCallback((data: unknown) => {
-    if (dataChannelRef.current && dataChannelRef.current.readyState === 'open') {
+    if (
+      dataChannelRef.current &&
+      dataChannelRef.current.readyState === 'open'
+    ) {
       dataChannelRef.current.send(JSON.stringify(data));
     }
   }, []);

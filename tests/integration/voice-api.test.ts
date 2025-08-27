@@ -50,11 +50,17 @@ vi.mock('openai', () => ({
 }));
 
 // Mock Next.js request objects
-function createMockRequest(method: string, body?: any, searchParams?: URLSearchParams) {
+function createMockRequest(
+  method: string,
+  body?: any,
+  searchParams?: URLSearchParams
+) {
   const mockRequest = {
     method,
     json: () => Promise.resolve(body),
-    url: searchParams ? `http://localhost:3000/api/voice/transcripts?${searchParams.toString()}` : 'http://localhost:3000/api/voice/transcripts',
+    url: searchParams
+      ? `http://localhost:3000/api/voice/transcripts?${searchParams.toString()}`
+      : 'http://localhost:3000/api/voice/transcripts',
     nextUrl: {
       searchParams: searchParams || new URLSearchParams(),
     },
@@ -65,7 +71,7 @@ function createMockRequest(method: string, body?: any, searchParams?: URLSearchP
 describe('Voice Transcripts API Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Reset Supabase mocks
     mockSupabaseQuery.select.mockReturnThis();
     mockSupabaseQuery.eq.mockReturnThis();
@@ -81,9 +87,9 @@ describe('Voice Transcripts API Integration', () => {
     it('should create new vector store and index transcript successfully', async () => {
       // Mock Supabase query for API key retrieval
       mockSupabaseQuery.single.mockResolvedValueOnce({
-        data: { 
+        data: {
           encrypted_key: 'test-encrypted-key',
-          iv: 'test-iv'
+          iv: 'test-iv',
         },
         error: null,
       });
@@ -121,7 +127,7 @@ describe('Voice Transcripts API Integration', () => {
       const response = await POST(request);
 
       expect(response.status).toBe(200);
-      
+
       const responseData = await response.json();
       expect(responseData).toEqual({
         success: true,
@@ -131,11 +137,13 @@ describe('Voice Transcripts API Integration', () => {
 
       // Verify Supabase calls
       expect(mockSupabase.from).toHaveBeenCalledWith('user_keys');
-      expect(mockSupabaseQuery.select).toHaveBeenCalledWith('encrypted_key, iv');
+      expect(mockSupabaseQuery.select).toHaveBeenCalledWith(
+        'encrypted_key, iv'
+      );
       expect(mockSupabaseQuery.eq).toHaveBeenCalledWith('user_id', 'test-user');
       expect(mockSupabaseQuery.eq).toHaveBeenCalledWith('provider', 'openai');
       expect(mockSupabaseQuery.single).toHaveBeenCalled();
-      
+
       // Verify database insert call
       expect(mockSupabase.from).toHaveBeenCalledWith('voice_transcripts');
       expect(mockSupabaseQuery.insert).toHaveBeenCalledWith({
@@ -152,7 +160,7 @@ describe('Voice Transcripts API Integration', () => {
         },
         created_at: expect.any(String),
       });
-      
+
       // Verify OpenAI file creation
       expect(mockOpenAI.files.create).toHaveBeenCalledWith({
         file: expect.any(File),
@@ -163,9 +171,9 @@ describe('Voice Transcripts API Integration', () => {
     it('should use existing vector store if found', async () => {
       // Mock Supabase query for API key retrieval
       mockSupabaseQuery.single.mockResolvedValueOnce({
-        data: { 
+        data: {
           encrypted_key: 'test-encrypted-key',
-          iv: 'test-iv'
+          iv: 'test-iv',
         },
         error: null,
       });
@@ -201,7 +209,7 @@ describe('Voice Transcripts API Integration', () => {
       const response = await POST(request);
 
       expect(response.status).toBe(200);
-      
+
       const responseData = await response.json();
       expect(responseData).toEqual({
         success: true,
@@ -242,7 +250,7 @@ describe('Voice Transcripts API Integration', () => {
       const response = await POST(request);
 
       expect(response.status).toBe(400);
-      
+
       const responseData = await response.json();
       expect(responseData.error).toBe('Transcript and userId are required');
     });
@@ -264,7 +272,7 @@ describe('Voice Transcripts API Integration', () => {
       const response = await POST(request);
 
       expect(response.status).toBe(401);
-      
+
       const responseData = await response.json();
       expect(responseData.error).toBe('OpenAI API key not found');
     });
@@ -272,13 +280,13 @@ describe('Voice Transcripts API Integration', () => {
     it('should handle OpenAI API errors', async () => {
       // Mock Supabase query for API key retrieval
       mockSupabaseQuery.single.mockResolvedValueOnce({
-        data: { 
+        data: {
           encrypted_key: 'test-encrypted-key',
-          iv: 'test-iv'
+          iv: 'test-iv',
         },
         error: null,
       });
-      
+
       // Mock file creation to fail with invalid response
       mockOpenAI.files.create.mockResolvedValueOnce({
         // Missing id field to trigger our error handling
@@ -299,10 +307,12 @@ describe('Voice Transcripts API Integration', () => {
       const response = await POST(request);
 
       expect(response.status).toBe(500);
-      
+
       const responseData = await response.json();
       expect(responseData.error).toBe('Failed to upload transcript file');
-      expect(responseData.details).toContain('invalid response or missing file ID');
+      expect(responseData.details).toContain(
+        'invalid response or missing file ID'
+      );
     });
   });
 
@@ -321,7 +331,10 @@ describe('Voice Transcripts API Integration', () => {
             session_id: 'session-1',
             transcript: 'This is a technical discussion about APIs',
             file_id: 'file-1',
-            metadata: { sessionId: 'session-1', personalityMode: 'technical-expert' },
+            metadata: {
+              sessionId: 'session-1',
+              personalityMode: 'technical-expert',
+            },
             created_at: '2024-12-24T10:00:00Z',
           },
           {
@@ -330,7 +343,10 @@ describe('Voice Transcripts API Integration', () => {
             session_id: 'session-2',
             transcript: 'Another technical discussion about databases',
             file_id: 'file-2',
-            metadata: { sessionId: 'session-2', personalityMode: 'technical-expert' },
+            metadata: {
+              sessionId: 'session-2',
+              personalityMode: 'technical-expert',
+            },
             created_at: '2024-12-24T11:00:00Z',
           },
         ],
@@ -346,7 +362,7 @@ describe('Voice Transcripts API Integration', () => {
       const response = await GET(request);
 
       expect(response.status).toBe(200);
-      
+
       const responseData = await response.json();
       expect(responseData).toEqual({
         results: [
@@ -356,7 +372,10 @@ describe('Voice Transcripts API Integration', () => {
             session_id: 'session-1',
             transcript: 'This is a technical discussion about APIs',
             file_id: 'file-1',
-            metadata: { sessionId: 'session-1', personalityMode: 'technical-expert' },
+            metadata: {
+              sessionId: 'session-1',
+              personalityMode: 'technical-expert',
+            },
             created_at: '2024-12-24T10:00:00Z',
           },
           {
@@ -365,7 +384,10 @@ describe('Voice Transcripts API Integration', () => {
             session_id: 'session-2',
             transcript: 'Another technical discussion about databases',
             file_id: 'file-2',
-            metadata: { sessionId: 'session-2', personalityMode: 'technical-expert' },
+            metadata: {
+              sessionId: 'session-2',
+              personalityMode: 'technical-expert',
+            },
             created_at: '2024-12-24T11:00:00Z',
           },
         ],
@@ -376,9 +398,17 @@ describe('Voice Transcripts API Integration', () => {
       // Verify Supabase calls
       expect(mockSupabase.from).toHaveBeenCalledWith('voice_transcripts');
       expect(mockSupabaseQuery.select).toHaveBeenCalledWith('*');
-      expect(mockSupabaseQuery.eq).toHaveBeenCalledWith('user_id', 'search-user');
-      expect(mockSupabaseQuery.ilike).toHaveBeenCalledWith('transcript', '%technical discussion%');
-      expect(mockSupabaseQuery.order).toHaveBeenCalledWith('created_at', { ascending: false });
+      expect(mockSupabaseQuery.eq).toHaveBeenCalledWith(
+        'user_id',
+        'search-user'
+      );
+      expect(mockSupabaseQuery.ilike).toHaveBeenCalledWith(
+        'transcript',
+        '%technical discussion%'
+      );
+      expect(mockSupabaseQuery.order).toHaveBeenCalledWith('created_at', {
+        ascending: false,
+      });
       expect(mockSupabaseQuery.limit).toHaveBeenCalledWith(10);
     });
 
@@ -392,7 +422,7 @@ describe('Voice Transcripts API Integration', () => {
       const response = await GET(request);
 
       expect(response.status).toBe(400);
-      
+
       const responseData = await response.json();
       expect(responseData.error).toBe('userId and query are required');
     });
@@ -417,7 +447,7 @@ describe('Voice Transcripts API Integration', () => {
       const response = await GET(request);
 
       expect(response.status).toBe(200);
-      
+
       const responseData = await response.json();
       expect(responseData).toEqual({
         results: [],
@@ -428,9 +458,17 @@ describe('Voice Transcripts API Integration', () => {
       // Verify Supabase calls
       expect(mockSupabase.from).toHaveBeenCalledWith('voice_transcripts');
       expect(mockSupabaseQuery.select).toHaveBeenCalledWith('*');
-      expect(mockSupabaseQuery.eq).toHaveBeenCalledWith('user_id', 'no-store-user');
-      expect(mockSupabaseQuery.ilike).toHaveBeenCalledWith('transcript', '%test query%');
-      expect(mockSupabaseQuery.order).toHaveBeenCalledWith('created_at', { ascending: false });
+      expect(mockSupabaseQuery.eq).toHaveBeenCalledWith(
+        'user_id',
+        'no-store-user'
+      );
+      expect(mockSupabaseQuery.ilike).toHaveBeenCalledWith(
+        'transcript',
+        '%test query%'
+      );
+      expect(mockSupabaseQuery.order).toHaveBeenCalledWith('created_at', {
+        ascending: false,
+      });
       expect(mockSupabaseQuery.limit).toHaveBeenCalledWith(10);
     });
   });

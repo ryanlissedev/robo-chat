@@ -18,7 +18,7 @@ export async function getChatsForUserInDb(userId: string): Promise<Chats[]> {
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('chats')
       .select('*')
       .eq('user_id', userId)
@@ -41,9 +41,9 @@ export async function updateChatTitleInDb(id: string, title: string) {
     return;
   }
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('chats')
-    .update({ title, updated_at: new Date().toISOString() })
+    .update({ title, updated_at: new Date().toISOString() } as any)
     .eq('id', id);
   if (error) {
     throw error;
@@ -56,7 +56,7 @@ export async function deleteChatInDb(id: string) {
     return;
   }
 
-  const { error } = await supabase.from('chats').delete().eq('id', id);
+  const { error } = await (supabase as any).from('chats').delete().eq('id', id);
   if (error) {
     throw error;
   }
@@ -74,7 +74,7 @@ export async function getAllUserChatsInDb(userId: string): Promise<Chats[]> {
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('chats')
       .select('*')
       .eq('user_id', userId)
@@ -101,9 +101,14 @@ export async function createChatInDb(
     return null;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('chats')
-    .insert({ user_id: userId, title, model, system_prompt: systemPrompt })
+    .insert({
+      user_id: userId,
+      title,
+      model,
+      system_prompt: systemPrompt,
+    } as any)
     .select('id')
     .single();
 

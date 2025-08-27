@@ -3,20 +3,17 @@
  * Ensures proper tracking of credential usage and errors without exposing sensitive data
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  trackCredentialUsage,
-  trackCredentialError,
+  type CredentialSource,
+  clearMetrics,
+  type ErrorType,
+  getMetricsStorageInfo,
   getMetricsSummary,
   getRecentMetrics,
-  clearMetrics,
-  getMetricsStorageInfo,
-  type CredentialSource,
   type Provider,
-  type ErrorType,
-  type CredentialUsageMetric,
-  type CredentialErrorMetric,
-  type MetricsSummary,
+  trackCredentialError,
+  trackCredentialUsage,
 } from '@/lib/utils/metrics';
 
 describe('Metrics Utilities', () => {
@@ -34,27 +31,27 @@ describe('Metrics Utilities', () => {
   describe('trackCredentialUsage', () => {
     it('should track basic credential usage', () => {
       trackCredentialUsage('user-byok', 'openai', 'gpt-4');
-      
+
       const summary = getMetricsSummary();
       expect(summary.totalRequests).toBe(1);
       expect(summary.successfulRequests).toBe(1);
       expect(summary.errorRate).toBe(0);
       expect(summary.bySource['user-byok'].total).toBe(1);
-      expect(summary.byProvider['openai'].total).toBe(1);
+      expect(summary.byProvider.openai.total).toBe(1);
     });
 
     it('should track with additional options', () => {
       trackCredentialUsage('guest-header', 'anthropic', 'claude-3', {
         userId: 'user123',
         success: false,
-        responseTime: 1500
+        responseTime: 1500,
       });
 
       const summary = getMetricsSummary();
       expect(summary.totalRequests).toBe(1);
       expect(summary.successfulRequests).toBe(0);
       expect(summary.errorRate).toBe(1);
-      expect(summary.byProvider['anthropic'].avgResponseTime).toBe(1500);
+      expect(summary.byProvider.anthropic.avgResponseTime).toBe(1500);
     });
 
     it('should track multiple requests and calculate rates', () => {
@@ -66,8 +63,8 @@ describe('Metrics Utilities', () => {
       const summary = getMetricsSummary();
       expect(summary.totalRequests).toBe(3);
       expect(summary.successfulRequests).toBe(2);
-      expect(summary.errorRate).toBeCloseTo(1/3);
-      expect(summary.bySource['user-byok'].errorRate).toBeCloseTo(1/3);
+      expect(summary.errorRate).toBeCloseTo(1 / 3);
+      expect(summary.bySource['user-byok'].errorRate).toBeCloseTo(1 / 3);
     });
 
     it('should track different sources separately', () => {
@@ -79,31 +76,40 @@ describe('Metrics Utilities', () => {
       expect(summary.totalRequests).toBe(3);
       expect(summary.bySource['user-byok'].total).toBe(1);
       expect(summary.bySource['guest-header'].total).toBe(1);
-      expect(summary.bySource['environment'].total).toBe(1);
+      expect(summary.bySource.environment.total).toBe(1);
     });
 
     it('should track different providers separately', () => {
-      trackCredentialUsage('user-byok', 'openai', 'gpt-4', { responseTime: 1000 });
-      trackCredentialUsage('user-byok', 'anthropic', 'claude-3', { responseTime: 2000 });
-      trackCredentialUsage('user-byok', 'openai', 'gpt-3.5', { responseTime: 500 });
+      trackCredentialUsage('user-byok', 'openai', 'gpt-4', {
+        responseTime: 1000,
+      });
+      trackCredentialUsage('user-byok', 'anthropic', 'claude-3', {
+        responseTime: 2000,
+      });
+      trackCredentialUsage('user-byok', 'openai', 'gpt-3.5', {
+        responseTime: 500,
+      });
 
       const summary = getMetricsSummary();
-      expect(summary.byProvider['openai'].total).toBe(2);
-      expect(summary.byProvider['anthropic'].total).toBe(1);
-      expect(summary.byProvider['openai'].avgResponseTime).toBe(750); // (1000 + 500) / 2
-      expect(summary.byProvider['anthropic'].avgResponseTime).toBe(2000);
+      expect(summary.byProvider.openai.total).toBe(2);
+      expect(summary.byProvider.anthropic.total).toBe(1);
+      expect(summary.byProvider.openai.avgResponseTime).toBe(750); // (1000 + 500) / 2
+      expect(summary.byProvider.anthropic.avgResponseTime).toBe(2000);
     });
   });
 
   describe('trackCredentialError', () => {
     it('should track authentication errors', () => {
       const authError = new Error('Invalid API key');
-      trackCredentialError(authError, 'openai', { source: 'user-byok', model: 'gpt-4' });
+      trackCredentialError(authError, 'openai', {
+        source: 'user-byok',
+        model: 'gpt-4',
+      });
 
       const summary = getMetricsSummary();
       expect(summary.errors.total).toBe(1);
       expect(summary.errors.byType.authentication).toBe(1);
-      expect(summary.errors.byProvider['openai']).toBe(1);
+      expect(summary.errors.byProvider.openai).toBe(1);
     });
 
     it('should categorize different error types', () => {
@@ -116,14 +122,16 @@ describe('Metrics Utilities', () => {
       const summary = getMetricsSummary();
       expect(summary.errors.total).toBe(5);
       expect(summary.errors.byType.authentication).toBe(1); // 401
-      expect(summary.errors.byType.authorization).toBe(1);  // 403
-      expect(summary.errors.byType.rate_limit).toBe(1);     // 429
-      expect(summary.errors.byType.network).toBe(1);        // timeout
-      expect(summary.errors.byType.unknown).toBe(1);        // unknown
+      expect(summary.errors.byType.authorization).toBe(1); // 403
+      expect(summary.errors.byType.rate_limit).toBe(1); // 429
+      expect(summary.errors.byType.network).toBe(1); // timeout
+      expect(summary.errors.byType.unknown).toBe(1); // unknown
     });
 
     it('should redact sensitive information from error messages', () => {
-      const sensitiveError = new Error('API key sk-1234567890abcdef is invalid');
+      const sensitiveError = new Error(
+        'API key sk-1234567890abcdef is invalid'
+      );
       trackCredentialError(sensitiveError, 'openai');
 
       const recentMetrics = getRecentMetrics();
@@ -154,10 +162,18 @@ describe('Metrics Utilities', () => {
   describe('getMetricsSummary', () => {
     beforeEach(() => {
       // Set up test data
-      trackCredentialUsage('user-byok', 'openai', 'gpt-4', { success: true, responseTime: 1000 });
+      trackCredentialUsage('user-byok', 'openai', 'gpt-4', {
+        success: true,
+        responseTime: 1000,
+      });
       trackCredentialUsage('user-byok', 'openai', 'gpt-4', { success: false });
-      trackCredentialUsage('guest-header', 'anthropic', 'claude-3', { success: true, responseTime: 2000 });
-      trackCredentialError(new Error('Auth failed'), 'openai', { source: 'user-byok' });
+      trackCredentialUsage('guest-header', 'anthropic', 'claude-3', {
+        success: true,
+        responseTime: 2000,
+      });
+      trackCredentialError(new Error('Auth failed'), 'openai', {
+        source: 'user-byok',
+      });
     });
 
     it('should provide complete metrics summary', () => {
@@ -165,14 +181,14 @@ describe('Metrics Utilities', () => {
 
       expect(summary.totalRequests).toBe(3);
       expect(summary.successfulRequests).toBe(2);
-      expect(summary.errorRate).toBeCloseTo(1/3);
+      expect(summary.errorRate).toBeCloseTo(1 / 3);
 
       expect(summary.bySource['user-byok'].total).toBe(2);
       expect(summary.bySource['guest-header'].total).toBe(1);
-      expect(summary.bySource['environment'].total).toBe(0);
+      expect(summary.bySource.environment.total).toBe(0);
 
-      expect(summary.byProvider['openai'].total).toBe(2);
-      expect(summary.byProvider['anthropic'].total).toBe(1);
+      expect(summary.byProvider.openai.total).toBe(2);
+      expect(summary.byProvider.anthropic.total).toBe(1);
 
       expect(summary.errors.total).toBe(1);
       expect(summary.timeRange.start).toBeDefined();
@@ -277,7 +293,7 @@ describe('Metrics Utilities', () => {
     testCases.forEach(([errorMessage, expectedType]) => {
       it(`should categorize "${errorMessage}" as ${expectedType}`, () => {
         trackCredentialError(new Error(errorMessage), 'openai');
-        
+
         const summary = getMetricsSummary();
         expect(summary.errors.byType[expectedType]).toBe(1);
       });
@@ -285,9 +301,17 @@ describe('Metrics Utilities', () => {
   });
 
   describe('Provider Types', () => {
-    const providers: Provider[] = ['openai', 'anthropic', 'mistral', 'google', 'xai', 'perplexity', 'openrouter'];
+    const providers: Provider[] = [
+      'openai',
+      'anthropic',
+      'mistral',
+      'google',
+      'xai',
+      'perplexity',
+      'openrouter',
+    ];
 
-    providers.forEach(provider => {
+    providers.forEach((provider) => {
       it(`should track metrics for ${provider} provider`, () => {
         trackCredentialUsage('user-byok', provider, 'test-model');
         trackCredentialError(new Error('Test'), provider);
@@ -300,9 +324,13 @@ describe('Metrics Utilities', () => {
   });
 
   describe('Credential Sources', () => {
-    const sources: CredentialSource[] = ['user-byok', 'guest-header', 'environment'];
+    const sources: CredentialSource[] = [
+      'user-byok',
+      'guest-header',
+      'environment',
+    ];
 
-    sources.forEach(source => {
+    sources.forEach((source) => {
       it(`should track metrics for ${source} source`, () => {
         trackCredentialUsage(source, 'openai', 'test-model');
 
@@ -315,7 +343,11 @@ describe('Metrics Utilities', () => {
   describe('Edge Cases and Error Handling', () => {
     it('should handle undefined/null values gracefully', () => {
       expect(() => {
-        trackCredentialUsage('user-byok' as any, undefined as any, 'test-model');
+        trackCredentialUsage(
+          'user-byok' as any,
+          undefined as any,
+          'test-model'
+        );
       }).not.toThrow();
 
       expect(() => {
@@ -328,7 +360,7 @@ describe('Metrics Utilities', () => {
       for (let i = 0; i < 1000; i++) {
         trackCredentialUsage('user-byok', 'openai', `model-${i % 10}`, {
           success: i % 2 === 0,
-          responseTime: 1000 + i
+          responseTime: 1000 + i,
         });
       }
 
@@ -339,20 +371,28 @@ describe('Metrics Utilities', () => {
     });
 
     it('should calculate average response times correctly', () => {
-      trackCredentialUsage('user-byok', 'openai', 'gpt-4', { responseTime: 1000 });
-      trackCredentialUsage('user-byok', 'openai', 'gpt-4', { responseTime: 2000 });
-      trackCredentialUsage('user-byok', 'openai', 'gpt-4', { responseTime: 3000 });
+      trackCredentialUsage('user-byok', 'openai', 'gpt-4', {
+        responseTime: 1000,
+      });
+      trackCredentialUsage('user-byok', 'openai', 'gpt-4', {
+        responseTime: 2000,
+      });
+      trackCredentialUsage('user-byok', 'openai', 'gpt-4', {
+        responseTime: 3000,
+      });
       trackCredentialUsage('user-byok', 'openai', 'gpt-4', { success: true }); // No response time
 
       const summary = getMetricsSummary();
-      expect(summary.byProvider['openai'].avgResponseTime).toBe(2000); // (1000 + 2000 + 3000) / 3
+      expect(summary.byProvider.openai.avgResponseTime).toBe(2000); // (1000 + 2000 + 3000) / 3
     });
 
     it('should handle time range edge cases', () => {
       const summary = getMetricsSummary();
       expect(summary.timeRange.start).toBeInstanceOf(Date);
       expect(summary.timeRange.end).toBeInstanceOf(Date);
-      expect(summary.timeRange.end.getTime()).toBeGreaterThanOrEqual(summary.timeRange.start.getTime());
+      expect(summary.timeRange.end.getTime()).toBeGreaterThanOrEqual(
+        summary.timeRange.start.getTime()
+      );
     });
   });
 });

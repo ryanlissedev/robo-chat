@@ -314,7 +314,7 @@ export async function createTestUser() {
 export async function setupTestChat(page: Page) {
   // Navigate to chat page
   await page.goto('/');
-  
+
   // Wait for chat interface to load
   await page.waitForSelector('[data-testid="chat-input"]', {
     state: 'visible',

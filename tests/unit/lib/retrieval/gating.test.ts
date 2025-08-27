@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
+  selectRetrievalMode,
   shouldEnableFileSearchTools,
   shouldUseFallbackRetrieval,
-  selectRetrievalMode,
 } from '@/lib/retrieval/gating';
 
 describe('retrieval gating helpers', () => {
@@ -29,8 +29,11 @@ describe('retrieval gating helpers', () => {
     const enableSearch = true;
     const modelSupportsFileSearchTools = true;
 
-    expect(shouldEnableFileSearchTools(enableSearch, modelSupportsFileSearchTools)).toBe(true);
-    expect(shouldUseFallbackRetrieval(enableSearch, modelSupportsFileSearchTools)).toBe(false);
+    expect(
+      shouldEnableFileSearchTools(enableSearch, modelSupportsFileSearchTools)
+    ).toBe(true);
+    expect(
+      shouldUseFallbackRetrieval(enableSearch, modelSupportsFileSearchTools)
+    ).toBe(false);
   });
-
 });

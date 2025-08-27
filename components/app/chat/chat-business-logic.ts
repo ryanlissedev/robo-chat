@@ -50,7 +50,10 @@ export type ChatRequestOptions = {
     enableSearch?: boolean;
     reasoningEffort: 'low' | 'medium' | 'high';
     context?: 'chat' | 'voice';
-    personalityMode?: 'safety-focused' | 'technical-expert' | 'friendly-assistant';
+    personalityMode?:
+      | 'safety-focused'
+      | 'technical-expert'
+      | 'friendly-assistant';
   };
   experimental_attachments?: Attachment[];
 };
@@ -178,7 +181,7 @@ export async function submitMessageScenario(
         systemPrompt: systemPrompt || SYSTEM_PROMPT_DEFAULT,
         enableSearch,
         reasoningEffort,
-        context: 'chat' as const,  // Explicitly set chat context for immediate response
+        context: 'chat' as const, // Explicitly set chat context for immediate response
       },
       experimental_attachments: fileResult.data || undefined,
     };
@@ -359,7 +362,7 @@ export async function submitSuggestionScenario(
         isAuthenticated,
         systemPrompt: SYSTEM_PROMPT_DEFAULT,
         reasoningEffort,
-        context: 'chat' as const,  // Explicitly set chat context for immediate response
+        context: 'chat' as const, // Explicitly set chat context for immediate response
       },
     };
 

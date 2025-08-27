@@ -1,5 +1,5 @@
-import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatDraft } from '@/app/hooks/use-chat-draft';
 
 // Mock localStorage
@@ -31,7 +31,9 @@ describe('useChatDraft', () => {
       const { result } = renderHook(() => useChatDraft('test-chat-id'));
 
       expect(result.current.draftValue).toBe('');
-      expect(localStorageMock.getItem).toHaveBeenCalledWith('chat-draft-test-chat-id');
+      expect(localStorageMock.getItem).toHaveBeenCalledWith(
+        'chat-draft-test-chat-id'
+      );
     });
 
     it('should initialize with stored draft value', () => {
@@ -41,7 +43,9 @@ describe('useChatDraft', () => {
       const { result } = renderHook(() => useChatDraft('test-chat-id'));
 
       expect(result.current.draftValue).toBe(storedDraft);
-      expect(localStorageMock.getItem).toHaveBeenCalledWith('chat-draft-test-chat-id');
+      expect(localStorageMock.getItem).toHaveBeenCalledWith(
+        'chat-draft-test-chat-id'
+      );
     });
 
     it('should use "new" key when chatId is null', () => {
@@ -61,7 +65,9 @@ describe('useChatDraft', () => {
 
       // The hook should load from localStorage when window is available
       expect(result.current.draftValue).toBe('stored-value');
-      expect(localStorageMock.getItem).toHaveBeenCalledWith('chat-draft-test-chat-id');
+      expect(localStorageMock.getItem).toHaveBeenCalledWith(
+        'chat-draft-test-chat-id'
+      );
     });
   });
 
@@ -94,7 +100,9 @@ describe('useChatDraft', () => {
       });
 
       expect(result.current.draftValue).toBe('');
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('chat-draft-test-chat-id');
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(
+        'chat-draft-test-chat-id'
+      );
     });
 
     it('should handle multiple updates correctly', () => {
@@ -127,7 +135,10 @@ describe('useChatDraft', () => {
       });
 
       expect(result.current.draftValue).toBe('Test content');
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('chat-draft-test-chat-id', 'Test content');
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        'chat-draft-test-chat-id',
+        'Test content'
+      );
     });
   });
 
@@ -148,7 +159,9 @@ describe('useChatDraft', () => {
       });
 
       expect(result.current.draftValue).toBe('');
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('chat-draft-test-chat-id');
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(
+        'chat-draft-test-chat-id'
+      );
     });
 
     it('should work when draft is already empty', () => {
@@ -159,7 +172,9 @@ describe('useChatDraft', () => {
       });
 
       expect(result.current.draftValue).toBe('');
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('chat-draft-test-chat-id');
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(
+        'chat-draft-test-chat-id'
+      );
     });
 
     it('should not call localStorage when window is undefined', () => {
@@ -175,7 +190,9 @@ describe('useChatDraft', () => {
       });
 
       expect(result.current.draftValue).toBe('');
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('chat-draft-test-chat-id');
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(
+        'chat-draft-test-chat-id'
+      );
     });
   });
 
@@ -184,7 +201,9 @@ describe('useChatDraft', () => {
       const chatId = 'abc-123-def';
       renderHook(() => useChatDraft(chatId));
 
-      expect(localStorageMock.getItem).toHaveBeenCalledWith(`chat-draft-${chatId}`);
+      expect(localStorageMock.getItem).toHaveBeenCalledWith(
+        `chat-draft-${chatId}`
+      );
     });
 
     it('should use "new" key for null chat ID', () => {
@@ -204,13 +223,17 @@ describe('useChatDraft', () => {
       const specialChatId = 'chat@#$%^&*()_+-=[]{}|;:,.<>?';
       renderHook(() => useChatDraft(specialChatId));
 
-      expect(localStorageMock.getItem).toHaveBeenCalledWith(`chat-draft-${specialChatId}`);
+      expect(localStorageMock.getItem).toHaveBeenCalledWith(
+        `chat-draft-${specialChatId}`
+      );
     });
   });
 
   describe('stability and performance', () => {
     it('should maintain function reference stability', () => {
-      const { result, rerender } = renderHook(() => useChatDraft('test-chat-id'));
+      const { result, rerender } = renderHook(() =>
+        useChatDraft('test-chat-id')
+      );
 
       const initialSetDraftValue = result.current.setDraftValue;
       const initialClearDraft = result.current.clearDraft;

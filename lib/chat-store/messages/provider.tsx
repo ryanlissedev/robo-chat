@@ -42,9 +42,11 @@ function convertAISDKMessageToDb(aiMessage: MessageAISDK): {
         // Handle text-delta type (currently not in UIMessagePart union)
         if (
           'type' in part &&
-          (part as { type: string; textDelta?: string }).type === 'text-delta' &&
+          (part as { type: string; textDelta?: string }).type ===
+            'text-delta' &&
           'textDelta' in part &&
-          typeof (part as { type: string; textDelta?: string }).textDelta === 'string'
+          typeof (part as { type: string; textDelta?: string }).textDelta ===
+            'string'
         ) {
           return (part as { type: string; textDelta: string }).textDelta;
         }

@@ -1,4 +1,4 @@
-import { Check, Search, Pencil, Trash2, X } from 'lucide-react';
+import { Check, Pencil, Search, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
@@ -159,7 +159,6 @@ export function DrawerHistory({
                 <div className="flex flex-1 items-center">
                   <span className="font-normal text-base">{chat.title}</span>
                   <input
-                    autoFocus
                     className="sr-only"
                     onKeyDown={(e) => {
                       if (e.key === 'Escape') {

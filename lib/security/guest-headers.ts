@@ -3,11 +3,16 @@
 
 'use client';
 
-import { getSessionCredential, getMemoryCredentialPlaintext } from '@/lib/security/web-crypto';
 import { getProviderForModel } from '@/lib/openproviders/provider-map';
 import type { SupportedModel } from '@/lib/openproviders/types';
+import {
+  getMemoryCredentialPlaintext,
+  getSessionCredential,
+} from '@/lib/security/web-crypto';
 
-export async function headersForModel(modelId: string): Promise<Record<string, string> | undefined> {
+export async function headersForModel(
+  modelId: string
+): Promise<Record<string, string> | undefined> {
   try {
     // Safely resolve provider; cast to SupportedModel for type compatibility
     const provider = getProviderForModel(modelId as unknown as SupportedModel);
@@ -38,4 +43,3 @@ export async function headersForModel(modelId: string): Promise<Record<string, s
     return undefined;
   }
 }
-

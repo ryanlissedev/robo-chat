@@ -1,5 +1,4 @@
 import { storeAssistantMessage as storeAssistantMessageToDb } from '@/app/api/chat/db';
-import { logWarning } from '@/lib/utils/logger';
 import type {
   ChatApiParams,
   LogUserMessageParams,
@@ -12,13 +11,16 @@ import { sanitizeUserInput } from '@/lib/sanitize';
 import { validateUserIdentity } from '@/lib/server/api';
 import { checkUsageByModel, incrementUsage } from '@/lib/usage';
 import { getUserKey, type ProviderWithoutOllama } from '@/lib/user-keys';
+import { logWarning } from '@/lib/utils/logger';
 
 export async function validateAndTrackUsage({
   userId,
   model,
   isAuthenticated,
   hasGuestCredentials = false,
-}: ChatApiParams & { hasGuestCredentials?: boolean }): Promise<SupabaseClientType | null> {
+}: ChatApiParams & {
+  hasGuestCredentials?: boolean;
+}): Promise<SupabaseClientType | null> {
   const supabase = await validateUserIdentity(userId, isAuthenticated);
   if (!supabase) {
     return null;
@@ -44,9 +46,11 @@ export async function validateAndTrackUsage({
     }
   } else {
     // For unauthenticated users
-    const isFreeModel = FREE_MODELS_IDS.includes(model) || NON_AUTH_ALLOWED_MODELS.includes(model);
+    const isFreeModel =
+      FREE_MODELS_IDS.includes(model) ||
+      NON_AUTH_ALLOWED_MODELS.includes(model);
     const isOllamaModel = model.startsWith('ollama:');
-    
+
     // Allow access if:
     // 1. It's a free model
     // 2. It's an Ollama model
@@ -86,7 +90,7 @@ export async function incrementMessageCount({
  * Ensures a chat exists in the database before saving user messages
  * Creates the chat if it doesn't exist
  */
-  async function ensureChatExistsForUser(
+async function ensureChatExistsForUser(
   supabase: SupabaseClientType,
   chatId: string,
   userId: string
@@ -145,7 +149,6 @@ export async function logUserMessage({
   const chatExists = await ensureChatExistsForUser(supabase, chatId, userId);
   if (!chatExists) {
     // If we can't ensure chat exists, skip saving to avoid foreign key constraint
-    logWarning(`Chat ${chatId} does not exist and cannot be created for user ${userId}. Skipping user message save.`, { chatId, userId });
     return;
   }
 

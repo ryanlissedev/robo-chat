@@ -15,11 +15,11 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 // Import mocked functions
-import { 
-  getAllModels, 
-  getModelsForUserProviders, 
-  getModelsWithAccessFlags, 
-  refreshModelsCache 
+import {
+  getAllModels,
+  getModelsForUserProviders,
+  getModelsWithAccessFlags,
+  refreshModelsCache,
 } from '@/lib/models';
 import { createClient } from '@/lib/supabase/server';
 
@@ -82,7 +82,7 @@ const mockModels: ModelConfig[] = [
   },
 ];
 
-const mockModelsWithAccess = mockModels.map(model => ({
+const mockModelsWithAccess = mockModels.map((model) => ({
   ...model,
   accessible: true,
 }));
@@ -108,14 +108,14 @@ describe('/api/models', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Cast imported functions as mocks
     mockGetAllModels = getAllModels as Mock;
     mockGetModelsWithAccessFlags = getModelsWithAccessFlags as Mock;
     mockGetModelsForUserProviders = getModelsForUserProviders as Mock;
     mockRefreshModelsCache = refreshModelsCache as Mock;
     mockCreateClient = createClient as Mock;
-    
+
     // Reset environment variables
     delete process.env.OPENAI_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;
@@ -139,7 +139,7 @@ describe('/api/models', () => {
 
       expect(response.status).toBe(200);
       expect(data.models).toHaveLength(mockModels.length);
-      
+
       data.models.forEach((model: any) => {
         expect(model).toHaveProperty('accessible', true);
         expect(model.credentialInfo).toEqual({
@@ -162,11 +162,19 @@ describe('/api/models', () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      
-      const openaiModel = data.models.find((m: any) => m.providerId === 'openai');
-      const anthropicModel = data.models.find((m: any) => m.providerId === 'anthropic');
-      const googleModel = data.models.find((m: any) => m.providerId === 'google');
-      const mistralModel = data.models.find((m: any) => m.providerId === 'mistral');
+
+      const openaiModel = data.models.find(
+        (m: any) => m.providerId === 'openai'
+      );
+      const anthropicModel = data.models.find(
+        (m: any) => m.providerId === 'anthropic'
+      );
+      const googleModel = data.models.find(
+        (m: any) => m.providerId === 'google'
+      );
+      const mistralModel = data.models.find(
+        (m: any) => m.providerId === 'mistral'
+      );
       const xaiModel = data.models.find((m: any) => m.providerId === 'xai');
 
       expect(openaiModel.credentialInfo.envAvailable).toBe(true);
@@ -182,7 +190,9 @@ describe('/api/models', () => {
       const response = await GET();
       const data = await response.json();
 
-      const googleModel = data.models.find((m: any) => m.providerId === 'google');
+      const googleModel = data.models.find(
+        (m: any) => m.providerId === 'google'
+      );
       expect(googleModel.credentialInfo.envAvailable).toBe(true);
     });
   });
@@ -190,7 +200,9 @@ describe('/api/models', () => {
   describe('GET - Guest users (authenticated but no user ID)', () => {
     beforeEach(() => {
       mockCreateClient.mockResolvedValue(mockSupabaseClient as any);
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: null } });
+      mockSupabaseClient.auth.getUser.mockResolvedValue({
+        data: { user: null },
+      });
       mockGetModelsWithAccessFlags.mockResolvedValue(mockModelsWithAccess);
     });
 
@@ -202,14 +214,16 @@ describe('/api/models', () => {
 
       expect(response.status).toBe(200);
       expect(mockGetModelsWithAccessFlags).toHaveBeenCalled();
-      
+
       data.models.forEach((model: any) => {
         expect(model).toHaveProperty('credentialInfo');
         expect(model.credentialInfo.guestByokAvailable).toBe(true);
         expect(model.credentialInfo.userByokAvailable).toBe(false);
       });
 
-      const openaiModel = data.models.find((m: any) => m.providerId === 'openai');
+      const openaiModel = data.models.find(
+        (m: any) => m.providerId === 'openai'
+      );
       expect(openaiModel.credentialInfo.envAvailable).toBe(true);
     });
   });
@@ -220,18 +234,18 @@ describe('/api/models', () => {
     beforeEach(() => {
       mockCreateClient.mockResolvedValue(mockSupabaseClient as any);
       mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: mockUserId } }
+        data: { user: { id: mockUserId } },
       });
     });
 
     it('should handle database error gracefully', async () => {
       const mockSelect = vi.fn(() => ({
-        eq: vi.fn().mockResolvedValue({ 
-          data: null, 
-          error: new Error('Database error') 
+        eq: vi.fn().mockResolvedValue({
+          data: null,
+          error: new Error('Database error'),
         }),
       }));
-      
+
       mockSupabaseClient.from.mockReturnValue({ select: mockSelect });
       mockGetModelsWithAccessFlags.mockResolvedValue(mockModelsWithAccess);
 
@@ -240,7 +254,7 @@ describe('/api/models', () => {
 
       expect(response.status).toBe(200);
       expect(mockGetModelsWithAccessFlags).toHaveBeenCalled();
-      
+
       data.models.forEach((model: any) => {
         expect(model).toHaveProperty('credentialInfo');
       });
@@ -248,12 +262,12 @@ describe('/api/models', () => {
 
     it('should return models with access flags when user has no BYOK keys', async () => {
       const mockSelect = vi.fn(() => ({
-        eq: vi.fn().mockResolvedValue({ 
-          data: [], 
-          error: null 
+        eq: vi.fn().mockResolvedValue({
+          data: [],
+          error: null,
         }),
       }));
-      
+
       mockSupabaseClient.from.mockReturnValue({ select: mockSelect });
       mockGetModelsWithAccessFlags.mockResolvedValue(mockModelsWithAccess);
 
@@ -262,7 +276,7 @@ describe('/api/models', () => {
 
       expect(response.status).toBe(200);
       expect(mockGetModelsWithAccessFlags).toHaveBeenCalled();
-      
+
       data.models.forEach((model: any) => {
         expect(model.credentialInfo.userByokAvailable).toBe(false);
       });
@@ -270,18 +284,19 @@ describe('/api/models', () => {
 
     it('should return user provider models with enhanced credentialInfo', async () => {
       const userProviders = ['openai', 'anthropic'];
-      
+
       const mockSelect = vi.fn(() => ({
-        eq: vi.fn().mockResolvedValue({ 
-          data: userProviders.map(provider => ({ provider })), 
-          error: null 
+        eq: vi.fn().mockResolvedValue({
+          data: userProviders.map((provider) => ({ provider })),
+          error: null,
         }),
       }));
-      
+
       mockSupabaseClient.from.mockReturnValue({ select: mockSelect });
       mockGetModelsForUserProviders.mockResolvedValue(
-        mockModels.filter(m => userProviders.includes(m.providerId))
-          .map(m => ({ ...m, accessible: true }))
+        mockModels
+          .filter((m) => userProviders.includes(m.providerId))
+          .map((m) => ({ ...m, accessible: true }))
       );
 
       // Set some env vars
@@ -292,9 +307,13 @@ describe('/api/models', () => {
 
       expect(response.status).toBe(200);
       expect(mockGetModelsForUserProviders).toHaveBeenCalledWith(userProviders);
-      
-      const openaiModel = data.models.find((m: any) => m.providerId === 'openai');
-      const anthropicModel = data.models.find((m: any) => m.providerId === 'anthropic');
+
+      const openaiModel = data.models.find(
+        (m: any) => m.providerId === 'openai'
+      );
+      const anthropicModel = data.models.find(
+        (m: any) => m.providerId === 'anthropic'
+      );
 
       expect(openaiModel.credentialInfo).toEqual({
         envAvailable: true,
@@ -367,10 +386,13 @@ describe('/api/models', () => {
       const response = await GET();
       const data = await response.json();
 
-      const providerAvailability = data.models.reduce((acc: any, model: any) => {
-        acc[model.providerId] = model.credentialInfo.envAvailable;
-        return acc;
-      }, {});
+      const providerAvailability = data.models.reduce(
+        (acc: any, model: any) => {
+          acc[model.providerId] = model.credentialInfo.envAvailable;
+          return acc;
+        },
+        {}
+      );
 
       expect(providerAvailability.openai).toBe(true);
       expect(providerAvailability.anthropic).toBe(true);
@@ -390,9 +412,15 @@ describe('/api/models', () => {
       const response = await GET();
       const data = await response.json();
 
-      const openaiModel = data.models.find((m: any) => m.providerId === 'openai');
-      const anthropicModel = data.models.find((m: any) => m.providerId === 'anthropic');
-      const mistralModel = data.models.find((m: any) => m.providerId === 'mistral');
+      const openaiModel = data.models.find(
+        (m: any) => m.providerId === 'openai'
+      );
+      const anthropicModel = data.models.find(
+        (m: any) => m.providerId === 'anthropic'
+      );
+      const mistralModel = data.models.find(
+        (m: any) => m.providerId === 'mistral'
+      );
 
       expect(openaiModel.credentialInfo.envAvailable).toBe(true);
       expect(anthropicModel.credentialInfo.envAvailable).toBe(false);

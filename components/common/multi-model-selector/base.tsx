@@ -3,9 +3,9 @@
 import { Check, ChevronDown, Search, Star } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRef, useState } from 'react';
-import { PopoverContentAuth } from '@/components/app/chat-input/popover-content-auth';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import { useKeyShortcut } from '@/app/hooks/use-key-shortcut';
+import { PopoverContentAuth } from '@/components/app/chat-input/popover-content-auth';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {

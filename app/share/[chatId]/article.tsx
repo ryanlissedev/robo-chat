@@ -1,9 +1,9 @@
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
 import { ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
+import type { Tables } from '@/app/types/database.types';
 import { getSources } from '@/components/app/chat/get-sources';
 import { SourcesList } from '@/components/app/chat/sources-list';
-import type { Tables } from '@/app/types/database.types';
 import { Message, MessageContent } from '@/components/prompt-kit/message';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

@@ -50,11 +50,12 @@ export function getSources(parts: MessagePart[]) {
           result &&
           'result' in result &&
           Array.isArray((result as { result: unknown[] }).result) &&
-          (result as { result: { citations?: unknown[] }[] }).result[0]?.citations
+          (result as { result: { citations?: unknown[] }[] }).result[0]
+            ?.citations
         ) {
-          return (result as { result: { citations?: unknown[] }[] }).result.flatMap(
-            (item) => item.citations || []
-          );
+          return (
+            result as { result: { citations?: unknown[] }[] }
+          ).result.flatMap((item) => item.citations || []);
         }
 
         return Array.isArray(result) ? result.flat() : result;

@@ -1,7 +1,5 @@
 'use client';
 
-import { clientLogger } from '@/lib/utils/client-logger';
-
 import { Brain, Filter, RefreshCw, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -25,6 +23,7 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { createClient } from '@/lib/supabase/client';
+import { clientLogger } from '@/lib/utils/client-logger';
 
 type RetrievalConfig = {
   // Query Rewriting
@@ -85,7 +84,10 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
 
       if (error) {
         // Handle case where table doesn't exist yet or no data found
-        if (error.code === '42P01' || error.message.includes('does not exist')) {
+        if (
+          error.code === '42P01' ||
+          error.message.includes('does not exist')
+        ) {
           clientLogger.warn('user_retrieval_settings table does not exist yet');
           return;
         }
@@ -97,8 +99,8 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
         return;
       }
 
-      if (data && data.config) {
-        setConfig(data.config as RetrievalConfig);
+      if ((data as any)?.config) {
+        setConfig((data as any).config as RetrievalConfig);
       }
     } catch (error: unknown) {
       clientLogger.error('Failed to load retrieval settings', error);
@@ -107,7 +109,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
 
   useEffect(() => {
     loadSettings();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadSettings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveSettings = async () => {
     if (!supabase) {
@@ -117,21 +119,28 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
 
     setLoading(true);
     try {
-      const { error } = await supabase.from('user_retrieval_settings').upsert(
-        {
-          user_id: userId,
-          config,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'user_id',
-        }
-      );
+      const { error } = await (supabase as any)
+        .from('user_retrieval_settings')
+        .upsert(
+          {
+            user_id: userId,
+            config,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'user_id',
+          }
+        );
 
       if (error) {
         // Handle case where table doesn't exist yet
-        if (error.code === '42P01' || error.message.includes('does not exist')) {
-          toast.error('Retrieval settings storage not yet configured. Please contact support.');
+        if (
+          error.code === '42P01' ||
+          error.message.includes('does not exist')
+        ) {
+          toast.error(
+            'Retrieval settings storage not yet configured. Please contact support.'
+          );
           return;
         }
         throw error;
@@ -147,7 +156,10 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
     }
   };
 
-  const updateConfig = <K extends keyof RetrievalConfig>(key: K, value: RetrievalConfig[K]) => {
+  const updateConfig = <K extends keyof RetrievalConfig>(
+    key: K,
+    value: RetrievalConfig[K]
+  ) => {
     setConfig({ ...config, [key]: value });
     setSaved(false);
   };
@@ -198,7 +210,14 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
               <Label>Rewrite Strategy</Label>
               <Select
                 onValueChange={(value) =>
-                  updateConfig('rewriteStrategy', value as 'expansion' | 'refinement' | 'decomposition' | 'multi-perspective')
+                  updateConfig(
+                    'rewriteStrategy',
+                    value as
+                      | 'expansion'
+                      | 'refinement'
+                      | 'decomposition'
+                      | 'multi-perspective'
+                  )
                 }
                 value={config.rewriteStrategy}
               >
@@ -282,7 +301,10 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
                 <Label>Reranking Method</Label>
                 <Select
                   onValueChange={(value) =>
-                    updateConfig('rerankingMethod', value as 'semantic' | 'cross-encoder' | 'diversity')
+                    updateConfig(
+                      'rerankingMethod',
+                      value as 'semantic' | 'cross-encoder' | 'diversity'
+                    )
                   }
                   value={config.rerankingMethod}
                 >

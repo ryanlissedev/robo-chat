@@ -151,7 +151,6 @@ export function SidebarItem({ chat, currentChatId }: SidebarItemProps) {
       {isEditing ? (
         <div className="flex items-center rounded-md bg-accent py-1 pr-1 pl-2">
           <input
-            autoFocus
             className="max-h-full w-full bg-transparent text-primary text-sm focus:outline-none"
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}

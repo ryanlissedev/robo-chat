@@ -1,8 +1,7 @@
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
-import { describe, expect, it } from 'vitest';
-import { vi } from 'vitest';
-import React from 'react';
+import { describe, expect, it, vi } from 'vitest';
+
 // Mock the ReasoningEffortSelector to a simple stub for this focus test
 vi.mock('@/components/app/chat/reasoning-effort-selector', () => ({
   ReasoningEffortSelector: ({ children, ...props }: any) => {
@@ -26,6 +25,7 @@ vi.mock('@/components/app/suggestions/prompt-system', () => ({
     );
   },
 }));
+
 import { ChatInput } from '@/components/app/chat-input/chat-input';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ModelProvider } from '@/lib/model-store/provider';
@@ -80,7 +80,7 @@ describe('ChatInput focus resilience with suggestions', () => {
     const textarea = screen.getByPlaceholderText(
       'Ask anything…'
     ) as HTMLInputElement;
-    
+
     // Use global act function
     await (global as any).act(async () => {
       await user.type(textarea, 'h');
@@ -103,7 +103,9 @@ describe('ChatInput focus resilience with suggestions', () => {
     });
 
     // Should still be able to type - need to get the element again after rerender
-    const textareaAfterRerender = screen.getByPlaceholderText('Ask anything…') as HTMLInputElement;
+    const textareaAfterRerender = screen.getByPlaceholderText(
+      'Ask anything…'
+    ) as HTMLInputElement;
     await (global as any).act(async () => {
       await user.type(textareaAfterRerender, 'i');
     });

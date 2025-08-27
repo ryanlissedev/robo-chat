@@ -7,7 +7,11 @@ export function LinkMarkdown({
   ...props
 }: React.ComponentProps<'a'>) {
   if (!href) {
-    return <span {...props} className={className}>{children}</span>;
+    return (
+      <span {...props} className={className}>
+        {children}
+      </span>
+    );
   }
 
   // Check if href is a valid URL
@@ -15,7 +19,7 @@ export function LinkMarkdown({
   try {
     const url = new URL(href);
     domain = url.hostname;
-    
+
     // Handle file URLs - extract filename from pathname
     if (url.protocol === 'file:' && !domain) {
       const pathname = url.pathname;
@@ -27,9 +31,11 @@ export function LinkMarkdown({
   }
 
   const linkClassName = [
-    "inline-flex h-5 max-w-32 items-center gap-1 overflow-hidden overflow-ellipsis whitespace-nowrap rounded-full bg-muted py-0 pr-2 pl-0.5 text-muted-foreground text-xs leading-none no-underline transition-colors duration-150 hover:bg-muted-foreground/30 hover:text-primary",
-    className
-  ].filter(Boolean).join(' ');
+    'inline-flex h-5 max-w-32 items-center gap-1 overflow-hidden overflow-ellipsis whitespace-nowrap rounded-full bg-muted py-0 pr-2 pl-0.5 text-muted-foreground text-xs leading-none no-underline transition-colors duration-150 hover:bg-muted-foreground/30 hover:text-primary',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <a

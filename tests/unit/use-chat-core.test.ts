@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import type { UIMessage as Message } from 'ai';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatCore } from '@/components/app/chat/use-chat-core';
@@ -10,12 +10,12 @@ vi.mock('@ai-sdk/react', () => {
   const mockSendMessage = vi.fn() as any;
   const mockSetMessages = vi.fn() as any;
   const mockStop = vi.fn();
-  
+
   // Add mock methods to the functions
   mockSendMessage.mockClear = vi.fn();
   mockSendMessage.mockResolvedValue = vi.fn();
   mockSetMessages.mockClear = vi.fn();
-  
+
   const mockUseChat = {
     messages: [],
     status: 'ready' as const,
@@ -35,7 +35,7 @@ vi.mock('@/components/app/chat/chat-business-logic', () => {
   const submitSuggestionScenario = vi.fn();
   const prepareReloadScenario = vi.fn();
   const handleChatError = vi.fn();
-  
+
   return {
     submitMessageScenario,
     submitSuggestionScenario,
@@ -164,7 +164,7 @@ describe('useChatCore', () => {
 
       // The effect should run and call searchParams.get
       expect(mockGet).toHaveBeenCalledWith('prompt');
-      
+
       // The hook should handle the prompt parameter internally
       expect(mockGet).toHaveBeenCalled();
 
@@ -523,9 +523,7 @@ describe('useChatCore', () => {
         reasoningEffort: 'medium',
       });
       // In AI SDK v5, reload is done via setMessages instead of reload()
-      expect(mockUseChat.setMessages).toHaveBeenCalledWith(
-        expect.any(Array)
-      );
+      expect(mockUseChat.setMessages).toHaveBeenCalledWith(expect.any(Array));
     });
 
     it('should handle failed reload', async () => {

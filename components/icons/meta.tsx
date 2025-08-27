@@ -8,8 +8,11 @@ export default function MetaIcon(props: SVGProps<SVGSVGElement>) {
       viewBox="0 0 192 192"
       width={192}
       xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Meta"
       {...props}
     >
+      <title>Meta</title>
       <g clipPath="url(#meta)">
         <path
           d="M55.176 32h-.192l-.248 20.92h.176c13.72 0 24.368 10.856 47.52 49.968l1.4 2.376.096.16 12.96-19.504-.096-.152a390 390 0 0 0-8.784-13.728 224 224 0 0 0-9.4-13.032C83.304 39.456 70.504 32 55.176 32"

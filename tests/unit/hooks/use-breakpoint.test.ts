@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 
 // Use global window.matchMedia mock
@@ -10,7 +10,7 @@ describe('useBreakpoint', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockMQL = {
       matches: false,
       media: '(max-width: 767px)',

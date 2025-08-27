@@ -4,8 +4,20 @@
  */
 
 export type CredentialSource = 'user-byok' | 'guest-header' | 'environment';
-export type Provider = 'openai' | 'anthropic' | 'mistral' | 'google' | 'xai' | 'perplexity' | 'openrouter';
-export type ErrorType = 'authentication' | 'authorization' | 'rate_limit' | 'network' | 'unknown';
+export type Provider =
+  | 'openai'
+  | 'anthropic'
+  | 'mistral'
+  | 'google'
+  | 'xai'
+  | 'perplexity'
+  | 'openrouter';
+export type ErrorType =
+  | 'authentication'
+  | 'authorization'
+  | 'rate_limit'
+  | 'network'
+  | 'unknown';
 
 export interface CredentialUsageMetric {
   timestamp: Date;
@@ -31,17 +43,23 @@ export interface MetricsSummary {
   totalRequests: number;
   successfulRequests: number;
   errorRate: number;
-  bySource: Record<CredentialSource, {
-    total: number;
-    successful: number;
-    errorRate: number;
-  }>;
-  byProvider: Record<string, {
-    total: number;
-    successful: number;
-    errorRate: number;
-    avgResponseTime: number;
-  }>;
+  bySource: Record<
+    CredentialSource,
+    {
+      total: number;
+      successful: number;
+      errorRate: number;
+    }
+  >;
+  byProvider: Record<
+    string,
+    {
+      total: number;
+      successful: number;
+      errorRate: number;
+      avgResponseTime: number;
+    }
+  >;
   errors: {
     total: number;
     byType: Record<ErrorType, number>;
@@ -72,7 +90,7 @@ class MetricsStore {
 
   addUsageMetric(metric: CredentialUsageMetric): void {
     this.usageMetrics.push(metric);
-    
+
     // Keep only the most recent metrics
     if (this.usageMetrics.length > this.maxMetrics) {
       this.usageMetrics = this.usageMetrics.slice(-this.maxMetrics);
@@ -81,7 +99,7 @@ class MetricsStore {
 
   addErrorMetric(metric: CredentialErrorMetric): void {
     this.errorMetrics.push(metric);
-    
+
     // Keep only the most recent errors
     if (this.errorMetrics.length > this.maxMetrics) {
       this.errorMetrics = this.errorMetrics.slice(-this.maxMetrics);
@@ -92,16 +110,16 @@ class MetricsStore {
     if (!since) {
       return [...this.usageMetrics];
     }
-    
-    return this.usageMetrics.filter(metric => metric.timestamp >= since);
+
+    return this.usageMetrics.filter((metric) => metric.timestamp >= since);
   }
 
   getErrorMetrics(since?: Date): CredentialErrorMetric[] {
     if (!since) {
       return [...this.errorMetrics];
     }
-    
-    return this.errorMetrics.filter(metric => metric.timestamp >= since);
+
+    return this.errorMetrics.filter((metric) => metric.timestamp >= since);
   }
 
   clear(): void {
@@ -111,9 +129,13 @@ class MetricsStore {
 
   private cleanup(): void {
     const cutoff = new Date(Date.now() - this.cleanupInterval);
-    
-    this.usageMetrics = this.usageMetrics.filter(metric => metric.timestamp >= cutoff);
-    this.errorMetrics = this.errorMetrics.filter(metric => metric.timestamp >= cutoff);
+
+    this.usageMetrics = this.usageMetrics.filter(
+      (metric) => metric.timestamp >= cutoff
+    );
+    this.errorMetrics = this.errorMetrics.filter(
+      (metric) => metric.timestamp >= cutoff
+    );
   }
 
   getSize(): { usage: number; errors: number } {
@@ -192,37 +214,57 @@ export function getMetricsSummary(since?: Date): MetricsSummary {
   const errorMetrics = metricsStore.getErrorMetrics(since);
 
   const totalRequests = usageMetrics.length;
-  const successfulRequests = usageMetrics.filter(m => m.success).length;
-  const errorRate = totalRequests > 0 ? (totalRequests - successfulRequests) / totalRequests : 0;
+  const successfulRequests = usageMetrics.filter((m) => m.success).length;
+  const errorRate =
+    totalRequests > 0
+      ? (totalRequests - successfulRequests) / totalRequests
+      : 0;
 
   // Aggregate by source
-  const bySource: Record<CredentialSource, { total: number; successful: number; errorRate: number }> = {
+  const bySource: Record<
+    CredentialSource,
+    { total: number; successful: number; errorRate: number }
+  > = {
     'user-byok': { total: 0, successful: 0, errorRate: 0 },
     'guest-header': { total: 0, successful: 0, errorRate: 0 },
-    'environment': { total: 0, successful: 0, errorRate: 0 },
+    environment: { total: 0, successful: 0, errorRate: 0 },
   };
 
-  usageMetrics.forEach(metric => {
+  usageMetrics.forEach((metric) => {
     bySource[metric.source].total++;
     if (metric.success) {
       bySource[metric.source].successful++;
     }
   });
 
-  Object.keys(bySource).forEach(source => {
+  Object.keys(bySource).forEach((source) => {
     const sourceKey = source as CredentialSource;
     const data = bySource[sourceKey];
-    data.errorRate = data.total > 0 ? (data.total - data.successful) / data.total : 0;
+    data.errorRate =
+      data.total > 0 ? (data.total - data.successful) / data.total : 0;
   });
 
   // Aggregate by provider
-  const byProvider: Record<string, { total: number; successful: number; errorRate: number; avgResponseTime: number }> = {};
-
-  usageMetrics.forEach(metric => {
-    if (!byProvider[metric.provider]) {
-      byProvider[metric.provider] = { total: 0, successful: 0, errorRate: 0, avgResponseTime: 0 };
+  const byProvider: Record<
+    string,
+    {
+      total: number;
+      successful: number;
+      errorRate: number;
+      avgResponseTime: number;
     }
-    
+  > = {};
+
+  usageMetrics.forEach((metric) => {
+    if (!byProvider[metric.provider]) {
+      byProvider[metric.provider] = {
+        total: 0,
+        successful: 0,
+        errorRate: 0,
+        avgResponseTime: 0,
+      };
+    }
+
     byProvider[metric.provider].total++;
     if (metric.success) {
       byProvider[metric.provider].successful++;
@@ -230,14 +272,23 @@ export function getMetricsSummary(since?: Date): MetricsSummary {
   });
 
   // Calculate error rates and average response times
-  Object.keys(byProvider).forEach(provider => {
+  Object.keys(byProvider).forEach((provider) => {
     const data = byProvider[provider];
-    data.errorRate = data.total > 0 ? (data.total - data.successful) / data.total : 0;
-    
+    data.errorRate =
+      data.total > 0 ? (data.total - data.successful) / data.total : 0;
+
     // Calculate average response time
-    const providerMetrics = usageMetrics.filter(m => m.provider === provider && m.responseTime);
-    const totalResponseTime = providerMetrics.reduce((sum, m) => sum + (m.responseTime || 0), 0);
-    data.avgResponseTime = providerMetrics.length > 0 ? totalResponseTime / providerMetrics.length : 0;
+    const providerMetrics = usageMetrics.filter(
+      (m) => m.provider === provider && m.responseTime
+    );
+    const totalResponseTime = providerMetrics.reduce(
+      (sum, m) => sum + (m.responseTime || 0),
+      0
+    );
+    data.avgResponseTime =
+      providerMetrics.length > 0
+        ? totalResponseTime / providerMetrics.length
+        : 0;
   });
 
   // Aggregate errors
@@ -251,9 +302,9 @@ export function getMetricsSummary(since?: Date): MetricsSummary {
 
   const errorsByProvider: Record<string, number> = {};
 
-  errorMetrics.forEach(metric => {
+  errorMetrics.forEach((metric) => {
     errorsByType[metric.errorType]++;
-    
+
     if (!errorsByProvider[metric.provider]) {
       errorsByProvider[metric.provider] = 0;
     }
@@ -262,13 +313,19 @@ export function getMetricsSummary(since?: Date): MetricsSummary {
 
   // Determine time range
   const allTimestamps = [
-    ...usageMetrics.map(m => m.timestamp),
-    ...errorMetrics.map(m => m.timestamp),
+    ...usageMetrics.map((m) => m.timestamp),
+    ...errorMetrics.map((m) => m.timestamp),
   ];
-  
+
   const timeRange = {
-    start: allTimestamps.length > 0 ? new Date(Math.min(...allTimestamps.map(t => t.getTime()))) : new Date(),
-    end: allTimestamps.length > 0 ? new Date(Math.max(...allTimestamps.map(t => t.getTime()))) : new Date(),
+    start:
+      allTimestamps.length > 0
+        ? new Date(Math.min(...allTimestamps.map((t) => t.getTime())))
+        : new Date(),
+    end:
+      allTimestamps.length > 0
+        ? new Date(Math.max(...allTimestamps.map((t) => t.getTime())))
+        : new Date(),
   };
 
   return {
@@ -294,7 +351,7 @@ export function getRecentMetrics(minutes: number = 60): {
   errors: CredentialErrorMetric[];
 } {
   const since = new Date(Date.now() - minutes * 60 * 1000);
-  
+
   return {
     usage: metricsStore.getUsageMetrics(since),
     errors: metricsStore.getErrorMetrics(since),
@@ -324,32 +381,41 @@ function categorizeError(error: unknown): ErrorType {
   }
 
   const errorStr = String(error).toLowerCase();
-  const errorMessage = error instanceof Error ? error.message.toLowerCase() : errorStr;
+  const errorMessage =
+    error instanceof Error ? error.message.toLowerCase() : errorStr;
 
-  if (errorMessage.includes('unauthorized') || 
-      errorMessage.includes('invalid api key') || 
-      errorMessage.includes('authentication') ||
-      errorMessage.includes('401')) {
+  if (
+    errorMessage.includes('unauthorized') ||
+    errorMessage.includes('invalid api key') ||
+    errorMessage.includes('authentication') ||
+    errorMessage.includes('401')
+  ) {
     return 'authentication';
   }
 
-  if (errorMessage.includes('forbidden') || 
-      errorMessage.includes('403') ||
-      errorMessage.includes('authorization')) {
+  if (
+    errorMessage.includes('forbidden') ||
+    errorMessage.includes('403') ||
+    errorMessage.includes('authorization')
+  ) {
     return 'authorization';
   }
 
-  if (errorMessage.includes('rate limit') || 
-      errorMessage.includes('too many requests') || 
-      errorMessage.includes('429')) {
+  if (
+    errorMessage.includes('rate limit') ||
+    errorMessage.includes('too many requests') ||
+    errorMessage.includes('429')
+  ) {
     return 'rate_limit';
   }
 
-  if (errorMessage.includes('network') || 
-      errorMessage.includes('timeout') || 
-      errorMessage.includes('connection') ||
-      errorMessage.includes('econnrefused') ||
-      errorMessage.includes('enotfound')) {
+  if (
+    errorMessage.includes('network') ||
+    errorMessage.includes('timeout') ||
+    errorMessage.includes('connection') ||
+    errorMessage.includes('econnrefused') ||
+    errorMessage.includes('enotfound')
+  ) {
     return 'network';
   }
 
@@ -367,11 +433,11 @@ function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     // Redact potentially sensitive information from error messages
     let message = error.message;
-    
+
     // Remove any potential API keys or tokens from error messages
     message = message.replace(/sk-[a-zA-Z0-9-_]+/g, '[API_KEY_REDACTED]');
     message = message.replace(/[a-zA-Z0-9]{32,}/g, '[TOKEN_REDACTED]');
-    
+
     return message.substring(0, 200); // Limit message length
   }
 

@@ -1,8 +1,7 @@
 'use client';
 
-import { Key, Plus } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Key, Loader2, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import ClaudeIcon from '@/components/icons/claude';
 import GoogleIcon from '@/components/icons/google';

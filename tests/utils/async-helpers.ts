@@ -18,8 +18,11 @@ export function createUserEvent() {
 /**
  * Helper to wait for async clipboard operations
  */
-export async function waitForClipboard(expectation: () => void, timeout = 5000) {
-  await waitFor(expectation, { 
+export async function waitForClipboard(
+  expectation: () => void,
+  timeout = 5000
+) {
+  await waitFor(expectation, {
     timeout,
     interval: 50, // Check more frequently for clipboard operations
   });
@@ -28,8 +31,11 @@ export async function waitForClipboard(expectation: () => void, timeout = 5000) 
 /**
  * Helper to wait for user interactions to complete
  */
-export async function waitForUserInteraction(expectation: () => void, timeout = 5000) {
-  await waitFor(expectation, { 
+export async function waitForUserInteraction(
+  expectation: () => void,
+  timeout = 5000
+) {
+  await waitFor(expectation, {
     timeout,
     interval: 100,
   });
@@ -38,13 +44,14 @@ export async function waitForUserInteraction(expectation: () => void, timeout = 
 /**
  * Helper to safely click elements with async operations
  */
-export async function safeClick(user: ReturnType<typeof userEvent.setup>, element: HTMLElement) {
+export async function safeClick(
+  user: ReturnType<typeof userEvent.setup>,
+  element: HTMLElement
+) {
   try {
     await user.click(element);
-  } catch (error) {
-    // Retry once if click fails
-    console.warn('First click attempt failed, retrying:', error);
-    await new Promise(resolve => setTimeout(resolve, 100));
+  } catch (_error) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
     await user.click(element);
   }
 }
@@ -53,13 +60,11 @@ export async function safeClick(user: ReturnType<typeof userEvent.setup>, elemen
  * Helper to mock clipboard operations consistently
  */
 export function createClipboardMock() {
-  const writeText = vi.fn((text: string) => {
-    console.log('[Test Mock] Clipboard.writeText called with:', text);
+  const writeText = vi.fn((_text: string) => {
     return Promise.resolve();
   });
-  
+
   const readText = vi.fn(() => {
-    console.log('[Test Mock] Clipboard.readText called');
     return Promise.resolve('');
   });
 
@@ -89,15 +94,15 @@ export function withFakeTimers(testFn: () => void | Promise<void>) {
  * Helper to wait for DOM updates after state changes
  */
 export async function waitForDOMUpdate() {
-  await new Promise(resolve => setTimeout(resolve, 0));
+  await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 /**
  * Enhanced timeout configuration for different test types
  */
 export const TEST_TIMEOUTS = {
-  FAST: 2000,      // Quick DOM updates
-  NORMAL: 5000,    // User interactions, async operations
-  SLOW: 10000,     // Network requests, heavy computations
-  VERY_SLOW: 15000 // File operations, complex renders
+  FAST: 2000, // Quick DOM updates
+  NORMAL: 5000, // User interactions, async operations
+  SLOW: 10000, // Network requests, heavy computations
+  VERY_SLOW: 15000, // File operations, complex renders
 } as const;

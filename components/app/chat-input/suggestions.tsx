@@ -3,8 +3,8 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { PromptSuggestion } from '@/components/prompt-kit/prompt-suggestion';
-import { TRANSITION_SUGGESTIONS } from '@/lib/motion';
 import { SUGGESTIONS as SUGGESTIONS_CONFIG } from '@/lib/config';
+import { TRANSITION_SUGGESTIONS } from '@/lib/motion';
 
 type SuggestionsProps = {
   onValueChange: (value: string) => void;
@@ -28,7 +28,9 @@ export const Suggestions = memo(function Suggestions({
   // Derive active category from the external value when it matches a category prompt
   const derivedActiveCategory = useMemo(() => {
     if (value) {
-      const matched = SUGGESTIONS_CONFIG.find((group) => group.prompt === value);
+      const matched = SUGGESTIONS_CONFIG.find(
+        (group) => group.prompt === value
+      );
       if (matched) return matched.label;
     }
     return activeCategory;

@@ -38,7 +38,7 @@ export function DialogPublish() {
   const isMobile = useBreakpoint(768);
   const [copied, setCopied] = useState(false);
 
-  if (!isSupabaseEnabled) {
+  if (!isSupabaseEnabled()) {
     return null;
   }
 
@@ -70,9 +70,10 @@ export function DialogPublish() {
       throw new Error('Supabase is not configured');
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('chats')
-      .update({ public: true })
+      // Cast to any to satisfy TS inference issues with Supabase types
+      .update({ public: true } as any)
       .eq('id', chatId)
       .select()
       .single();

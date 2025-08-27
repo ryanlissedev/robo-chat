@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import type { Page } from '@playwright/test';
 import { mockApiResponse, waitForPageReady } from './fixtures';
 
 test.describe('Multi-Chat Functionality Integration', () => {
@@ -306,7 +305,9 @@ test.describe('Multi-Chat Functionality Integration', () => {
           await route.fulfill({
             status: 500,
             contentType: 'application/json',
-            body: JSON.stringify({ error: 'Claude API temporarily unavailable' }),
+            body: JSON.stringify({
+              error: 'Claude API temporarily unavailable',
+            }),
           });
         }
       });
@@ -315,7 +316,10 @@ test.describe('Multi-Chat Functionality Integration', () => {
         '[data-testid="multi-chat-interface"]'
       );
       if (await multiChatInterface.isVisible()) {
-        await page.fill('[data-testid="multi-chat-input"]', 'Test mixed results');
+        await page.fill(
+          '[data-testid="multi-chat-input"]',
+          'Test mixed results'
+        );
         await page.click('[data-testid="send-to-all-models"]');
 
         await page.waitForTimeout(2000);
@@ -374,7 +378,10 @@ test.describe('Multi-Chat Functionality Integration', () => {
         '[data-testid="multi-chat-interface"]'
       );
       if (await multiChatInterface.isVisible()) {
-        await page.fill('[data-testid="multi-chat-input"]', 'Test loading states');
+        await page.fill(
+          '[data-testid="multi-chat-input"]',
+          'Test loading states'
+        );
         await page.click('[data-testid="send-to-all-models"]');
 
         // Should show loading indicators for all models
@@ -400,7 +407,9 @@ test.describe('Multi-Chat Functionality Integration', () => {
         await page.waitForTimeout(2000);
 
         // All loading indicators should be gone
-        await expect(page.locator('[data-testid="loading-gpt-4"]')).toBeHidden();
+        await expect(
+          page.locator('[data-testid="loading-gpt-4"]')
+        ).toBeHidden();
         await expect(
           page.locator('[data-testid="loading-claude-3-sonnet"]')
         ).toBeHidden();
@@ -427,13 +436,16 @@ test.describe('Multi-Chat Functionality Integration', () => {
 
         switch (modelId) {
           case 'gpt-4':
-            responseText = 'GPT-4 suggests using a recursive approach with memoization.';
+            responseText =
+              'GPT-4 suggests using a recursive approach with memoization.';
             break;
           case 'claude-3-sonnet':
-            responseText = 'Claude recommends an iterative solution for better memory efficiency.';
+            responseText =
+              'Claude recommends an iterative solution for better memory efficiency.';
             break;
           case 'gpt-3.5-turbo':
-            responseText = 'GPT-3.5 proposes a hybrid approach combining both methods.';
+            responseText =
+              'GPT-3.5 proposes a hybrid approach combining both methods.';
             break;
         }
 
@@ -526,7 +538,10 @@ test.describe('Multi-Chat Functionality Integration', () => {
         '[data-testid="multi-chat-interface"]'
       );
       if (await multiChatInterface.isVisible()) {
-        await page.fill('[data-testid="multi-chat-input"]', 'Test rating system');
+        await page.fill(
+          '[data-testid="multi-chat-input"]',
+          'Test rating system'
+        );
         await page.click('[data-testid="send-to-all-models"]');
 
         await page.waitForTimeout(2000);
@@ -602,15 +617,16 @@ test.describe('Multi-Chat Functionality Integration', () => {
         '[data-testid="multi-chat-interface"]'
       );
       if (await multiChatInterface.isVisible()) {
-        await page.fill('[data-testid="multi-chat-input"]', 'Export test query');
+        await page.fill(
+          '[data-testid="multi-chat-input"]',
+          'Export test query'
+        );
         await page.click('[data-testid="send-to-all-models"]');
 
         await page.waitForTimeout(2000);
 
         // Export comparison
-        const exportButton = page.locator(
-          '[data-testid="export-comparison"]'
-        );
+        const exportButton = page.locator('[data-testid="export-comparison"]');
         if (await exportButton.isVisible()) {
           // Mock export API
           await page.route('**/api/export/comparison', async (route) => {
@@ -619,7 +635,8 @@ test.describe('Multi-Chat Functionality Integration', () => {
               contentType: 'application/json',
               body: JSON.stringify({
                 format: 'markdown',
-                content: '# Model Comparison\n\n## GPT-4\nResponse from gpt-4...\n\n## Claude\nResponse from claude...',
+                content:
+                  '# Model Comparison\n\n## GPT-4\nResponse from gpt-4...\n\n## Claude\nResponse from claude...',
               }),
             });
           });
@@ -684,7 +701,10 @@ test.describe('Multi-Chat Functionality Integration', () => {
         '[data-testid="multi-chat-interface"]'
       );
       if (await multiChatInterface.isVisible()) {
-        await page.fill('[data-testid="multi-chat-input"]', 'Save this conversation');
+        await page.fill(
+          '[data-testid="multi-chat-input"]',
+          'Save this conversation'
+        );
         await page.click('[data-testid="send-to-all-models"]');
 
         await page.waitForTimeout(2000);
@@ -703,9 +723,9 @@ test.describe('Multi-Chat Functionality Integration', () => {
           await expect(
             page.locator('[data-testid="multi-chat-interface"]')
           ).toBeVisible();
-          await expect(page.locator('[data-testid="chat-message"]')).toHaveCount(
-            4
-          ); // User + 2 model responses
+          await expect(
+            page.locator('[data-testid="chat-message"]')
+          ).toHaveCount(4); // User + 2 model responses
         }
       }
     });
@@ -752,7 +772,9 @@ test.describe('Multi-Chat Functionality Integration', () => {
         await page.waitForTimeout(1000);
 
         // Add another model mid-conversation
-        const addModelButton = page.locator('[data-testid="add-model-to-chat"]');
+        const addModelButton = page.locator(
+          '[data-testid="add-model-to-chat"]'
+        );
         if (await addModelButton.isVisible()) {
           await addModelButton.click();
 
@@ -850,8 +872,12 @@ test.describe('Multi-Chat Functionality Integration', () => {
           .locator('[data-testid="response-claude-3-sonnet"]')
           .last();
 
-        await expect(gpt4Response).toContainText('JavaScript topic we discussed');
-        await expect(claudeResponse).toContainText('JavaScript topic we discussed');
+        await expect(gpt4Response).toContainText(
+          'JavaScript topic we discussed'
+        );
+        await expect(claudeResponse).toContainText(
+          'JavaScript topic we discussed'
+        );
       }
     });
   });
@@ -873,7 +899,7 @@ test.describe('Multi-Chat Functionality Integration', () => {
       await page.route('**/api/chat', async (route) => {
         concurrentRequests++;
         maxConcurrent = Math.max(maxConcurrent, concurrentRequests);
-        
+
         const startTime = Date.now();
         requestTimes.push(startTime);
 
@@ -966,13 +992,17 @@ test.describe('Multi-Chat Functionality Integration', () => {
         }
 
         // Should still be responsive after many messages
-        await expect(page.locator('[data-testid="multi-chat-input"]')).toBeEnabled();
+        await expect(
+          page.locator('[data-testid="multi-chat-input"]')
+        ).toBeEnabled();
 
         // Check for memory optimization features
-        const optimizeButton = page.locator('[data-testid="optimize-conversation"]');
+        const optimizeButton = page.locator(
+          '[data-testid="optimize-conversation"]'
+        );
         if (await optimizeButton.isVisible()) {
           await optimizeButton.click();
-          
+
           // Should show optimization results
           await expect(
             page.locator('[data-testid="optimization-complete"]')

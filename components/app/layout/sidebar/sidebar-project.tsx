@@ -1,7 +1,7 @@
 'use client';
 
-import { FolderPlus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { FolderPlus } from 'lucide-react';
 import { useState } from 'react';
 import { DialogCreateProject } from './dialog-create-project';
 import { SidebarProjectItem } from './sidebar-project-item';

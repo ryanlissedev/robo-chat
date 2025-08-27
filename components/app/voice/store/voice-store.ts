@@ -3,11 +3,11 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-export type VoiceSessionStatus = 
+export type VoiceSessionStatus =
   | 'idle'
   | 'connecting'
   | 'connected'
-  | 'recording' 
+  | 'recording'
   | 'transcribing'
   | 'processing'
   | 'error'
@@ -45,34 +45,34 @@ export interface VoiceState {
   status: VoiceSessionStatus;
   isRecording: boolean;
   isPlaying: boolean;
-  
+
   // Audio configuration
   config: VoiceConfig;
-  
+
   // Transcription data
   transcriptions: TranscriptionEntry[];
   currentTranscript: string;
   finalTranscript: string;
-  
+
   // Audio levels and visualization
   inputLevel: number;
   outputLevel: number;
   visualizationData: Float32Array | null;
-  
+
   // Error handling
   error: VoiceError | null;
   lastErrorTime: number;
   reconnectAttempts: number;
-  
+
   // RoboRail personality
   personalityMode: 'safety-focused' | 'technical-expert' | 'friendly-assistant';
   safetyProtocols: boolean;
-  
+
   // Vector store integration
   userId?: string;
   vectorStoreId?: string | null;
   indexingStatus: 'idle' | 'indexing' | 'completed' | 'failed';
-  
+
   // Actions
   startSession: () => Promise<void>;
   stopSession: () => void;
@@ -86,10 +86,15 @@ export interface VoiceState {
   finalizeTranscript: () => void;
   updateAudioLevels: (inputLevel: number, outputLevel?: number) => void;
   updateVisualizationData: (data: Float32Array) => void;
-  setPersonalityMode: (mode: 'safety-focused' | 'technical-expert' | 'friendly-assistant') => void;
+  setPersonalityMode: (
+    mode: 'safety-focused' | 'technical-expert' | 'friendly-assistant'
+  ) => void;
   setSafetyProtocols: (enabled: boolean) => void;
   setUserId: (userId: string) => void;
-  indexTranscript: (transcript: string, metadata?: Record<string, unknown>) => Promise<void>;
+  indexTranscript: (
+    transcript: string,
+    metadata?: Record<string, unknown>
+  ) => Promise<void>;
   reset: () => void;
 }
 
@@ -133,26 +138,25 @@ export const useVoiceStore = create<VoiceState>()(
       startSession: async () => {
         const { status } = get();
         if (status !== 'idle') {
-          console.warn(`Cannot start session in ${status} state`);
           return;
         }
 
         try {
           set({ status: 'connecting' });
-          
+
           const { config, personalityMode, safetyProtocols } = get();
-          
+
           const requestBody = {
             config: config || {},
             personalityMode: personalityMode || 'safety-focused',
             safetyProtocols: safetyProtocols ?? true,
           };
-          
+
           const response = await fetch('/api/voice/session', {
             method: 'POST',
-            headers: { 
+            headers: {
               'Content-Type': 'application/json',
-              'Accept': 'application/json',
+              Accept: 'application/json',
             },
             body: JSON.stringify(requestBody),
           });
@@ -165,7 +169,7 @@ export const useVoiceStore = create<VoiceState>()(
             } catch {
               errorData = { error: errorText || response.statusText };
             }
-            
+
             throw new Error(
               `Failed to start session (${response.status}): ${
                 errorData.error || response.statusText
@@ -174,11 +178,17 @@ export const useVoiceStore = create<VoiceState>()(
           }
 
           const result = await response.json();
-          
-          if (!result || typeof result.sessionId !== 'string' || !result.sessionId.trim()) {
-            throw new Error('Invalid session response: missing or invalid session ID');
+
+          if (
+            !result ||
+            typeof result.sessionId !== 'string' ||
+            !result.sessionId.trim()
+          ) {
+            throw new Error(
+              'Invalid session response: missing or invalid session ID'
+            );
           }
-          
+
           set({
             sessionId: result.sessionId,
             status: 'connected',
@@ -186,15 +196,19 @@ export const useVoiceStore = create<VoiceState>()(
             reconnectAttempts: 0,
           });
         } catch (error) {
-          console.error('Voice session start failed:', error);
-          
           const voiceError: VoiceError = {
             code: 'SESSION_START_FAILED',
-            message: error instanceof Error ? error.message : 'Failed to start voice session',
-            details: error instanceof Error ? { name: error.name, stack: error.stack } : undefined,
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Failed to start voice session',
+            details:
+              error instanceof Error
+                ? { name: error.name, stack: error.stack }
+                : undefined,
             timestamp: Date.now(),
           };
-          
+
           set({
             status: 'error',
             error: voiceError,
@@ -206,29 +220,25 @@ export const useVoiceStore = create<VoiceState>()(
       stopSession: () => {
         const { sessionId } = get();
         if (!sessionId) {
-          console.warn('No active session to stop');
           return;
         }
 
         set({ status: 'disconnecting' });
-        
+
         // Clean up WebRTC connection
         fetch('/api/voice/session', {
           method: 'DELETE',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            Accept: 'application/json',
           },
           body: JSON.stringify({ sessionId }),
         })
-        .then(response => {
-          if (!response.ok) {
-            console.warn(`Session cleanup failed (${response.status}): ${response.statusText}`);
-          }
-        })
-        .catch(error => {
-          console.error('Session cleanup error:', error);
-        });
+          .then((response) => {
+            if (!response.ok) {
+            }
+          })
+          .catch((_error) => {});
 
         set({
           sessionId: null,
@@ -246,46 +256,46 @@ export const useVoiceStore = create<VoiceState>()(
       startRecording: () => {
         const { status } = get();
         if (status !== 'connected') return;
-        
-        set({ 
-          isRecording: true, 
+
+        set({
+          isRecording: true,
           status: 'recording',
-          currentTranscript: '' 
+          currentTranscript: '',
         });
       },
 
       stopRecording: () => {
-        set({ 
+        set({
           isRecording: false,
-          status: 'connected' 
+          status: 'connected',
         });
       },
 
       clearTranscriptions: () => {
-        set({ 
+        set({
           transcriptions: [],
           currentTranscript: '',
-          finalTranscript: '' 
+          finalTranscript: '',
         });
       },
 
       updateConfig: (newConfig) => {
         set((state) => ({
-          config: { ...state.config, ...newConfig }
+          config: { ...state.config, ...newConfig },
         }));
       },
 
       setError: (error) => {
-        set({ 
+        set({
           error,
           lastErrorTime: error ? Date.now() : 0,
-          status: error ? 'error' : get().status 
+          status: error ? 'error' : get().status,
         });
       },
 
       addTranscription: (entry) => {
         set((state) => ({
-          transcriptions: [...state.transcriptions, entry]
+          transcriptions: [...state.transcriptions, entry],
         }));
       },
 
@@ -294,17 +304,23 @@ export const useVoiceStore = create<VoiceState>()(
       },
 
       finalizeTranscript: async () => {
-        const { currentTranscript, config, userId, sessionId, personalityMode } = get();
-        
+        const {
+          currentTranscript,
+          config,
+          userId,
+          sessionId,
+          personalityMode,
+        } = get();
+
         if (!currentTranscript || !currentTranscript.trim()) {
           return;
         }
-        
-        set({ 
+
+        set({
           finalTranscript: currentTranscript,
-          currentTranscript: ''
+          currentTranscript: '',
         });
-        
+
         // Auto-index transcript if enabled
         if (config?.autoIndexTranscripts && userId) {
           try {
@@ -315,19 +331,20 @@ export const useVoiceStore = create<VoiceState>()(
               language: config?.language || 'en-US',
               voice: config?.voice || 'nova',
             };
-            
+
             await get().indexTranscript(currentTranscript, metadata);
           } catch (error) {
-            console.error('Failed to auto-index transcript:', error);
             // Set error state so the UI can display the error
-            const errorMessage = error instanceof Error 
-              ? error.message 
-              : 'Failed to auto-index transcript';
-              
+            const errorMessage =
+              error instanceof Error
+                ? error.message
+                : 'Failed to auto-index transcript';
+
             get().setError({
               code: 'AUTO_INDEXING_FAILED',
               message: errorMessage,
-              details: error instanceof Error ? { stack: error.stack } : undefined,
+              details:
+                error instanceof Error ? { stack: error.stack } : undefined,
               timestamp: Date.now(),
             });
           }
@@ -356,21 +373,29 @@ export const useVoiceStore = create<VoiceState>()(
 
       indexTranscript: async (transcript, metadata = {}) => {
         const { userId, sessionId } = get();
-        
+
         if (!userId || typeof userId !== 'string' || !userId.trim()) {
-          const error = new Error('Valid User ID required for transcript indexing');
+          const error = new Error(
+            'Valid User ID required for transcript indexing'
+          );
           set({ indexingStatus: 'failed' });
           throw error;
         }
-        
-        if (!transcript || typeof transcript !== 'string' || !transcript.trim()) {
-          const error = new Error('Valid transcript content required for indexing');
+
+        if (
+          !transcript ||
+          typeof transcript !== 'string' ||
+          !transcript.trim()
+        ) {
+          const error = new Error(
+            'Valid transcript content required for indexing'
+          );
           set({ indexingStatus: 'failed' });
           throw error;
         }
 
         set({ indexingStatus: 'indexing' });
-        
+
         try {
           const requestBody = {
             transcript: transcript.trim(),
@@ -378,12 +403,12 @@ export const useVoiceStore = create<VoiceState>()(
             sessionId: sessionId || null,
             metadata: metadata || {},
           };
-          
+
           const response = await fetch('/api/voice/transcripts', {
             method: 'POST',
-            headers: { 
+            headers: {
               'Content-Type': 'application/json',
-              'Accept': 'application/json',
+              Accept: 'application/json',
             },
             body: JSON.stringify(requestBody),
           });
@@ -396,7 +421,7 @@ export const useVoiceStore = create<VoiceState>()(
             } catch {
               errorData = { error: errorText || response.statusText };
             }
-            
+
             throw new Error(
               `Failed to index transcript (${response.status}): ${
                 errorData.error || errorData.details || response.statusText
@@ -405,27 +430,26 @@ export const useVoiceStore = create<VoiceState>()(
           }
 
           const result = await response.json();
-          
+
           if (!result || typeof result !== 'object') {
             throw new Error('Invalid response from transcript indexing API');
           }
-          
+
           set({
             indexingStatus: 'completed',
             vectorStoreId: result.vectorStoreId || result.fileId || null,
           });
-          
-          console.log('Transcript indexed successfully:', result);
           return result;
         } catch (error) {
           set({ indexingStatus: 'failed' });
-          console.error('Transcript indexing failed:', error);
-          
+
           // Re-throw with enhanced error information
           if (error instanceof TypeError && error.message.includes('fetch')) {
-            throw new Error('Network error: Unable to connect to transcript indexing service');
+            throw new Error(
+              'Network error: Unable to connect to transcript indexing service'
+            );
           }
-          
+
           throw error;
         }
       },
@@ -444,16 +468,18 @@ export const useVoiceStore = create<VoiceState>()(
 // Selector hooks for optimal performance
 export const useVoiceStatus = () => useVoiceStore((state) => state.status);
 export const useVoiceError = () => useVoiceStore((state) => state.error);
-export const useVoiceTranscription = () => useVoiceStore((state) => ({
-  current: state.currentTranscript,
-  final: state.finalTranscript,
-  transcriptions: state.transcriptions,
-}));
+export const useVoiceTranscription = () =>
+  useVoiceStore((state) => ({
+    current: state.currentTranscript,
+    final: state.finalTranscript,
+    transcriptions: state.transcriptions,
+  }));
 export const useVoiceConfig = () => useVoiceStore((state) => state.config);
-export const useVoiceAudio = () => useVoiceStore((state) => ({
-  isRecording: state.isRecording,
-  isPlaying: state.isPlaying,
-  inputLevel: state.inputLevel,
-  outputLevel: state.outputLevel,
-  visualizationData: state.visualizationData,
-}));
+export const useVoiceAudio = () =>
+  useVoiceStore((state) => ({
+    isRecording: state.isRecording,
+    isPlaying: state.isPlaying,
+    inputLevel: state.inputLevel,
+    outputLevel: state.outputLevel,
+    visualizationData: state.visualizationData,
+  }));

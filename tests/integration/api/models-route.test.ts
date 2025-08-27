@@ -1,11 +1,19 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type MockedFunction } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Create mock implementations
-const mockGetAllModels = vi.fn();
-const mockGetModelsForUserProviders = vi.fn();
-const mockGetModelsWithAccessFlags = vi.fn();
-const mockRefreshModelsCache = vi.fn();
-const mockCreateClient = vi.fn();
+// Hoist mock functions properly to avoid initialization errors
+const {
+  mockGetAllModels,
+  mockGetModelsForUserProviders,
+  mockGetModelsWithAccessFlags,
+  mockRefreshModelsCache,
+  mockCreateClient,
+} = vi.hoisted(() => ({
+  mockGetAllModels: vi.fn(),
+  mockGetModelsForUserProviders: vi.fn(),
+  mockGetModelsWithAccessFlags: vi.fn(),
+  mockRefreshModelsCache: vi.fn(),
+  mockCreateClient: vi.fn(),
+}));
 
 // Hoist vi.mock calls to ensure proper module mocking
 vi.mock('@/lib/models', () => ({
@@ -29,17 +37,14 @@ describe('Models API Route', () => {
 
   const mockSupabaseClient = {
     auth: {
-      getUser: vi.fn()
+      getUser: vi.fn(),
     },
     from: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnValue({
-      data: [
-        { provider: 'openai' },
-        { provider: 'anthropic' }
-      ],
-      error: null
-    })
+      data: [{ provider: 'openai' }, { provider: 'anthropic' }],
+      error: null,
+    }),
   };
 
   const mockModels = [
@@ -49,7 +54,7 @@ describe('Models API Route', () => {
       providerId: 'openai',
       provider: 'openai',
       baseProviderId: 'openai',
-      accessible: true
+      accessible: true,
     },
     {
       id: 'claude-3-haiku',
@@ -57,7 +62,7 @@ describe('Models API Route', () => {
       providerId: 'anthropic',
       provider: 'anthropic',
       baseProviderId: 'anthropic',
-      accessible: true
+      accessible: true,
     },
     {
       id: 'gemini-pro',
@@ -65,7 +70,7 @@ describe('Models API Route', () => {
       providerId: 'google',
       provider: 'google',
       baseProviderId: 'google',
-      accessible: false
+      accessible: false,
     },
     {
       id: 'mistral-7b',
@@ -73,8 +78,8 @@ describe('Models API Route', () => {
       providerId: 'mistral',
       provider: 'mistral',
       baseProviderId: 'mistral',
-      accessible: true
-    }
+      accessible: true,
+    },
   ];
 
   beforeEach(() => {
@@ -93,18 +98,15 @@ describe('Models API Route', () => {
     mockGetModelsWithAccessFlags.mockResolvedValue(mockModels);
     mockRefreshModelsCache.mockImplementation(() => {});
     mockCreateClient.mockResolvedValue(mockSupabaseClient as any);
-    
+
     // Add debug logging to verify mocks are called
     mockGetAllModels.mockImplementation(async () => {
-      console.log('mockGetAllModels called');
       return mockModels;
     });
-    mockGetModelsForUserProviders.mockImplementation(async (providers) => {
-      console.log('mockGetModelsForUserProviders called with:', providers);
+    mockGetModelsForUserProviders.mockImplementation(async (_providers) => {
       return mockModels;
     });
     mockGetModelsWithAccessFlags.mockImplementation(async () => {
-      console.log('mockGetModelsWithAccessFlags called');
       return mockModels;
     });
   });
@@ -116,61 +118,50 @@ describe('Models API Route', () => {
 
   describe('GET /api/models', () => {
     it('should return models for authenticated user with API keys', async () => {
-      // First verify our mocks are working
-      console.log('Testing mock setup...');
-      console.log('mockGetModelsForUserProviders type:', typeof mockGetModelsForUserProviders);
-      console.log('mockGetModelsForUserProviders isMock:', vi.isMockFunction(mockGetModelsForUserProviders));
-      
       // Manually test the mock
       try {
-        const testResult = await mockGetModelsForUserProviders(['test']);
-        console.log('Mock test result:', testResult);
-      } catch (error) {
-        console.log('Mock test error:', error);
-      }
+        const _testResult = await mockGetModelsForUserProviders(['test']);
+      } catch (_error) {}
 
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: { id: 'user-123' } },
-        error: null
+        error: null,
+      });
+      const response = await GET();
+
+      if (response.status !== 200) {
+        const _errorData = await response.json();
+      }
+
+      expect(response.status).toBe(200);
+
+      const responseData = await response.json();
+      expect(responseData.models).toHaveLength(4);
+
+      // Check credential info is added
+      const openaiModel = responseData.models.find(
+        (m: any) => m.providerId === 'openai'
+      );
+      expect(openaiModel.credentialInfo).toEqual({
+        envAvailable: true,
+        guestByokAvailable: true,
+        userByokAvailable: true,
       });
 
-      try {
-        const response = await GET();
-        
-        if (response.status !== 200) {
-          const errorData = await response.json();
-          console.log('API returned 500 error:', errorData);
-        }
-        
-        expect(response.status).toBe(200);
-        
-        const responseData = await response.json();
-        expect(responseData.models).toHaveLength(4);
-        
-        // Check credential info is added
-        const openaiModel = responseData.models.find((m: any) => m.providerId === 'openai');
-        expect(openaiModel.credentialInfo).toEqual({
-          envAvailable: true,
-          guestByokAvailable: true,
-          userByokAvailable: true
-        });
-
-        const mistralModel = responseData.models.find((m: any) => m.providerId === 'mistral');
-        expect(mistralModel.credentialInfo).toEqual({
-          envAvailable: false, // No MISTRAL_API_KEY in env
-          guestByokAvailable: true,
-          userByokAvailable: false // Not in user providers
-        });
-      } catch (error) {
-        console.log('Direct error thrown:', error);
-        throw error;
-      }
+      const mistralModel = responseData.models.find(
+        (m: any) => m.providerId === 'mistral'
+      );
+      expect(mistralModel.credentialInfo).toEqual({
+        envAvailable: false, // No MISTRAL_API_KEY in env
+        guestByokAvailable: true,
+        userByokAvailable: false, // Not in user providers
+      });
     });
 
     it('should handle unauthenticated users', async () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: null },
-        error: null
+        error: null,
       });
 
       const response = await GET();
@@ -184,7 +175,7 @@ describe('Models API Route', () => {
     it('should handle missing user ID', async () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: { id: null } },
-        error: null
+        error: null,
       });
 
       const response = await GET();
@@ -207,12 +198,12 @@ describe('Models API Route', () => {
     it('should handle database query errors', async () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: { id: 'user-123' } },
-        error: null
+        error: null,
       });
 
       mockSupabaseClient.eq.mockReturnValue({
         data: null,
-        error: new Error('Database connection failed')
+        error: new Error('Database connection failed'),
       });
 
       const response = await GET();
@@ -224,12 +215,12 @@ describe('Models API Route', () => {
     it('should handle empty user providers', async () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: { id: 'user-123' } },
-        error: null
+        error: null,
       });
 
       mockSupabaseClient.eq.mockReturnValue({
         data: [],
-        error: null
+        error: null,
       });
 
       const response = await GET();
@@ -241,18 +232,21 @@ describe('Models API Route', () => {
     it('should handle user with specific providers', async () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: { id: 'user-123' } },
-        error: null
+        error: null,
       });
 
       mockSupabaseClient.eq.mockReturnValue({
         data: [{ provider: 'openai' }, { provider: 'google' }],
-        error: null
+        error: null,
       });
 
       const response = await GET();
       expect(response.status).toBe(200);
 
-      expect(mockGetModelsForUserProviders).toHaveBeenCalledWith(['openai', 'google']);
+      expect(mockGetModelsForUserProviders).toHaveBeenCalledWith([
+        'openai',
+        'google',
+      ]);
     });
 
     it('should check environment variable availability correctly', async () => {
@@ -265,19 +259,25 @@ describe('Models API Route', () => {
 
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: null },
-        error: null
+        error: null,
       });
 
       const response = await GET();
       const responseData = await response.json();
 
-      const openaiModel = responseData.models.find((m: any) => m.providerId === 'openai');
+      const openaiModel = responseData.models.find(
+        (m: any) => m.providerId === 'openai'
+      );
       expect(openaiModel.credentialInfo.envAvailable).toBe(true);
 
-      const googleModel = responseData.models.find((m: any) => m.providerId === 'google');
+      const googleModel = responseData.models.find(
+        (m: any) => m.providerId === 'google'
+      );
       expect(googleModel.credentialInfo.envAvailable).toBe(true);
 
-      const anthropicModel = responseData.models.find((m: any) => m.providerId === 'anthropic');
+      const anthropicModel = responseData.models.find(
+        (m: any) => m.providerId === 'anthropic'
+      );
       expect(anthropicModel.credentialInfo.envAvailable).toBe(false);
     });
 
@@ -291,7 +291,9 @@ describe('Models API Route', () => {
       const response = await GET();
       const responseData = await response.json();
 
-      const googleModel = responseData.models.find((m: any) => m.providerId === 'google');
+      const googleModel = responseData.models.find(
+        (m: any) => m.providerId === 'google'
+      );
       expect(googleModel.credentialInfo.envAvailable).toBe(true);
     });
 
@@ -304,8 +306,8 @@ describe('Models API Route', () => {
           providerId: 'unknown-provider',
           provider: 'unknown-provider',
           baseProviderId: 'unknown-provider',
-          accessible: true
-        }
+          accessible: true,
+        },
       ];
 
       mockGetAllModels.mockResolvedValue(modelsWithUnknownProvider);
@@ -314,14 +316,18 @@ describe('Models API Route', () => {
       const response = await GET();
       const responseData = await response.json();
 
-      const unknownModel = responseData.models.find((m: any) => m.providerId === 'unknown-provider');
+      const unknownModel = responseData.models.find(
+        (m: any) => m.providerId === 'unknown-provider'
+      );
       expect(unknownModel.credentialInfo.envAvailable).toBe(false);
       expect(unknownModel.credentialInfo.guestByokAvailable).toBe(true);
       expect(unknownModel.credentialInfo.userByokAvailable).toBe(false);
     });
 
     it('should handle general errors gracefully', async () => {
-      mockGetAllModels.mockRejectedValue(new Error('Models service unavailable'));
+      mockGetAllModels.mockRejectedValue(
+        new Error('Models service unavailable')
+      );
       mockCreateClient.mockResolvedValue(null);
 
       const response = await GET();
@@ -334,7 +340,7 @@ describe('Models API Route', () => {
     it('should handle authentication errors', async () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: null },
-        error: new Error('Auth service unavailable')
+        error: new Error('Auth service unavailable'),
       });
 
       const response = await GET();
@@ -345,8 +351,22 @@ describe('Models API Route', () => {
 
     it('should preserve model accessibility flags', async () => {
       const modelsWithVariedAccess = [
-        { id: 'model-1', name: 'Model 1', providerId: 'openai', provider: 'openai', baseProviderId: 'openai', accessible: true },
-        { id: 'model-2', name: 'Model 2', providerId: 'openai', provider: 'openai', baseProviderId: 'openai', accessible: false },
+        {
+          id: 'model-1',
+          name: 'Model 1',
+          providerId: 'openai',
+          provider: 'openai',
+          baseProviderId: 'openai',
+          accessible: true,
+        },
+        {
+          id: 'model-2',
+          name: 'Model 2',
+          providerId: 'openai',
+          provider: 'openai',
+          baseProviderId: 'openai',
+          accessible: false,
+        },
       ];
 
       mockGetAllModels.mockResolvedValue(modelsWithVariedAccess);
@@ -401,7 +421,7 @@ describe('Models API Route', () => {
       const beforeTime = new Date();
       const response = await POST();
       const afterTime = new Date();
-      
+
       const responseData = await response.json();
       const timestamp = new Date(responseData.timestamp);
 
@@ -413,21 +433,25 @@ describe('Models API Route', () => {
   describe('Environment Variable Detection', () => {
     it('should detect OpenAI API key', async () => {
       process.env.OPENAI_API_KEY = 'sk-test-key';
-      
+
       const response = await GET();
       const responseData = await response.json();
-      
-      const openaiModel = responseData.models.find((m: any) => m.providerId === 'openai');
+
+      const openaiModel = responseData.models.find(
+        (m: any) => m.providerId === 'openai'
+      );
       expect(openaiModel.credentialInfo.envAvailable).toBe(true);
     });
 
     it('should detect Anthropic API key', async () => {
       process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
-      
+
       const response = await GET();
       const responseData = await response.json();
-      
-      const anthropicModel = responseData.models.find((m: any) => m.providerId === 'anthropic');
+
+      const anthropicModel = responseData.models.find(
+        (m: any) => m.providerId === 'anthropic'
+      );
       expect(anthropicModel.credentialInfo.envAvailable).toBe(true);
     });
 
@@ -436,14 +460,21 @@ describe('Models API Route', () => {
       process.env = { ...originalEnv, GOOGLE_API_KEY: 'test-key' };
       let response = await GET();
       let responseData = await response.json();
-      let googleModel = responseData.models.find((m: any) => m.providerId === 'google');
+      let googleModel = responseData.models.find(
+        (m: any) => m.providerId === 'google'
+      );
       expect(googleModel.credentialInfo.envAvailable).toBe(true);
 
       // Test GOOGLE_GENERATIVE_AI_API_KEY
-      process.env = { ...originalEnv, GOOGLE_GENERATIVE_AI_API_KEY: 'test-key' };
+      process.env = {
+        ...originalEnv,
+        GOOGLE_GENERATIVE_AI_API_KEY: 'test-key',
+      };
       response = await GET();
       responseData = await response.json();
-      googleModel = responseData.models.find((m: any) => m.providerId === 'google');
+      googleModel = responseData.models.find(
+        (m: any) => m.providerId === 'google'
+      );
       expect(googleModel.credentialInfo.envAvailable).toBe(true);
     });
 
@@ -453,13 +484,15 @@ describe('Models API Route', () => {
         MISTRAL_API_KEY: 'test-mistral',
         PERPLEXITY_API_KEY: 'test-perplexity',
         XAI_API_KEY: 'test-xai',
-        OPENROUTER_API_KEY: 'test-openrouter'
+        OPENROUTER_API_KEY: 'test-openrouter',
       };
 
       const response = await GET();
       const responseData = await response.json();
 
-      const mistralModel = responseData.models.find((m: any) => m.providerId === 'mistral');
+      const mistralModel = responseData.models.find(
+        (m: any) => m.providerId === 'mistral'
+      );
       if (mistralModel) {
         expect(mistralModel.credentialInfo.envAvailable).toBe(true);
       }
@@ -484,33 +517,37 @@ describe('Models API Route', () => {
     it('should mark models as user available when user has provider keys', async () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: { id: 'user-123' } },
-        error: null
+        error: null,
       });
 
       mockSupabaseClient.eq.mockReturnValue({
         data: [{ provider: 'openai' }, { provider: 'anthropic' }],
-        error: null
+        error: null,
       });
 
       const response = await GET();
       const responseData = await response.json();
 
-      const openaiModel = responseData.models.find((m: any) => m.providerId === 'openai');
+      const openaiModel = responseData.models.find(
+        (m: any) => m.providerId === 'openai'
+      );
       expect(openaiModel.credentialInfo.userByokAvailable).toBe(true);
 
-      const googleModel = responseData.models.find((m: any) => m.providerId === 'google');
+      const googleModel = responseData.models.find(
+        (m: any) => m.providerId === 'google'
+      );
       expect(googleModel.credentialInfo.userByokAvailable).toBe(false);
     });
 
     it('should handle null user provider data', async () => {
       mockSupabaseClient.auth.getUser.mockResolvedValue({
         data: { user: { id: 'user-123' } },
-        error: null
+        error: null,
       });
 
       mockSupabaseClient.eq.mockReturnValue({
         data: null,
-        error: null
+        error: null,
       });
 
       const response = await GET();
@@ -528,7 +565,7 @@ describe('Models API Route', () => {
         providerId: 'openai',
         provider: 'openai',
         baseProviderId: 'openai',
-        accessible: true
+        accessible: true,
       }));
 
       mockGetAllModels.mockResolvedValue(largeModelSet);
@@ -549,7 +586,7 @@ describe('Models API Route', () => {
       const [response1, response2, response3] = await Promise.all([
         GET(),
         GET(),
-        GET()
+        GET(),
       ]);
 
       expect(response1.status).toBe(200);
@@ -559,7 +596,7 @@ describe('Models API Route', () => {
 
     it('should handle memory cleanup properly', async () => {
       await GET();
-      
+
       // Verify mocks are called correct number of times
       expect(mockCreateClient).toHaveBeenCalledTimes(1);
     });

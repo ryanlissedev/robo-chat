@@ -1,8 +1,8 @@
 import type { UIMessage as MessageType } from '@ai-sdk/react';
 import { useState } from 'react';
+import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import { MessageAssistant } from './message-assistant';
 import { MessageUser } from './message-user';
-import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 
 type MessageProps = {
   variant: MessageType['role'];

@@ -1,11 +1,12 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { MessageCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { MessageCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { usePathname } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
+import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import { Conversation } from '@/components/app/chat/conversation';
 import { useChatOperations } from '@/components/app/chat/use-chat-operations';
 import { useFileUpload } from '@/components/app/chat/use-file-upload';
@@ -13,7 +14,6 @@ import { useModel } from '@/components/app/chat/use-model';
 import { ChatInput } from '@/components/app/chat-input/chat-input';
 import { ProjectChatItem } from '@/components/app/layout/sidebar/project-chat-item';
 import { toast } from '@/components/ui/toast';
-import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import { useChats } from '@/lib/chat-store/chats/provider';
 import { useMessages } from '@/lib/chat-store/messages/provider';
 import { MESSAGE_MAX_LENGTH, SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
@@ -86,13 +86,7 @@ export function ProjectView({ projectId }: ProjectViewProps) {
     });
   }, []);
 
-  const {
-    messages,
-    status,
-    stop,
-    setMessages,
-    sendMessage,
-  } = useChat({
+  const { messages, status, stop, setMessages, sendMessage } = useChat({
     id: `project-${projectId}-${currentChatId}`,
     onFinish: ({ message }) => cacheAndAddMessage(message),
     onError: handleError,
@@ -178,12 +172,9 @@ export function ProjectView({ projectId }: ProjectViewProps) {
   });
 
   // Simple input change handler for project context (no draft saving needed)
-  const handleInputChange = useCallback(
-    (value: string) => {
-      setInput(value);
-    },
-    [setInput]
-  );
+  const handleInputChange = useCallback((value: string) => {
+    setInput(value);
+  }, []);
 
   const submit = useCallback(async () => {
     setIsSubmitting(true);
@@ -281,7 +272,6 @@ export function ProjectView({ projectId }: ProjectViewProps) {
     createOptimisticAttachments,
     input,
     setMessages,
-    setInput,
     setFiles,
     cleanupOptimisticAttachments,
     ensureChatExists,

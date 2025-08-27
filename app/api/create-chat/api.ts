@@ -54,7 +54,7 @@ export async function createChatInDb({
   };
 
   if (projectId) {
-    insertData.project_id = projectId;
+    (insertData as any).project_id = projectId;
   }
 
   const { data, error } = await supabase

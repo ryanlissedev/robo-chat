@@ -1,6 +1,15 @@
 'use client';
 
-import { Database, File, FileCode, FileText, FolderOpen, Plus, Trash, Upload } from 'lucide-react';
+import {
+  Database,
+  File,
+  FileCode,
+  FileText,
+  FolderOpen,
+  Plus,
+  Trash,
+  Upload,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
@@ -15,6 +24,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+
 // Uses server API routes under /api/vector-stores
 
 type VectorStore = {
@@ -42,7 +52,7 @@ type VectorStoreManagerProps = {
 };
 
 const FILE_ICONS = {
-  pdf: FileText,  // Using FileText as FilePdf doesn't exist in lucide-react
+  pdf: FileText, // Using FileText as FilePdf doesn't exist in lucide-react
   txt: FileText,
   md: FileText,
   py: FileCode,
@@ -52,7 +62,7 @@ const FILE_ICONS = {
   default: File,
 };
 
-export function VectorStoreManager({ }: VectorStoreManagerProps) {
+export function VectorStoreManager({}: VectorStoreManagerProps) {
   const [vectorStores, setVectorStores] = useState<VectorStore[]>([]);
   const [selectedStore, setSelectedStore] = useState<VectorStore | null>(null);
   const [storeFiles, setStoreFiles] = useState<VectorStoreFile[]>([]);
@@ -69,7 +79,12 @@ export function VectorStoreManager({ }: VectorStoreManagerProps) {
       if (!res.ok) throw new Error('Failed to fetch vector stores');
       const data = await res.json();
       const stores = (data.stores || []) as Array<{
-        id: string; name: string; created_at?: string; status?: string; usage_bytes?: number; file_counts?: { total: number }
+        id: string;
+        name: string;
+        created_at?: string;
+        status?: string;
+        usage_bytes?: number;
+        file_counts?: { total: number };
       }>;
       setVectorStores(
         stores.map((s) => ({
@@ -94,7 +109,13 @@ export function VectorStoreManager({ }: VectorStoreManagerProps) {
       if (!res.ok) throw new Error('Failed to fetch files');
       const data = await res.json();
       const files = (data.files || []) as Array<{
-        id: string; file_id?: string; filename?: string; name?: string; created_at?: string; status?: string; bytes?: number
+        id: string;
+        file_id?: string;
+        filename?: string;
+        name?: string;
+        created_at?: string;
+        status?: string;
+        bytes?: number;
       }>;
       const mapped: VectorStoreFile[] = files.map((f) => ({
         id: f.id,
@@ -150,7 +171,9 @@ export function VectorStoreManager({ }: VectorStoreManagerProps) {
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/vector-stores/${storeId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/vector-stores/${storeId}`, {
+        method: 'DELETE',
+      });
       if (!res.ok) throw new Error('Delete failed');
       toast.success('Vector store deleted');
       setSelectedStore(null);
@@ -178,10 +201,13 @@ export function VectorStoreManager({ }: VectorStoreManagerProps) {
         for (const file of acceptedFiles) {
           const form = new FormData();
           form.append('file', file);
-          const res = await fetch(`/api/vector-stores/${selectedStore.id}/files`, {
-            method: 'POST',
-            body: form,
-          });
+          const res = await fetch(
+            `/api/vector-stores/${selectedStore.id}/files`,
+            {
+              method: 'POST',
+              body: form,
+            }
+          );
           if (!res.ok) throw new Error('Upload failed');
           completed++;
           setUploadProgress((completed / totalFiles) * 100);

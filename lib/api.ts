@@ -1,4 +1,3 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { APP_DOMAIN } from '@/lib/config';
 import type { UserProfile } from '@/lib/user/types';
 import { fetchClient } from './fetch';
@@ -87,7 +86,9 @@ export async function updateChatModel(chatId: string, model: string) {
 /**
  * Signs in user with Google OAuth via Supabase
  */
-export async function signInWithGoogle(supabase: SupabaseClient) {
+// Use `any` here to avoid type incompatibilities between different SupabaseClient generic signatures
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function signInWithGoogle(supabase: any) {
   const isDev = process.env.NODE_ENV === 'development';
 
   // Get base URL dynamically (will work in both browser and server environments)

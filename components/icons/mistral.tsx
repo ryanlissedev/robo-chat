@@ -7,8 +7,11 @@ const Icon = (props: SVGProps<SVGSVGElement>) => (
     viewBox="0 0 64 64"
     width={64}
     xmlns="http://www.w3.org/2000/svg"
+    role="img"
+    aria-label="Mistral"
     {...props}
   >
+    <title>Mistral</title>
     <g clipPath="url(#mistral)">
       <path
         d="M9.141 9.067h9.144v9.141H9.141zm36.571 0h9.147v9.141h-9.147z"

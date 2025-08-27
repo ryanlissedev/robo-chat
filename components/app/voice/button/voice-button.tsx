@@ -1,10 +1,15 @@
 'use client';
 
-import React from 'react';
 import { Mic, MicOff, Square } from 'lucide-react';
+import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useVoiceStore } from '../store/voice-store';
 
@@ -17,7 +22,7 @@ interface VoiceButtonProps {
 
 const sizeMap = {
   sm: 'size-8',
-  md: 'size-10', 
+  md: 'size-10',
   lg: 'size-12',
 };
 
@@ -27,11 +32,11 @@ const iconSizeMap = {
   lg: 'size-6',
 };
 
-export function VoiceButton({ 
-  className, 
+export function VoiceButton({
+  className,
   size = 'md',
   onTranscriptReady,
-  disabled = false 
+  disabled = false,
 }: VoiceButtonProps) {
   const {
     status,
@@ -72,9 +77,7 @@ export function VoiceButton({
       } else if (status === 'error') {
         reset();
       }
-    } catch (error) {
-      console.error('Voice button error:', error);
-    }
+    } catch (_error) {}
   }, [status, disabled, startSession, startRecording, stopRecording, reset]);
 
   const handleMouseDown = useCallback(() => {
@@ -108,7 +111,7 @@ export function VoiceButton({
     ariaLabel: string;
   } => {
     const iconSize = iconSizeMap[size];
-    
+
     switch (status) {
       case 'idle':
         return {
@@ -117,7 +120,7 @@ export function VoiceButton({
           tooltip: 'Click to start voice transcription',
           ariaLabel: 'Start voice transcription',
         };
-      
+
       case 'connecting':
         return {
           variant: 'secondary',
@@ -125,7 +128,7 @@ export function VoiceButton({
           tooltip: 'Connecting...',
           ariaLabel: 'Connecting to voice service',
         };
-      
+
       case 'connected':
         return {
           variant: 'ghost',
@@ -133,7 +136,7 @@ export function VoiceButton({
           tooltip: 'Click or hold to record',
           ariaLabel: 'Start recording',
         };
-      
+
       case 'recording':
       case 'transcribing':
         return {
@@ -142,7 +145,7 @@ export function VoiceButton({
           tooltip: 'Recording... Click to stop',
           ariaLabel: 'Stop recording',
         };
-      
+
       case 'processing':
         return {
           variant: 'secondary',
@@ -150,7 +153,7 @@ export function VoiceButton({
           tooltip: 'Processing audio...',
           ariaLabel: 'Processing audio',
         };
-      
+
       case 'error':
         return {
           variant: 'destructive',
@@ -158,7 +161,7 @@ export function VoiceButton({
           tooltip: error?.message || 'Voice error - click to retry',
           ariaLabel: 'Voice error, click to retry',
         };
-      
+
       case 'disconnecting':
         return {
           variant: 'ghost',
@@ -166,7 +169,7 @@ export function VoiceButton({
           tooltip: 'Disconnecting...',
           ariaLabel: 'Disconnecting from voice service',
         };
-      
+
       default:
         return {
           variant: 'ghost',
@@ -194,7 +197,12 @@ export function VoiceButton({
               disabled && 'opacity-50 cursor-not-allowed',
               className
             )}
-            disabled={disabled || status === 'connecting' || status === 'processing' || status === 'disconnecting'}
+            disabled={
+              disabled ||
+              status === 'connecting' ||
+              status === 'processing' ||
+              status === 'disconnecting'
+            }
             onClick={handleClick}
             onMouseDown={handleMouseDown}
             onMouseUp={handleMouseUp}
@@ -204,12 +212,12 @@ export function VoiceButton({
             variant={buttonState.variant}
           >
             {buttonState.icon}
-            
+
             {/* Recording indicator */}
             {isActive && (
               <div className="absolute -top-1 -right-1 size-3 bg-red-500 rounded-full animate-ping" />
             )}
-            
+
             {/* Connection indicator */}
             {status === 'connected' && !isActive && (
               <div className="absolute -top-1 -right-1 size-2 bg-green-500 rounded-full" />

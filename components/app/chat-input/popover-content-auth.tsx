@@ -13,7 +13,7 @@ export function PopoverContentAuth() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isSupabaseEnabled) {
+  if (!isSupabaseEnabled()) {
     return null;
   }
 

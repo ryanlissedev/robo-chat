@@ -1,13 +1,32 @@
 'use client';
 
-import { ArrowUp, PencilIcon, X } from 'lucide-react';
-import { Check, Copy, RotateCcw, Trash2, Volume2 } from 'lucide-react';
+import {
+  ArrowUp,
+  Check,
+  Copy,
+  PencilIcon,
+  RotateCcw,
+  Trash2,
+  Volume2,
+  X,
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useVoiceStore } from '../store/voice-store';
 
@@ -22,7 +41,7 @@ export function TranscriptionPanel({
   className,
   onSendTranscript,
   onClose,
-  isVisible = false
+  isVisible = false,
 }: TranscriptionPanelProps) {
   const {
     status,
@@ -35,7 +54,7 @@ export function TranscriptionPanel({
     clearTranscriptions,
     updateCurrentTranscript,
     finalizeTranscript,
-    reset
+    reset,
   } = useVoiceStore();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -86,22 +105,31 @@ export function TranscriptionPanel({
   }, [editableText, updateCurrentTranscript, finalizeTranscript]);
 
   const handleSendTranscript = useCallback(() => {
-    const textToSend = isEditing ? editableText : (finalTranscript || currentTranscript);
+    const textToSend = isEditing
+      ? editableText
+      : finalTranscript || currentTranscript;
     if (textToSend.trim()) {
       onSendTranscript?.(textToSend.trim());
       clearTranscriptions();
       setEditableText('');
       setIsEditing(false);
     }
-  }, [isEditing, editableText, finalTranscript, currentTranscript, onSendTranscript, clearTranscriptions]);
+  }, [
+    isEditing,
+    editableText,
+    finalTranscript,
+    currentTranscript,
+    onSendTranscript,
+    clearTranscriptions,
+  ]);
 
   const handleCopyText = useCallback(async () => {
-    const textToCopy = isEditing ? editableText : (finalTranscript || currentTranscript);
+    const textToCopy = isEditing
+      ? editableText
+      : finalTranscript || currentTranscript;
     try {
       await navigator.clipboard.writeText(textToCopy);
-    } catch (error) {
-      console.error('Failed to copy text:', error);
-    }
+    } catch (_error) {}
   }, [isEditing, editableText, finalTranscript, currentTranscript]);
 
   const handleClear = useCallback(() => {
@@ -123,13 +151,19 @@ export function TranscriptionPanel({
       case 'technical-expert':
         return { label: 'Technical Mode', color: 'text-blue-600', icon: '🔧' };
       case 'friendly-assistant':
-        return { label: 'Assistant Mode', color: 'text-purple-600', icon: '😊' };
+        return {
+          label: 'Assistant Mode',
+          color: 'text-purple-600',
+          icon: '😊',
+        };
       default:
         return { label: 'Standard Mode', color: 'text-gray-600', icon: '🤖' };
     }
   }, [personalityMode]);
 
-  const displayText = isEditing ? editableText : (finalTranscript || currentTranscript);
+  const displayText = isEditing
+    ? editableText
+    : finalTranscript || currentTranscript;
   const hasText = displayText.trim().length > 0;
   const isRecording = status === 'recording' || status === 'transcribing';
   const isProcessing = status === 'processing' || status === 'connecting';
@@ -140,12 +174,14 @@ export function TranscriptionPanel({
 
   return (
     <TooltipProvider>
-      <Card className={cn(
-        'w-full max-w-2xl mx-auto border-2 transition-all duration-300',
-        isRecording && 'border-red-200 bg-red-50/50',
-        hasError && 'border-red-300 bg-red-50',
-        className
-      )}>
+      <Card
+        className={cn(
+          'w-full max-w-2xl mx-auto border-2 transition-all duration-300',
+          isRecording && 'border-red-200 bg-red-50/50',
+          hasError && 'border-red-300 bg-red-50',
+          className
+        )}
+      >
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -154,13 +190,20 @@ export function TranscriptionPanel({
               {isRecording && (
                 <div className="flex items-center gap-1">
                   <div className="size-2 bg-red-500 rounded-full animate-pulse" />
-                  <span className="text-sm font-normal text-muted-foreground">Recording...</span>
+                  <span className="text-sm font-normal text-muted-foreground">
+                    Recording...
+                  </span>
                 </div>
               )}
             </CardTitle>
-            
+
             <div className="flex items-center gap-2">
-              <div className={cn('text-xs px-2 py-1 rounded-full bg-gray-100', personality.color)}>
+              <div
+                className={cn(
+                  'text-xs px-2 py-1 rounded-full bg-gray-100',
+                  personality.color
+                )}
+              >
                 <span className="mr-1">{personality.icon}</span>
                 {personality.label}
               </div>
@@ -176,7 +219,7 @@ export function TranscriptionPanel({
                   </TooltipContent>
                 </Tooltip>
               )}
-              
+
               {onClose && (
                 <Button
                   onClick={onClose}
@@ -189,7 +232,7 @@ export function TranscriptionPanel({
               )}
             </div>
           </div>
-          
+
           {/* Confidence indicator */}
           {confidence > 0 && !isRecording && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -216,11 +259,15 @@ export function TranscriptionPanel({
           ) : (
             <div className="space-y-3">
               {/* Live transcription area */}
-              <div className={cn(
-                'min-h-[120px] p-4 border-2 border-dashed rounded-lg transition-all',
-                isRecording ? 'border-red-300 bg-red-50/30' : 'border-gray-200 bg-gray-50/50',
-                hasText && 'border-solid bg-white'
-              )}>
+              <div
+                className={cn(
+                  'min-h-[120px] p-4 border-2 border-dashed rounded-lg transition-all',
+                  isRecording
+                    ? 'border-red-300 bg-red-50/30'
+                    : 'border-gray-200 bg-gray-50/50',
+                  hasText && 'border-solid bg-white'
+                )}
+              >
                 {isEditing ? (
                   <Textarea
                     ref={textareaRef}
@@ -255,18 +302,22 @@ export function TranscriptionPanel({
                   </div>
                 )}
               </div>
-              
+
               {/* Recent transcriptions */}
               {transcriptions.length > 1 && !isEditing && (
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">Recent transcriptions:</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    Recent transcriptions:
+                  </h4>
                   <div className="max-h-32 overflow-y-auto space-y-1">
                     {transcriptions.slice(-5).map((entry) => (
                       <div
                         key={entry.id}
                         className={cn(
                           'text-xs p-2 rounded border',
-                          entry.isInterim ? 'bg-yellow-50 border-yellow-200 text-yellow-800' : 'bg-gray-50 border-gray-200'
+                          entry.isInterim
+                            ? 'bg-yellow-50 border-yellow-200 text-yellow-800'
+                            : 'bg-gray-50 border-gray-200'
                         )}
                       >
                         <span className="opacity-60 mr-2">
@@ -289,7 +340,11 @@ export function TranscriptionPanel({
                 <>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button onClick={handleCopyText} size="sm" variant="outline">
+                      <Button
+                        onClick={handleCopyText}
+                        size="sm"
+                        variant="outline"
+                      >
                         <Copy className="size-4" />
                       </Button>
                     </TooltipTrigger>
@@ -297,7 +352,7 @@ export function TranscriptionPanel({
                       <p>Copy text</p>
                     </TooltipContent>
                   </Tooltip>
-                  
+
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button onClick={handleClear} size="sm" variant="outline">
@@ -311,39 +366,49 @@ export function TranscriptionPanel({
                 </>
               )}
             </div>
-            
+
             <div className="flex gap-2">
-              {hasText && !hasError && (
-                <>
-                  {isEditing ? (
-                    <>
-                      <Button onClick={handleCancelEditing} size="sm" variant="outline">
-                        Cancel
-                      </Button>
-                      <Button onClick={handleSaveEditing} size="sm" variant="default">
-                        <Check className="size-4 mr-2" />
-                        Save
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button onClick={handleStartEditing} size="sm" variant="outline">
-                        <PencilIcon className="size-4 mr-2" />
-                        Edit
-                      </Button>
-                      <Button 
-                        onClick={handleSendTranscript} 
-                        size="sm" 
-                        variant="default"
-                        disabled={isRecording || isProcessing}
-                      >
-                        <ArrowUp className="size-4 mr-2" />
-                        Send to Chat
-                      </Button>
-                    </>
-                  )}
-                </>
-              )}
+              {hasText &&
+                !hasError &&
+                (isEditing ? (
+                  <>
+                    <Button
+                      onClick={handleCancelEditing}
+                      size="sm"
+                      variant="outline"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleSaveEditing}
+                      size="sm"
+                      variant="default"
+                    >
+                      <Check className="size-4 mr-2" />
+                      Save
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      onClick={handleStartEditing}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <PencilIcon className="size-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button
+                      onClick={handleSendTranscript}
+                      size="sm"
+                      variant="default"
+                      disabled={isRecording || isProcessing}
+                    >
+                      <ArrowUp className="size-4 mr-2" />
+                      Send to Chat
+                    </Button>
+                  </>
+                ))}
             </div>
           </div>
         </CardFooter>

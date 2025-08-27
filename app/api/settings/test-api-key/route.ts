@@ -80,7 +80,10 @@ export async function POST(req: Request) {
     }
 
     // Test the API key based on provider
-    let testResult: APITestResult = { success: false, error: 'Unknown provider' };
+    let testResult: APITestResult = {
+      success: false,
+      error: 'Unknown provider',
+    };
 
     switch (provider) {
       case 'openai':

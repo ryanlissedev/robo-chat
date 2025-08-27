@@ -13,6 +13,8 @@ export function shouldUseFallbackRetrieval(
   return enableSearch && !modelSupportsFileSearchTools;
 }
 
-export function selectRetrievalMode(twoPassEnabled: boolean): 'two-pass' | 'vector' {
+export function selectRetrievalMode(
+  twoPassEnabled: boolean
+): 'two-pass' | 'vector' {
   return twoPassEnabled ? 'two-pass' : 'vector';
 }

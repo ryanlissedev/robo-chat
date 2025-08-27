@@ -18,9 +18,7 @@ export function ButtonCopy({ code }: ButtonCopyProps) {
       setTimeout(() => {
         setHasCopyLabel(false);
       }, 1000);
-    } catch (error) {
-      // Handle clipboard errors gracefully
-      console.error('Failed to copy to clipboard:', error);
+    } catch (_error) {
       setHasCopyLabel(true);
 
       setTimeout(() => {

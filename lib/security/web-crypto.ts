@@ -26,7 +26,11 @@ const SALT_BYTES = 16;
 const PBKDF2_ITER = 100_000;
 
 function assertBrowserCrypto() {
-  if (typeof window === 'undefined' || !window.crypto || !window.crypto.subtle) {
+  if (
+    typeof window === 'undefined' ||
+    !window.crypto ||
+    !window.crypto.subtle
+  ) {
     throw new Error('Web Crypto API not available in this environment');
   }
 }
@@ -73,7 +77,12 @@ export async function deriveKeyFromPassphrase(
     ['deriveKey']
   );
   return window.crypto.subtle.deriveKey(
-    { name: PBKDF2_ALG, hash: 'SHA-256', salt: salt as BufferSource, iterations },
+    {
+      name: PBKDF2_ALG,
+      hash: 'SHA-256',
+      salt: salt as BufferSource,
+      iterations,
+    },
     keyMaterial,
     { name: AES_ALG, length: 256 },
     false,
@@ -83,18 +92,22 @@ export async function deriveKeyFromPassphrase(
 
 export async function importAesKeyRaw(raw: Uint8Array): Promise<CryptoKey> {
   assertBrowserCrypto();
-  return window.crypto.subtle.importKey('raw', raw as BufferSource, { name: AES_ALG }, false, [
-    'encrypt',
-    'decrypt',
-  ]);
+  return window.crypto.subtle.importKey(
+    'raw',
+    raw as BufferSource,
+    { name: AES_ALG },
+    false,
+    ['encrypt', 'decrypt']
+  );
 }
 
 export async function generateEphemeralAesKey(): Promise<CryptoKey> {
   assertBrowserCrypto();
-  return window.crypto.subtle.generateKey({ name: AES_ALG, length: 256 }, true, [
-    'encrypt',
-    'decrypt',
-  ]);
+  return window.crypto.subtle.generateKey(
+    { name: AES_ALG, length: 256 },
+    true,
+    ['encrypt', 'decrypt']
+  );
 }
 
 export async function encryptWithKey(
@@ -109,10 +122,18 @@ export async function encryptWithKey(
     key,
     enc(plaintext) as BufferSource
   );
-  return { ciphertextB64: toB64(ct), ivB64: toB64(ivBytes), alg: AES_ALG, v: 1 };
+  return {
+    ciphertextB64: toB64(ct),
+    ivB64: toB64(ivBytes),
+    alg: AES_ALG,
+    v: 1,
+  };
 }
 
-export async function decryptWithKey(bundle: EncryptBundle, key: CryptoKey): Promise<string> {
+export async function decryptWithKey(
+  bundle: EncryptBundle,
+  key: CryptoKey
+): Promise<string> {
   assertBrowserCrypto();
   const iv = fromB64(bundle.ivB64);
   const pt = await window.crypto.subtle.decrypt(
@@ -139,7 +160,8 @@ export async function decryptWithPassphrase(
   passphrase: string,
   iterations = PBKDF2_ITER
 ): Promise<string> {
-  if (!bundle.saltB64) throw new Error('Missing salt for passphrase decryption');
+  if (!bundle.saltB64)
+    throw new Error('Missing salt for passphrase decryption');
   const salt = fromB64(bundle.saltB64);
   const key = await deriveKeyFromPassphrase(passphrase, salt, iterations);
   return decryptWithKey(bundle, key);
@@ -160,7 +182,10 @@ let SESSION_AES_KEY: CryptoKey | null = null; // not persisted
 const SESSION_PREFIX = 'guestByok:session:';
 const PERSIST_PREFIX = 'guestByok:persistent:';
 
-export async function setMemoryCredential(provider: string, plaintextKey: string) {
+export async function setMemoryCredential(
+  provider: string,
+  plaintextKey: string
+) {
   if (!MEM_AES_KEY) MEM_AES_KEY = await generateEphemeralAesKey();
   const bundle = await encryptWithKey(plaintextKey, MEM_AES_KEY);
   MEM_STORE.set(provider, { bundle, masked: maskKey(plaintextKey) });
@@ -168,39 +193,53 @@ export async function setMemoryCredential(provider: string, plaintextKey: string
 }
 
 // Returns non-sensitive metadata only
-export function getMemoryCredential(provider: string): { masked: string } | null {
+export function getMemoryCredential(
+  provider: string
+): { masked: string } | null {
   const entry = MEM_STORE.get(provider);
   if (!entry) return null;
   return { masked: entry.masked };
 }
 
 // Decrypts the in-memory credential for active request use only
-export async function getMemoryCredentialPlaintext(provider: string): Promise<string | null> {
+export async function getMemoryCredentialPlaintext(
+  provider: string
+): Promise<string | null> {
   const entry = MEM_STORE.get(provider);
   if (!entry || !MEM_AES_KEY) return null;
   const plaintext = await decryptWithKey(entry.bundle, MEM_AES_KEY);
   return plaintext;
 }
 
-export async function setSessionCredential(provider: string, plaintextKey: string) {
+export async function setSessionCredential(
+  provider: string,
+  plaintextKey: string
+) {
   if (!SESSION_AES_KEY) SESSION_AES_KEY = await generateEphemeralAesKey();
   const bundle = await encryptWithKey(plaintextKey, SESSION_AES_KEY);
-  sessionStorage.setItem(`${SESSION_PREFIX}${provider}`, JSON.stringify(bundle));
+  sessionStorage.setItem(
+    `${SESSION_PREFIX}${provider}`,
+    JSON.stringify(bundle)
+  );
   return { masked: maskKey(plaintextKey) };
 }
 
-export async function getSessionCredential(provider: string): Promise<{ masked: string; plaintext: string } | null> {
+export async function getSessionCredential(
+  provider: string
+): Promise<{ masked: string; plaintext: string } | null> {
   const raw = sessionStorage.getItem(`${SESSION_PREFIX}${provider}`);
   if (!raw) return null;
   if (!SESSION_AES_KEY) return null; // cannot decrypt without in-memory key
-  
+
   let bundle: EncryptBundle;
   try {
     bundle = JSON.parse(raw) as EncryptBundle;
   } catch (error) {
-    throw new Error(`Failed to parse session storage data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to parse session storage data: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
-  
+
   const plaintext = await decryptWithKey(bundle, SESSION_AES_KEY);
   return { masked: maskKey(plaintext), plaintext };
 }
@@ -221,14 +260,16 @@ export async function getPersistentCredential(
 ): Promise<{ masked: string; plaintext: string } | null> {
   const raw = localStorage.getItem(`${PERSIST_PREFIX}${provider}`);
   if (!raw) return null;
-  
+
   let bundle: EncryptBundle;
   try {
     bundle = JSON.parse(raw) as EncryptBundle;
   } catch (error) {
-    throw new Error(`Failed to parse persistent storage data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to parse persistent storage data: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
-  
+
   const plaintext = await decryptWithPassphrase(bundle, passphrase);
   return { masked: maskKey(plaintext), plaintext };
 }
@@ -238,4 +279,3 @@ export function clearAllGuestCredentialsFor(provider: string) {
   sessionStorage.removeItem(`${SESSION_PREFIX}${provider}`);
   localStorage.removeItem(`${PERSIST_PREFIX}${provider}`);
 }
-

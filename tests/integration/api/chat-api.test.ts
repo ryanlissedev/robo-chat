@@ -1,29 +1,27 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Set up environment variables before any imports
 process.env.ENCRYPTION_KEY = Buffer.from('test'.repeat(8)).toString('base64');
 process.env.NODE_ENV = 'test';
 
 import {
-  validateAndTrackUsage,
   incrementMessageCount,
   logUserMessage,
   storeAssistantMessage,
+  validateAndTrackUsage,
 } from '@/app/api/chat/api';
 import { storeAssistantMessage as storeAssistantMessageToDb } from '@/app/api/chat/db';
-import { validateUserIdentity } from '@/lib/server/api';
-import { checkUsageByModel, incrementUsage } from '@/lib/usage';
-import { getUserKey } from '@/lib/user-keys';
-import { getProviderForModel } from '@/lib/openproviders/provider-map';
-import { sanitizeUserInput } from '@/lib/sanitize';
-import { logWarning } from '@/lib/utils/logger';
-import { FREE_MODELS_IDS, NON_AUTH_ALLOWED_MODELS } from '@/lib/config';
 import type {
   ChatApiParams,
-  LogUserMessageParams,
   StoreAssistantMessageParams,
   SupabaseClientType,
 } from '@/app/types/api.types';
+import { getProviderForModel } from '@/lib/openproviders/provider-map';
+import { sanitizeUserInput } from '@/lib/sanitize';
+import { validateUserIdentity } from '@/lib/server/api';
+import { checkUsageByModel, incrementUsage } from '@/lib/usage';
+import { getUserKey } from '@/lib/user-keys';
+import { logWarning } from '@/lib/utils/logger';
 
 // Mock all dependencies
 vi.mock('@/app/api/chat/db', () => ({
@@ -91,7 +89,10 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
     vi.mocked(validateUserIdentity).mockResolvedValue(mockSupabaseClient);
     vi.mocked(getProviderForModel).mockReturnValue('openai');
     vi.mocked(getUserKey).mockResolvedValue('sk-test-key');
-    vi.mocked(checkUsageByModel).mockResolvedValue({ dailyProCount: 0, limit: 10 });
+    vi.mocked(checkUsageByModel).mockResolvedValue({
+      dailyProCount: 0,
+      limit: 10,
+    });
     vi.mocked(incrementUsage).mockResolvedValue(undefined);
     vi.mocked(sanitizeUserInput).mockImplementation((input) => input);
     vi.mocked(storeAssistantMessageToDb).mockResolvedValue(undefined);
@@ -202,7 +203,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
 
     it('should handle different provider types', async () => {
       const providers = ['anthropic', 'google', 'mistral'] as const;
-      
+
       for (const provider of providers) {
         vi.clearAllMocks();
         vi.mocked(validateUserIdentity).mockResolvedValue(mockSupabaseClient);
@@ -363,7 +364,10 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
         userId: mockUserId,
       });
 
-      expect(incrementUsage).toHaveBeenCalledWith(mockSupabaseClient, mockUserId);
+      expect(incrementUsage).toHaveBeenCalledWith(
+        mockSupabaseClient,
+        mockUserId
+      );
     });
 
     it('should return early when supabase is null', async () => {
@@ -519,9 +523,9 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
 
       mockSupabaseClient.from = vi.fn((table) => {
         if (table === 'chats') {
-          return { 
-            select: mockSelectForCheck, 
-            insert: mockInsert 
+          return {
+            select: mockSelectForCheck,
+            insert: mockInsert,
           };
         }
         return { insert: mockInsert };
@@ -548,16 +552,16 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
           }),
         })),
       }));
-      const mockInsertChat = vi.fn().mockResolvedValue({ 
-        error: { message: 'Insert failed' } 
+      const mockInsertChat = vi.fn().mockResolvedValue({
+        error: { message: 'Insert failed' },
       });
       const mockInsertMessage = vi.fn().mockResolvedValue({ error: null });
 
       mockSupabaseClient.from = vi.fn((table) => {
         if (table === 'chats') {
-          return { 
-            select: mockSelectForCheck, 
-            insert: mockInsertChat 
+          return {
+            select: mockSelectForCheck,
+            insert: mockInsertChat,
           };
         }
         return { insert: mockInsertMessage };
@@ -613,9 +617,9 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
           }),
         })),
       }));
-      
+
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
-      
+
       mockSupabaseClient.from = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
@@ -645,13 +649,13 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
     });
 
     it('should handle message insertion errors gracefully', async () => {
-      const mockInsertMessage = vi.fn().mockResolvedValue({ 
-        error: { message: 'Insertion failed' } 
+      const mockInsertMessage = vi.fn().mockResolvedValue({
+        error: { message: 'Insertion failed' },
       });
 
       mockSupabaseClient.from = vi.fn((table) => {
         if (table === 'chats') {
-          return { 
+          return {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
@@ -668,10 +672,9 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
 
       await logUserMessage(baseParams);
 
-      expect(logWarning).toHaveBeenCalledWith(
-        'Failed to save user message',
-        { error: 'Insertion failed' }
-      );
+      expect(logWarning).toHaveBeenCalledWith('Failed to save user message', {
+        error: 'Insertion failed',
+      });
     });
 
     it('should handle null attachments', async () => {
@@ -819,11 +822,9 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
     it('should handle messages with different content types', async () => {
       const complexMessages = [
         { role: 'assistant' as const, content: 'Text response' },
-        { 
-          role: 'assistant' as const, 
-          content: [
-            { type: 'text', text: 'Complex content' }
-          ] as any
+        {
+          role: 'assistant' as const,
+          content: [{ type: 'text', text: 'Complex content' }] as any,
         },
       ];
 
@@ -848,13 +849,13 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
         isAuthenticated: true,
       };
 
-      const promises = Array(10).fill(null).map(() => 
-        validateAndTrackUsage(params)
-      );
+      const promises = Array(10)
+        .fill(null)
+        .map(() => validateAndTrackUsage(params));
 
       const results = await Promise.all(promises);
 
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result).toBe(mockSupabaseClient);
       });
 
@@ -892,13 +893,15 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
 
       vi.stubEnv('NODE_ENV', 'production');
 
-      const promises = Array(5).fill(null).map((_, index) => 
-        logUserMessage({
-          ...baseParams,
-          content: `Message ${index}`,
-          message_group_id: `group-${index}`,
-        })
-      );
+      const promises = Array(5)
+        .fill(null)
+        .map((_, index) =>
+          logUserMessage({
+            ...baseParams,
+            content: `Message ${index}`,
+            message_group_id: `group-${index}`,
+          })
+        );
 
       await Promise.all(promises);
 
@@ -924,7 +927,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
 
       // System should continue working after error
       vi.mocked(validateUserIdentity).mockResolvedValue(mockSupabaseClient);
-      
+
       const result = await validateAndTrackUsage(params);
       expect(result).toBe(mockSupabaseClient);
     });
@@ -934,9 +937,9 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
 
       // First call fails
       const mockInsertFail = vi.fn().mockResolvedValue({
-        error: { message: 'Database error' }
+        error: { message: 'Database error' },
       });
-      
+
       // Second call succeeds
       const mockInsertSuccess = vi.fn().mockResolvedValue({ error: null });
 
@@ -956,8 +959,8 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
           };
         }
         callCount++;
-        return { 
-          insert: callCount === 1 ? mockInsertFail : mockInsertSuccess 
+        return {
+          insert: callCount === 1 ? mockInsertFail : mockInsertSuccess,
         };
       }) as any;
 

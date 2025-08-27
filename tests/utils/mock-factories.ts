@@ -3,16 +3,15 @@
  * Provides consistent, reusable mocks for Supabase, authentication, API responses, and more
  */
 
-import { vi } from 'vitest';
-import type { 
-  SupabaseClient, 
-  User, 
-  Session, 
-  AuthResponse, 
+import type {
   AuthError,
+  AuthResponse,
+  PostgrestError,
   PostgrestResponse,
-  PostgrestError 
+  Session,
+  User,
 } from '@supabase/supabase-js';
+import { vi } from 'vitest';
 
 // ============================================================================
 // Supabase Mock Factory
@@ -25,37 +24,41 @@ export interface MockSupabaseOptions {
   isAuthenticated?: boolean;
 }
 
-export const createMockSupabaseClient = (options: MockSupabaseOptions = {}): any => {
+export const createMockSupabaseClient = (
+  options: MockSupabaseOptions = {}
+): any => {
   const {
     user = null,
     session = null,
     error = null,
-    isAuthenticated = false
+    isAuthenticated = false,
   } = options;
 
   const mockUser = user ? createMockUser(user) : undefined;
-  const mockSession = session ? createMockSession({ ...session, user: mockUser }) : null;
+  const mockSession = session
+    ? createMockSession({ ...session, user: mockUser })
+    : null;
 
   return {
     auth: {
       getUser: vi.fn().mockResolvedValue({
         data: { user: isAuthenticated ? mockUser : undefined },
-        error: error
+        error: error,
       }),
       getSession: vi.fn().mockResolvedValue({
         data: { session: isAuthenticated ? mockSession : null },
-        error: error
+        error: error,
       }),
       signUp: vi.fn().mockResolvedValue({
         data: { user: mockUser, session: mockSession },
-        error: error
+        error: error,
       } as AuthResponse),
       signInWithPassword: vi.fn().mockResolvedValue({
         data: { user: mockUser, session: mockSession },
-        error: error
+        error: error,
       } as AuthResponse),
       signOut: vi.fn().mockResolvedValue({
-        error: error
+        error: error,
       }),
       onAuthStateChange: vi.fn().mockImplementation((callback) => {
         // Simulate auth state change
@@ -66,20 +69,20 @@ export const createMockSupabaseClient = (options: MockSupabaseOptions = {}): any
         }
         return {
           data: { subscription: { unsubscribe: vi.fn() } },
-          error: null
+          error: null,
         };
       }),
       resetPasswordForEmail: vi.fn().mockResolvedValue({
         data: {},
-        error: error
+        error: error,
       }),
       updateUser: vi.fn().mockResolvedValue({
         data: { user: mockUser },
-        error: error
+        error: error,
       }),
       refreshSession: vi.fn().mockResolvedValue({
         data: { session: mockSession, user: mockUser },
-        error: error
+        error: error,
       }),
     },
     from: vi.fn().mockReturnThis(),
@@ -120,57 +123,57 @@ export const createMockSupabaseClient = (options: MockSupabaseOptions = {}): any
       error: undefined,
       count: null,
       status: 200,
-      statusText: 'OK'
+      statusText: 'OK',
     } as unknown as PostgrestResponse<any>),
     maybeSingle: vi.fn().mockResolvedValue({
       data: null,
       error: undefined,
       count: null,
       status: 200,
-      statusText: 'OK'
+      statusText: 'OK',
     } as unknown as PostgrestResponse<any>),
     then: vi.fn().mockResolvedValue({
       data: [],
       error: null,
       count: null,
       status: 200,
-      statusText: 'OK'
+      statusText: 'OK',
     } as PostgrestResponse<any[]>),
     storage: {
       from: vi.fn().mockReturnThis(),
       upload: vi.fn().mockResolvedValue({
         data: { path: 'test-file.txt' },
-        error: null
+        error: null,
       }),
       download: vi.fn().mockResolvedValue({
         data: new Blob(['test content']),
-        error: null
+        error: null,
       }),
       remove: vi.fn().mockResolvedValue({
         data: [],
-        error: null
+        error: null,
       }),
       list: vi.fn().mockResolvedValue({
         data: [],
-        error: null
+        error: null,
       }),
       createSignedUrl: vi.fn().mockResolvedValue({
         data: { signedUrl: 'https://example.com/signed-url' },
-        error: null
+        error: null,
       }),
       createSignedUrls: vi.fn().mockResolvedValue({
         data: [],
-        error: null
+        error: null,
       }),
       getPublicUrl: vi.fn().mockReturnValue({
-        data: { publicUrl: 'https://example.com/public-url' }
+        data: { publicUrl: 'https://example.com/public-url' },
       }),
     },
     functions: {
       invoke: vi.fn().mockResolvedValue({
         data: null,
-        error: null
-      })
+        error: null,
+      }),
     },
     channel: vi.fn().mockReturnValue({
       on: vi.fn().mockReturnThis(),
@@ -210,7 +213,9 @@ export const createMockUser = (overrides: Partial<User> = {}): User => ({
 // Session Mock Factory
 // ============================================================================
 
-export const createMockSession = (overrides: Partial<Session> = {}): Session => ({
+export const createMockSession = (
+  overrides: Partial<Session> = {}
+): Session => ({
   access_token: 'mock-access-token',
   token_type: 'bearer',
   expires_in: 3600,
@@ -240,12 +245,10 @@ export const createMockApiResponse = <T = any>(
     error = null,
     status = 200,
     statusText = 'OK',
-    headers = { 'Content-Type': 'application/json' }
+    headers = { 'Content-Type': 'application/json' },
   } = options;
 
-  const responseBody = error 
-    ? { error, data: null }
-    : { data, error: null };
+  const responseBody = error ? { error, data: null } : { data, error: null };
 
   return new Response(JSON.stringify(responseBody), {
     status,
@@ -261,7 +264,7 @@ export const createMockStreamingResponse = (
   const {
     status = 200,
     statusText = 'OK',
-    headers = { 'Content-Type': 'text/plain; charset=utf-8' }
+    headers = { 'Content-Type': 'text/plain; charset=utf-8' },
   } = options;
 
   const encoder = new TextEncoder();
@@ -297,7 +300,9 @@ export interface MockChatMessage {
   metadata?: Record<string, any>;
 }
 
-export const createMockChatMessage = (overrides: Partial<MockChatMessage> = {}): MockChatMessage => ({
+export const createMockChatMessage = (
+  overrides: Partial<MockChatMessage> = {}
+): MockChatMessage => ({
   id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
   role: 'user',
   content: 'Test message content',
@@ -306,13 +311,17 @@ export const createMockChatMessage = (overrides: Partial<MockChatMessage> = {}):
   ...overrides,
 });
 
-export const createMockChatConversation = (messageCount: number = 3): MockChatMessage[] => {
-  return Array.from({ length: messageCount }, (_, index) => 
+export const createMockChatConversation = (
+  messageCount: number = 3
+): MockChatMessage[] => {
+  return Array.from({ length: messageCount }, (_, index) =>
     createMockChatMessage({
       id: `msg-${index}`,
       role: index % 2 === 0 ? 'user' : 'assistant',
       content: `Message ${index + 1} content`,
-      timestamp: new Date(Date.now() - (messageCount - index) * 60000).toISOString(),
+      timestamp: new Date(
+        Date.now() - (messageCount - index) * 60000
+      ).toISOString(),
     })
   );
 };
@@ -356,12 +365,13 @@ export const createMockFileList = (files: File[]): FileList => {
 export const createMockError = (
   message: string = 'Test error',
   code: string = 'TEST_ERROR'
-): AuthError => ({
-  message,
-  name: 'AuthError',
-  status: 400,
-  code,
-} as AuthError);
+): AuthError =>
+  ({
+    message,
+    name: 'AuthError',
+    status: 400,
+    code,
+  }) as AuthError;
 
 export const createMockPostgrestError = (
   message: string = 'Database error',
@@ -436,7 +446,9 @@ export const createMockWebSocket = (): any => {
 // Environment Mock Factory
 // ============================================================================
 
-export const createMockEnvironment = (overrides: Record<string, string> = {}): void => {
+export const createMockEnvironment = (
+  overrides: Record<string, string> = {}
+): void => {
   const mockEnv = {
     NODE_ENV: 'test',
     NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:54321',
