@@ -123,9 +123,7 @@ const testConfigs = {
       },
     },
     globals: true,
-    include: [
-      'tests/unit/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
-    ],
+    include: ['tests/unit/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: [
       'node_modules',
       'dist',
@@ -226,7 +224,7 @@ const testConfigs = {
 // Determine configuration based on environment
 const getTestConfig = () => {
   const testType = process.env.TEST_TYPE || 'standard';
-  
+
   switch (testType) {
     case 'fast':
     case 'unit':

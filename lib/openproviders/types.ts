@@ -1,4 +1,18 @@
-export type OpenAIModel = 'gpt-5-mini' | 'gpt-5' | 'gpt-5-pro';
+export type OpenAIModel =
+  | 'gpt-5-mini'
+  | 'gpt-5'
+  | 'gpt-5-pro'
+  | 'gpt-5-nano'
+  | 'gpt-4o'
+  | 'gpt-4o-mini'
+  | 'gpt-4.1'
+  | 'gpt-4.1-mini'
+  | 'gpt-4.1-nano'
+  | 'gpt-4.5-preview'
+  | 'o1'
+  | 'o1-mini'
+  | 'o3-mini'
+  | 'o4-mini';
 
 export type MistralModel =
   | 'ministral-3b-latest'
@@ -82,12 +96,6 @@ export type OpenRouterModel =
   | 'openrouter:x-ai/grok-3-mini-beta'
   | 'openrouter:google/gemini-2.5-flash-preview-05-20';
 
-// Static Ollama models for type safety
-export type StaticOllamaModel = 'llama3.2:latest' | 'qwen2.5-coder:latest';
-
-// Dynamic Ollama model type - allows any string for auto-detected models
-export type OllamaModel = StaticOllamaModel | (string & {});
-
 export type Provider =
   | 'openai'
   | 'mistral'
@@ -95,7 +103,6 @@ export type Provider =
   | 'google'
   | 'anthropic'
   | 'xai'
-  | 'ollama'
   | 'openrouter';
 
 export type SupportedModel =
@@ -105,7 +112,6 @@ export type SupportedModel =
   | PerplexityModel
   | AnthropicModel
   | XaiModel
-  | OllamaModel
   | OpenRouterModel;
 
 export type ReasoningEffort = 'low' | 'medium' | 'high';

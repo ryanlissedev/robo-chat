@@ -1,0 +1,297 @@
+{
+  "timestamp": "2025-08-28T09:46:24.911Z",
+  "environment": {
+    "nodeVersion": "v24.3.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "gateway": {
+    "withoutGateway": [
+      {
+        "provider": "openai",
+        "model": "gpt-5-mini",
+        "name": "GPT-5 Mini",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "name": "GPT-4o",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "openai",
+        "model": "o1",
+        "name": "OpenAI o1",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "anthropic",
+        "model": "claude-3-5-sonnet-latest",
+        "name": "Claude 3.5 Sonnet",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "anthropic",
+        "model": "claude-3-5-haiku-latest",
+        "name": "Claude 3.5 Haiku",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "google",
+        "model": "gemini-2.0-flash-001",
+        "name": "Gemini 2.0 Flash",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "google",
+        "model": "gemini-1.5-pro-latest",
+        "name": "Gemini 1.5 Pro",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "mistral",
+        "model": "mistral-large-latest",
+        "name": "Mistral Large",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "mistral",
+        "model": "ministral-8b-latest",
+        "name": "Ministral 8B",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "perplexity",
+        "model": "sonar",
+        "name": "Sonar",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "perplexity",
+        "model": "sonar-pro",
+        "name": "Sonar Pro",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "xai",
+        "model": "grok-3",
+        "name": "Grok 3",
+        "gateway": false,
+        "status": "passed",
+        "duration": 1,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "xai",
+        "model": "grok-3-mini",
+        "name": "Grok 3 Mini",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "openrouter",
+        "model": "openrouter:deepseek/deepseek-r1:free",
+        "name": "DeepSeek R1 (OpenRouter)",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "openrouter",
+        "model": "openrouter:anthropic/claude-3.7-sonnet:thinking",
+        "name": "Claude 3.7 Sonnet (OpenRouter)",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      },
+      {
+        "provider": "openrouter",
+        "model": "openrouter:google/gemini-2.5-pro-preview",
+        "name": "Gemini 2.5 Pro (OpenRouter)",
+        "gateway": false,
+        "status": "passed",
+        "duration": 0,
+        "error": null,
+        "details": {
+          "initialized": true,
+          "hasDoGenerate": true,
+          "hasDoStream": true,
+          "message": "Provider initialized successfully"
+        }
+      }
+    ],
+    "withGateway": []
+  },
+  "summary": {
+    "total": 16,
+    "passed": 16,
+    "failed": 0,
+    "skipped": 0
+  },
+  "providers": {
+    "openai": {
+      "passed": 3,
+      "failed": 0,
+      "total": 3
+    },
+    "anthropic": {
+      "passed": 2,
+      "failed": 0,
+      "total": 2
+    },
+    "google": {
+      "passed": 2,
+      "failed": 0,
+      "total": 2
+    },
+    "mistral": {
+      "passed": 2,
+      "failed": 0,
+      "total": 2
+    },
+    "perplexity": {
+      "passed": 2,
+      "failed": 0,
+      "total": 2
+    },
+    "xai": {
+      "passed": 2,
+      "failed": 0,
+      "total": 2
+    },
+    "openrouter": {
+      "passed": 3,
+      "failed": 0,
+      "total": 3
+    }
+  },
+  "errors": []
+}

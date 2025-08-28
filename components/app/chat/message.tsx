@@ -18,6 +18,7 @@ type MessageProps = {
   status?: 'streaming' | 'ready' | 'submitted' | 'error';
   className?: string;
   onQuote?: (text: string, messageId: string) => void;
+  langsmithRunId?: string | null;
 };
 
 export function Message({
@@ -34,6 +35,7 @@ export function Message({
   status,
   className,
   onQuote,
+  langsmithRunId,
 }: MessageProps) {
   const [copied, setCopied] = useState(false);
 
@@ -74,6 +76,7 @@ export function Message({
         onReload={onReload}
         parts={parts}
         status={status}
+        langsmithRunId={langsmithRunId || undefined}
       >
         {children}
       </MessageAssistant>

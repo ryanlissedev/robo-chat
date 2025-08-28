@@ -17,13 +17,18 @@ import {
 
 // Convert database message to AI SDK format
 function convertDbMessageToAISDK(dbMessage: MessageFromDB): MessageAISDK {
+  // Include optional LangSmith run id in the message object for downstream components
   return {
     id: dbMessage.id,
     role: dbMessage.role as 'user' | 'assistant' | 'system',
     parts: Array.isArray(dbMessage.parts)
       ? (dbMessage.parts as MessageAISDK['parts'])
       : [{ type: 'text', text: dbMessage.content || '' }],
-  };
+    // Extra metadata that ExtendedUIMessage can read
+    ...(dbMessage.langsmith_run_id
+      ? { langsmithRunId: dbMessage.langsmith_run_id as unknown as string }
+      : {}),
+  } as unknown as MessageAISDK;
 }
 
 // Convert AI SDK message to database format

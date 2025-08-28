@@ -1,5 +1,6 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { ModelSettings } from '@/lib/types/models';
+import { getGatewayConfig } from '@/lib/openproviders/env';
 import type { ModelConfig } from '../types';
 
 type OpenRouterModelSettings = ModelSettings & {
@@ -35,9 +36,17 @@ export const openrouterModels: ModelConfig[] = [
     releasedAt: '2024-04-01',
     icon: 'deepseek',
     apiSdk: (apiKey?: string) => {
-      return createOpenRouter({
-        apiKey: apiKey || process.env.OPENROUTER_API_KEY,
-      }).chat('deepseek/deepseek-r1:free');
+      const gateway = getGatewayConfig();
+      const config = gateway.enabled
+        ? {
+            apiKey: apiKey || process.env.OPENROUTER_API_KEY,
+            baseURL: `${gateway.baseURL}/openrouter`,
+            headers: gateway.headers,
+          }
+        : {
+            apiKey: apiKey || process.env.OPENROUTER_API_KEY,
+          };
+      return createOpenRouter(config).chat('deepseek/deepseek-r1:free');
     },
   },
   {
@@ -69,14 +78,23 @@ export const openrouterModels: ModelConfig[] = [
     releasedAt: '2025-04-01',
     icon: 'claude',
     apiSdk: (apiKey?: string, opts?: unknown) => {
-      return createOpenRouter({
+      const gateway = getGatewayConfig();
+      const baseConfig = {
         apiKey: apiKey || process.env.OPENROUTER_API_KEY,
         ...((opts as OpenRouterModelSettings)?.enableSearch && {
           extraBody: {
             plugins: [{ id: 'web', max_results: 3 }],
           },
         }),
-      }).chat('anthropic/claude-sonnet-4');
+      };
+      const config = gateway.enabled
+        ? {
+            ...baseConfig,
+            baseURL: `${gateway.baseURL}/openrouter`,
+            headers: { ...(baseConfig.headers || {}), ...gateway.headers },
+          }
+        : baseConfig;
+      return createOpenRouter(config).chat('anthropic/claude-sonnet-4');
     },
   },
   {

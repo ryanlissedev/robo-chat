@@ -148,6 +148,7 @@ export type Database = {
           user_id?: string | null;
           message_group_id: string | null;
           model: string | null;
+          langsmith_run_id: string | null;
         };
         Insert: {
           experimental_attachments?: Attachment[];
@@ -160,6 +161,7 @@ export type Database = {
           user_id?: string | null;
           message_group_id?: string | null;
           model?: string | null;
+          langsmith_run_id?: string | null;
         };
         Update: {
           experimental_attachments?: Attachment[];
@@ -172,6 +174,7 @@ export type Database = {
           user_id?: string | null;
           message_group_id?: string | null;
           model?: string | null;
+          langsmith_run_id?: string | null;
         };
         Relationships: [
           {

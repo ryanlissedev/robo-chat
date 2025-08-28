@@ -41,6 +41,9 @@ export interface ExtendedUIMessage extends UIMessage {
     text: string;
   }>;
 
+  // LangSmith run id (if available) to allow submitting feedback
+  langsmithRunId?: string | null;
+
   // v5 compatibility - add missing properties
   createdAt?: Date;
   updatedAt?: Date;

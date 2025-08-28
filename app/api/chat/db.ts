@@ -177,8 +177,15 @@ async function ensureChatExistsInDatabase(
 export async function storeAssistantMessage(
   params: StoreAssistantMessageParams
 ): Promise<void> {
-  const { supabase, chatId, messages, userId, message_group_id, model } =
-    params;
+  const {
+    supabase,
+    chatId,
+    messages,
+    userId,
+    message_group_id,
+    model,
+    langsmithRunId,
+  } = params;
   const processed = processMessages(messages);
 
   // Merge tool parts at the end
@@ -204,6 +211,7 @@ export async function storeAssistantMessage(
     parts: processed.parts as unknown as Json,
     message_group_id,
     model,
+    langsmith_run_id: langsmithRunId || null,
   } as never);
 
   if (error) {

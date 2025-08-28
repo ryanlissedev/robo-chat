@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { createFeedback as createLangSmithFeedback } from '@/lib/langsmith/client';
-import { validateUserIdentity } from '@/lib/server/api';
 
 function getFeedbackScore(feedback: string): number | undefined {
   if (feedback === 'upvote') {
@@ -15,9 +13,10 @@ function getFeedbackScore(feedback: string): number | undefined {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { messageId, feedback, comment, runId, userId } = body;
+    const { messageId, feedback, comment, runId } = body;
 
-    if (!messageId || feedback === undefined) {
+    // Allow LangSmith-only feedback without messageId if runId is present
+    if ((!messageId && !runId) || feedback === undefined) {
       return NextResponse.json(
         { error: 'Message ID and feedback are required' },
         { status: 400 }
@@ -32,53 +31,54 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get user authentication
-    const supabase = await validateUserIdentity(userId || '', true);
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'User authentication required' },
-        { status: 401 }
-      );
+    // Get user authentication from cookies/headers (optional for LangSmith-only feedback)
+    let supabase: any | null = null;
+    try {
+      const { createClient } = await import('@/lib/supabase/server');
+      supabase = await createClient();
+    } catch {
+      supabase = null;
     }
-
-    // Get the authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Failed to authenticate user' },
-        { status: 401 }
-      );
+    let user: { id: string } | null = null;
+    
+    if (supabase) {
+      try {
+        const result = await supabase.auth.getUser();
+        if (!result.error && result.data.user) {
+          user = { id: result.data.user.id };
+        }
+      } catch {
+        // Continue without user authentication if it fails
+      }
     }
 
     // Store feedback in Supabase
-    const { error: dbError } = await supabase.from('feedback').upsert({
-      message: `${feedback}${comment ? `: ${comment}` : ''}`, // Combine feedback and comment into message field
-      user_id: user.id,
-    } as never);
+    if (supabase && user?.id) {
+      const { error: dbError } = await supabase.from('feedback').upsert({
+        message: `${feedback}${comment ? `: ${comment}` : ''}`, // Combine feedback and comment into message field
+        user_id: user.id,
+      } as never);
 
-    if (dbError) {
-      return NextResponse.json(
-        { error: 'Failed to save feedback' },
-        { status: 500 }
-      );
+      if (dbError) {
+        // Don't block LangSmith feedback on DB errors
+      }
     }
 
     // Send to LangSmith if run ID is provided
     let langsmithResult: unknown = null;
     if (runId) {
       try {
-        langsmithResult = await createLangSmithFeedback({
+        const { createFeedback } = await import('@/lib/langsmith/client');
+        langsmithResult = await createFeedback({
           runId,
           feedback,
           score: getFeedbackScore(feedback),
           comment,
-          userId: user.id,
+          userId: user?.id,
         });
       } catch {
         // Silently handle LangSmith error
+        langsmithResult = null;
       }
     }
 
@@ -99,21 +99,29 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const messageId = searchParams.get('messageId');
-    const userId = searchParams.get('userId');
 
-    if (!(messageId && userId)) {
+    if (!messageId) {
       return NextResponse.json(
-        { error: 'Message ID and user ID are required' },
+        { error: 'Message ID is required' },
         { status: 400 }
       );
     }
 
-    // Validate user
-    const supabase = await validateUserIdentity(userId, true);
+    // Get user authentication from cookies/headers
+    let supabase: any | null = null;
+    try {
+      const { createClient } = await import('@/lib/supabase/server');
+      supabase = await createClient();
+    } catch {
+      return NextResponse.json(
+        { error: 'Database connection failed' },
+        { status: 500 }
+      );
+    }
     if (!supabase) {
       return NextResponse.json(
-        { error: 'User authentication required' },
-        { status: 401 }
+        { error: 'Database connection failed' },
+        { status: 500 }
       );
     }
 
@@ -124,7 +132,7 @@ export async function GET(req: Request) {
     } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json(
-        { error: 'Failed to authenticate user' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }

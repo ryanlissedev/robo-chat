@@ -45,7 +45,7 @@ export async function getMessagesFromDb(
   const { data, error } = await supabase
     .from('messages')
     .select(
-      'id, content, role, experimental_attachments, created_at, parts, message_group_id, model, chat_id'
+      'id, content, role, experimental_attachments, created_at, parts, message_group_id, model, chat_id, langsmith_run_id'
     )
     .eq('chat_id', chatId)
     .order('created_at', { ascending: true });
@@ -55,13 +55,18 @@ export async function getMessagesFromDb(
   }
 
   return data.map((message: DatabaseMessage): MessageFromDB => {
-    const { id, created_at, ...rest } = message;
+    const { id, created_at, ...rest } = message as DatabaseMessage & {
+      langsmith_run_id?: string | null;
+    };
     return {
       ...rest,
       id: String(id),
       content: message.content ?? '',
       createdAt: new Date(created_at || ''),
       parts: message.parts || null,
+      langsmith_run_id:
+        (message as unknown as { langsmith_run_id?: string | null })
+          .langsmith_run_id ?? null,
       message_group_id: message.message_group_id,
       model: message.model,
     };

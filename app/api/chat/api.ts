@@ -31,31 +31,29 @@ export async function validateAndTrackUsage({
     // For authenticated users, check API key requirements
     const provider = getProviderForModel(model);
 
-    if (provider !== 'ollama') {
-      const userApiKey = await getUserKey(
-        userId,
-        provider as ProviderWithoutOllama
-      );
+    // All providers now require API keys since Ollama was removed
+    const userApiKey = await getUserKey(
+      userId,
+      provider as ProviderWithoutOllama
+    );
 
-      // If no API key and model is not in free list, deny access
-      if (!(userApiKey || FREE_MODELS_IDS.includes(model))) {
-        throw new Error(
-          `This model requires an API key for ${provider}. Please add your API key in settings or use a free model.`
-        );
-      }
+    // If no API key and model is not in free list, deny access
+    if (!(userApiKey || FREE_MODELS_IDS.includes(model))) {
+      throw new Error(
+        `This model requires an API key for ${provider}. Please add your API key in settings or use a free model.`
+      );
     }
   } else {
     // For unauthenticated users
     const isFreeModel =
       FREE_MODELS_IDS.includes(model) ||
       NON_AUTH_ALLOWED_MODELS.includes(model);
-    const isOllamaModel = model.startsWith('ollama:');
+    // Ollama models no longer supported
 
     // Allow access if:
     // 1. It's a free model
-    // 2. It's an Ollama model
-    // 3. Guest has provided BYOK credentials
-    if (!isFreeModel && !isOllamaModel && !hasGuestCredentials) {
+    // 2. Guest has provided BYOK credentials
+    if (!isFreeModel && !hasGuestCredentials) {
       throw new Error(
         'This model requires authentication or an API key. Please sign in or provide your API key to access this model.'
       );
@@ -174,6 +172,7 @@ export async function storeAssistantMessage({
   userId,
   message_group_id,
   model,
+  langsmithRunId,
 }: StoreAssistantMessageParams): Promise<void> {
   if (!supabase) {
     return;
@@ -198,6 +197,7 @@ export async function storeAssistantMessage({
       userId,
       message_group_id,
       model,
+      langsmithRunId,
     });
   } catch {
     // Silently handle error to avoid breaking chat flow

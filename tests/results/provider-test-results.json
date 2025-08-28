@@ -1,0 +1,171 @@
+{
+  "summary": {
+    "openai": {
+      "configured": true,
+      "keyPrefix": "sk-EGhoP"
+    },
+    "anthropic": {
+      "configured": false,
+      "keyPrefix": null
+    },
+    "google": {
+      "configured": false,
+      "keyPrefix": null
+    },
+    "mistral": {
+      "configured": false,
+      "keyPrefix": null
+    },
+    "perplexity": {
+      "configured": false,
+      "keyPrefix": null
+    },
+    "xai": {
+      "configured": false,
+      "keyPrefix": null
+    }
+  },
+  "detailed": {
+    "openai": {
+      "configured": true,
+      "models": {
+        "gpt-5-mini": {
+          "initialization": {
+            "success": true,
+            "duration": 1,
+            "hasDoGenerate": true,
+            "hasDoStream": true
+          },
+          "generation": {
+            "success": true,
+            "duration": 3433,
+            "finishReason": "stop",
+            "promptTokens": 0,
+            "completionTokens": 0,
+            "totalTokens": 0,
+            "responseLength": 0,
+            "containsExpected": false
+          },
+          "streaming": {
+            "success": true,
+            "duration": 1770,
+            "chunks": 12,
+            "responseLength": 45,
+            "finishReason": "stop",
+            "promptTokens": 0,
+            "completionTokens": 0,
+            "containsNumbers": false
+          },
+          "errorHandling": {
+            "success": false,
+            "error": "Expected error for invalid parameters but none occurred"
+          },
+          "gateway": {
+            "directAccess": null,
+            "gatewayRouted": null
+          }
+        },
+        "gpt-5": {
+          "initialization": {
+            "success": true,
+            "duration": 1,
+            "hasDoGenerate": true,
+            "hasDoStream": true
+          },
+          "generation": {
+            "success": true,
+            "duration": 2143,
+            "finishReason": "stop",
+            "promptTokens": 0,
+            "completionTokens": 0,
+            "totalTokens": 0,
+            "responseLength": 0,
+            "containsExpected": false
+          },
+          "streaming": {
+            "success": true,
+            "duration": 1850,
+            "chunks": 12,
+            "responseLength": 45,
+            "finishReason": "stop",
+            "promptTokens": 0,
+            "completionTokens": 0,
+            "containsNumbers": false
+          },
+          "errorHandling": {
+            "success": false,
+            "error": "Expected error for invalid parameters but none occurred"
+          },
+          "gateway": {
+            "directAccess": null,
+            "gatewayRouted": null
+          }
+        }
+      },
+      "errors": [],
+      "performance": {
+        "totalTests": 8,
+        "successfulTests": 6,
+        "failedTests": 2
+      }
+    },
+    "anthropic": {
+      "configured": false,
+      "models": {},
+      "errors": [],
+      "performance": {
+        "totalTests": 0,
+        "successfulTests": 0,
+        "failedTests": 0
+      }
+    },
+    "google": {
+      "configured": false,
+      "models": {},
+      "errors": [],
+      "performance": {
+        "totalTests": 0,
+        "successfulTests": 0,
+        "failedTests": 0
+      }
+    },
+    "mistral": {
+      "configured": false,
+      "models": {},
+      "errors": [],
+      "performance": {
+        "totalTests": 0,
+        "successfulTests": 0,
+        "failedTests": 0
+      }
+    },
+    "perplexity": {
+      "configured": false,
+      "models": {},
+      "errors": [],
+      "performance": {
+        "totalTests": 0,
+        "successfulTests": 0,
+        "failedTests": 0
+      }
+    },
+    "xai": {
+      "configured": false,
+      "models": {},
+      "errors": [],
+      "performance": {
+        "totalTests": 0,
+        "successfulTests": 0,
+        "failedTests": 0
+      }
+    }
+  },
+  "errors": [],
+  "performance": {
+    "totalDuration": 18157
+  },
+  "gateway": {
+    "enabled": false,
+    "configured": false
+  }
+}

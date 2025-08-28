@@ -256,6 +256,13 @@ vi.mock('@radix-ui/react-tooltip', () => ({
     React.createElement('div', { ...filterDOMProps(props), ref }, children)
   ),
   Portal: ({ children }: any) => children,
+  Arrow: React.forwardRef(({ ...props }: any, ref: any) =>
+    React.createElement('span', {
+      ...filterDOMProps(props),
+      ref,
+      'data-testid': 'tooltip-arrow',
+    })
+  ),
 }));
 
 vi.mock('@radix-ui/react-accordion', () => ({
@@ -462,6 +469,14 @@ vi.mock('crypto', async (importOriginal) => {
 // Mock CSS imports to prevent "Unknown file extension" errors
 vi.mock('katex/dist/katex.min.css', () => ({}));
 vi.mock('tailwindcss/tailwind.css', () => ({}));
+
+// Mock streamdown which imports katex CSS
+vi.mock('streamdown', () => ({
+  Streamdown: ({ children, className }: any) => {
+    const React = require('react');
+    return React.createElement('div', { className }, children);
+  },
+}));
 
 // Mock Lucide React icons
 vi.mock('lucide-react', async (importOriginal) => {

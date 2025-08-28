@@ -481,15 +481,15 @@ describe('ModelSelector', () => {
 
     // Clear any remaining DOM state
     document.body.innerHTML = '';
-    
+
     // Clear any custom event listeners that might persist
     window.removeEventListener('guest-byok:open', () => {});
-    
+
     // Reset document focus
     if (document.activeElement && document.activeElement !== document.body) {
       (document.activeElement as HTMLElement).blur();
     }
-    
+
     // Force garbage collection of any React state
     if (typeof global.gc === 'function') {
       global.gc();
@@ -664,8 +664,10 @@ describe('ModelSelector', () => {
 
   it('should filter models by search query', async () => {
     // Store original implementation for cleanup
-    const originalImplementation = vi.mocked(modelStoreUtils.filterAndSortModels).getMockImplementation();
-    
+    const originalImplementation = vi
+      .mocked(modelStoreUtils.filterAndSortModels)
+      .getMockImplementation();
+
     // Override the provider mock to return models with GPT and Claude
     vi.mocked(modelStoreProvider.useModel).mockReturnValue({
       models: mockModels, // This includes GPT Model and Claude Model
@@ -717,10 +719,12 @@ describe('ModelSelector', () => {
       });
       expect(claudeModelButtons.length).toBe(0);
     });
-    
+
     // Restore original implementation to prevent test pollution
     if (originalImplementation) {
-      vi.mocked(modelStoreUtils.filterAndSortModels).mockImplementation(originalImplementation);
+      vi.mocked(modelStoreUtils.filterAndSortModels).mockImplementation(
+        originalImplementation
+      );
     } else {
       vi.mocked(modelStoreUtils.filterAndSortModels).mockRestore();
     }
@@ -731,7 +735,7 @@ describe('ModelSelector', () => {
 
     // Completely isolate this test by recreating all mocks
     vi.clearAllMocks();
-    
+
     // Ensure clean provider state for this test only
     vi.mocked(modelStoreProvider.useModel).mockReturnValue({
       models: [
@@ -754,7 +758,7 @@ describe('ModelSelector', () => {
             guestByokAvailable: false,
             userByokAvailable: false,
           },
-        }
+        },
       ],
       isLoading: false,
       isLoadingModels: false,

@@ -636,7 +636,16 @@ async function createLangSmithRun({
 }
 
 export async function POST(req: Request) {
-  // biome-ignore lint/complexity/noExcessiveComplexity: This handler coordinates validation, logging, retrieval, streaming, and persistence.
+  // Debug LangSmith configuration
+  console.log('[LangSmith Config]:', {
+    enabled: isLangSmithEnabled(),
+    apiKey: !!process.env.LANGSMITH_API_KEY,
+    project: process.env.LANGSMITH_PROJECT,
+    endpoint: process.env.LANGSMITH_ENDPOINT,
+    tracing: process.env.LANGSMITH_TRACING,
+    tracingV2: process.env.LANGSMITH_TRACING_V2,
+  });
+
   let requestData: ChatRequest | null = null;
   try {
     requestData = (await req.json()) as ChatRequest;
@@ -876,7 +885,6 @@ export async function POST(req: Request) {
               'Stream encountered an error'
             );
           },
-          // biome-ignore lint/complexity/noExcessiveComplexity: Logging and persistence steps are verbose by nature.
           onFinish: async ({ response }) => {
             // Same onFinish as below for logging and storage
             if (response.messages && response.messages.length > 0) {
@@ -1110,7 +1118,6 @@ export async function POST(req: Request) {
       // experimental_toolCallStreaming: true, // Removed - not supported in current AI SDK version
       // onToolCall not supported in current AI SDK version - tool calls are logged in onFinish
 
-      // biome-ignore lint/complexity/noExcessiveComplexity: Logging and persistence steps are verbose by nature.
       onFinish: async ({ response }) => {
         // Log tool results if any
         if (response.messages && response.messages.length > 0) {

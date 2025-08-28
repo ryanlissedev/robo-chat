@@ -51,7 +51,7 @@ export async function retrieveWithGpt41(
       streamText({
         model,
         system:
-          'You are a retrieval orchestrator. Call the fileSearch tool exactly once with the user query. Do not provide an answer. After the tool returns, stop.',
+          'You are a retrieval assistant. Use the fileSearch tool to find relevant documents for the user query. Return the search results to help answer their question.',
         messages: [
           {
             role: 'user',

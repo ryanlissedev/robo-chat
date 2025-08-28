@@ -69,6 +69,7 @@ export function Conversation({
                 id={message.id}
                 isLast={isLast}
                 key={message.id}
+                langsmithRunId={extendedMessage.langsmithRunId ?? null}
                 onDelete={onDelete}
                 onEdit={onEdit}
                 onQuote={onQuote}

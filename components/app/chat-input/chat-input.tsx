@@ -1,8 +1,7 @@
 'use client';
 
-import { ArrowUp, AudioWaveform, Square } from 'lucide-react';
+import { ArrowUp, Send, Square } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { VoiceButton } from '@/components/app/voice/button/voice-button';
 import { RealtimeAudioModal } from '@/components/audio/RealtimeAudioModal';
 import { ModelSelector } from '@/components/common/model-selector/base';
 import {
@@ -234,11 +233,6 @@ export function ChatInput({
                 model={selectedModel}
                 onFileUpload={onFileUpload}
               />
-              <VoiceButton
-                size="sm"
-                onTranscriptReady={handleVoiceTranscript}
-                disabled={isSubmitting}
-              />
               <ModelSelector
                 className="rounded-full"
                 selectedModelId={selectedModel}
@@ -292,7 +286,7 @@ export function ChatInput({
                     type="button"
                     variant="ghost"
                   >
-                    <AudioWaveform className="size-5" />
+                    <Send className="size-5" />
                   </Button>
                 </RealtimeAudioModal>
               )}

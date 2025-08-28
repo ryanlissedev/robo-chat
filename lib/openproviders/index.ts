@@ -4,15 +4,17 @@ import { createMistral, mistral } from '@ai-sdk/mistral';
 import { createOpenAI, openai } from '@ai-sdk/openai';
 import { createPerplexity, perplexity } from '@ai-sdk/perplexity';
 import { createXai, xai } from '@ai-sdk/xai';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 // Import the actual LanguageModel type from AI SDK v5
 import type { LanguageModel } from 'ai';
+import { getGatewayConfig } from './env';
 import { getProviderForModel } from './provider-map';
 import type {
   AnthropicModel,
   GeminiModel,
   MistralModel,
-  OllamaModel,
   OpenAIModel,
+  OpenRouterModel,
   PerplexityModel,
   SupportedModel,
   XaiModel,
@@ -21,28 +23,41 @@ import type {
 // Keep options loosely typed to avoid coupling to provider signatures
 export type OpenProvidersOptions = unknown;
 
-// Get Ollama base URL from environment or use default
-const getOllamaBaseURL = () => {
-  if (typeof window !== 'undefined') {
-    // Client-side: use localhost
-    return 'http://localhost:11434/v1';
+// Gateway configuration injection helper
+function injectGatewayConfig<T extends Record<string, unknown>>(
+  provider: string,
+  baseConfig: T
+): T {
+  const gateway = getGatewayConfig();
+  if (!gateway.enabled) {
+    return baseConfig;
   }
 
-  // Server-side: check environment variables
-  return (
-    `${process.env.OLLAMA_BASE_URL?.replace(/\/+$/, '')}/v1` ||
-    'http://localhost:11434/v1'
-  );
-};
+  // Map provider names to gateway endpoints
+  const gatewayEndpoints: Record<string, string> = {
+    openai: 'openai',
+    anthropic: 'anthropic',
+    mistral: 'mistral',
+    google: 'google',
+    perplexity: 'perplexity',
+    xai: 'xai',
+    openrouter: 'openrouter',
+  };
 
-// Create Ollama provider instance with configurable baseURL
-const createOllamaProvider = () => {
-  return createOpenAI({
-    baseURL: getOllamaBaseURL(),
-    apiKey: 'ollama', // Ollama doesn't require a real API key
-    name: 'ollama',
-  });
-};
+  const endpoint = gatewayEndpoints[provider];
+  if (!endpoint) {
+    return baseConfig;
+  }
+
+  return {
+    ...baseConfig,
+    baseURL: `${gateway.baseURL}/${endpoint}`,
+    headers: {
+      ...((baseConfig as any).headers || {}),
+      ...gateway.headers,
+    },
+  } as T;
+}
 
 export function openproviders<T extends SupportedModel>(
   modelId: T,
@@ -116,11 +131,13 @@ export function openproviders<T extends SupportedModel>(
     }
 
     if (apiKey) {
-      const openaiProvider = createOpenAI({
-        apiKey,
-        headers: customHeaders,
-        ...providerOptions,
-      });
+      const openaiProvider = createOpenAI(
+        injectGatewayConfig('openai', {
+          apiKey,
+          headers: customHeaders,
+          ...providerOptions,
+        })
+      );
       // Use openai.responses() for GPT-5 models as recommended in the cookbook
       return isGPT5Model
         ? openaiProvider.responses(modelId as OpenAIModel)
@@ -130,11 +147,13 @@ export function openproviders<T extends SupportedModel>(
     // For default OpenAI provider, use environment variable
     const envApiKey = process.env.OPENAI_API_KEY;
     if (envApiKey) {
-      const openaiProvider = createOpenAI({
-        apiKey: envApiKey,
-        headers: customHeaders,
-        ...providerOptions,
-      });
+      const openaiProvider = createOpenAI(
+        injectGatewayConfig('openai', {
+          apiKey: envApiKey,
+          headers: customHeaders,
+          ...providerOptions,
+        })
+      );
       // Use openai.responses() for GPT-5 models as recommended in the cookbook
       return isGPT5Model
         ? openaiProvider.responses(modelId as OpenAIModel)
@@ -144,7 +163,12 @@ export function openproviders<T extends SupportedModel>(
     // Fallback to default provider
     const enhancedOpenAI =
       customHeaders || Object.keys(providerOptions).length > 0
-        ? createOpenAI({ headers: customHeaders, ...providerOptions })
+        ? createOpenAI(
+            injectGatewayConfig('openai', {
+              headers: customHeaders,
+              ...providerOptions,
+            })
+          )
         : openai;
 
     // Use openai.responses() for GPT-5 models as recommended in the cookbook
@@ -155,7 +179,9 @@ export function openproviders<T extends SupportedModel>(
 
   if (provider === 'mistral') {
     if (apiKey) {
-      const mistralProvider = createMistral({ apiKey });
+      const mistralProvider = createMistral(
+        injectGatewayConfig('mistral', { apiKey })
+      );
       return mistralProvider(modelId as MistralModel);
     }
     return mistral(modelId as MistralModel);
@@ -163,7 +189,9 @@ export function openproviders<T extends SupportedModel>(
 
   if (provider === 'google') {
     if (apiKey) {
-      const googleProvider = createGoogleGenerativeAI({ apiKey });
+      const googleProvider = createGoogleGenerativeAI(
+        injectGatewayConfig('google', { apiKey })
+      );
       return googleProvider(modelId as GeminiModel);
     }
     return google(modelId as GeminiModel);
@@ -171,7 +199,9 @@ export function openproviders<T extends SupportedModel>(
 
   if (provider === 'perplexity') {
     if (apiKey) {
-      const perplexityProvider = createPerplexity({ apiKey });
+      const perplexityProvider = createPerplexity(
+        injectGatewayConfig('perplexity', { apiKey })
+      );
       return perplexityProvider(modelId as PerplexityModel);
     }
     return perplexity(modelId as PerplexityModel);
@@ -179,7 +209,9 @@ export function openproviders<T extends SupportedModel>(
 
   if (provider === 'anthropic') {
     if (apiKey) {
-      const anthropicProvider = createAnthropic({ apiKey });
+      const anthropicProvider = createAnthropic(
+        injectGatewayConfig('anthropic', { apiKey })
+      );
       return anthropicProvider(modelId as AnthropicModel);
     }
     return anthropic(modelId as AnthropicModel);
@@ -187,15 +219,40 @@ export function openproviders<T extends SupportedModel>(
 
   if (provider === 'xai') {
     if (apiKey) {
-      const xaiProvider = createXai({ apiKey });
+      const xaiProvider = createXai(injectGatewayConfig('xai', { apiKey }));
       return xaiProvider(modelId as XaiModel);
     }
     return xai(modelId as XaiModel);
   }
 
-  if (provider === 'ollama') {
-    const ollamaProvider = createOllamaProvider();
-    return ollamaProvider(modelId as OllamaModel);
+  if (provider === 'openrouter') {
+    // OpenRouter models use the format "openrouter:provider/model"
+    // Extract the actual model part after "openrouter:"
+    const actualModel = modelId.startsWith('openrouter:') 
+      ? modelId.slice('openrouter:'.length) 
+      : modelId;
+    
+    if (apiKey) {
+      const openrouterProvider = createOpenRouter(
+        injectGatewayConfig('openrouter', { apiKey })
+      );
+      return openrouterProvider.chat(actualModel);
+    }
+
+    // Use environment variable
+    const envApiKey = process.env.OPENROUTER_API_KEY;
+    if (envApiKey) {
+      const openrouterProvider = createOpenRouter(
+        injectGatewayConfig('openrouter', { apiKey: envApiKey })
+      );
+      return openrouterProvider.chat(actualModel);
+    }
+
+    // Fallback without API key (will likely fail for actual requests)
+    const openrouterProvider = createOpenRouter(
+      injectGatewayConfig('openrouter', {})
+    );
+    return openrouterProvider.chat(actualModel);
   }
 
   throw new Error(`Unsupported model: ${modelId}`);

@@ -47,7 +47,8 @@ export const langsmithClient = process.env.LANGSMITH_API_KEY
 // Check if LangSmith is enabled
 export const isLangSmithEnabled = () => {
   return !!(
-    process.env.LANGSMITH_API_KEY && process.env.LANGSMITH_TRACING === 'true'
+    process.env.LANGSMITH_API_KEY && 
+    (process.env.LANGSMITH_TRACING === 'true' || process.env.LANGSMITH_TRACING_V2 === 'true')
   );
 };
 
@@ -86,21 +87,31 @@ export async function createFeedback({
   userId,
 }: {
   runId: string;
-  feedback: 'upvote' | 'downvote';
+  feedback: 'upvote' | 'downvote' | null;
   score?: number;
   comment?: string;
   userId?: string;
 }) {
-  if (!(langsmithClient && isLangSmithEnabled())) {
+  // For feedback submission, only require a configured client (API key). Do not
+  // require tracing to be enabled globally.
+  if (!langsmithClient) {
     return null;
   }
 
   try {
-    const feedbackScore = score ?? (feedback === 'upvote' ? 1 : 0);
+    // Preserve provided score. If not provided, infer only for explicit up/down votes.
+    const inferredScore =
+      score !== undefined
+        ? score
+        : feedback === 'upvote'
+          ? 1
+          : feedback === 'downvote'
+            ? 0
+            : undefined;
 
     await langsmithClient.createFeedback(runId, 'user-feedback', {
-      score: feedbackScore,
-      value: feedback,
+      score: inferredScore,
+      value: feedback as unknown as string | null,
       comment,
       feedbackSourceType: 'api',
       sourceInfo: {
@@ -112,7 +123,7 @@ export async function createFeedback({
       success: true,
       runId,
       feedback,
-      score: feedbackScore,
+      score: inferredScore,
     };
   } catch (error) {
     return {
@@ -124,7 +135,8 @@ export async function createFeedback({
 
 // Get run details
 export async function getRunDetails(runId: string) {
-  if (!(langsmithClient && isLangSmithEnabled())) {
+  // Allow fetching run details if API key is configured
+  if (!langsmithClient) {
     return null;
   }
 
@@ -168,7 +180,7 @@ export async function logMetrics({
   runId: string;
   metrics: Record<string, unknown>;
 }) {
-  if (!(langsmithClient && isLangSmithEnabled())) {
+  if (!langsmithClient) {
     return;
   }
 
@@ -191,7 +203,7 @@ export async function createRun({
   metadata?: Record<string, unknown>;
   parentRunId?: string;
 }) {
-  if (!(langsmithClient && isLangSmithEnabled())) {
+  if (!langsmithClient) {
     return null;
   }
 
@@ -223,7 +235,7 @@ export async function updateRun({
   error?: string;
   endTime?: Date;
 }) {
-  if (!(langsmithClient && isLangSmithEnabled())) {
+  if (!langsmithClient) {
     return;
   }
 
