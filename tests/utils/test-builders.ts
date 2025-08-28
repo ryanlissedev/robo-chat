@@ -51,16 +51,24 @@ export class UserBuilder extends BaseBuilder<User> {
     this.data = {
       id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       email: 'test@example.com',
+      // biome-ignore lint/style/useNamingConvention: Supabase auth schema uses snake_case
       created_at: new Date().toISOString(),
+      // biome-ignore lint/style/useNamingConvention: Supabase auth schema uses snake_case
       updated_at: new Date().toISOString(),
+      // biome-ignore lint/style/useNamingConvention: Supabase auth schema uses snake_case
       email_confirmed_at: new Date().toISOString(),
+      // biome-ignore lint/style/useNamingConvention: Supabase auth schema uses snake_case
       last_sign_in_at: new Date().toISOString(),
       aud: 'authenticated',
       role: 'authenticated',
+      // biome-ignore lint/style/useNamingConvention: Supabase auth schema uses snake_case
       app_metadata: {},
+      // biome-ignore lint/style/useNamingConvention: Supabase auth schema uses snake_case
       user_metadata: {},
       phone: undefined,
+      // biome-ignore lint/style/useNamingConvention: Supabase auth schema uses snake_case
       confirmed_at: new Date().toISOString(),
+      // biome-ignore lint/style/useNamingConvention: Supabase auth schema uses snake_case
       recovery_sent_at: undefined,
     };
     return this;
@@ -159,6 +167,7 @@ export class SessionBuilder extends BaseBuilder<Session> {
   private withDefaults(): this {
     const now = Math.floor(Date.now() / 1000);
     this.data = {
+      // biome-ignore lint/style/useNamingConvention: JWT token standard uses snake_case
       access_token: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${Buffer.from(
         JSON.stringify({
           sub: 'user_123',
@@ -167,9 +176,13 @@ export class SessionBuilder extends BaseBuilder<Session> {
           iat: now,
         })
       ).toString('base64')}.signature`,
+      // biome-ignore lint/style/useNamingConvention: OAuth standard uses snake_case
       token_type: 'bearer',
+      // biome-ignore lint/style/useNamingConvention: OAuth standard uses snake_case
       expires_in: 3600,
+      // biome-ignore lint/style/useNamingConvention: OAuth standard uses snake_case
       expires_at: now + 3600,
+      // biome-ignore lint/style/useNamingConvention: OAuth standard uses snake_case
       refresh_token: `refresh_${Math.random().toString(36).substr(2, 32)}`,
       user: UserBuilder.create().build(),
     };

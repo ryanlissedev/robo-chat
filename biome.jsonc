@@ -52,7 +52,7 @@
     },
     {
       "includes": [
-        "app/types/database.types.ts", 
+        "app/types/database.types.ts",
         "app/api/**/*",
         "lib/chat-store/**/*",
         "lib/user/**/*",
@@ -85,7 +85,7 @@
     },
     {
       "includes": [
-        "app/types/ai-extended.ts", 
+        "app/types/ai-extended.ts",
         "app/types/api.types.ts",
         "app/auth/callback/route.ts",
         "app/p/\\[projectId\\]/project-view.tsx",

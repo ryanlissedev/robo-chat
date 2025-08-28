@@ -273,7 +273,10 @@ const ToolInvocationCard = memo(function ToolInvocationCard({
 
   return (
     <AITool key={tp.toolCallId}>
-      <AIToolHeader state={tp.state} type={tp.type} />
+      <AIToolHeader
+        state={tp.state || 'input-available'}
+        type={`tool-${tp.toolCallId}` as `tool-${string}`}
+      />
       <AIToolContent>
         {tp.input ? <AIToolInput input={tp.input} /> : null}
         {tp.output ? (

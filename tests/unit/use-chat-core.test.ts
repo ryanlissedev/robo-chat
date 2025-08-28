@@ -186,6 +186,8 @@ describe('useChatCore', () => {
         handleInputChange: mockHandleInputChange,
         handleSubmit: mockHandleSubmit,
         isLoading: false,
+        data: undefined,
+        metadata: undefined,
       };
       return mockResult;
     });
@@ -271,6 +273,86 @@ describe('useChatCore', () => {
 
       // Restore requestAnimationFrame
       global.requestAnimationFrame = originalRAF;
+    });
+  });
+
+  // Debug test to isolate rendering issue
+  describe('Debug tests', () => {
+    it('should render hook without errors in minimal case', () => {
+      const minimalProps = {
+        initialMessages: [],
+        draftValue: '',
+        cacheAndAddMessage: vi.fn(),
+        chatId: null,
+        user: null,
+        files: [],
+        createOptimisticAttachments: vi.fn(),
+        setFiles: vi.fn(),
+        checkLimitsAndNotify: vi.fn(),
+        cleanupOptimisticAttachments: vi.fn(),
+        ensureChatExists: vi.fn(),
+        handleFileUploads: vi.fn(),
+        selectedModel: 'test-model',
+        clearDraft: vi.fn(),
+        bumpChat: vi.fn(),
+      };
+
+      const { result } = renderHook(() => {
+        try {
+          return useChatCore(minimalProps);
+        } catch (error) {
+          console.error('Hook render error:', error);
+          throw error;
+        }
+      });
+
+      expect(result.current).not.toBeNull();
+      expect(typeof result.current).toBe('object');
+      expect(result.current.isSubmitting).toBeDefined();
+    });
+
+    it('should render hook with draft value', () => {
+      const props = createFreshProps();
+      props.draftValue = 'Test message';
+      props.user = mockUserProfile;
+
+      const { result } = renderHook(() => {
+        try {
+          return useChatCore(props);
+        } catch (error) {
+          console.error('Hook render error with draft:', error);
+          throw error;
+        }
+      });
+
+      expect(result.current).not.toBeNull();
+      expect(result.current.input).toBe('Test message');
+    });
+
+    it('should render hook with files', () => {
+      const props = createFreshProps();
+      props.draftValue = 'Test message';
+      props.user = mockUserProfile;
+      props.files = [createMockFile()];
+      props.createOptimisticAttachments.mockReturnValue([
+        {
+          name: 'test.txt',
+          contentType: 'text/plain',
+          url: 'mock-url',
+        },
+      ]);
+
+      const { result } = renderHook(() => {
+        try {
+          return useChatCore(props);
+        } catch (error) {
+          console.error('Hook render error with files:', error);
+          throw error;
+        }
+      });
+
+      expect(result.current).not.toBeNull();
+      expect(result.current.input).toBe('Test message');
     });
   });
 
@@ -427,7 +509,14 @@ describe('useChatCore', () => {
       // Mock sendMessage to resolve successfully
       mockSendMessage.mockResolvedValue(undefined);
 
-      const { result } = renderHook(() => useChatCore(props));
+      const { result } = renderHook(() => {
+        try {
+          return useChatCore(props);
+        } catch (error) {
+          console.error('Hook render failed:', error);
+          throw error;
+        }
+      });
 
       // Ensure hook is properly initialized
       expect(result.current).not.toBeNull();
@@ -773,9 +862,22 @@ describe('useChatCore', () => {
         draftValue: 'Test message',
       });
 
-      const { result } = renderHook(() => useChatCore(props));
+      let hookResult;
+      try {
+        hookResult = renderHook(() => useChatCore(props));
+      } catch (error) {
+        console.error('Hook render failed:', error);
+        throw error;
+      }
+
+      const { result } = hookResult;
 
       // Ensure hook is properly initialized
+      if (result.current === null || result.current === undefined) {
+        console.error('Hook result is null/undefined');
+        console.error('Props passed:', JSON.stringify(props, null, 2));
+        throw new Error('Hook failed to initialize properly');
+      }
       expect(result.current).not.toBeNull();
       expect(result.current.input).toBe('Test message');
 
