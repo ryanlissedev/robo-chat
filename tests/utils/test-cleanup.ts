@@ -135,7 +135,9 @@ class TestCleanupManager {
 
   cleanupAll(): void {
     const testIds = Array.from(this.trackers.keys());
-    testIds.forEach((testId) => this.cleanup(testId));
+    testIds.forEach((testId) => {
+      this.cleanup(testId);
+    });
   }
 }
 
@@ -241,6 +243,7 @@ export async function withCleanup<T>(
 /**
  * Performance monitoring utilities
  */
+// biome-ignore lint/complexity/noStaticOnlyClass: Utility class with static methods for performance monitoring
 export class PerformanceMonitor {
   private static timers = new Map<string, number>();
   private static memory = new Map<string, number>();
