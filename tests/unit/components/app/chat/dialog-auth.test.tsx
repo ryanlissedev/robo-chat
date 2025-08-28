@@ -1,4 +1,4 @@
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DialogAuth } from '@/components/app/chat/dialog-auth';
@@ -57,11 +57,11 @@ describe('DialogAuth', () => {
   beforeEach(() => {
     mockLocation.href = '';
     vi.clearAllMocks();
-    
+
     // Setup default mock implementations
     const mockIsSupabaseEnabled = vi.mocked(supabaseConfig.isSupabaseEnabled);
     const mockCreateClient = vi.mocked(supabaseClient.createClient);
-    
+
     mockIsSupabaseEnabled.mockReturnValue(true);
     mockCreateClient.mockReturnValue(mockSupabaseClient as any);
   });
@@ -71,14 +71,20 @@ describe('DialogAuth', () => {
       renderDialogAuth();
 
       expect(screen.getByRole('dialog')).toBeInTheDocument();
-      expect(screen.getByText("You've reached the limit for today")).toBeInTheDocument();
-      expect(screen.getByText('Sign in below to increase your message limits.')).toBeInTheDocument();
+      expect(
+        screen.getByText("You've reached the limit for today")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('Sign in below to increase your message limits.')
+      ).toBeInTheDocument();
     });
 
     it('should render Google sign-in button', () => {
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       expect(button).toBeInTheDocument();
       expect(button).not.toBeDisabled();
     });
@@ -140,7 +146,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       await user.click(button);
 
       await waitFor(() => {
@@ -157,7 +165,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       await user.click(button);
 
       await waitFor(() => {
@@ -173,7 +183,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       await user.click(button);
 
       await waitFor(() => {
@@ -186,7 +198,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       await user.click(button);
 
       await waitFor(() => {
@@ -209,7 +223,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       await user.click(button);
 
       await waitFor(() => {
@@ -231,7 +247,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       await act(async () => {
         await user.click(button);
       });
@@ -247,7 +265,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       await act(async () => {
         await user.click(button);
       });
@@ -265,7 +285,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       await act(async () => {
         await user.click(button);
       });
@@ -278,12 +300,16 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       await act(async () => {
         await user.click(button);
       });
 
-      expect(screen.getByText('An unexpected error occurred. Please try again.')).toBeInTheDocument();
+      expect(
+        screen.getByText('An unexpected error occurred. Please try again.')
+      ).toBeInTheDocument();
     });
 
     it('should apply error styling to error message', async () => {
@@ -293,7 +319,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       await act(async () => {
         await user.click(button);
       });
@@ -311,7 +339,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       await act(async () => {
         await user.click(button);
       });
@@ -337,7 +367,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       await act(async () => {
         await user.click(button);
       });
@@ -361,7 +393,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
 
       // Click multiple times rapidly - use single act() to avoid overlapping
       await act(async () => {
@@ -377,7 +411,7 @@ describe('DialogAuth', () => {
       // Resolve the promise to clean up
       await act(async () => {
         resolveSignIn({ provider: 'google', url: 'test' });
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
       });
     });
 
@@ -389,7 +423,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
 
       // First attempt
       await act(async () => {
@@ -412,15 +448,23 @@ describe('DialogAuth', () => {
       renderDialogAuth();
 
       expect(screen.getByRole('dialog')).toBeInTheDocument();
-      expect(screen.getByText("You've reached the limit for today")).toBeInTheDocument();
-      expect(screen.getByText('Sign in below to increase your message limits.')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /continue with google/i })).toBeInTheDocument();
+      expect(
+        screen.getByText("You've reached the limit for today")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('Sign in below to increase your message limits.')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /continue with google/i })
+      ).toBeInTheDocument();
     });
 
     it('should have accessible button text', () => {
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       expect(button).toBeInTheDocument();
     });
 
@@ -443,7 +487,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i }) as HTMLButtonElement;
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      }) as HTMLButtonElement;
       button.focus();
       expect(document.activeElement).toBe(button);
 
@@ -462,7 +508,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       expect(() => user.click(button)).not.toThrow();
     });
 
@@ -471,12 +519,16 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       await act(async () => {
         await user.click(button);
       });
 
-      expect(screen.getByText('An unexpected error occurred. Please try again.')).toBeInTheDocument();
+      expect(
+        screen.getByText('An unexpected error occurred. Please try again.')
+      ).toBeInTheDocument();
     });
 
     it('should handle very long error messages', async () => {
@@ -485,7 +537,9 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', { name: /continue with google/i });
+      const button = screen.getByRole('button', {
+        name: /continue with google/i,
+      });
       await act(async () => {
         await user.click(button);
       });

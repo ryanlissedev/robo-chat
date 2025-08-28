@@ -1,7 +1,7 @@
 import userEvent from '@testing-library/user-event';
 import type React from 'react';
+import { useMemo } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, waitFor } from '@/tests/test-utils';
 
 // Mock streamdown (which pulls in katex CSS) BEFORE importing MessageAssistant
 vi.mock('streamdown', () => ({
@@ -72,7 +72,9 @@ vi.mock('@/lib/user-preference-store/provider', () => ({
       multiModelEnabled: false,
     },
   }),
-  UserPreferencesProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  UserPreferencesProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }));
 
 // Helpers to build a tool part for fileSearch failure
@@ -112,11 +114,11 @@ describe('MessageAssistant toast on fileSearch failure', () => {
   });
 
   it('shows error toast with Retry button and triggers onReload when clicked', async () => {
-    const user = userEvent.setup({ delay: null });
+    const _user = userEvent.setup({ delay: null });
     const onReload = vi.fn();
 
     const globalState = (global as any).__toastMockState;
-    
+
     // Reset state for clean test
     globalState.lastToastOptions = undefined;
 
@@ -150,14 +152,14 @@ describe('MessageAssistant toast on fileSearch failure', () => {
 
     // Verify onReload was called
     expect(onReload).toHaveBeenCalledTimes(1);
-    
+
     // Clean up this component instance
     unmount();
   });
 
   it('shows error toast without button if no onReload provided', async () => {
     const globalState = (global as any).__toastMockState;
-    
+
     // Reset state for clean test
     globalState.lastToastOptions = undefined;
 
@@ -198,10 +200,10 @@ describe('MessageAssistant toast on fileSearch failure', () => {
     // Toast is called synchronously after render - no need for waitFor
     expect(globalState.lastToastOptions).toBeDefined();
     expect(globalState.lastToastOptions.title).toBe('File search failed');
-    
+
     // Check that no button was provided since onReload is missing
     expect(globalState.lastToastOptions.button).toBeUndefined();
-    
+
     // Clean up this component instance
     unmount();
   });

@@ -13,8 +13,11 @@ const LayoutSidebar = (props: SVGProps<SVGSVGElement>) => {
       viewBox="0 0 1028 578"
       width={1028}
       xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Sidebar Layout"
       {...props}
     >
+      <title>Sidebar Layout</title>
       <g clipPath="url(#layout-sidebar)">
         {/* Main background */}
         <path d="M0 0h1028v578H0z" strokeWidth={1} />

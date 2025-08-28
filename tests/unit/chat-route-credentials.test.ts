@@ -200,7 +200,7 @@ describe('Chat Route - Credential Resolution Through API', () => {
   let mockGetEffectiveApiKey: Mock;
   let mockLoggerInfo: Mock;
   let mockGetProviderForModel: Mock;
-  let POST: Mock;
+  let Post: Mock;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -210,7 +210,7 @@ describe('Chat Route - Credential Resolution Through API', () => {
     mockLoggerInfo = logger.info as Mock;
     mockGetProviderForModel = getProviderForModel as Mock;
     mockGetProviderForModel.mockReturnValue('openai');
-    POST = createMockPOST();
+    Post = createMockPOST();
   });
 
   const createRequest = (
@@ -254,7 +254,7 @@ describe('Chat Route - Credential Resolution Through API', () => {
         }
       );
 
-      const response = await POST(request);
+      const response = await Post(request);
 
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
@@ -285,7 +285,7 @@ describe('Chat Route - Credential Resolution Through API', () => {
         enableSearch: false,
       });
 
-      const response = await POST(request);
+      const response = await Post(request);
 
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
@@ -323,7 +323,7 @@ describe('Chat Route - Credential Resolution Through API', () => {
         }
       );
 
-      const response = await POST(request);
+      const response = await Post(request);
 
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
@@ -360,7 +360,7 @@ describe('Chat Route - Credential Resolution Through API', () => {
         }
       );
 
-      const response = await POST(request);
+      const response = await Post(request);
 
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
@@ -473,7 +473,7 @@ describe('Chat Route - Credential Resolution Through API', () => {
         }
       );
 
-      const response = await POST(request);
+      const response = await Post(request);
 
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
@@ -514,7 +514,7 @@ describe('Chat Route - Credential Resolution Through API', () => {
         }
       );
 
-      const response = await POST(request);
+      const response = await Post(request);
 
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
@@ -548,7 +548,7 @@ describe('Chat Route - Credential Resolution Through API', () => {
         enableSearch: false,
       });
 
-      const response = await POST(request);
+      const response = await Post(request);
 
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
@@ -591,7 +591,7 @@ describe('Chat Route - Credential Resolution Through API', () => {
         }
       );
 
-      const response = await POST(request);
+      const response = await Post(request);
 
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
@@ -629,7 +629,7 @@ describe('Chat Route - Credential Resolution Through API', () => {
         }
       );
 
-      const response = await POST(request);
+      const response = await Post(request);
 
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
@@ -669,7 +669,7 @@ describe('Chat Route - Credential Resolution Through API', () => {
         }
       );
 
-      await POST(request);
+      await Post(request);
 
       // Check all logger calls to ensure no actual API key is logged
       const allLoggerCalls = mockLoggerInfo.mock.calls;

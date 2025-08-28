@@ -8,12 +8,14 @@ describe('storeAssistantMessage - TDD London School', () => {
   let mockSupabase: SupabaseClient<Database>;
 
   // Helper function to create a fresh Supabase mock
-  function createSupabaseMock(config: {
-    chatExists?: boolean;
-    chatCreateSuccess?: boolean;
-    messageInsertSuccess?: boolean;
-    messageInsertError?: string;
-  } = {}) {
+  function createSupabaseMock(
+    config: {
+      chatExists?: boolean;
+      chatCreateSuccess?: boolean;
+      messageInsertSuccess?: boolean;
+      messageInsertError?: string;
+    } = {}
+  ) {
     const {
       chatExists = true,
       chatCreateSuccess = true,
@@ -36,10 +38,10 @@ describe('storeAssistantMessage - TDD London School', () => {
 
     const mockMessageInsert = vi.fn().mockResolvedValue({
       data: messageInsertSuccess ? [{ id: 'test-message-id' }] : null,
-      error: messageInsertError 
+      error: messageInsertError
         ? { message: messageInsertError }
-        : messageInsertSuccess 
-          ? null 
+        : messageInsertSuccess
+          ? null
           : { message: 'Message insert failed' },
     });
 
@@ -69,6 +71,7 @@ describe('storeAssistantMessage - TDD London School', () => {
   beforeEach(() => {
     // Create a default successful mock
     mockSupabase = createSupabaseMock();
+    vi.clearAllMocks();
   });
 
   describe('when processing assistant messages with text content', () => {
@@ -85,17 +88,26 @@ describe('storeAssistantMessage - TDD London School', () => {
         },
       ];
 
+      // Create a fresh mock that explicitly succeeds
+      const successMock = createSupabaseMock({
+        chatExists: true,
+        messageInsertSuccess: true,
+      });
+
       // Act
       await storeAssistantMessage({
-        supabase: mockSupabase,
+        supabase: successMock,
         chatId,
         messages,
+        userId: 'test-user-id', // Provide userId to ensure chat creation can succeed
       });
 
       // Assert - Verify behavior (interactions)
-      expect(mockSupabase.mocks.from).toHaveBeenCalledWith('chats');
+      expect(successMock.mocks.from).toHaveBeenCalledWith('chats');
+      expect(successMock.mocks.single).toHaveBeenCalled();
+      expect(successMock.mocks.from).toHaveBeenCalledWith('messages');
       // Note: messages table call happens only when chat exists, which should be the case
-      expect(mockSupabase.mocks.messageInsert).toHaveBeenCalledWith({
+      expect(successMock.mocks.messageInsert).toHaveBeenCalledWith({
         chat_id: chatId,
         role: 'assistant',
         content: 'Hello world\n\nHow are you?',
@@ -141,16 +153,24 @@ describe('storeAssistantMessage - TDD London School', () => {
         },
       ];
 
+      // Create a fresh mock that explicitly succeeds
+      const successMock = createSupabaseMock({
+        chatExists: true,
+        messageInsertSuccess: true,
+      });
+
       // Act
       await storeAssistantMessage({
-        supabase: mockSupabase,
+        supabase: successMock,
         chatId: 'chat-id',
         messages,
+        userId: 'test-user-id', // Provide userId to ensure chat creation can succeed
       });
 
       // Assert - Focus on collaborations
-      expect(mockSupabase.mocks.from).toHaveBeenCalledWith('chats');
-      expect(mockSupabase.mocks.messageInsert).toHaveBeenCalledWith(
+      expect(successMock.mocks.from).toHaveBeenCalledWith('chats');
+      expect(successMock.mocks.from).toHaveBeenCalledWith('messages');
+      expect(successMock.mocks.messageInsert).toHaveBeenCalledWith(
         expect.objectContaining({
           parts: expect.arrayContaining([
             expect.objectContaining({
@@ -178,16 +198,24 @@ describe('storeAssistantMessage - TDD London School', () => {
         },
       ];
 
+      // Create a fresh mock that explicitly succeeds
+      const successMock = createSupabaseMock({
+        chatExists: true,
+        messageInsertSuccess: true,
+      });
+
       // Act
       await storeAssistantMessage({
-        supabase: mockSupabase,
+        supabase: successMock,
         chatId: 'chat-id',
         messages,
+        userId: 'test-user-id', // Provide userId to ensure chat creation can succeed
       });
 
       // Assert
-      expect(mockSupabase.mocks.from).toHaveBeenCalledWith('chats');
-      expect(mockSupabase.mocks.messageInsert).toHaveBeenCalledWith(
+      expect(successMock.mocks.from).toHaveBeenCalledWith('chats');
+      expect(successMock.mocks.from).toHaveBeenCalledWith('messages');
+      expect(successMock.mocks.messageInsert).toHaveBeenCalledWith(
         expect.objectContaining({
           parts: expect.arrayContaining([
             {

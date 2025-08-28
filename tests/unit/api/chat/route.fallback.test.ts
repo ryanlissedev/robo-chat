@@ -1,27 +1,85 @@
 /**
  * @vitest-environment happy-dom
- * 
+ *
  * Simplified API Route Tests - Focus on successful execution rather than implementation details
  */
 import { describe, expect, it, vi } from 'vitest';
 
 // Mock all external dependencies to ensure tests run successfully
-vi.mock('@/lib/encryption', () => ({ encrypt: vi.fn(), decrypt: vi.fn(), encryptKey: vi.fn(), decryptKey: vi.fn() }));
-vi.mock('@/lib/user-keys', () => ({ getUserKey: vi.fn(() => Promise.resolve(null)) }));
-vi.mock('@/lib/langsmith/client', () => ({ createRun: vi.fn(), extractRunId: vi.fn(), isLangSmithEnabled: () => false, logMetrics: vi.fn(), updateRun: vi.fn() }));
-vi.mock('@/app/api/chat/api', () => ({ incrementMessageCount: vi.fn(), logUserMessage: vi.fn(), storeAssistantMessage: vi.fn(), validateAndTrackUsage: vi.fn(() => ({})) }));
-vi.mock('@/app/api/chat/utils', () => ({ createErrorResponse: (m: string, s = 400) => new Response(m, { status: s }) }));
-vi.mock('@/lib/utils/logger', () => ({ default: { info: vi.fn(), error: vi.fn(), warn: vi.fn() } }));
-vi.mock('@/lib/utils/redaction', () => ({ redactSensitiveHeaders: (h: any) => h, sanitizeLogEntry: (o: any) => o }));
-vi.mock('@/lib/utils/metrics', () => ({ trackCredentialUsage: vi.fn(), trackCredentialError: vi.fn() }));
-vi.mock('@/lib/models', () => ({ getAllModels: async () => [{ id: 'test-model', apiSdk: () => vi.fn(), reasoningText: false, fileSearchTools: false }] }));
-vi.mock('@/lib/openproviders/provider-map', () => ({ getProviderForModel: () => 'openai' }));
-vi.mock('@/lib/config', () => ({ FILE_SEARCH_SYSTEM_PROMPT: 'Base system', RETRIEVAL_MAX_TOKENS: 2000, RETRIEVAL_TOP_K: 5, RETRIEVAL_TWO_PASS_ENABLED: false, SYSTEM_PROMPT_DEFAULT: 'Default' }));
-vi.mock('@/lib/retrieval/vector-retrieval', () => ({ performVectorRetrieval: vi.fn(async () => []) }));
-vi.mock('@/lib/retrieval/augment', () => ({ buildAugmentedSystemPrompt: vi.fn((base) => base) }));
-vi.mock('@/lib/retrieval/gating', () => ({ selectRetrievalMode: () => 'vector', shouldEnableFileSearchTools: () => false, shouldUseFallbackRetrieval: () => false }));
+vi.mock('@/lib/encryption', () => ({
+  encrypt: vi.fn(),
+  decrypt: vi.fn(),
+  encryptKey: vi.fn(),
+  decryptKey: vi.fn(),
+}));
+vi.mock('@/lib/user-keys', () => ({
+  getUserKey: vi.fn(() => Promise.resolve(null)),
+}));
+vi.mock('@/lib/langsmith/client', () => ({
+  createRun: vi.fn(),
+  extractRunId: vi.fn(),
+  isLangSmithEnabled: () => false,
+  logMetrics: vi.fn(),
+  updateRun: vi.fn(),
+}));
+vi.mock('@/app/api/chat/api', () => ({
+  incrementMessageCount: vi.fn(),
+  logUserMessage: vi.fn(),
+  storeAssistantMessage: vi.fn(),
+  validateAndTrackUsage: vi.fn(() => ({})),
+}));
+vi.mock('@/app/api/chat/utils', () => ({
+  createErrorResponse: (m: string, s = 400) => new Response(m, { status: s }),
+}));
+vi.mock('@/lib/utils/logger', () => ({
+  default: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
+}));
+vi.mock('@/lib/utils/redaction', () => ({
+  redactSensitiveHeaders: (h: any) => h,
+  sanitizeLogEntry: (o: any) => o,
+}));
+vi.mock('@/lib/utils/metrics', () => ({
+  trackCredentialUsage: vi.fn(),
+  trackCredentialError: vi.fn(),
+}));
+vi.mock('@/lib/models', () => ({
+  getAllModels: async () => [
+    {
+      id: 'test-model',
+      apiSdk: () => vi.fn(),
+      reasoningText: false,
+      fileSearchTools: false,
+    },
+  ],
+}));
+vi.mock('@/lib/openproviders/provider-map', () => ({
+  getProviderForModel: () => 'openai',
+}));
+vi.mock('@/lib/config', () => ({
+  FILE_SEARCH_SYSTEM_PROMPT: 'Base system',
+  RETRIEVAL_MAX_TOKENS: 2000,
+  RETRIEVAL_TOP_K: 5,
+  RETRIEVAL_TWO_PASS_ENABLED: false,
+  SYSTEM_PROMPT_DEFAULT: 'Default',
+}));
+vi.mock('@/lib/retrieval/vector-retrieval', () => ({
+  performVectorRetrieval: vi.fn(async () => []),
+}));
+vi.mock('@/lib/retrieval/augment', () => ({
+  buildAugmentedSystemPrompt: vi.fn((base) => base),
+}));
+vi.mock('@/lib/retrieval/gating', () => ({
+  selectRetrievalMode: () => 'vector',
+  shouldEnableFileSearchTools: () => false,
+  shouldUseFallbackRetrieval: () => false,
+}));
 vi.mock('@/lib/tools/file-search', () => ({ fileSearchTool: {} }));
-vi.mock('ai', () => ({ streamText: vi.fn(() => ({ toUIMessageStreamResponse: () => new Response('stream', { status: 200 }) })), convertToModelMessages: vi.fn(() => [{ role: 'user', content: 'test' }]) }));
+vi.mock('ai', () => ({
+  streamText: vi.fn(() => ({
+    toUIMessageStreamResponse: () => new Response('stream', { status: 200 }),
+  })),
+  convertToModelMessages: vi.fn(() => [{ role: 'user', content: 'test' }]),
+}));
 
 import { POST } from '@/app/api/chat/route';
 
@@ -46,7 +104,7 @@ describe('API Chat Route - Fallback Behavior', () => {
     const req = makeRequest({
       messages: [{ role: 'user', content: 'Hello' }],
       chatId: 'test-chat',
-      userId: 'test-user', 
+      userId: 'test-user',
       model: 'test-model',
       isAuthenticated: false,
       systemPrompt: 'Test system',
@@ -62,7 +120,7 @@ describe('API Chat Route - Fallback Behavior', () => {
       messages: [{ role: 'user', content: 'Search query' }],
       chatId: 'test-chat',
       userId: 'test-user',
-      model: 'test-model', 
+      model: 'test-model',
       isAuthenticated: false,
       systemPrompt: 'Test system',
       enableSearch: true,

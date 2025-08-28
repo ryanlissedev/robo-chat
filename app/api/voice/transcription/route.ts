@@ -107,9 +107,8 @@ export async function GET(request: NextRequest) {
     const sessionId = searchParams.get('sessionId');
     const includeInterim = searchParams.get('includeInterim') === 'true';
     const limit = parseInt(searchParams.get('limit') || '50', 10);
-    const since = searchParams.get('since')
-      ? parseInt(searchParams.get('since')!, 10)
-      : 0;
+    const sinceParam = searchParams.get('since');
+    const since = sinceParam ? parseInt(sinceParam, 10) : 0;
 
     if (!sessionId) {
       return NextResponse.json(

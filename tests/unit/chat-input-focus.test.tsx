@@ -1,13 +1,26 @@
 import { act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type React from 'react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 // Mock the ReasoningEffortSelector to a simple stub for this focus test
 vi.mock('@/components/app/chat/reasoning-effort-selector', () => ({
-  ReasoningEffortSelector: ({ children, ...props }: any) => {
+  ReasoningEffortSelector: ({
+    children,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    onReasoningEffortChange?: unknown;
+    reasoningEffort?: unknown;
+    [key: string]: unknown;
+  }) => {
     // Filter out component-specific props that shouldn't be passed to DOM
-    const { onReasoningEffortChange, reasoningEffort, ...domProps } = props;
+    const {
+      onReasoningEffortChange: _,
+      reasoningEffort: __,
+      ...domProps
+    } = props;
     return (
       <div data-testid="reasoning-effort-selector" {...domProps}>
         {children}
@@ -16,9 +29,17 @@ vi.mock('@/components/app/chat/reasoning-effort-selector', () => ({
   },
 }));
 vi.mock('@/components/app/suggestions/prompt-system', () => ({
-  PromptSystem: ({ children, ...props }: any) => {
+  PromptSystem: ({
+    children,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    onSelect?: unknown;
+    prompts?: unknown;
+    [key: string]: unknown;
+  }) => {
     // Filter out component-specific props that shouldn't be passed to DOM
-    const { onSelect, prompts, ...domProps } = props;
+    const { onSelect: _, prompts: __, ...domProps } = props;
     return (
       <div data-testid="prompt-system" {...domProps}>
         {children}

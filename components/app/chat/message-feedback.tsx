@@ -110,6 +110,7 @@ export function MessageFeedback({
     <>
       <div className={cn('flex items-center gap-1', className)}>
         <button
+          type="button"
           aria-label="Upvote message"
           className={cn(
             'rounded-md p-1.5 transition-all',
@@ -133,6 +134,7 @@ export function MessageFeedback({
         </button>
 
         <button
+          type="button"
           aria-label="Downvote message"
           className={cn(
             'rounded-md p-1.5 transition-all',
@@ -245,6 +247,7 @@ export function MessageFeedbackInline({
   return (
     <div className={cn('ml-2 inline-flex items-center gap-0.5', className)}>
       <button
+        type="button"
         className={cn(
           'rounded p-1 transition-all',
           'hover:bg-accent/50',
@@ -259,6 +262,7 @@ export function MessageFeedbackInline({
         <ThumbsUp className="h-3 w-3" />
       </button>
       <button
+        type="button"
         className={cn(
           'rounded p-1 transition-all',
           'hover:bg-accent/50',

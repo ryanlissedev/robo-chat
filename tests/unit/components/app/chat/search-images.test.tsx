@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, cleanup } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchImages } from '@/components/app/chat/search-images';
 import * as utils from '@/components/app/chat/utils';
@@ -8,7 +8,6 @@ vi.mock('next/image', () => ({
   default: ({ alt, src, className, onError, onLoad, ...props }: any) => {
     return (
       <img
-        role="img"
         alt={alt}
         src={src || null}
         className={className}
@@ -92,9 +91,6 @@ describe('SearchImages', () => {
 
     it('should render links with correct href', () => {
       const { container } = renderSearchImages();
-      
-      // Debug: Print actual HTML to see what's rendered
-      console.log('Rendered HTML:', container.innerHTML);
 
       const links = screen.getAllByRole('link', { hidden: true });
       expect(links).toHaveLength(6); // 3 images + 3 favicons = 6 links

@@ -75,20 +75,29 @@ vi.mock('@/app/types/ai-extended', () => {
   const actualModule = vi.importActual('@/app/types/ai-extended');
   return {
     ...actualModule,
-    getMessageContent: vi.fn((message: any) => {
-      if (typeof message?.content === 'string') return message.content;
-      if (Array.isArray(message?.content)) {
-        return message.content
-          .map((part: any) => (part.type === 'text' ? part.text : ''))
-          .join('');
+    getMessageContent: vi.fn(
+      (message: {
+        content?: string | unknown[];
+        parts?: { type?: string; text?: string }[];
+      }) => {
+        if (typeof message?.content === 'string') return message.content;
+        if (Array.isArray(message?.content)) {
+          return message.content
+            .map((part: { type?: string; text?: string }) =>
+              part.type === 'text' ? part.text : ''
+            )
+            .join('');
+        }
+        if (message?.parts) {
+          return message.parts
+            .map((part: { type?: string; text?: string }) =>
+              part.type === 'text' ? part.text : ''
+            )
+            .join('');
+        }
+        return 'test message content';
       }
-      if (message?.parts) {
-        return message.parts
-          .map((part: any) => (part.type === 'text' ? part.text : ''))
-          .join('');
-      }
-      return 'test message content';
-    }),
+    ),
     hasContent: vi.fn(() => true),
     hasParts: vi.fn(() => true),
     hasAttachments: vi.fn(() => false),

@@ -30,20 +30,25 @@ vi.mock('next/headers', () => ({
 }));
 
 // Import the actual module to be tested (use importOriginal to bypass global mocks)
-const { getUserKey, getEffectiveApiKey } = await vi.importActual('@/lib/user-keys') as {
+const { getUserKey, getEffectiveApiKey } = (await vi.importActual(
+  '@/lib/user-keys'
+)) as {
   getUserKey: (userId: string, provider: any) => Promise<string | null>;
-  getEffectiveApiKey: (userId: string | null, provider: any) => Promise<string | null>;
+  getEffectiveApiKey: (
+    userId: string | null,
+    provider: any
+  ) => Promise<string | null>;
 };
 
-// Import types separately
-import type { Provider, ProviderWithoutOllama } from '@/lib/user-keys';
+import { cookies } from 'next/headers';
 
 // Import mocked modules
 import { decryptKey } from '@/lib/encryption';
 import { env } from '@/lib/openproviders/env';
-import { createClient } from '@/lib/supabase/server';
 import { isSupabaseEnabled } from '@/lib/supabase/config';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase/server';
+// Import types separately
+import type { Provider, ProviderWithoutOllama } from '@/lib/user-keys';
 
 // Mock Supabase client with proper query builder chain
 const mockSupabaseClient = {
@@ -76,7 +81,7 @@ describe('User Keys Service', () => {
     mockSupabaseClient.from.mockReturnValue(mockSupabaseClient);
     mockSupabaseClient.select.mockReturnValue(mockSupabaseClient);
     mockSupabaseClient.eq.mockReturnValue(mockSupabaseClient);
-    
+
     // Default successful response for single() unless overridden in specific tests
     mockSupabaseClient.single.mockResolvedValue({
       data: { encrypted_key: 'mock-encrypted', iv: 'mock-iv' },

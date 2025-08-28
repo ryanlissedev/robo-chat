@@ -138,7 +138,6 @@ export function FeedbackForm({ authUserId, onClose }: FeedbackFormProps) {
               What would make Zola better for you?
             </motion.span>
             <textarea
-              autoFocus
               className="h-full w-full resize-none rounded-md bg-transparent px-4 py-3.5 text-foreground text-sm outline-hidden"
               disabled={status === 'submitting'}
               onChange={(e) => setFeedback(e.target.value)}

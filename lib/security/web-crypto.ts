@@ -176,8 +176,8 @@ export function maskKey(key: string, visible = 4): string {
 
 // Simple storage helpers
 const MEM_STORE = new Map<string, { masked: string; bundle: EncryptBundle }>();
-let MEM_AES_KEY: CryptoKey | null = null; // tab-ephemeral, not persisted
-let SESSION_AES_KEY: CryptoKey | null = null; // not persisted
+let MemAesKey: CryptoKey | null = null; // tab-ephemeral, not persisted
+let SessionAesKey: CryptoKey | null = null; // not persisted
 
 const SESSION_PREFIX = 'guestByok:session:';
 const PERSIST_PREFIX = 'guestByok:persistent:';
@@ -186,8 +186,8 @@ export async function setMemoryCredential(
   provider: string,
   plaintextKey: string
 ) {
-  if (!MEM_AES_KEY) MEM_AES_KEY = await generateEphemeralAesKey();
-  const bundle = await encryptWithKey(plaintextKey, MEM_AES_KEY);
+  if (!MemAesKey) MemAesKey = await generateEphemeralAesKey();
+  const bundle = await encryptWithKey(plaintextKey, MemAesKey);
   MEM_STORE.set(provider, { bundle, masked: maskKey(plaintextKey) });
   return { masked: maskKey(plaintextKey) };
 }
@@ -206,8 +206,8 @@ export async function getMemoryCredentialPlaintext(
   provider: string
 ): Promise<string | null> {
   const entry = MEM_STORE.get(provider);
-  if (!entry || !MEM_AES_KEY) return null;
-  const plaintext = await decryptWithKey(entry.bundle, MEM_AES_KEY);
+  if (!entry || !MemAesKey) return null;
+  const plaintext = await decryptWithKey(entry.bundle, MemAesKey);
   return plaintext;
 }
 
@@ -215,8 +215,8 @@ export async function setSessionCredential(
   provider: string,
   plaintextKey: string
 ) {
-  if (!SESSION_AES_KEY) SESSION_AES_KEY = await generateEphemeralAesKey();
-  const bundle = await encryptWithKey(plaintextKey, SESSION_AES_KEY);
+  if (!SessionAesKey) SessionAesKey = await generateEphemeralAesKey();
+  const bundle = await encryptWithKey(plaintextKey, SessionAesKey);
   sessionStorage.setItem(
     `${SESSION_PREFIX}${provider}`,
     JSON.stringify(bundle)
@@ -229,7 +229,7 @@ export async function getSessionCredential(
 ): Promise<{ masked: string; plaintext: string } | null> {
   const raw = sessionStorage.getItem(`${SESSION_PREFIX}${provider}`);
   if (!raw) return null;
-  if (!SESSION_AES_KEY) return null; // cannot decrypt without in-memory key
+  if (!SessionAesKey) return null; // cannot decrypt without in-memory key
 
   let bundle: EncryptBundle;
   try {
@@ -240,7 +240,7 @@ export async function getSessionCredential(
     );
   }
 
-  const plaintext = await decryptWithKey(bundle, SESSION_AES_KEY);
+  const plaintext = await decryptWithKey(bundle, SessionAesKey);
   return { masked: maskKey(plaintext), plaintext };
 }
 

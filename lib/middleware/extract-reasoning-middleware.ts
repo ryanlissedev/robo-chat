@@ -7,7 +7,13 @@
 export interface ReasoningTrace {
   id: string;
   timestamp: number;
-  type: 'reasoning' | 'thinking' | 'planning' | 'analysis' | 'conclusion' | 'reflection';
+  type:
+    | 'reasoning'
+    | 'thinking'
+    | 'planning'
+    | 'analysis'
+    | 'conclusion'
+    | 'reflection';
   content: string;
   confidence?: number;
   metadata?: Record<string, unknown>;
@@ -44,27 +50,60 @@ export function extractReasoningFromResponse(
   // Define reasoning tag patterns to extract
   const reasoningPatterns = [
     // Standard thinking tags
-    { pattern: /<thinking>([\s\S]*?)<\/thinking>/gi, type: 'thinking' as const },
-    { pattern: /<reasoning>([\s\S]*?)<\/reasoning>/gi, type: 'reasoning' as const },
+    {
+      pattern: /<thinking>([\s\S]*?)<\/thinking>/gi,
+      type: 'thinking' as const,
+    },
+    {
+      pattern: /<reasoning>([\s\S]*?)<\/reasoning>/gi,
+      type: 'reasoning' as const,
+    },
     { pattern: /<thought>([\s\S]*?)<\/thought>/gi, type: 'thinking' as const },
-    { pattern: /<reflection>([\s\S]*?)<\/reflection>/gi, type: 'reflection' as const },
-    
+    {
+      pattern: /<reflection>([\s\S]*?)<\/reflection>/gi,
+      type: 'reflection' as const,
+    },
+
     // Namespaced tags (e.g., antml:thinking)
-    { pattern: /<[^>]+:thinking>([\s\S]*?)<\/[^>]+:thinking>/gi, type: 'thinking' as const },
-    { pattern: /<[^>]+:reasoning>([\s\S]*?)<\/[^>]+:reasoning>/gi, type: 'reasoning' as const },
-    { pattern: /<[^>]+:reflection>([\s\S]*?)<\/[^>]+:reflection>/gi, type: 'reflection' as const },
-    
+    {
+      pattern: /<[^>]+:thinking>([\s\S]*?)<\/[^>]+:thinking>/gi,
+      type: 'thinking' as const,
+    },
+    {
+      pattern: /<[^>]+:reasoning>([\s\S]*?)<\/[^>]+:reasoning>/gi,
+      type: 'reasoning' as const,
+    },
+    {
+      pattern: /<[^>]+:reflection>([\s\S]*?)<\/[^>]+:reflection>/gi,
+      type: 'reflection' as const,
+    },
+
     // COT (Chain of Thought) tags
     { pattern: /<cot>([\s\S]*?)<\/cot>/gi, type: 'reasoning' as const },
-    { pattern: /<chain_of_thought>([\s\S]*?)<\/chain_of_thought>/gi, type: 'reasoning' as const },
-    
+    {
+      pattern: /<chain_of_thought>([\s\S]*?)<\/chain_of_thought>/gi,
+      type: 'reasoning' as const,
+    },
+
     // Internal reasoning tags
-    { pattern: /<internal_reasoning>([\s\S]*?)<\/internal_reasoning>/gi, type: 'reasoning' as const },
-    { pattern: /<inner_thoughts>([\s\S]*?)<\/inner_thoughts>/gi, type: 'thinking' as const },
-    
+    {
+      pattern: /<internal_reasoning>([\s\S]*?)<\/internal_reasoning>/gi,
+      type: 'reasoning' as const,
+    },
+    {
+      pattern: /<inner_thoughts>([\s\S]*?)<\/inner_thoughts>/gi,
+      type: 'thinking' as const,
+    },
+
     // Planning tags
-    { pattern: /<planning>([\s\S]*?)<\/planning>/gi, type: 'planning' as const },
-    { pattern: /<analysis>([\s\S]*?)<\/analysis>/gi, type: 'analysis' as const },
+    {
+      pattern: /<planning>([\s\S]*?)<\/planning>/gi,
+      type: 'planning' as const,
+    },
+    {
+      pattern: /<analysis>([\s\S]*?)<\/analysis>/gi,
+      type: 'analysis' as const,
+    },
   ];
 
   const traces: ReasoningTrace[] = [];
@@ -78,7 +117,7 @@ export function extractReasoningFromResponse(
       if (match[1]) {
         const content = match[1].trim();
         reasoningParts.push(content);
-        
+
         // Create a trace for each match
         traces.push({
           id: `trace-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -91,7 +130,7 @@ export function extractReasoningFromResponse(
             originalLength: match[0].length,
           },
         });
-        
+
         // Remove the matched reasoning section from the content
         cleanedContent = cleanedContent.replace(match[0], '');
       }
@@ -104,11 +143,15 @@ export function extractReasoningFromResponse(
       { pattern: /Planning:?\s*([^.!?]+[.!?])/gi, type: 'planning' as const },
       { pattern: /Analysis:?\s*([^.!?]+[.!?])/gi, type: 'analysis' as const },
       { pattern: /Reasoning:?\s*([^.!?]+[.!?])/gi, type: 'reasoning' as const },
-      { pattern: /Conclusion:?\s*([^.!?]+[.!?])/gi, type: 'conclusion' as const },
+      {
+        pattern: /Conclusion:?\s*([^.!?]+[.!?])/gi,
+        type: 'conclusion' as const,
+      },
     ];
 
     for (const { pattern, type } of inlinePatterns) {
-      let match;
+      let match: RegExpExecArray | null;
+      // biome-ignore lint/suspicious/noAssignInExpressions: Common pattern for regex matching
       while ((match = pattern.exec(responseText)) !== null) {
         const content = match[1]?.trim();
         if (content) {
@@ -126,16 +169,15 @@ export function extractReasoningFromResponse(
 
   // Clean up extra whitespace
   cleanedContent = cleanedContent.trim();
-  
+
   // Join all reasoning sections if multiple found
-  const combinedReasoning = reasoningParts.length > 0 
-    ? reasoningParts.join('\n\n---\n\n')
-    : null;
+  const combinedReasoning =
+    reasoningParts.length > 0 ? reasoningParts.join('\n\n---\n\n') : null;
 
   // Create summary
   let summary: string | undefined;
   if (traces.length > 0) {
-    const traceTypes = traces.map(t => t.type);
+    const traceTypes = traces.map((t) => t.type);
     const uniqueTypes = Array.from(new Set(traceTypes));
     summary = `Found ${uniqueTypes.join(', ')} reasoning (${traces.length} sections)`;
   }
@@ -155,7 +197,7 @@ export function extractReasoningFromResponse(
  * Extracts reasoning in real-time during streaming
  */
 export function createReasoningMiddleware() {
-  let buffer = '';
+  let _buffer = '';
   const reasoningBuffer: { type: string; content: string }[] = [];
   let isInsideReasoningTag = false;
   let currentTagName = '';
@@ -180,10 +222,13 @@ export function createReasoningMiddleware() {
      * Process streaming chunks
      */
     processChunk(chunk: string): string {
-      buffer += chunk;
+      _buffer += chunk;
 
       // Check for reasoning tag starts
-      const openTagMatch = /<([^>]+:)?(thinking|reasoning|thought|reflection|cot|chain_of_thought|internal_reasoning|inner_thoughts|planning|analysis)>/gi.exec(chunk);
+      const openTagMatch =
+        /<([^>]+:)?(thinking|reasoning|thought|reflection|cot|chain_of_thought|internal_reasoning|inner_thoughts|planning|analysis)>/gi.exec(
+          chunk
+        );
       if (openTagMatch) {
         isInsideReasoningTag = true;
         currentTagName = openTagMatch[2].toLowerCase();
@@ -194,10 +239,13 @@ export function createReasoningMiddleware() {
 
       // Check for reasoning tag ends
       if (isInsideReasoningTag) {
-        const closeTagMatch = new RegExp(`<\\/([^>]+:)?${currentTagName}>`, 'gi').exec(chunk);
+        const closeTagMatch = new RegExp(
+          `<\\/([^>]+:)?${currentTagName}>`,
+          'gi'
+        ).exec(chunk);
         if (closeTagMatch) {
           isInsideReasoningTag = false;
-          
+
           // Save the collected reasoning
           if (currentContent.trim()) {
             reasoningBuffer.push({
@@ -205,12 +253,12 @@ export function createReasoningMiddleware() {
               content: currentContent.trim(),
             });
           }
-          
+
           currentTagName = '';
           currentContent = '';
           return ''; // Don't output closing tags
         }
-        
+
         // Collect content while inside tags
         currentContent += chunk;
         return '';
@@ -224,8 +272,10 @@ export function createReasoningMiddleware() {
      * Get collected reasoning after streaming completes
      */
     getReasoning(): string | null {
-      return reasoningBuffer.length > 0 
-        ? reasoningBuffer.map(r => `[${r.type}]: ${r.content}`).join('\n\n---\n\n')
+      return reasoningBuffer.length > 0
+        ? reasoningBuffer
+            .map((r) => `[${r.type}]: ${r.content}`)
+            .join('\n\n---\n\n')
         : null;
     },
 
@@ -246,7 +296,7 @@ export function createReasoningMiddleware() {
      * Reset the middleware state
      */
     reset() {
-      buffer = '';
+      _buffer = '';
       reasoningBuffer.length = 0;
       isInsideReasoningTag = false;
       currentTagName = '';
@@ -274,7 +324,8 @@ export function formatReasoningTraces(traces: ReasoningTrace[]): string {
     .sort((a, b) => a.timestamp - b.timestamp)
     .map((trace) => {
       const emoji = typeEmojis[trace.type] || '💭';
-      const typeLabel = trace.type.charAt(0).toUpperCase() + trace.type.slice(1);
+      const typeLabel =
+        trace.type.charAt(0).toUpperCase() + trace.type.slice(1);
       return `${emoji} ${typeLabel}: ${trace.content}`;
     })
     .join('\n\n');
@@ -299,7 +350,7 @@ export function hasReasoningTraces(content: string): boolean {
     /<analysis>/i,
   ];
 
-  return patterns.some(pattern => pattern.test(content));
+  return patterns.some((pattern) => pattern.test(content));
 }
 
 /**

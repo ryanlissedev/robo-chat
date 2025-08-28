@@ -5,7 +5,7 @@ process.env.ENCRYPTION_KEY = Buffer.from('a'.repeat(32)).toString('base64');
 // Set IS_REACT_ACT_ENVIRONMENT for React Testing Library
 process.env.IS_REACT_ACT_ENVIRONMENT = 'true';
 
-import { act, configure, cleanup } from '@testing-library/react';
+import { act, cleanup, configure } from '@testing-library/react';
 // DOM environment is provided by jsdom via vitest config
 import React from 'react';
 import { vi } from 'vitest';
@@ -84,7 +84,7 @@ beforeEach(() => {
   // Always clear mocks and timers
   vi.clearAllMocks();
   vi.clearAllTimers();
-  
+
   // Console mocking (reduced in fast mode)
   if (!IS_FAST_MODE) {
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -279,16 +279,24 @@ vi.mock('@radix-ui/react-accordion', () => ({
 // Standard Supabase Client Mocks
 const createStandardSupabaseClient = () => ({
   auth: {
-    getUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
-    getSession: vi.fn(() => Promise.resolve({ data: { session: null }, error: null })),
-    onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+    getUser: vi.fn(() =>
+      Promise.resolve({ data: { user: null }, error: null })
+    ),
+    getSession: vi.fn(() =>
+      Promise.resolve({ data: { session: null }, error: null })
+    ),
+    onAuthStateChange: vi.fn(() => ({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    })),
     signOut: vi.fn(() => Promise.resolve({ error: null })),
   },
   from: vi.fn(() => ({
     select: vi.fn(() => ({
       eq: vi.fn(() => ({
         eq: vi.fn(() => ({
-          maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+          maybeSingle: vi.fn(() =>
+            Promise.resolve({ data: null, error: null })
+          ),
           single: vi.fn(() => Promise.resolve({ data: null, error: null })),
         })),
         maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
@@ -332,35 +340,35 @@ const createStandardNextResponse = (data = {}, status = 200) =>
 export const mockHelpers = {
   // Supabase mocks
   createSupabaseClient: createStandardSupabaseClient,
-  
+
   // Next.js mocks
   createNextRequest: createStandardNextRequest,
   createNextResponse: createStandardNextResponse,
-  
+
   // Standard mock functions for common patterns
   mockIsSupabaseEnabled: vi.fn(() => true),
   mockIsDevelopmentMode: vi.fn(() => false),
   mockIsRealtimeEnabled: vi.fn(() => false),
-  
+
   // Standard encryption mocks
   mockEncrypt: vi.fn(() => 'encrypted-data'),
   mockDecrypt: vi.fn(() => 'decrypted-data'),
-  
+
   // Standard toast mock
   mockToast: vi.fn(),
-  
+
   // Reset all mocks helper
   resetAllMocks: () => {
     vi.clearAllMocks();
     vi.clearAllTimers();
     vi.resetModules();
   },
-  
+
   // Common assertion helpers
   expectMockCalled: (mockFn: any, times = 1) => {
     expect(mockFn).toHaveBeenCalledTimes(times);
   },
-  
+
   expectMockCalledWith: (mockFn: any, ...args: any[]) => {
     expect(mockFn).toHaveBeenCalledWith(...args);
   },

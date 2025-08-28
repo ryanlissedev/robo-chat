@@ -31,8 +31,7 @@ export async function getUserKey(
       (data as unknown as { encrypted_key: string; iv: string }).encrypted_key,
       (data as unknown as { encrypted_key: string; iv: string }).iv
     );
-  } catch (error) {
-    console.log('[DEBUG] Exception caught in getUserKey:', error);
+  } catch (_error) {
     return null;
   }
 }

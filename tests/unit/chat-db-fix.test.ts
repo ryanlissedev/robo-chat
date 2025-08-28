@@ -6,6 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { storeAssistantMessage } from '@/app/api/chat/db';
 import type { StoreAssistantMessageParams } from '@/app/types/api.types';
+import { logWarning } from '@/lib/utils/logger';
 
 // Mock the logger
 vi.mock('@/lib/utils/logger', () => ({
@@ -18,11 +19,13 @@ vi.mock('@/lib/utils/logger', () => ({
 
 describe('Chat Database Fix', () => {
   // Helper function to create a Supabase mock
-  function createSupabaseMock(config: {
-    chatExists?: boolean;
-    chatCreateSuccess?: boolean;
-    messageInsertSuccess?: boolean;
-  } = {}) {
+  function createSupabaseMock(
+    config: {
+      chatExists?: boolean;
+      chatCreateSuccess?: boolean;
+      messageInsertSuccess?: boolean;
+    } = {}
+  ) {
     const {
       chatExists = true,
       chatCreateSuccess = true,
@@ -135,13 +138,12 @@ describe('Chat Database Fix', () => {
     // Act
     await expect(storeAssistantMessage(params)).resolves.not.toThrow();
 
-    // Assert - Get the mocked logger and check it was called
-    const { logWarning } = await import('@/lib/utils/logger');
+    // Assert - Check that the mocked logger was called
     expect(logWarning).toHaveBeenCalledWith(
       'Chat does not exist and cannot be created. Skipping message save.',
       { chatId: 'test-chat-id' }
     );
-    
+
     // Verify message insert was not attempted
     expect(mockSupabase.mocks.messageInsert).not.toHaveBeenCalled();
   });

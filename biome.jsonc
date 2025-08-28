@@ -20,10 +20,86 @@
       },
       "suspicious": {
         "noConsole": "error",
-        "noDebugger": "error"
+        "noDebugger": "error",
+        "noUnknownAtRules": "off",
+        "noExplicitAny": "warn"
+      },
+      "style": {
+        "noNonNullAssertion": "warn",
+        "useNamingConvention": {
+          "level": "error",
+          "options": {
+            "strictCase": false
+          }
+        }
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "warn"
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["tests/**/*", "**/*.test.ts", "**/*.test.tsx"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off",
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "app/types/database.types.ts", 
+        "app/api/**/*",
+        "lib/chat-store/**/*",
+        "lib/user/**/*",
+        "lib/supabase/**/*",
+        "lib/types/**/*",
+        "lib/tools/**/*",
+        "lib/models/**/*",
+        "lib/openproviders/**/*",
+        "lib/api.ts",
+        "lib/file-handling.ts",
+        "lib/hooks/use-chat-preview.tsx",
+        "lib/langsmith/**/*",
+        "lib/middleware/**/*",
+        "lib/model-store/**/*",
+        "lib/retrieval/**/*",
+        "lib/security/**/*",
+        "lib/server/**/*",
+        "lib/usage.ts",
+        "lib/user-keys.ts",
+        "lib/user-preference-store/**/*",
+        "lib/utils/**/*"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "useNamingConvention": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "app/types/ai-extended.ts", 
+        "app/types/api.types.ts",
+        "app/auth/callback/route.ts",
+        "app/p/\\[projectId\\]/project-view.tsx",
+        "app/settings/components/retrieval-settings.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "useNamingConvention": "off"
+          }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "single",

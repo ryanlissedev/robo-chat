@@ -1,7 +1,6 @@
 import {
   act,
   fireEvent,
-  render,
   renderHook,
   screen,
   waitFor,

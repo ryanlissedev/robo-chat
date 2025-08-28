@@ -6,7 +6,6 @@ import {
   useChat,
 } from '@ai-sdk/react';
 import { useMemo } from 'react';
-import { toast } from '@/components/ui/toast';
 
 type ModelConfig = {
   id: string;
@@ -25,30 +24,29 @@ type ModelChat = {
 // Maximum number of models we support
 const MAX_MODELS = 10;
 
+// Narrow type to read status without using `any`
+type StatusCap = { status?: 'submitted' | 'streaming' | 'ready' | 'error' };
+
 export function useMultiChat(models: ModelConfig[]): ModelChat[] {
-  // Create a fixed number of useChat hooks to avoid conditional hook calls
-  const chatHooks: Array<UseChatHelpers<Message>> = Array.from(
-    { length: MAX_MODELS },
-    (_, index) =>
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      useChat({
-        onError: (error) => {
-          const model = models[index];
-          if (model) {
-            toast({
-              title: `Error with ${model.name}`,
-              description: error.message,
-              status: 'error',
-            });
-          }
-        },
-      })
-  );
+  // Create a fixed number of useChat hooks without loops or nested callbacks
+  // to satisfy the Rules of Hooks. Errors will be handled by callers.
+  const chatHooks = [
+    useChat(),
+    useChat(),
+    useChat(),
+    useChat(),
+    useChat(),
+    useChat(),
+    useChat(),
+    useChat(),
+    useChat(),
+    useChat(),
+  ] as const satisfies ReadonlyArray<UseChatHelpers<Message>>;
 
   // Map only the provided models to their corresponding chat hooks
   const activeChatInstances = useMemo(() => {
     const instances = models.slice(0, MAX_MODELS).map((model, index) => {
-      const chatHook = chatHooks[index];
+      const chatHook = chatHooks[index] as UseChatHelpers<Message> & StatusCap;
 
       return {
         model,
@@ -65,7 +63,10 @@ export function useMultiChat(models: ModelConfig[]): ModelChat[] {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     models,
-    ...chatHooks.flatMap((chat) => [chat.messages, (chat as any).status]),
+    // Track messages and status changes for memo recalculation
+    ...chatHooks.map((chat) => chat.messages),
+    ...chatHooks.map((chat) => (chat as StatusCap).status),
+    chatHooks,
   ]);
 
   return activeChatInstances;

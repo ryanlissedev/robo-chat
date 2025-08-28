@@ -3,7 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useVoiceStore } from '@/components/app/voice/store/voice-store';
 
 // Import timer test utilities
-import { createTimerTestContext, safeRunPendingTimers } from '../utils/timer-test-utils';
+import {
+  createTimerTestContext,
+  safeRunPendingTimers,
+} from '../utils/timer-test-utils';
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -14,7 +17,7 @@ describe('Voice Store', () => {
 
   beforeEach(() => {
     timerContext.setupTimers();
-    
+
     // Reset store state before each test
     act(() => {
       useVoiceStore.getState().reset();
@@ -23,11 +26,11 @@ describe('Voice Store', () => {
 
   afterEach(() => {
     vi.resetAllMocks();
-    
+
     // Handle timer cleanup safely
     safeRunPendingTimers();
     timerContext.cleanupTimers();
-    
+
     // Cleanup any remaining subscriptions or effects
     act(() => {
       useVoiceStore.getState().reset();

@@ -1,4 +1,4 @@
-import { render, screen, act } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ButtonSearch } from '@/components/app/chat-input/button-search';
@@ -14,7 +14,15 @@ vi.mock('lucide-react', () => ({
 
 // Mock UI components
 vi.mock('@/components/ui/button', () => ({
-  Button: ({ children, onClick, className, variant, size, disabled, ...props }: any) => (
+  Button: ({
+    children,
+    onClick,
+    className,
+    variant,
+    size,
+    disabled,
+    ...props
+  }: any) => (
     <button
       type="button"
       onClick={onClick}

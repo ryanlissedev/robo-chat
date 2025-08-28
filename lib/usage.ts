@@ -182,11 +182,11 @@ export async function incrementUsage(
     return;
   }
 
-  const { data: userData, error: userDataError } = await supabase
+  const { data: userData, error: userDataError } = (await supabase
     .from('users')
     .select('message_count, daily_message_count')
     .eq('id', userId)
-    .maybeSingle() as { data: UserData | null; error: any };
+    .maybeSingle()) as { data: UserData | null; error: any };
 
   if (userDataError || !userData) {
     throw new Error(
@@ -285,11 +285,11 @@ export async function checkProUsage(supabase: AnyClient, userId: string) {
 }
 
 export async function incrementProUsage(supabase: AnyClient, userId: string) {
-  const { data, error } = await supabase
+  const { data, error } = (await supabase
     .from('users')
     .select('daily_pro_message_count')
     .eq('id', userId)
-    .maybeSingle() as { data: UserData | null; error: any };
+    .maybeSingle()) as { data: UserData | null; error: any };
 
   if (error || !data) {
     throw new Error('Failed to fetch user usage for increment');

@@ -1,8 +1,9 @@
 /**
  * Timer Test Utilities - Consistent patterns for handling timers in tests
  */
-import { vi } from 'vitest';
+
 import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
 
 export interface TimerTestContext {
   setupTimers: () => void;
@@ -18,17 +19,17 @@ export interface TimerTestContext {
  */
 export function createTimerTestContext(): TimerTestContext {
   let usingFakeTimers = false;
-  
+
   const setupTimers = () => {
     vi.clearAllMocks();
     vi.clearAllTimers();
-    
+
     if (!vi.isFakeTimers()) {
       vi.useFakeTimers();
       usingFakeTimers = true;
     }
   };
-  
+
   const cleanupTimers = () => {
     if (vi.isFakeTimers() && usingFakeTimers) {
       try {
@@ -41,7 +42,7 @@ export function createTimerTestContext(): TimerTestContext {
       usingFakeTimers = false;
     }
   };
-  
+
   const createUserEvents = () => {
     if (vi.isFakeTimers()) {
       return userEvent.setup({
@@ -50,23 +51,23 @@ export function createTimerTestContext(): TimerTestContext {
     }
     return userEvent.setup();
   };
-  
+
   const advanceTime = (ms: number) => {
     if (vi.isFakeTimers()) {
       vi.advanceTimersByTime(ms);
     }
   };
-  
+
   const runAllTimers = () => {
     if (vi.isFakeTimers()) {
       vi.runAllTimers();
     }
   };
-  
+
   const getCurrentTimerCount = () => {
     return vi.getTimerCount();
   };
-  
+
   return {
     setupTimers,
     cleanupTimers,
@@ -84,9 +85,11 @@ export const TimerTestPatterns = {
   /**
    * For tests that need fake timers throughout
    */
-  withFakeTimers: (callback: (context: TimerTestContext) => void | Promise<void>) => {
+  withFakeTimers: (
+    callback: (context: TimerTestContext) => void | Promise<void>
+  ) => {
     const context = createTimerTestContext();
-    
+
     return {
       beforeEach: () => {
         context.setupTimers();
@@ -98,13 +101,15 @@ export const TimerTestPatterns = {
       context,
     };
   },
-  
+
   /**
    * For tests that need real timers for user interactions
    */
-  withRealTimersForInteraction: (callback: (context: TimerTestContext) => void | Promise<void>) => {
+  withRealTimersForInteraction: (
+    callback: (context: TimerTestContext) => void | Promise<void>
+  ) => {
     const context = createTimerTestContext();
-    
+
     return {
       beforeEach: () => {
         // Don't setup fake timers
@@ -119,13 +124,15 @@ export const TimerTestPatterns = {
       context,
     };
   },
-  
+
   /**
    * For tests that need mixed timer handling
    */
-  withMixedTimers: (callback: (context: TimerTestContext) => void | Promise<void>) => {
+  withMixedTimers: (
+    callback: (context: TimerTestContext) => void | Promise<void>
+  ) => {
     const context = createTimerTestContext();
-    
+
     return {
       beforeEach: () => {
         context.setupTimers();
@@ -133,27 +140,27 @@ export const TimerTestPatterns = {
       afterEach: () => {
         context.cleanupTimers();
       },
-      test: async (testFn: () => void | Promise<void>) => {
+      test: async (_testFn: () => void | Promise<void>) => {
         // Start with fake timers
         context.setupTimers();
-        
+
         // Allow test to switch to real timers when needed
         const switchToRealTimers = () => {
           if (vi.isFakeTimers()) {
             vi.useRealTimers();
           }
         };
-        
+
         const switchToFakeTimers = () => {
           if (!vi.isFakeTimers()) {
             vi.useFakeTimers();
           }
         };
-        
-        await callback({ 
-          ...context, 
-          switchToRealTimers, 
-          switchToFakeTimers 
+
+        await callback({
+          ...context,
+          switchToRealTimers,
+          switchToFakeTimers,
         } as any);
       },
       context,
@@ -184,9 +191,7 @@ export function safeAdvanceTimers(ms: number): void {
   if (vi.isFakeTimers()) {
     try {
       vi.advanceTimersByTime(ms);
-    } catch (error) {
-      console.warn(`Failed to advance timers by ${ms}ms:`, error);
-    }
+    } catch (_error) {}
   }
 }
 
@@ -197,9 +202,7 @@ export function safeRunAllTimers(): void {
   if (vi.isFakeTimers()) {
     try {
       vi.runAllTimers();
-    } catch (error) {
-      console.warn('Failed to run all timers:', error);
-    }
+    } catch (_error) {}
   }
 }
 
@@ -210,8 +213,6 @@ export function safeRunPendingTimers(): void {
   if (vi.isFakeTimers()) {
     try {
       vi.runOnlyPendingTimers();
-    } catch (error) {
-      console.warn('Failed to run pending timers:', error);
-    }
+    } catch (_error) {}
   }
 }

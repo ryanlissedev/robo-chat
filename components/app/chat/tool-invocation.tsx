@@ -57,7 +57,16 @@ export function ToolInvocation({ toolInvocations }: ToolInvocationProps) {
     <div className="mb-6 w-full space-y-3">
       {displayParts.map((part) => (
         <AITool key={part.toolCallId}>
-          <AIToolHeader state={part.state as 'input-streaming' | 'input-available' | 'output-available' | 'output-error'} type={part.type} />
+          <AIToolHeader
+            state={
+              part.state as
+                | 'input-streaming'
+                | 'input-available'
+                | 'output-available'
+                | 'output-error'
+            }
+            type={part.type}
+          />
           <AIToolContent>
             {'input' in part && part.input ? (
               <AIToolInput input={JSON.stringify(part.input, null, 2)} />

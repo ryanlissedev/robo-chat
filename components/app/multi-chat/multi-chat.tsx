@@ -266,7 +266,7 @@ export function MultiChat() {
         return;
       }
 
-      const message_group_id = crypto.randomUUID();
+      const messageGroupId = crypto.randomUUID();
 
       let chatIdToUse = multiChatId || chatId;
       if (!chatIdToUse) {
@@ -298,7 +298,7 @@ export function MultiChat() {
               isAuthenticated: !!user?.id && !user?.anonymous,
               systemPrompt,
               enableSearch: false,
-              message_group_id,
+              message_group_id: messageGroupId,
             },
           };
 

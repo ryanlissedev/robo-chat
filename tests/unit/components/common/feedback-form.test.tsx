@@ -4,7 +4,6 @@ import {
   fireEvent,
   render,
   screen,
-  waitFor,
 } from '@testing-library/react';
 // userEvent import removed - using fireEvent for better fake timer compatibility
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -73,7 +72,7 @@ vi.mock('motion/react', () => ({
         ...domProps
       } = props;
       return (
-        <form role="form" onSubmit={onSubmit} {...domProps}>
+        <form onSubmit={onSubmit} {...domProps}>
           {children}
         </form>
       );
@@ -121,71 +120,53 @@ describe('FeedbackForm', () => {
   };
 
   beforeEach(() => {
-    console.log('BEFORE EACH: Starting focused test isolation setup');
-    
-    // Clear all timers first 
+    // Clear all timers first
     vi.clearAllTimers();
     vi.useRealTimers();
-    
+
     // AGGRESSIVE approach: Reset ALL mocks completely to prevent pollution
     mockToast.mockClear();
     mockOnClose.mockClear();
     mockCreateClient.mockClear();
     mockSupabaseClient.from.mockClear();
     mockSupabaseClient.insert.mockClear();
-    console.log('BEFORE EACH: Cleared mock call history while preserving implementations');
-    
+
     // Ensure isSupabaseEnabled mock returns true (global setup sometimes doesn't take effect)
     vi.mocked(isSupabaseEnabled).mockReturnValue(true);
-    
+
     // Configure other mocks with fresh setup
     mockCreateClient.mockReturnValue(mockSupabaseClient as any);
     mockSupabaseClient.from.mockReturnThis();
     mockSupabaseClient.insert.mockResolvedValue({ error: null });
-    console.log('BEFORE EACH: Configured Supabase client mock');
-    
+
     // Set up fake timers
     vi.useFakeTimers();
-    console.log('BEFORE EACH: Setup complete - preserving critical mock implementations');
   });
 
   afterEach(() => {
-    console.log('AFTER EACH: Starting focused cleanup');
-    
     // Clean up timers synchronously
     vi.clearAllTimers();
     vi.useRealTimers();
-    console.log('AFTER EACH: Cleared timers');
-    
+
     // Clean up DOM
     cleanup();
-    console.log('AFTER EACH: DOM cleanup complete');
-    
+
     // Clear ONLY call history, preserve all implementations
     mockToast.mockClear();
     mockOnClose.mockClear();
     mockSupabaseClient.from.mockClear();
     mockSupabaseClient.insert.mockClear();
     mockCreateClient.mockClear();
-    console.log('AFTER EACH: Cleared mock call history only');
-    
-    // Note: isSupabaseEnabled mock reset is handled by global setup in tests/setup.ts
-    
-    console.log('AFTER EACH: Cleanup complete with bulletproof mock state');
   });
 
   describe('Rendering', () => {
     it('DEBUG: should check what isSupabaseEnabled returns and what gets rendered', () => {
-      console.log('DEBUG: isSupabaseEnabled function type:', typeof isSupabaseEnabled);
-      console.log('DEBUG: isSupabaseEnabled isMockFunction:', vi.isMockFunction(isSupabaseEnabled));
-      console.log('DEBUG: isSupabaseEnabled mock details:', vi.mocked(isSupabaseEnabled));
-      console.log('DEBUG: isSupabaseEnabled() returns:', isSupabaseEnabled());
       // Note: Using global mock from tests/setup.ts
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
-      console.log('DEBUG: container.innerHTML:', container.innerHTML);
-      console.log('DEBUG: container.firstChild:', container.firstChild);
-      
+
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
+
       // This test will help us understand what's happening
       expect(true).toBe(true); // Placeholder assertion
     });
@@ -209,14 +190,10 @@ describe('FeedbackForm', () => {
     // MOVED: Null test moved to end to prevent mock pollution
 
     it('should have correct initial state', () => {
-      // Debug: Check mock state before render
-      console.log('Mock state before render - using global mock from tests/setup.ts');
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
-      
-      // Debug: Check what was actually rendered
-      console.log('Rendered HTML:', container.innerHTML);
-      
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
+
       const textboxes = screen.getAllByRole('textbox');
       const textarea = textboxes[0]; // Get the first textbox
       const submitButton = screen.getByRole('button', {
@@ -249,13 +226,9 @@ describe('FeedbackForm', () => {
 
   describe('User Interaction', () => {
     it('should enable submit button when text is entered', async () => {
-      // Debug: Check mock state before render
-      console.log('User Interaction test - using global mock from tests/setup.ts');
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
-      
-      // Debug: Check what was actually rendered
-      console.log('User Interaction test - Rendered HTML:', container.innerHTML);
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       const textboxes = screen.getAllByRole('textbox');
       const textarea = textboxes[0]; // Get the first textbox
@@ -275,16 +248,13 @@ describe('FeedbackForm', () => {
     });
 
     it('should hide placeholder when typing', async () => {
-      console.log('HIDE PLACEHOLDER TEST: isSupabaseEnabled() returns:', isSupabaseEnabled());
-      console.log('HIDE PLACEHOLDER TEST: using global mock from tests/setup.ts');
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
-      console.log('HIDE PLACEHOLDER TEST: container.innerHTML:', container.innerHTML);
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Query textarea element directly - component should render immediately
       const textarea = container.querySelector('textarea');
       if (!textarea) {
-        console.log('HIDE PLACEHOLDER TEST: textarea not found, container.innerHTML:', container.innerHTML);
       }
       expect(textarea).toBeInTheDocument();
       const placeholders = screen.getAllByText(
@@ -304,17 +274,13 @@ describe('FeedbackForm', () => {
     });
 
     it('should show placeholder when text is cleared', async () => {
-      // Note: Using global mock from tests/setup.ts - no need to force verification
-      console.log('SHOW PLACEHOLDER TEST: isSupabaseEnabled() returns:', isSupabaseEnabled());
-      console.log('SHOW PLACEHOLDER TEST: using global mock from tests/setup.ts');
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
-      console.log('SHOW PLACEHOLDER TEST: container.innerHTML:', container.innerHTML);
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Query textarea element directly - component should render immediately
       const textarea = container.querySelector('textarea');
       if (!textarea) {
-        console.log('SHOW PLACEHOLDER TEST: textarea not found, container.innerHTML:', container.innerHTML);
       }
       expect(textarea).toBeInTheDocument();
       const placeholders = screen.getAllByText(
@@ -335,16 +301,13 @@ describe('FeedbackForm', () => {
     });
 
     it('should disable submit button for whitespace-only text', async () => {
-      console.log('WHITESPACE TEST: isSupabaseEnabled() returns:', isSupabaseEnabled());
-      console.log('WHITESPACE TEST: using global mock from tests/setup.ts');
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
-      console.log('WHITESPACE TEST: container.innerHTML:', container.innerHTML);
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Query textarea element directly - component should render immediately
       const textarea = container.querySelector('textarea');
       if (!textarea) {
-        console.log('WHITESPACE TEST: textarea not found, container.innerHTML:', container.innerHTML);
       }
       expect(textarea).toBeInTheDocument();
       const submitButton = screen.getByRole('button', {
@@ -370,16 +333,13 @@ describe('FeedbackForm', () => {
     });
 
     it('should reset form state when closing', async () => {
-      console.log('RESET FORM TEST: isSupabaseEnabled() returns:', isSupabaseEnabled());
-      console.log('RESET FORM TEST: using global mock from tests/setup.ts');
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
-      console.log('RESET FORM TEST: container.innerHTML:', container.innerHTML);
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Query textarea element directly - component should render immediately
       const textarea = container.querySelector('textarea');
       if (!textarea) {
-        console.log('RESET FORM TEST: textarea not found, container.innerHTML:', container.innerHTML);
       }
       expect(textarea).toBeInTheDocument();
       await act(async () => {
@@ -397,16 +357,13 @@ describe('FeedbackForm', () => {
 
   describe('Form Submission', () => {
     it('should submit feedback successfully', async () => {
-      console.log('SUBMIT SUCCESS TEST: isSupabaseEnabled() returns:', isSupabaseEnabled());
-      console.log('SUBMIT SUCCESS TEST: using global mock from tests/setup.ts');
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
-      console.log('SUBMIT SUCCESS TEST: container.innerHTML:', container.innerHTML);
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Query textarea element directly - component should render immediately
       const textarea = container.querySelector('textarea');
       if (!textarea) {
-        console.log('SUBMIT SUCCESS TEST: textarea not found, container.innerHTML:', container.innerHTML);
       }
       expect(textarea).toBeInTheDocument();
       const submitButton = screen.getByRole('button', {
@@ -418,7 +375,9 @@ describe('FeedbackForm', () => {
 
       // Enter feedback text
       await act(async () => {
-        fireEvent.change(textarea, { target: { value: 'Great app, love it!' } });
+        fireEvent.change(textarea, {
+          target: { value: 'Great app, love it!' },
+        });
       });
 
       // Now submit button should be enabled
@@ -432,7 +391,9 @@ describe('FeedbackForm', () => {
 
     it('should show success state after submission', async () => {
       // This test focuses on the component structure rather than async behavior
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Query textarea element directly to avoid role timing issues
       const textarea = container.querySelector('textarea');
@@ -479,7 +440,9 @@ describe('FeedbackForm', () => {
     });
 
     it('should handle submission without user ID', async () => {
-      const { container } = render(<FeedbackForm authUserId={undefined} onClose={mockOnClose} />);
+      const { container } = render(
+        <FeedbackForm authUserId={undefined} onClose={mockOnClose} />
+      );
 
       // Query textarea element directly to avoid role timing issues
       const textarea = container.querySelector('textarea');
@@ -515,7 +478,7 @@ describe('FeedbackForm', () => {
 
       const textboxes = screen.getAllByRole('textbox');
       const textarea = textboxes[0];
-      const closeButton = screen.getByRole('button', { name: 'Close' });
+      const _closeButton = screen.getByRole('button', { name: 'Close' });
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
       });
@@ -855,19 +818,15 @@ describe('FeedbackForm', () => {
       // Temporarily override global mock for this specific test only
       const originalMock = vi.mocked(isSupabaseEnabled);
       originalMock.mockImplementation(() => false);
-      
-      console.log('NULL TEST: Overridden global mock to return false for entire test');
 
       const { container } = render(
         <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
       );
 
       expect(container.firstChild).toBeNull();
-      console.log('NULL TEST: Verified component renders null when Supabase disabled');
-      
+
       // Reset to global implementation after test
       originalMock.mockImplementation(() => true);
-      console.log('NULL TEST: Restored global mock to return true');
     });
   });
 });

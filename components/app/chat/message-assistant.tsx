@@ -1,6 +1,7 @@
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
 import { Check, Copy, RotateCw } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+
 // AI SDK Elements
 import {
   Reasoning,
@@ -14,6 +15,7 @@ import {
   SourcesContent,
   SourcesTrigger,
 } from '@/components/ai-elements/source';
+
 import {
   Tool as AITool,
   ToolContent as AIToolContent,
@@ -21,11 +23,13 @@ import {
   ToolInput as AIToolInput,
   ToolOutput as AIToolOutput,
 } from '@/components/ai-elements/tool';
+
 import {
   Message,
   MessageAction,
   MessageActions,
 } from '@/components/prompt-kit/message';
+
 import { toast } from '@/components/ui/toast';
 import { useUserPreferences } from '@/lib/user-preference-store/provider';
 import { cn } from '@/lib/utils';
@@ -35,8 +39,252 @@ import { QuoteButton } from './quote-button';
 import { SearchImages } from './search-images';
 import { SmoothStreamingMessage } from './smooth-streaming-message';
 import type { ToolUIPart } from './tool-invocation';
-import { ToolInvocation } from './tool-invocation';
 import { useAssistantMessageSelection } from './useAssistantMessageSelection';
+
+// ========= Types & Typeguards =========
+
+type Part = NonNullable<MessageAISDK['parts']>[number];
+
+type ToolPartState =
+  | 'output-available'
+  | 'input-available'
+  | 'input-streaming'
+  | 'output-error';
+
+interface TypedToolPart {
+  toolCallId?: string;
+  state?: ToolPartState;
+  type: string;
+  toolName?: string;
+  output?: unknown;
+  input?: unknown;
+  errorText?: string;
+  text?: string;
+  reasoningText?: string;
+}
+
+interface ImageResult {
+  title: string;
+  imageUrl: string;
+  sourceUrl: string;
+}
+
+const isToolUIPart = (part: Part): part is ToolUIPart =>
+  typeof (part as any)?.type === 'string' &&
+  (part as any).type.startsWith('tool-') &&
+  'toolCallId' in (part as any);
+
+// ========= Pure helpers (éénpass, herbruikbaar) =========
+
+const BEST_STATE_ORDER: ToolPartState[] = [
+  'output-available',
+  'input-available',
+  'input-streaming',
+  'output-error',
+];
+
+const pickBestState = (group: ToolUIPart[]): ToolUIPart => {
+  // Kies de "informatiereikste" part volgens BEST_STATE_ORDER
+  let best: ToolUIPart | undefined;
+  let bestIdx = Number.POSITIVE_INFINITY;
+  for (const p of group) {
+    const s = (p as TypedToolPart).state;
+    const idx = s ? BEST_STATE_ORDER.indexOf(s) : BEST_STATE_ORDER.length;
+    if (idx >= 0 && idx < bestIdx) {
+      best = p;
+      bestIdx = idx;
+    }
+  }
+  return best ?? group[0];
+};
+
+const groupToolParts = (toolParts: ToolUIPart[]): ToolUIPart[] => {
+  if (toolParts.length === 0) return [];
+  const map = new Map<string, ToolUIPart[]>();
+  for (const p of toolParts) {
+    const id = (p as TypedToolPart).toolCallId || 'unknown';
+    const arr = map.get(id);
+    if (arr) arr.push(p);
+    else map.set(id, [p]);
+  }
+  const picks: ToolUIPart[] = [];
+  for (const [, group] of map) picks.push(pickBestState(group));
+  return picks;
+};
+
+const extractToolInvocationParts = (
+  parts?: MessageAISDK['parts']
+): ToolUIPart[] => {
+  if (!parts || parts.length === 0) return [];
+  // filter zonder extra allocaties
+  const out: ToolUIPart[] = [];
+  for (const p of parts) if (isToolUIPart(p)) out.push(p);
+  return out;
+};
+
+const parseMaybeJson = (value: unknown): unknown => {
+  if (!value) return undefined;
+  if (typeof value === 'object') return value;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+};
+
+const extractFileSearchFailure = (toolParts: ToolUIPart[]) => {
+  // Zoek eerste fileSearch met success=false
+  for (const p of toolParts) {
+    const tp = p as TypedToolPart;
+    if (
+      tp.toolName === 'fileSearch' &&
+      tp.state === 'output-available' &&
+      'output' in tp
+    ) {
+      let parsed: any | undefined;
+
+      // Output kan string of { content: [{type:'text', text:string}]} zijn
+      const out: any = tp.output as any;
+      if (out && typeof out === 'object' && Array.isArray(out.content)) {
+        const textNode = out.content.find((c: any) => c?.type === 'text');
+        parsed = parseMaybeJson(textNode?.text);
+        if (!parsed) parsed = out; // val terug op object
+      } else {
+        parsed = parseMaybeJson(out);
+      }
+
+      if (parsed && parsed.success === false) {
+        const description =
+          parsed.error ||
+          parsed.summary ||
+          'File search failed. Please try again.';
+        return String(description);
+      }
+    }
+  }
+  return null;
+};
+
+const extractReasoningText = (
+  parts?: MessageAISDK['parts']
+): string | undefined => {
+  if (!parts || parts.length === 0) return undefined;
+
+  for (const part of parts as TypedToolPart[]) {
+    if ((part as any).type === 'reasoning') {
+      const t = (part as any).text ?? (part as any).reasoningText;
+      if (typeof t === 'string' && t) return t;
+    }
+
+    // sommige modellen nestelen reasoning in tool output
+    if (typeof part.type === 'string' && part.type.startsWith('tool-')) {
+      if (part.toolName === 'reasoning') {
+        const direct = part.text ?? part.reasoningText;
+        if (typeof direct === 'string' && direct) return direct;
+      }
+      if (part.output && typeof part.output === 'object') {
+        const out = part.output as Record<string, unknown>;
+        if (out.reasoning != null) return String(out.reasoning);
+      }
+    }
+  }
+  return undefined;
+};
+
+const extractSearchImageResults = (
+  parts?: MessageAISDK['parts']
+): ImageResult[] => {
+  if (!parts || parts.length === 0) return [];
+  const results: ImageResult[] = [];
+  for (const p of parts as TypedToolPart[]) {
+    if (
+      typeof p.type === 'string' &&
+      p.type.startsWith('tool-') &&
+      p.state === 'output-available' &&
+      p.toolName === 'imageSearch' &&
+      p.output
+    ) {
+      const out = p.output as {
+        content?: Array<{ type: string; results?: ImageResult[] }>;
+      };
+      const first = out?.content?.[0];
+      if (first?.type === 'images' && Array.isArray(first.results)) {
+        // push zonder extra arrays
+        for (const r of first.results) results.push(r);
+      }
+    }
+  }
+  return results;
+};
+
+// Dedup urls zodat Sources niet explodeert
+const dedupSources = (sources: Array<{ url: string; title?: string }>) => {
+  if (!sources.length) return sources;
+  const seen = new Set<string>();
+  const out: typeof sources = [];
+  for (const s of sources) {
+    if (!seen.has(s.url)) {
+      seen.add(s.url);
+      out.push(s);
+    }
+  }
+  return out;
+};
+
+// ========= Subcomponent: ToolInvocationCard (gememoized) =========
+
+const ToolInvocationCard = memo(function ToolInvocationCard({
+  part,
+}: {
+  part: ToolUIPart;
+}) {
+  const tp = part as TypedToolPart;
+
+  // Alleen stringify wanneer output-referentie wijzigt
+  const outputNode = useMemo(() => {
+    const out = tp.output as unknown;
+    if (out == null) return null;
+
+    if (typeof out === 'string') {
+      return (
+        <pre className="whitespace-pre-wrap text-xs" aria-label="tool-output">
+          {out}
+        </pre>
+      );
+    }
+    if (typeof out === 'object') {
+      let text = '';
+      try {
+        text = JSON.stringify(out, null, 2);
+      } catch {
+        text = '[Unserializable output]';
+      }
+      return (
+        <pre className="whitespace-pre-wrap text-xs" aria-label="tool-output">
+          {text}
+        </pre>
+      );
+    }
+    return null;
+  }, [tp.output]);
+
+  return (
+    <AITool key={tp.toolCallId}>
+      <AIToolHeader state={tp.state} type={tp.type} />
+      <AIToolContent>
+        {tp.input ? <AIToolInput input={tp.input} /> : null}
+        {tp.output ? (
+          <AIToolOutput errorText={tp.errorText} output={outputNode} />
+        ) : null}
+      </AIToolContent>
+    </AITool>
+  );
+});
+
+// ========= Component =========
 
 type MessageAssistantProps = {
   children: string;
@@ -68,211 +316,79 @@ export function MessageAssistant({
   langsmithRunId,
 }: MessageAssistantProps) {
   const { preferences } = useUserPreferences();
-  const sources = getSources(parts || []);
-  // Type guard to narrow AI SDK parts to tool invocation parts
-  const isToolUIPart = (
-    part: NonNullable<MessageAISDK['parts']>[number]
-  ): part is ToolUIPart => {
-    return (
-      typeof part.type === 'string' &&
-      part.type.startsWith('tool-') &&
-      'toolCallId' in part
-    );
-  };
-  // Filter for tool parts using the AI SDK's built-in tool part types
-  const toolInvocationParts: ToolUIPart[] = useMemo(
-    () => parts?.filter(isToolUIPart) || [],
-    [parts, isToolUIPart]
+
+  // ---- Derived data (gememoized) ----
+  const toolInvocationParts = useMemo(
+    () => extractToolInvocationParts(parts),
+    [parts]
+  );
+  const groupedToolParts = useMemo(
+    () => groupToolParts(toolInvocationParts),
+    [toolInvocationParts]
+  );
+  const reasoningText = useMemo(() => extractReasoningText(parts), [parts]);
+  const searchImageResults = useMemo(
+    () => extractSearchImageResults(parts),
+    [parts]
   );
 
-  const groupedToolParts = useMemo(() => {
-    const groups: Record<string, ToolUIPart[]> = {};
-    for (const p of toolInvocationParts) {
-      const id = (p as { toolCallId?: string }).toolCallId || 'unknown';
-      if (!groups[id]) groups[id] = [];
-      groups[id].push(p);
-    }
-    // For each group choose the most informative state to display
-    const chosen: ToolUIPart[] = [];
-    for (const id of Object.keys(groups)) {
-      const group = groups[id];
-      const pick =
-        group.find((x) => (x as any).state === 'output-available') ||
-        group.find((x) => (x as any).state === 'input-available') ||
-        group.find((x) => (x as any).state === 'input-streaming') ||
-        group.find((x) => (x as any).state === 'output-error') ||
-        group[0];
-      if (pick) chosen.push(pick);
-    }
-    return chosen;
-  }, [toolInvocationParts]);
+  // Sources (met dedup)
+  const sources = useMemo(() => dedupSources(getSources(parts ?? [])), [parts]);
 
-  // Show actionable toast when fileSearch tool fails
+  const contentNullOrEmpty = children == null || children === '';
+  const isLastStreaming = status === 'streaming' && isLast;
+  const showTools =
+    groupedToolParts.length > 0 && preferences.showToolInvocations;
+
+  // ---- FileSearch error toast (één keer) ----
   const hasShownFileSearchErrorRef = useRef(false);
   useEffect(() => {
     if (hasShownFileSearchErrorRef.current) return;
-    if (!toolInvocationParts.length) return;
+    if (toolInvocationParts.length === 0) return;
 
-    // Find fileSearch tool outputs and check for success=false
-    const fileSearchOutputs = toolInvocationParts.filter(
-      (p) =>
-        typeof p.type === 'string' &&
-        'toolName' in p &&
-        (p as { toolName?: string }).toolName === 'fileSearch' &&
-        'state' in p &&
-        (p as { state?: string }).state === 'output-available' &&
-        'output' in p
-    );
-
-    for (const part of fileSearchOutputs) {
-      // Attempt to parse the output as JSON from text content or object
-      let parsed: unknown;
-      const output = (part as { output?: unknown }).output;
-      try {
-        if (
-          output &&
-          typeof output === 'object' &&
-          'content' in (output as Record<string, unknown>)
-        ) {
-          const content = (
-            output as { content?: Array<{ type: string; text?: string }> }
-          ).content;
-          const textNode = Array.isArray(content)
-            ? content.find(
-                (c) =>
-                  c &&
-                  typeof c === 'object' &&
-                  (c as { type?: string }).type === 'text'
-              )
-            : undefined;
-          if (textNode && typeof textNode.text === 'string') {
-            try {
-              parsed = JSON.parse(textNode.text);
-            } catch {
-              parsed = undefined;
-            }
-          }
-        } else if (typeof output === 'string') {
-          try {
-            parsed = JSON.parse(output);
-          } catch {
-            parsed = undefined;
-          }
-        } else if (output && typeof output === 'object') {
-          parsed = output;
-        }
-      } catch {
-        // ignore parse errors
-      }
-
-      const result = parsed as
-        | { success?: boolean; error?: string; summary?: string }
-        | undefined;
-      if (result && result.success === false) {
-        hasShownFileSearchErrorRef.current = true;
-        const description =
-          result.error ||
-          result.summary ||
-          'File search failed. Please try again.';
-        toast({
-          title: 'File search failed',
-          description,
-          status: 'error',
-          ...(onReload
-            ? {
-                button: {
-                  label: 'Retry',
-                  onClick: () => {
-                    try {
-                      onReload?.();
-                    } catch {
-                      /* noop */
-                    }
-                  },
+    const description = extractFileSearchFailure(toolInvocationParts);
+    if (description) {
+      hasShownFileSearchErrorRef.current = true;
+      toast({
+        title: 'File search failed',
+        description,
+        status: 'error',
+        ...(onReload
+          ? {
+              button: {
+                label: 'Retry',
+                onClick: () => {
+                  try {
+                    onReload?.();
+                  } catch {
+                    /* noop */
+                  }
                 },
-              }
-            : {}),
-        });
-        break;
-      }
+              },
+            }
+          : {}),
+      });
     }
   }, [toolInvocationParts, onReload]);
 
-  // Better reasoning parts extraction - handle different formats
-  const reasoningParts = parts?.find((part) => {
-    if (part.type === 'reasoning') return true;
-    if (typeof part.type === 'string' && part.type.startsWith('tool-')) {
-      if ('toolName' in part && (part as any).toolName === 'reasoning')
-        return true;
-      if ('output' in part && (part as any).output?.reasoning) return true;
-    }
-    return false;
-  });
-  const reasoningText = (() => {
-    if (!reasoningParts) return undefined;
-    if ('text' in (reasoningParts as any) && (reasoningParts as any).text) {
-      return (reasoningParts as any).text as string;
-    }
-    if (
-      'reasoningText' in (reasoningParts as any) &&
-      (reasoningParts as any).reasoningText
-    ) {
-      return (reasoningParts as any).reasoningText as string;
-    }
-    if (
-      'output' in (reasoningParts as any) &&
-      (reasoningParts as any).output?.reasoning
-    ) {
-      return String((reasoningParts as any).output.reasoning);
-    }
-    return undefined;
-  })();
-
-  const contentNullOrEmpty = children === null || children === '';
-  const isLastStreaming = status === 'streaming' && isLast;
-
-  // Extract search image results from tool parts
-  const searchImageResults =
-    parts
-      ?.filter(
-        (part) =>
-          part.type.startsWith('tool-') &&
-          'state' in part &&
-          part.state === 'output-available' &&
-          'toolName' in part &&
-          part.toolName === 'imageSearch'
-      )
-      .flatMap((part) => {
-        if ('output' in part) {
-          const result = part.output as {
-            content?: {
-              type: string;
-              results?: {
-                title: string;
-                imageUrl: string;
-                sourceUrl: string;
-              }[];
-            }[];
-          };
-          return result?.content?.[0]?.type === 'images'
-            ? (result.content[0].results ?? [])
-            : [];
-        }
-        return [];
-      }) ?? [];
-
+  // ---- Quote selectie ----
   const isQuoteEnabled = !preferences.multiModelEnabled;
   const messageRef = useRef<HTMLDivElement>(null);
   const { selectionInfo, clearSelection } = useAssistantMessageSelection(
     messageRef,
     isQuoteEnabled
   );
+
   const handleQuoteBtnClick = useCallback(() => {
     if (selectionInfo && onQuote) {
       onQuote(selectionInfo.text, selectionInfo.messageId);
       clearSelection();
     }
   }, [selectionInfo, onQuote, clearSelection]);
+
+  // ---- Stabiele handlers voor acties ----
+  const handleCopy = useCallback(() => copyToClipboard?.(), [copyToClipboard]);
+  const handleReload = useCallback(() => onReload?.(), [onReload]);
 
   return (
     <Message
@@ -290,6 +406,7 @@ export function MessageAssistant({
         ref={messageRef}
         {...(isQuoteEnabled && { 'data-message-id': messageId })}
       >
+        {/* Reasoning */}
         {((status === 'streaming' && isLast) || reasoningText) && (
           <Reasoning defaultOpen={false} isStreaming={status === 'streaming'}>
             <ReasoningTrigger />
@@ -299,81 +416,54 @@ export function MessageAssistant({
           </Reasoning>
         )}
 
-        {groupedToolParts &&
-          groupedToolParts.length > 0 &&
-          preferences.showToolInvocations && (
-            <div className="mb-6 w-full space-y-3">
-              {groupedToolParts.map((part) => (
-                <AITool key={part.toolCallId}>
-                  <AIToolHeader state={(part as any).state} type={part.type} />
-                  <AIToolContent>
-                    {'input' in (part as any) && (part as any).input ? (
-                      <AIToolInput input={(part as any).input} />
-                    ) : null}
-                    {'output' in (part as any) && (part as any).output ? (
-                      <AIToolOutput
-                        errorText={(part as any).errorText}
-                        output={
-                          // show strings/objects directly; otherwise JSON stringify as fallback
-                          typeof (part as any).output === 'string' ||
-                          ((part as any).output &&
-                            typeof (part as any).output === 'object') ? (
-                            <pre className="whitespace-pre-wrap text-xs">
-                              {typeof (part as any).output === 'string'
-                                ? (part as any).output
-                                : JSON.stringify((part as any).output, null, 2)}
-                            </pre>
-                          ) : null
-                        }
-                      />
-                    ) : null}
-                  </AIToolContent>
-                </AITool>
-              ))}
-            </div>
-          )}
+        {/* Tool invocations */}
+        {showTools && (
+          <div className="mb-6 w-full space-y-3">
+            {groupedToolParts.map((part) => (
+              <ToolInvocationCard
+                key={(part as TypedToolPart).toolCallId ?? part.type}
+                part={part}
+              />
+            ))}
+          </div>
+        )}
 
+        {/* Image search resultaten */}
         {searchImageResults.length > 0 && (
           <SearchImages results={searchImageResults} />
         )}
 
-        {contentNullOrEmpty ? null : (
+        {/* Tekstinhoud */}
+        {!contentNullOrEmpty && (
           <div
             className={cn(
               'prose dark:prose-invert relative min-w-full bg-transparent p-0',
               'prose-h2:mt-8 prose-h2:mb-3 prose-table:block prose-h1:scroll-m-20 prose-h2:scroll-m-20 prose-h3:scroll-m-20 prose-h4:scroll-m-20 prose-h5:scroll-m-20 prose-h6:scroll-m-20 prose-table:overflow-y-auto prose-h1:font-semibold prose-h2:font-medium prose-h3:font-medium prose-strong:font-medium prose-h1:text-2xl prose-h2:text-xl prose-h3:text-base'
             )}
           >
-            <SmoothStreamingMessage
-              text={children}
-              animate={status === 'streaming' && isLast}
-            />
+            <SmoothStreamingMessage text={children} animate={isLastStreaming} />
           </div>
         )}
 
-        {sources && sources.length > 0 && (
+        {/* Bronnen */}
+        {sources.length > 0 && (
           <Sources>
             <SourcesTrigger count={sources.length} />
             <SourcesContent>
-              {sources.map(
-                (source: { url: string; title?: string }, index: number) => (
-                  <Source
-                    href={source.url}
-                    key={index}
-                    title={source.title || source.url}
-                  />
-                )
-              )}
+              {sources.map((source, index) => (
+                <Source
+                  href={source.url}
+                  key={`${source.url}-${index}`}
+                  title={source.title || source.url}
+                />
+              ))}
             </SourcesContent>
           </Sources>
         )}
 
-        {isLastStreaming || contentNullOrEmpty ? null : (
-          <MessageActions
-            className={cn(
-              '-ml-2 flex gap-0 opacity-0 transition-opacity group-hover:opacity-100'
-            )}
-          >
+        {/* Acties (copy / regen / feedback) */}
+        {!isLastStreaming && !contentNullOrEmpty && (
+          <MessageActions className="-ml-2 flex gap-0 opacity-0 transition-opacity group-hover:opacity-100">
             <MessageAction
               side="bottom"
               tooltip={copied ? 'Copied!' : 'Copy text'}
@@ -381,7 +471,7 @@ export function MessageAssistant({
               <button
                 aria-label="Copy text"
                 className="flex size-7.5 items-center justify-center rounded-full bg-transparent text-muted-foreground transition hover:bg-accent/60 hover:text-foreground"
-                onClick={copyToClipboard}
+                onClick={handleCopy}
                 type="button"
               >
                 {copied ? (
@@ -391,6 +481,7 @@ export function MessageAssistant({
                 )}
               </button>
             </MessageAction>
+
             {isLast ? (
               <MessageAction
                 delayDuration={0}
@@ -400,13 +491,14 @@ export function MessageAssistant({
                 <button
                   aria-label="Regenerate"
                   className="flex size-7.5 items-center justify-center rounded-full bg-transparent text-muted-foreground transition hover:bg-accent/60 hover:text-foreground"
-                  onClick={onReload}
+                  onClick={handleReload}
                   type="button"
                 >
                   <RotateCw className="size-4" />
                 </button>
               </MessageAction>
             ) : null}
+
             <MessageFeedback
               className="ml-1"
               langsmithRunId={langsmithRunId}
@@ -415,7 +507,8 @@ export function MessageAssistant({
           </MessageActions>
         )}
 
-        {isQuoteEnabled && selectionInfo && selectionInfo.messageId && (
+        {/* Quote button */}
+        {isQuoteEnabled && selectionInfo?.messageId && (
           <QuoteButton
             messageContainerRef={messageRef}
             mousePosition={selectionInfo.position}

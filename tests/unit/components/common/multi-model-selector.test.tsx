@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, act, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -52,7 +58,7 @@ vi.mock('@/components/ui/drawer', () => ({
         // Don't auto-trigger, let test handle it
       }
     }, [open, onOpenChange]);
-    
+
     return (
       <div data-testid="drawer-container" data-open={open}>
         {children}
@@ -78,40 +84,49 @@ vi.mock('@/components/ui/drawer', () => ({
       e.preventDefault();
       onClick?.(e);
     };
-    
+
     if (asChild && React.isValidElement(children)) {
-      return React.cloneElement(children, { 
+      return React.cloneElement(children, {
         onClick: (e: any) => {
           handleClick(e);
           children.props.onClick?.(e);
-        }
+        },
       });
     }
-    
-    return <div data-testid="drawer-trigger" onClick={handleClick}>{children}</div>;
+
+    return (
+      <div data-testid="drawer-trigger" onClick={handleClick}>
+        {children}
+      </div>
+    );
   },
 }));
 
 vi.mock('@/components/ui/dropdown-menu', () => {
-  const DropdownMenuContext = React.createContext({ isOpen: false, setIsOpen: (open: boolean) => {} });
-  
+  const DropdownMenuContext = React.createContext({
+    isOpen: false,
+    setIsOpen: (_open: boolean) => {},
+  });
+
   return {
     DropdownMenu: ({ children, open, onOpenChange }: any) => {
       const [isOpen, setIsOpen] = React.useState(open || false);
-      
+
       React.useEffect(() => {
         if (open !== undefined) {
           setIsOpen(open);
         }
       }, [open]);
-      
+
       const handleOpenChange = (newOpen: boolean) => {
         setIsOpen(newOpen);
         onOpenChange?.(newOpen);
       };
-      
+
       return (
-        <DropdownMenuContext.Provider value={{ isOpen, setIsOpen: handleOpenChange }}>
+        <DropdownMenuContext.Provider
+          value={{ isOpen, setIsOpen: handleOpenChange }}
+        >
           <div data-testid="dropdown-menu" data-open={isOpen}>
             {children}
           </div>
@@ -120,25 +135,31 @@ vi.mock('@/components/ui/dropdown-menu', () => {
     },
     DropdownMenuContent: ({ children, forceMount }: any) => {
       const { isOpen } = React.useContext(DropdownMenuContext);
-      
+
       // Always render content if forceMount is true or if dropdown is open
       if (!forceMount && !isOpen) return null;
-      
+
       return (
         <div data-testid="dropdown-content" role="menu">
           {children}
         </div>
       );
     },
-    DropdownMenuItem: ({ children, onSelect, onFocus, onMouseEnter, ...props }: any) => {
+    DropdownMenuItem: ({
+      children,
+      onSelect,
+      onFocus,
+      onMouseEnter,
+      ...props
+    }: any) => {
       const handleClick = (e: any) => {
         e.preventDefault();
         onSelect?.(e);
       };
-      
+
       return (
-        <div 
-          {...props} 
+        <div
+          {...props}
           onClick={handleClick}
           onFocus={onFocus}
           onMouseEnter={onMouseEnter}
@@ -151,21 +172,21 @@ vi.mock('@/components/ui/dropdown-menu', () => {
     },
     DropdownMenuTrigger: ({ children, asChild }: any) => {
       const { isOpen, setIsOpen } = React.useContext(DropdownMenuContext);
-      
+
       const handleClick = (e: any) => {
         e.preventDefault();
         setIsOpen(!isOpen);
       };
-      
+
       if (asChild && React.isValidElement(children)) {
-        return React.cloneElement(children, { 
+        return React.cloneElement(children, {
           onClick: (e: any) => {
             handleClick(e);
             children.props.onClick?.(e);
-          }
+          },
         });
       }
-      
+
       return <button onClick={handleClick}>{children}</button>;
     },
   };
@@ -187,40 +208,60 @@ vi.mock('@/components/ui/tooltip', () => ({
 }));
 
 vi.mock('@/components/ui/input', () => ({
-  Input: React.forwardRef(({ onChange, onClick, onFocus, onKeyDown, value, defaultValue, ...props }: any, ref: any) => {
-    // Use controlled input that respects the value prop
-    const handleChange = (e: any) => {
-      onChange?.(e);
-    };
-    
-    return (
-      <input 
-        ref={ref}
-        value={value}
-        defaultValue={defaultValue}
-        onChange={handleChange}
-        onClick={onClick}
-        onFocus={onFocus}
-        onKeyDown={onKeyDown}
-        {...props} 
-      />
-    );
-  }),
+  Input: React.forwardRef(
+    (
+      {
+        onChange,
+        onClick,
+        onFocus,
+        onKeyDown,
+        value,
+        defaultValue,
+        ...props
+      }: any,
+      ref: any
+    ) => {
+      // Use controlled input that respects the value prop
+      const handleChange = (e: any) => {
+        onChange?.(e);
+      };
+
+      return (
+        <input
+          ref={ref}
+          value={value}
+          defaultValue={defaultValue}
+          onChange={handleChange}
+          onClick={onClick}
+          onFocus={onFocus}
+          onKeyDown={onKeyDown}
+          {...props}
+        />
+      );
+    }
+  ),
 }));
 
 vi.mock('@/components/ui/checkbox', () => ({
-  Checkbox: ({ checked, onChange, onCheckedChange, disabled, onClick, ...props }: any) => {
+  Checkbox: ({
+    checked,
+    onChange,
+    onCheckedChange,
+    disabled,
+    onClick,
+    ...props
+  }: any) => {
     const handleChange = (e: any) => {
       const newChecked = e.target.checked;
       onChange?.(newChecked);
       onCheckedChange?.(newChecked);
     };
-    
+
     const handleClick = (e: any) => {
       e.stopPropagation();
       onClick?.(e);
     };
-    
+
     return (
       <input
         type="checkbox"
@@ -235,20 +276,25 @@ vi.mock('@/components/ui/checkbox', () => ({
 }));
 
 vi.mock('@/components/ui/button', () => ({
-  Button: React.forwardRef(({ children, onClick, disabled, className, variant, size, ...props }: any, ref: any) => (
-    <button 
-      ref={ref}
-      type="button" 
-      onClick={onClick}
-      disabled={disabled}
-      className={`min-w-[200px] justify-between rounded-full dark:bg-secondary ${className || ''}`}
-      data-variant={variant}
-      data-size={size}
-      {...props}
-    >
-      {children}
-    </button>
-  )),
+  Button: React.forwardRef(
+    (
+      { children, onClick, disabled, className, variant, size, ...props }: any,
+      ref: any
+    ) => (
+      <button
+        ref={ref}
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={`min-w-[200px] justify-between rounded-full dark:bg-secondary ${className || ''}`}
+        data-variant={variant}
+        data-size={size}
+        {...props}
+      >
+        {children}
+      </button>
+    )
+  ),
 }));
 
 vi.mock('@/components/app/chat-input/popover-content-auth', () => ({
@@ -259,9 +305,9 @@ vi.mock('@/components/common/model-selector/pro-dialog', () => ({
   ProModelDialog: ({ isOpen, currentModel, setIsOpen }: any) => {
     // Always render the dialog container, but show/hide based on isOpen
     return (
-      <div 
-        data-testid={isOpen ? "pro-dialog" : "pro-dialog-hidden"} 
-        role={isOpen ? "dialog" : undefined}
+      <div
+        data-testid={isOpen ? 'pro-dialog' : 'pro-dialog-hidden'}
+        role={isOpen ? 'dialog' : undefined}
         style={{ display: isOpen ? 'block' : 'none' }}
       >
         <div>Pro required</div>
@@ -284,13 +330,14 @@ vi.mock('lucide-react', async (importOriginal) => {
 
   // Create specific mock components for each icon
   const createMockIcon = (name: string) => {
-    const MockIcon = React.forwardRef(({ className, ...props }: any, ref: any) =>
-      React.createElement('svg', {
-        className,
-        ...props,
-        ref,
-        'data-testid': `${name.toLowerCase()}-icon`,
-      })
+    const MockIcon = React.forwardRef(
+      ({ className, ...props }: any, ref: any) =>
+        React.createElement('svg', {
+          className,
+          ...props,
+          ref,
+          'data-testid': `${name.toLowerCase()}-icon`,
+        })
     );
     MockIcon.displayName = `Mock${name}Icon`;
     return MockIcon;
@@ -411,7 +458,7 @@ describe('MultiModelSelector', () => {
 
     it('should have correct CSS classes', () => {
       renderComponent();
-      
+
       const button = screen.getByRole('button');
       expect(button).toBeInTheDocument();
       // Check for the presence of key classes that should be applied
@@ -440,7 +487,7 @@ describe('MultiModelSelector', () => {
 
       // When no models are selected, should show "Select models" text
       expect(screen.getByText('Select models')).toBeInTheDocument();
-      
+
       // Should not show auth popover
       expect(screen.queryByTestId('popover-auth')).not.toBeInTheDocument();
     });
@@ -455,10 +502,10 @@ describe('MultiModelSelector', () => {
       // Should render trigger button in mobile mode
       const buttons = screen.getAllByRole('button');
       expect(buttons.length).toBeGreaterThan(0);
-      
+
       // Should have content
       expect(container.textContent).toBeTruthy();
-      expect(container.textContent!.length).toBeGreaterThan(0);
+      expect(container.textContent?.length).toBeGreaterThan(0);
     });
 
     it('should render dropdown on desktop', () => {
@@ -480,12 +527,14 @@ describe('MultiModelSelector', () => {
 
       // The dropdown content is already rendered, so we can find menu items immediately
       const menuItems = screen.getAllByRole('menuitem');
-      const gpt35Item = menuItems.find(item => item.textContent?.includes('GPT-3.5'));
+      const gpt35Item = menuItems.find((item) =>
+        item.textContent?.includes('GPT-3.5')
+      );
       expect(gpt35Item).toBeDefined();
-      
+
       if (gpt35Item) {
         await user.click(gpt35Item);
-        
+
         // Check that the handler was called with the correct model selection
         expect(mockSetSelectedModelIds).toHaveBeenCalledWith([
           'gpt-4',
@@ -502,12 +551,14 @@ describe('MultiModelSelector', () => {
 
       // Find the selected model (gpt-4) in the menu items
       const menuItems = screen.getAllByRole('menuitem');
-      const gpt4Item = menuItems.find(item => item.textContent?.includes('GPT-4'));
+      const gpt4Item = menuItems.find((item) =>
+        item.textContent?.includes('GPT-4')
+      );
       expect(gpt4Item).toBeDefined();
-      
+
       if (gpt4Item) {
         await user.click(gpt4Item);
-        
+
         // Check that the handler was called to deselect the model
         expect(mockSetSelectedModelIds).toHaveBeenCalledWith([]);
       }
@@ -544,14 +595,14 @@ describe('MultiModelSelector', () => {
 
       // Wait for dropdown content
       await screen.findByTestId('dropdown-content');
-      
+
       // Look for limit indicators in menu items
       const menuItems = screen.getAllByRole('menuitem');
       const limitText = screen.queryByText('Limit');
-      
+
       // Should find either the limit text or verify that models at limit show some indication
       expect(limitText || menuItems.length > 0).toBeTruthy();
-      
+
       // Alternative check: look for disabled state or visual indicator
       if (limitText) {
         expect(limitText).toBeInTheDocument();
@@ -566,19 +617,24 @@ describe('MultiModelSelector', () => {
 
       // Find Claude-3 in menu items (should show as locked)
       const menuItems = screen.getAllByRole('menuitem');
-      const claudeItem = menuItems.find(item => item.textContent?.includes('Claude-3'));
+      const claudeItem = menuItems.find((item) =>
+        item.textContent?.includes('Claude-3')
+      );
       expect(claudeItem).toBeDefined();
-      
+
       // Verify that the Claude-3 item shows as locked
       expect(claudeItem?.textContent).toContain('Locked');
-      
+
       if (claudeItem) {
         await user.click(claudeItem);
-        
+
         // Wait for pro dialog to appear - it should change from hidden to visible
-        await waitFor(() => {
-          expect(screen.getByTestId('pro-dialog')).toBeInTheDocument();
-        }, { timeout: 1000 });
+        await waitFor(
+          () => {
+            expect(screen.getByTestId('pro-dialog')).toBeInTheDocument();
+          },
+          { timeout: 1000 }
+        );
         expect(mockSetSelectedModelIds).not.toHaveBeenCalled();
       }
     });
@@ -605,14 +661,14 @@ describe('MultiModelSelector', () => {
       // The dropdown content is already available
       const searchInput = screen.getByPlaceholderText('Search models...');
       expect(searchInput).toBeInTheDocument();
-      
+
       // Verify the input is interactive
       expect(searchInput.getAttribute('placeholder')).toBe('Search models...');
-      
+
       // Test that we can focus and interact with the search input
       await user.click(searchInput);
       await user.type(searchInput, 'GPT');
-      
+
       // The component uses controlled input, so we verify interaction happened
       expect(searchInput).toBeInTheDocument();
       expect(searchInput).toHaveFocus();
@@ -659,7 +715,7 @@ describe('MultiModelSelector', () => {
       const calls = vi.mocked(useKeyShortcutHook.useKeyShortcut).mock.calls;
       if (calls.length > 0) {
         const [, callback] = calls[0];
-        
+
         // Wrap state update in act to prevent React warnings
         await act(async () => {
           callback();
@@ -778,14 +834,19 @@ describe('MultiModelSelector', () => {
       await user.click(button);
 
       const menuItems = screen.getAllByRole('menuitem');
-      const lockedModel = menuItems.find(item => item.textContent?.includes('Claude-3'));
-      
+      const lockedModel = menuItems.find((item) =>
+        item.textContent?.includes('Claude-3')
+      );
+
       expect(lockedModel).toBeDefined();
       if (lockedModel) {
         await user.click(lockedModel);
-        await waitFor(() => {
-          expect(screen.getByTestId('pro-dialog')).toBeInTheDocument();
-        }, { timeout: 1000 });
+        await waitFor(
+          () => {
+            expect(screen.getByTestId('pro-dialog')).toBeInTheDocument();
+          },
+          { timeout: 1000 }
+        );
       }
     });
 
@@ -796,16 +857,21 @@ describe('MultiModelSelector', () => {
       await user.click(button);
 
       const menuItems = screen.getAllByRole('menuitem');
-      const lockedModel = menuItems.find(item => item.textContent?.includes('Claude-3'));
-      
+      const lockedModel = menuItems.find((item) =>
+        item.textContent?.includes('Claude-3')
+      );
+
       expect(lockedModel).toBeDefined();
       if (lockedModel) {
         await user.click(lockedModel);
-        
-        await waitFor(() => {
-          expect(screen.getByTestId('pro-dialog')).toBeInTheDocument();
-        }, { timeout: 1000 });
-        
+
+        await waitFor(
+          () => {
+            expect(screen.getByTestId('pro-dialog')).toBeInTheDocument();
+          },
+          { timeout: 1000 }
+        );
+
         // Check that the model ID is passed correctly
         const modelElement = screen.queryByTestId('pro-dialog-model');
         if (modelElement) {
@@ -902,10 +968,12 @@ describe('MultiModelSelector', () => {
       await waitFor(() => {
         expect(screen.getByTestId('dropdown-content')).toBeInTheDocument();
       });
-      
+
       const menuItems = screen.getAllByRole('menuitem');
-      const unknownModel = menuItems.find(item => item.textContent?.includes('Unknown Model'));
-      
+      const unknownModel = menuItems.find((item) =>
+        item.textContent?.includes('Unknown Model')
+      );
+
       expect(unknownModel).toBeDefined();
     });
   });
@@ -923,7 +991,7 @@ describe('MultiModelSelector', () => {
       await waitFor(() => {
         expect(screen.getByTestId('dropdown-content')).toBeInTheDocument();
       });
-      
+
       // Look for no results message
       await waitFor(() => {
         const noResultsText = screen.getByText((content) => {
@@ -931,7 +999,7 @@ describe('MultiModelSelector', () => {
         });
         expect(noResultsText).toBeInTheDocument();
       });
-      
+
       const requestText = screen.getByText((content) => {
         return content.includes('Request a new model');
       });
@@ -950,7 +1018,7 @@ describe('MultiModelSelector', () => {
       await waitFor(() => {
         expect(screen.getByTestId('dropdown-content')).toBeInTheDocument();
       });
-      
+
       // Look for the link by text content rather than role
       await waitFor(() => {
         const link = screen.getByText((content) => {
@@ -997,14 +1065,16 @@ describe('MultiModelSelector', () => {
       // Get all menu items
       const models = screen.queryAllByRole('menuitem');
       expect(models.length).toBeGreaterThan(0);
-      
+
       // Click the first unselected model (GPT-3.5 since GPT-4 is already selected)
-      const gpt35Model = models.find(item => item.textContent?.includes('GPT-3.5'));
+      const gpt35Model = models.find((item) =>
+        item.textContent?.includes('GPT-3.5')
+      );
       expect(gpt35Model).toBeDefined();
-      
+
       if (gpt35Model) {
         await user.click(gpt35Model);
-        
+
         // Check if the selection handler was called
         expect(mockSetSelectedModelIds).toHaveBeenCalledTimes(1);
       }

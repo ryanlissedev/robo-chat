@@ -11,8 +11,8 @@ vi.mock('@/lib/supabase/config', () => ({
   isRealtimeEnabled: vi.fn(() => false),
 }));
 
-import { createClient } from '@/lib/supabase/server';
 import { isSupabaseEnabled } from '@/lib/supabase/config';
+import { createClient } from '@/lib/supabase/server';
 
 // Get the mocked version for use in tests
 const mockIsSupabaseEnabled = vi.mocked(isSupabaseEnabled);
@@ -61,9 +61,9 @@ describe('User API', () => {
   describe('getUserProfile', () => {
     it('should return guest profile when supabase is disabled', async () => {
       mockIsSupabaseEnabled.mockReturnValue(false);
-      
+
       const profile = await getUserProfile();
-      
+
       expect(profile).toEqual({
         id: 'guest',
         email: 'guest@zola.chat',
@@ -99,13 +99,13 @@ describe('User API', () => {
     it('should return user profile when user is authenticated', async () => {
       // Ensure Supabase is enabled for this test
       mockIsSupabaseEnabled.mockReturnValue(true);
-      
+
       const mockUser = {
         id: 'user-123',
         email: 'test@example.com',
         user_metadata: {
           name: 'Test User',
-          avatar_url: 'https://example.com/avatar.jpg'
+          avatar_url: 'https://example.com/avatar.jpg',
         },
       };
       const mockProfile = {

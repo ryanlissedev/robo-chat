@@ -126,6 +126,7 @@ export function sanitizeInput(input: unknown): unknown {
 
     // Remove control characters except newlines and tabs
     sanitizedInput = sanitizedInput.replace(
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: Security sanitization requires control character matching
       /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g,
       ''
     );

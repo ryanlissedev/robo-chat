@@ -4,8 +4,6 @@ import {
   fireEvent,
   render,
   screen,
-  waitFor,
-  within,
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiKeyManager } from '@/app/settings/components/api-key-manager';

@@ -299,8 +299,9 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
               </div>
             ) : (
               vectorStores.map((store) => (
-                <div
-                  className={`cursor-pointer rounded-lg border p-3 transition-colors ${
+                <button
+                  type="button"
+                  className={`w-full cursor-pointer rounded-lg border p-3 text-left transition-colors ${
                     selectedStore?.id === store.id
                       ? 'border-primary bg-primary/10'
                       : 'hover:bg-muted'
@@ -313,24 +314,23 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
                       setSelectedStore(store);
                     }
                   }}
-                  role="button"
-                  tabIndex={0}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Database className="h-4 w-4" />
                       <span className="font-medium">{store.name}</span>
                     </div>
-                    <Button
+                    <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         deleteVectorStore(store.id);
                       }}
-                      size="icon"
-                      variant="ghost"
+                      className="p-1 hover:bg-destructive/10 rounded transition-colors"
+                      aria-label={`Delete vector store ${store.name}`}
                     >
-                      <Trash className="h-4 w-4" />
-                    </Button>
+                      <Trash className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                    </button>
                   </div>
                   <div className="mt-2 flex gap-4 text-muted-foreground text-xs">
                     <span>{store.file_count} files</span>
@@ -343,7 +343,7 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
                       {store.status}
                     </Badge>
                   </div>
-                </div>
+                </button>
               ))
             )}
           </CardContent>

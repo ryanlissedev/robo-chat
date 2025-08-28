@@ -38,11 +38,15 @@ export function HistoryTrigger({
   };
 
   const handleConfirmDelete = async (id: string) => {
+    if (!chatId) {
+      return;
+    }
+
     if (id === chatId) {
       setIsOpen(false);
     }
     await deleteMessages();
-    await deleteChat(id, chatId!, () => router.push('/'));
+    await deleteChat(id, chatId, () => router.push('/'));
   };
 
   const defaultTrigger = (

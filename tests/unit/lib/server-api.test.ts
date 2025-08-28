@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { validateUserIdentity } from '@/lib/server/api';
+import { isSupabaseEnabled } from '@/lib/supabase/config';
 import { createClient } from '@/lib/supabase/server';
 import { createGuestServerClient } from '@/lib/supabase/server-guest';
-import { isSupabaseEnabled } from '@/lib/supabase/config';
 
 // Mock dependencies
 vi.mock('@/lib/supabase/server', () => ({

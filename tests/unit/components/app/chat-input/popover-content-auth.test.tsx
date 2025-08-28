@@ -1,9 +1,8 @@
-import { cleanup, render, screen, waitFor, act } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PopoverContentAuth } from '@/components/app/chat-input/popover-content-auth';
 import * as api from '@/lib/api';
-import * as config from '@/lib/config';
 import * as supabaseClient from '@/lib/supabase/client';
 import * as supabaseConfig from '@/lib/supabase/config';
 
@@ -193,7 +192,7 @@ describe('PopoverContentAuth', () => {
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      
+
       // Single act() call - remove nested act() calls
       await act(async () => {
         await user.click(signInButton);
@@ -214,7 +213,7 @@ describe('PopoverContentAuth', () => {
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      
+
       // Single act() call - remove nested act() calls
       await act(async () => {
         await user.click(signInButton);
@@ -240,7 +239,7 @@ describe('PopoverContentAuth', () => {
       const signInButton = screen.getByRole('button', {
         name: /continue with google/i,
       });
-      
+
       // Single act() call - remove nested act() calls
       await act(async () => {
         await user.click(signInButton);
@@ -253,7 +252,7 @@ describe('PopoverContentAuth', () => {
       // Resolve the promise and wait for state updates
       await act(async () => {
         resolveSignIn({ provider: 'google', url: 'https://auth.google.com' });
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
       // Loading state should be cleared after completion - no need for waitFor
@@ -330,7 +329,9 @@ describe('PopoverContentAuth', () => {
       });
 
       // Error message should be displayed synchronously after act() - no need for waitFor
-      expect(screen.getByText('Supabase is not configured')).toBeInTheDocument();
+      expect(
+        screen.getByText('Supabase is not configured')
+      ).toBeInTheDocument();
     });
 
     it('should clear error on retry', async () => {
@@ -547,7 +548,7 @@ describe('PopoverContentAuth', () => {
 
       await act(async () => {
         resolveSignIn({ provider: 'google', url: 'https://auth.google.com' });
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
       });
     });
   });
@@ -583,7 +584,7 @@ describe('PopoverContentAuth', () => {
       // Resolve the promise to clean up
       await act(async () => {
         resolveSignIn({ provider: 'google', url: 'test' });
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
       });
     });
 

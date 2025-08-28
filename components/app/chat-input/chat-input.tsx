@@ -2,8 +2,8 @@
 
 import { ArrowUp, AudioWaveform, Square } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { RealtimeAudioModal } from '@/components/audio/RealtimeAudioModal';
 import { VoiceButton } from '@/components/app/voice/button/voice-button';
+import { RealtimeAudioModal } from '@/components/audio/RealtimeAudioModal';
 import { ModelSelector } from '@/components/common/model-selector/base';
 import {
   PromptInput,
@@ -91,7 +91,7 @@ export function ChatInput({
     (transcript: string) => {
       const newValue = value ? `${value}\n${transcript}` : transcript;
       onValueChange(newValue);
-      
+
       // Focus textarea after voice input
       requestAnimationFrame(() => {
         textareaRef.current?.focus();

@@ -1,14 +1,21 @@
 /**
  * Test cleanup utilities for preventing memory leaks and optimizing performance
  */
-import { vi } from 'vitest';
+
 import { cleanup as rtlCleanup } from '@testing-library/react';
+import { vi } from 'vitest';
 
 export interface CleanupTracker {
   timers: Set<NodeJS.Timeout>;
   intervals: Set<NodeJS.Timeout>;
-  listeners: Set<{ element: EventTarget; event: string; listener: EventListener }>;
-  observers: Set<{ observer: IntersectionObserver | ResizeObserver | MutationObserver }>;
+  listeners: Set<{
+    element: EventTarget;
+    event: string;
+    listener: EventListener;
+  }>;
+  observers: Set<{
+    observer: IntersectionObserver | ResizeObserver | MutationObserver;
+  }>;
   subscriptions: Set<{ unsubscribe: () => void }>;
 }
 
@@ -72,7 +79,10 @@ class TestCleanupManager {
     }
   }
 
-  trackSubscription(testId: string, subscription: { unsubscribe: () => void }): void {
+  trackSubscription(
+    testId: string,
+    subscription: { unsubscribe: () => void }
+  ): void {
     const tracker = this.trackers.get(testId);
     if (tracker) {
       tracker.subscriptions.add(subscription);
@@ -99,9 +109,7 @@ class TestCleanupManager {
     tracker.listeners.forEach(({ element, event, listener }) => {
       try {
         element.removeEventListener(event, listener);
-      } catch (error) {
-        console.warn('Failed to remove event listener:', error);
-      }
+      } catch (_error) {}
     });
     tracker.listeners.clear();
 
@@ -109,9 +117,7 @@ class TestCleanupManager {
     tracker.observers.forEach(({ observer }) => {
       try {
         observer.disconnect();
-      } catch (error) {
-        console.warn('Failed to disconnect observer:', error);
-      }
+      } catch (_error) {}
     });
     tracker.observers.clear();
 
@@ -119,9 +125,7 @@ class TestCleanupManager {
     tracker.subscriptions.forEach((subscription) => {
       try {
         subscription.unsubscribe();
-      } catch (error) {
-        console.warn('Failed to unsubscribe:', error);
-      }
+      } catch (_error) {}
     });
     tracker.subscriptions.clear();
 
@@ -172,7 +176,7 @@ export function enhancedCleanup(testId?: string): void {
  * Create a test-scoped cleanup tracker
  */
 export function createTestCleanup(testId: string) {
-  const tracker = cleanupManager.createTracker(testId);
+  const _tracker = cleanupManager.createTracker(testId);
 
   return {
     // Enhanced setTimeout that tracks the timer
@@ -201,7 +205,9 @@ export function createTestCleanup(testId: string) {
     },
 
     // Track observers
-    trackObserver: (observer: IntersectionObserver | ResizeObserver | MutationObserver) => {
+    trackObserver: (
+      observer: IntersectionObserver | ResizeObserver | MutationObserver
+    ) => {
       cleanupManager.trackObserver(testId, observer);
     },
 
@@ -223,7 +229,7 @@ export async function withCleanup<T>(
   operation: (cleanup: ReturnType<typeof createTestCleanup>) => Promise<T>
 ): Promise<T> {
   const testCleanup = createTestCleanup(testId);
-  
+
   try {
     const result = await operation(testCleanup);
     return result;
@@ -240,19 +246,19 @@ export class PerformanceMonitor {
   private static memory = new Map<string, number>();
 
   static start(label: string): void {
-    this.timers.set(label, Date.now());
-    
+    PerformanceMonitor.timers.set(label, Date.now());
+
     // Record memory usage if available
     if (typeof process !== 'undefined' && process.memoryUsage) {
       const usage = process.memoryUsage();
-      this.memory.set(label, usage.heapUsed);
+      PerformanceMonitor.memory.set(label, usage.heapUsed);
     }
   }
 
   static end(label: string): { duration: number; memoryDelta?: number } {
-    const startTime = this.timers.get(label);
-    const startMemory = this.memory.get(label);
-    
+    const startTime = PerformanceMonitor.timers.get(label);
+    const startMemory = PerformanceMonitor.memory.get(label);
+
     if (!startTime) {
       throw new Error(`No timer started for label: ${label}`);
     }
@@ -266,8 +272,8 @@ export class PerformanceMonitor {
     }
 
     // Cleanup
-    this.timers.delete(label);
-    this.memory.delete(label);
+    PerformanceMonitor.timers.delete(label);
+    PerformanceMonitor.memory.delete(label);
 
     return { duration, memoryDelta };
   }
@@ -276,17 +282,17 @@ export class PerformanceMonitor {
 /**
  * Memory leak detection helper
  */
-export function detectMemoryLeaks(testName: string, threshold = 10 * 1024 * 1024): void {
+export function detectMemoryLeaks(
+  _testName: string,
+  threshold = 10 * 1024 * 1024
+): void {
   if (typeof process === 'undefined' || !process.memoryUsage) {
     return; // Skip in browser environment
   }
 
   const usage = process.memoryUsage();
-  
+
   if (usage.heapUsed > threshold) {
-    console.warn(
-      `Potential memory leak detected in test "${testName}": ${Math.round(usage.heapUsed / 1024 / 1024)}MB heap used`
-    );
   }
 }
 

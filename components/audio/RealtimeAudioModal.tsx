@@ -1,7 +1,7 @@
 'use client';
 
 import { AudioWaveform, Settings, Volume2, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { VoiceButton } from '@/components/app/voice/button/voice-button';
 import { useVoiceIntegration } from '@/components/app/voice/hooks/use-voice-integration';
 import { useWebRTCConnection } from '@/components/app/voice/hooks/use-webrtc-connection';
@@ -47,6 +47,9 @@ export function RealtimeAudioModal({
   isUserAuthenticated = false,
   userId,
 }: RealtimeAudioModalProps) {
+  const safetyProtocolsId = useId();
+  const voiceActivityDetectionId = useId();
+
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -267,10 +270,14 @@ export function RealtimeAudioModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label
+                      htmlFor="voice-select"
+                      className="text-xs font-medium text-muted-foreground"
+                    >
                       Voice
                     </label>
                     <select
+                      id="voice-select"
                       value={config.voice}
                       onChange={(e) =>
                         handleVoiceChange(e.target.value as typeof config.voice)
@@ -288,10 +295,14 @@ export function RealtimeAudioModal({
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label
+                      htmlFor="language-select"
+                      className="text-xs font-medium text-muted-foreground"
+                    >
                       Language
                     </label>
                     <select
+                      id="language-select"
                       value={config.language}
                       onChange={(e) => handleLanguageChange(e.target.value)}
                       className="w-full p-2 text-xs border rounded"
@@ -312,20 +323,28 @@ export function RealtimeAudioModal({
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label
+                      htmlFor={safetyProtocolsId}
+                      className="text-xs font-medium text-muted-foreground"
+                    >
                       Safety Protocols
                     </label>
                     <Switch
+                      id={safetyProtocolsId}
                       checked={safetyProtocols}
                       onCheckedChange={setSafetyProtocols}
                     />
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-medium text-muted-foreground">
+                    <label
+                      htmlFor={voiceActivityDetectionId}
+                      className="text-xs font-medium text-muted-foreground"
+                    >
                       Voice Activity Detection
                     </label>
                     <Switch
+                      id={voiceActivityDetectionId}
                       checked={config.enableVAD}
                       onCheckedChange={(checked) =>
                         updateConfig({ enableVAD: checked })
@@ -337,10 +356,18 @@ export function RealtimeAudioModal({
                 <Separator />
 
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">
+                  <label
+                    htmlFor="personality-mode-group"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
                     Personality Mode
                   </label>
-                  <div className="flex flex-wrap gap-2">
+                  <div
+                    id="personality-mode-group"
+                    className="flex flex-wrap gap-2"
+                    role="radiogroup"
+                    aria-label="Personality Mode"
+                  >
                     {(
                       [
                         'safety-focused',
@@ -356,6 +383,9 @@ export function RealtimeAudioModal({
                           personalityMode === mode ? 'default' : 'outline'
                         }
                         className="text-xs"
+                        role="radio"
+                        aria-checked={personalityMode === mode}
+                        aria-label={`${mode === 'safety-focused' ? 'Safety focused' : mode === 'technical-expert' ? 'Technical expert' : 'Friendly assistant'} personality mode`}
                       >
                         {mode === 'safety-focused' && '🛡️ Safety'}
                         {mode === 'technical-expert' && '🔧 Technical'}

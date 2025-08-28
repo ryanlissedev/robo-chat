@@ -211,7 +211,7 @@ export default function TestChatPage() {
             {results.map((result, i) => (
               <div
                 className="border-blue-500 border-l-4 bg-gray-50 py-2 pl-4"
-                key={i}
+                key={`result-${result.message}-${i}`}
               >
                 <div className="font-semibold text-blue-600">
                   Test {i + 1}: &quot;{result.message}&quot;

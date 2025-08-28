@@ -1,35 +1,36 @@
-import {
-  cleanup,
-  render,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-// Import timer test utilities
-import { createTimerTestContext, safeRunAllTimers, safeAdvanceTimers } from '../tests/utils/timer-test-utils';
-
 // Import the Message component at module level
 import { Message } from '@/components/app/chat/message';
+// Import timer test utilities
+import {
+  createTimerTestContext,
+  safeAdvanceTimers,
+  safeRunAllTimers,
+} from '../tests/utils/timer-test-utils';
 
 // Mock child components with minimal implementations that include interactive elements
 vi.mock('@/components/app/chat/message-assistant', () => ({
-  MessageAssistant: ({ children, copyToClipboard, onQuote, messageId, ...props }: any) => {
+  MessageAssistant: ({
+    children,
+    copyToClipboard,
+    onQuote,
+    messageId,
+    ...props
+  }: any) => {
     const handleQuote = () => {
       if (onQuote) {
         onQuote(children, messageId);
       }
     };
-    
+
     return (
       <div data-testid="message-assistant" {...props}>
         {children}
-        <button role="button" aria-label="copy" onClick={copyToClipboard}>
+        <button aria-label="copy" onClick={copyToClipboard}>
           Copy
         </button>
-        <button role="button" aria-label="quote" onClick={handleQuote}>
+        <button aria-label="quote" onClick={handleQuote}>
           Quote
         </button>
       </div>
@@ -41,7 +42,7 @@ vi.mock('@/components/app/chat/message-user', () => ({
   MessageUser: ({ children, copyToClipboard, ...props }: any) => (
     <div data-testid="message-user" {...props}>
       {children}
-      <button role="button" aria-label="copy" onClick={copyToClipboard}>
+      <button aria-label="copy" onClick={copyToClipboard}>
         Copy
       </button>
     </div>
@@ -85,12 +86,12 @@ describe('Message Component (Optimized)', () => {
   describe('Basic Rendering', () => {
     it('should render assistant message', async () => {
       const props = createMockProps();
-      
+
       render(<Message {...props} />);
-      
+
       // Advance any timers that might be set
       safeRunAllTimers();
-      
+
       await waitFor(() => {
         expect(screen.getByTestId('message-assistant')).toBeInTheDocument();
       });
@@ -98,12 +99,12 @@ describe('Message Component (Optimized)', () => {
 
     it('should render user message', async () => {
       const props = createMockProps({ variant: 'user' });
-      
+
       render(<Message {...props} />);
-      
+
       // Advance any timers that might be set
       safeRunAllTimers();
-      
+
       await waitFor(() => {
         expect(screen.getByTestId('message-user')).toBeInTheDocument();
       });
@@ -113,26 +114,30 @@ describe('Message Component (Optimized)', () => {
   describe('Interactive Features', () => {
     it('should render copy button', async () => {
       const props = createMockProps();
-      
+
       render(<Message {...props} />);
-      
+
       safeRunAllTimers();
-      
+
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /copy/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /copy/i })
+        ).toBeInTheDocument();
       });
     });
 
     it('should render quote button for assistant messages', async () => {
       const onQuote = vi.fn();
       const props = createMockProps({ onQuote });
-      
+
       render(<Message {...props} />);
-      
+
       safeRunAllTimers();
-      
+
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /quote/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /quote/i })
+        ).toBeInTheDocument();
       });
     });
   });
@@ -141,32 +146,32 @@ describe('Message Component (Optimized)', () => {
     it('should handle rapid interactions without memory leaks', async () => {
       const onQuote = vi.fn();
       const props = createMockProps({ onQuote });
-      
+
       const { rerender } = render(<Message {...props} />);
-      
+
       // Simulate rapid re-renders
       for (let i = 0; i < 10; i++) {
         rerender(<Message {...props} id={`message-${i}`} />);
         safeAdvanceTimers(100);
       }
-      
+
       // Verify no memory leaks by checking cleanup
       safeRunAllTimers();
-      
+
       expect(onQuote).not.toHaveBeenCalled();
     });
 
     it('should cleanup event listeners on unmount', async () => {
       const props = createMockProps();
-      
+
       const { unmount } = render(<Message {...props} />);
-      
+
       // Allow component to initialize
       safeRunAllTimers();
-      
+
       // Unmount and verify cleanup
       unmount();
-      
+
       // Advance timers to ensure cleanup completes
       safeRunAllTimers();
       // Verify no remaining timers
@@ -176,13 +181,16 @@ describe('Message Component (Optimized)', () => {
 
   describe('Sequential Operations', () => {
     it('should render assistant message with content', async () => {
-      const props = createMockProps({ variant: 'assistant', children: 'Assistant message 1' });
-      
+      const props = createMockProps({
+        variant: 'assistant',
+        children: 'Assistant message 1',
+      });
+
       render(<Message {...props} />);
-      
+
       // Advance timers if using fake timers
       safeRunAllTimers();
-      
+
       await waitFor(
         () => {
           expect(screen.getByTestId('message-assistant')).toBeInTheDocument();
@@ -190,15 +198,18 @@ describe('Message Component (Optimized)', () => {
         { timeout: 3000 }
       );
     });
-    
+
     it('should render user message with content', async () => {
-      const props = createMockProps({ variant: 'user', children: 'User message 1' });
-      
+      const props = createMockProps({
+        variant: 'user',
+        children: 'User message 1',
+      });
+
       render(<Message {...props} />);
-      
+
       // Advance timers if using fake timers
       safeRunAllTimers();
-      
+
       await waitFor(
         () => {
           expect(screen.getByTestId('message-user')).toBeInTheDocument();

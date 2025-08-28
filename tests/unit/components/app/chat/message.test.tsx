@@ -54,7 +54,9 @@ vi.mock('@/components/app/chat/message-assistant', () => ({
         <div>{children}</div>
         <button
           type="button"
-          onClick={onQuote && (() => onQuote('quoted text', messageId))}
+          onClick={
+            onQuote ? () => onQuote('quoted text', messageId) : undefined
+          }
         >
           Quote
         </button>
@@ -63,9 +65,7 @@ vi.mock('@/components/app/chat/message-assistant', () => ({
         </button>
         <button
           type="button"
-          onClick={() => {
-            copyToClipboard();
-          }}
+          onClick={copyToClipboard ? () => copyToClipboard() : undefined}
         >
           Copy
         </button>
@@ -103,17 +103,21 @@ vi.mock('@/components/app/chat/message-user', () => ({
     return (
       <div data-testid="message-user" data-message-id={id} {...domProps}>
         <div>{children}</div>
-        <button type="button" onClick={() => onDelete(id)}>
+        <button
+          type="button"
+          onClick={onDelete ? () => onDelete(id) : undefined}
+        >
           Delete
         </button>
-        <button type="button" onClick={() => onEdit(id, 'edited text')}>
+        <button
+          type="button"
+          onClick={onEdit ? () => onEdit(id, 'edited text') : undefined}
+        >
           Edit
         </button>
         <button
           type="button"
-          onClick={() => {
-            copyToClipboard();
-          }}
+          onClick={copyToClipboard ? () => copyToClipboard() : undefined}
         >
           Copy
         </button>
@@ -122,10 +126,14 @@ vi.mock('@/components/app/chat/message-user', () => ({
   },
 }));
 
-// Hoist clipboard mock to avoid conflicts with global setup
-const { mockWriteText } = vi.hoisted(() => ({
-  mockWriteText: vi.fn().mockResolvedValue(undefined),
-}));
+// Create a clean clipboard mock at module level
+const mockWriteText = vi.fn().mockResolvedValue(undefined);
+const mockClipboard = {
+  writeText: mockWriteText,
+  readText: vi.fn().mockResolvedValue(''),
+  read: vi.fn().mockResolvedValue([]),
+  write: vi.fn().mockResolvedValue(undefined),
+};
 
 const defaultProps = {
   id: 'test-message-1',
@@ -138,8 +146,7 @@ const defaultProps = {
 } as const;
 
 function renderMessage(props = {}) {
-  // Clean up before each render to prevent DOM pollution
-  cleanup();
+  // No need to cleanup here since beforeEach handles it
   return render(<Message {...defaultProps} {...props} />);
 }
 
@@ -147,88 +154,38 @@ describe('Message', () => {
   let user: ReturnType<typeof userEvent.setup>;
 
   beforeEach(async () => {
+    // Clean up DOM first
+    cleanup();
+
+    // Clear all mocks
     vi.clearAllMocks();
-    // Use real timers for userEvent compatibility
-    vi.useRealTimers();
+
+    // Reset and configure the clipboard mock
     mockWriteText.mockClear();
-    mockWriteText.mockResolvedValue(undefined);
+    mockWriteText.mockImplementation(() => Promise.resolve());
+
+    // Use Object.assign to replace the existing clipboard mock from setup.ts
+    Object.assign(navigator.clipboard, mockClipboard);
 
     // Setup userEvent with proper configuration
     user = userEvent.setup({
-      advanceTimers: vi.advanceTimersByTime,
       delay: null, // Remove delay for faster tests
     });
-  });
 
-  // Use describe-level setup to override clipboard mock
-  beforeEach(() => {
-    // Force override any existing clipboard mock from vitest-setup.ts
-    // This needs to happen in beforeEach to ensure it's applied for each test
-    const mockClipboard = {
-      writeText: mockWriteText,
-      readText: vi.fn().mockResolvedValue(''),
-      read: vi.fn().mockResolvedValue([]),
-      write: vi.fn().mockResolvedValue(undefined),
-    };
-
-    // Override navigator.clipboard
-    Object.defineProperty(navigator, 'clipboard', {
-      value: mockClipboard,
-      writable: true,
-      configurable: true,
-    });
-
-    // Override global.navigator.clipboard for jsdom
-    if (global.navigator) {
-      Object.defineProperty(global.navigator, 'clipboard', {
-        value: mockClipboard,
-        writable: true,
-        configurable: true,
-      });
-    }
-
-    // Override window.navigator.clipboard
-    if (typeof window !== 'undefined' && window.navigator) {
-      Object.defineProperty(window.navigator, 'clipboard', {
-        value: mockClipboard,
-        writable: true,
-        configurable: true,
-      });
-    }
-
-    // Verify our mock is properly set
-    const isCorrectMock = navigator.clipboard.writeText === mockWriteText;
-    if (!isCorrectMock) {
-      throw new Error(
-        'Clipboard mock override failed - expected our mock function to be set'
-      );
-    }
-
-    // Ensure clipboard mock is properly available with argument
-    expect(navigator.clipboard.writeText).toBeDefined();
-
-    // Test the mock function works with a string argument
-    expect(() => mockWriteText('test')).not.toThrow();
+    // Ensure all default mock functions are cleared
+    defaultProps.onDelete.mockClear();
+    defaultProps.onEdit.mockClear();
+    defaultProps.onReload.mockClear();
+    defaultProps.onQuote.mockClear();
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    // Clean up DOM first
     cleanup();
-  });
-
-  describe('Clipboard Mock Verification', () => {
-    it('should verify clipboard mock is working', async () => {
-      // Clear any previous mock calls
-      mockWriteText.mockClear();
-
-      expect(navigator.clipboard).toBeDefined();
-      expect(navigator.clipboard.writeText).toBeDefined();
-
-      // Test direct call to clipboard
-      await navigator.clipboard.writeText('test');
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('test');
-      expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(1);
-    });
+    // Then clear all mocks
+    vi.clearAllMocks();
+    // Reset timers if any were used
+    vi.useRealTimers();
   });
 
   describe('User Messages', () => {
@@ -264,14 +221,10 @@ describe('Message', () => {
 
       const userMessage = screen.getByTestId('message-user');
       const deleteButton = within(userMessage).getByText('Delete');
+
       await user.click(deleteButton);
 
-      await waitFor(
-        () => {
-          expect(onDelete).toHaveBeenCalledWith('test-message-1');
-        },
-        { timeout: 5000 }
-      );
+      expect(onDelete).toHaveBeenCalledWith('test-message-1');
     });
 
     it('should handle user message editing', async () => {
@@ -280,14 +233,10 @@ describe('Message', () => {
 
       const userMessage = screen.getByTestId('message-user');
       const editButton = within(userMessage).getByText('Edit');
+
       await user.click(editButton);
 
-      await waitFor(
-        () => {
-          expect(onEdit).toHaveBeenCalledWith('test-message-1', 'edited text');
-        },
-        { timeout: 5000 }
-      );
+      expect(onEdit).toHaveBeenCalledWith('test-message-1', 'edited text');
     });
 
     it('should handle clipboard copy for user messages', async () => {
@@ -356,14 +305,10 @@ describe('Message', () => {
 
       const assistantMessage = screen.getByTestId('message-assistant');
       const reloadButton = within(assistantMessage).getByText('Reload');
+
       await user.click(reloadButton);
 
-      await waitFor(
-        () => {
-          expect(onReload).toHaveBeenCalledTimes(1);
-        },
-        { timeout: 5000 }
-      );
+      expect(onReload).toHaveBeenCalledTimes(1);
     });
 
     it('should handle quote functionality', async () => {
@@ -418,22 +363,16 @@ describe('Message', () => {
     });
 
     it('should reset copied state after timeout', async () => {
-      // Clear previous mock calls
-      mockWriteText.mockClear();
-
       renderMessage({ variant: 'user' });
 
       const userMessage = screen.getByTestId('message-user');
       const copyButton = within(userMessage).getByText('Copy');
+
       await user.click(copyButton);
 
       // Verify clipboard was called
-      await waitFor(
-        () => {
-          expect(mockWriteText).toHaveBeenCalledTimes(1);
-        },
-        { timeout: 1000 }
-      );
+      expect(mockWriteText).toHaveBeenCalledWith('Test message content');
+      expect(mockWriteText).toHaveBeenCalledTimes(1);
 
       // Wait for the 500ms timeout to complete naturally
       await new Promise((resolve) => setTimeout(resolve, 600));

@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cn, debounce, formatNumber, isDev } from '@/lib/utils';
 
 // Import timer test utilities
-import { createTimerTestContext, safeAdvanceTimers, safeRunPendingTimers } from '../utils/timer-test-utils';
+import {
+  createTimerTestContext,
+  safeAdvanceTimers,
+  safeRunPendingTimers,
+} from '../utils/timer-test-utils';
 
 describe('utils', () => {
   describe('cn()', () => {

@@ -404,21 +404,27 @@ describe('ChatInput', () => {
 
     it('should handle Enter key to send message', async () => {
       const onSend = vi.fn();
-      const { container, debug } = renderComponent({ value: 'Test message', onSend });
+      const { container, debug } = renderComponent({
+        value: 'Test message',
+        onSend,
+      });
 
       const textarea = container.querySelector('[data-testid="chat-textarea"]');
       expect(textarea).toBeInTheDocument();
-      
+
       if (textarea) {
         // Test directly firing a keydown event
         fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
-        
+
         // Alternative: simulate typing and pressing enter
         // await user.type(textarea as HTMLElement, '{Enter}');
-        
-        await waitFor(() => {
-          expect(onSend).toHaveBeenCalledTimes(1);
-        }, { timeout: 1000 });
+
+        await waitFor(
+          () => {
+            expect(onSend).toHaveBeenCalledTimes(1);
+          },
+          { timeout: 1000 }
+        );
       }
     });
 
@@ -518,13 +524,16 @@ describe('ChatInput', () => {
 
       const sendButton = container.querySelector('[aria-label="Send message"]');
       expect(sendButton).toBeInTheDocument();
-      
+
       if (sendButton) {
         fireEvent.click(sendButton);
-        
-        await waitFor(() => {
-          expect(onSend).toHaveBeenCalledTimes(1);
-        }, { timeout: 1000 });
+
+        await waitFor(
+          () => {
+            expect(onSend).toHaveBeenCalledTimes(1);
+          },
+          { timeout: 1000 }
+        );
       }
     });
 
@@ -538,14 +547,17 @@ describe('ChatInput', () => {
 
       const stopButton = container.querySelector('[aria-label="Stop"]');
       expect(stopButton).toBeInTheDocument();
-      
+
       if (stopButton) {
         // Try direct fireEvent.click
         fireEvent.click(stopButton);
-        
-        await waitFor(() => {
-          expect(stop).toHaveBeenCalledTimes(1);
-        }, { timeout: 1000 });
+
+        await waitFor(
+          () => {
+            expect(stop).toHaveBeenCalledTimes(1);
+          },
+          { timeout: 1000 }
+        );
       }
     });
 
@@ -583,14 +595,17 @@ describe('ChatInput', () => {
         '[data-testid="file-upload-button"]'
       );
       expect(uploadButton).toBeInTheDocument();
-      
+
       if (uploadButton) {
         // Try direct fireEvent.click
         fireEvent.click(uploadButton);
-        
-        await waitFor(() => {
-          expect(onFileUpload).toHaveBeenCalledWith([expect.any(File)]);
-        }, { timeout: 1000 });
+
+        await waitFor(
+          () => {
+            expect(onFileUpload).toHaveBeenCalledWith([expect.any(File)]);
+          },
+          { timeout: 1000 }
+        );
       }
     });
 
@@ -602,17 +617,20 @@ describe('ChatInput', () => {
       // Look specifically for the remove button in file list
       const fileList = container.querySelector('[data-testid="file-list"]');
       const removeButton = fileList?.querySelector('button');
-      
+
       expect(removeButton).toBeInTheDocument();
       expect(removeButton?.textContent).toBe('Remove');
-      
+
       if (removeButton) {
         // Use direct fireEvent.click
         fireEvent.click(removeButton);
-        
-        await waitFor(() => {
-          expect(onFileRemove).toHaveBeenCalledWith(file);
-        }, { timeout: 1000 });
+
+        await waitFor(
+          () => {
+            expect(onFileRemove).toHaveBeenCalledWith(file);
+          },
+          { timeout: 1000 }
+        );
       }
     });
 
@@ -682,14 +700,17 @@ describe('ChatInput', () => {
         '[data-testid="model-selector"]'
       );
       expect(modelSelector).toBeInTheDocument();
-      
+
       if (modelSelector) {
         // Use direct fireEvent.click
         fireEvent.click(modelSelector);
-        
-        await waitFor(() => {
-          expect(onSelectModel).toHaveBeenCalledWith('new-model');
-        }, { timeout: 1000 });
+
+        await waitFor(
+          () => {
+            expect(onSelectModel).toHaveBeenCalledWith('new-model');
+          },
+          { timeout: 1000 }
+        );
       }
     });
 
@@ -718,16 +739,19 @@ describe('ChatInput', () => {
         '[data-testid="voice-button"]'
       );
       expect(voiceButton).toBeInTheDocument();
-      
+
       if (voiceButton) {
         // Use direct fireEvent.click
         fireEvent.click(voiceButton);
-        
-        await waitFor(() => {
-          expect(onValueChange).toHaveBeenCalledWith(
-            'existing text\nVoice transcript test'
-          );
-        }, { timeout: 1000 });
+
+        await waitFor(
+          () => {
+            expect(onValueChange).toHaveBeenCalledWith(
+              'existing text\nVoice transcript test'
+            );
+          },
+          { timeout: 1000 }
+        );
       }
     });
 
@@ -739,14 +763,17 @@ describe('ChatInput', () => {
         '[data-testid="realtime-audio-modal"]'
       );
       expect(audioModal).toBeInTheDocument();
-      
+
       if (audioModal) {
         // Use direct fireEvent.click
         fireEvent.click(audioModal);
-        
-        await waitFor(() => {
-          expect(onValueChange).toHaveBeenCalledWith('Realtime audio');
-        }, { timeout: 1000 });
+
+        await waitFor(
+          () => {
+            expect(onValueChange).toHaveBeenCalledWith('Realtime audio');
+          },
+          { timeout: 1000 }
+        );
       }
     });
 
@@ -772,14 +799,17 @@ describe('ChatInput', () => {
         '[data-testid="reasoning-effort-selector"]'
       );
       expect(selector).toBeInTheDocument();
-      
+
       if (selector) {
         // Use fireEvent.change for select elements
         fireEvent.change(selector, { target: { value: 'high' } });
-        
-        await waitFor(() => {
-          expect(onReasoningEffortChange).toHaveBeenCalledWith('high');
-        }, { timeout: 1000 });
+
+        await waitFor(
+          () => {
+            expect(onReasoningEffortChange).toHaveBeenCalledWith('high');
+          },
+          { timeout: 1000 }
+        );
       }
     });
 
@@ -817,19 +847,26 @@ describe('ChatInput', () => {
       });
 
       // Look specifically in the prompt system for the suggest button
-      const promptSystem = container.querySelector('[data-testid="prompt-system"]');
-      const suggestButton = promptSystem?.querySelector('button[type="button"]');
-      
+      const promptSystem = container.querySelector(
+        '[data-testid="prompt-system"]'
+      );
+      const suggestButton = promptSystem?.querySelector(
+        'button[type="button"]'
+      );
+
       expect(suggestButton).toBeInTheDocument();
       expect(suggestButton?.textContent).toBe('Suggest');
-      
+
       if (suggestButton) {
         // Use direct fireEvent.click
         fireEvent.click(suggestButton);
-        
-        await waitFor(() => {
-          expect(onSuggestion).toHaveBeenCalledWith('Test suggestion');
-        }, { timeout: 1000 });
+
+        await waitFor(
+          () => {
+            expect(onSuggestion).toHaveBeenCalledWith('Test suggestion');
+          },
+          { timeout: 1000 }
+        );
       }
     });
   });

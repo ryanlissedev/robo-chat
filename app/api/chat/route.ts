@@ -26,6 +26,10 @@ import {
   logMetrics,
   updateRun,
 } from '@/lib/langsmith/client';
+import {
+  extractReasoningFromResponse,
+  type ReasoningContext,
+} from '@/lib/middleware/extract-reasoning-middleware';
 import { getAllModels } from '@/lib/models';
 import { getProviderForModel } from '@/lib/openproviders/provider-map';
 import { buildAugmentedSystemPrompt } from '@/lib/retrieval/augment';
@@ -38,7 +42,6 @@ import { retrieveWithGpt41 } from '@/lib/retrieval/two-pass';
 import { performVectorRetrieval } from '@/lib/retrieval/vector-retrieval';
 import { fileSearchTool } from '@/lib/tools/file-search';
 import type { ProviderWithoutOllama } from '@/lib/user-keys';
-import { extractReasoningFromResponse, type ReasoningContext } from '@/lib/middleware/extract-reasoning-middleware';
 import logger from '@/lib/utils/logger';
 import {
   type CredentialSource,
@@ -633,7 +636,7 @@ async function createLangSmithRun({
 }
 
 export async function POST(req: Request) {
-  // biome-ignore lint/correctness/noExcessiveComplexity: This handler coordinates validation, logging, retrieval, streaming, and persistence.
+  // biome-ignore lint/complexity/noExcessiveComplexity: This handler coordinates validation, logging, retrieval, streaming, and persistence.
   let requestData: ChatRequest | null = null;
   try {
     requestData = (await req.json()) as ChatRequest;
@@ -873,7 +876,7 @@ export async function POST(req: Request) {
               'Stream encountered an error'
             );
           },
-          // biome-ignore lint/correctness/noExcessiveComplexity: Logging and persistence steps are verbose by nature.
+          // biome-ignore lint/complexity/noExcessiveComplexity: Logging and persistence steps are verbose by nature.
           onFinish: async ({ response }) => {
             // Same onFinish as below for logging and storage
             if (response.messages && response.messages.length > 0) {
@@ -955,18 +958,20 @@ export async function POST(req: Request) {
                       traceTypes: reasoningContext.traces.map((t) => t.type),
                       summary: reasoningContext.summary,
                       // Include actual reasoning content for debugging
-                      reasoningTraces: reasoningContext.traces.map((trace, index) => ({
-                        index,
-                        type: trace.type,
-                        contentPreview: getPreview(trace.content, 200), // Show first 200 chars of reasoning
-                        fullContentLength: trace.content?.length || 0,
-                      })),
+                      reasoningTraces: reasoningContext.traces.map(
+                        (trace, index) => ({
+                          index,
+                          type: trace.type,
+                          contentPreview: getPreview(trace.content, 200), // Show first 200 chars of reasoning
+                          fullContentLength: trace.content?.length || 0,
+                        })
+                      ),
                       // Separate log for the full summary to make it easily searchable
                       reasoningSummaryFull: reasoningContext.summary,
                     },
                     'Reasoning traces extracted from GPT-5 response - ENHANCED LOGGING'
                   );
-                  
+
                   // Log each reasoning trace separately for better visibility
                   reasoningContext.traces.forEach((trace, index) => {
                     logger.info(
@@ -1105,7 +1110,7 @@ export async function POST(req: Request) {
       // experimental_toolCallStreaming: true, // Removed - not supported in current AI SDK version
       // onToolCall not supported in current AI SDK version - tool calls are logged in onFinish
 
-      // biome-ignore lint/correctness/noExcessiveComplexity: Logging and persistence steps are verbose by nature.
+      // biome-ignore lint/complexity/noExcessiveComplexity: Logging and persistence steps are verbose by nature.
       onFinish: async ({ response }) => {
         // Log tool results if any
         if (response.messages && response.messages.length > 0) {
@@ -1243,18 +1248,20 @@ export async function POST(req: Request) {
                   traceTypes: reasoningContext.traces.map((t) => t.type),
                   summary: reasoningContext.summary,
                   // Include actual reasoning content for debugging
-                  reasoningTraces: reasoningContext.traces.map((trace, index) => ({
-                    index,
-                    type: trace.type,
-                    contentPreview: getPreview(trace.content, 200), // Show first 200 chars of reasoning
-                    fullContentLength: trace.content?.length || 0,
-                  })),
+                  reasoningTraces: reasoningContext.traces.map(
+                    (trace, index) => ({
+                      index,
+                      type: trace.type,
+                      contentPreview: getPreview(trace.content, 200), // Show first 200 chars of reasoning
+                      fullContentLength: trace.content?.length || 0,
+                    })
+                  ),
                   // Separate log for the full summary to make it easily searchable
                   reasoningSummaryFull: reasoningContext.summary,
                 },
                 'Reasoning traces extracted from GPT-5 response - ENHANCED LOGGING (Main Stream)'
               );
-              
+
               // Log each reasoning trace separately for better visibility
               reasoningContext.traces.forEach((trace, index) => {
                 logger.info(
