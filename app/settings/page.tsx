@@ -1,12 +1,13 @@
 'use client';
 
-import { Brain, Database, Key, Shield } from 'lucide-react';
+import { Activity, Brain, Database, Key, Shield } from 'lucide-react';
 import { Header } from '@/components/app/layout/header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/lib/user-store/provider';
 import { ApiKeyManager } from './components/api-key-manager';
 import { RetrievalSettings } from './components/retrieval-settings';
 import { SecuritySettings } from './components/security-settings';
+import { DiagnosticsPanel } from './components/diagnostics';
 import { VectorStoreManager } from './components/vector-store-manager';
 
 export default function SettingsPage() {
@@ -28,7 +29,7 @@ export default function SettingsPage() {
           </div>
 
           <Tabs className="space-y-6" defaultValue="api-keys">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger className="gap-2" value="api-keys">
                 <Key className="h-4 w-4" />
                 API Keys
@@ -44,6 +45,10 @@ export default function SettingsPage() {
               <TabsTrigger className="gap-2" value="security">
                 <Shield className="h-4 w-4" />
                 Security
+              </TabsTrigger>
+              <TabsTrigger className="gap-2" value="diagnostics">
+                <Activity className="h-4 w-4" />
+                Diagnostics
               </TabsTrigger>
             </TabsList>
 
@@ -85,6 +90,10 @@ export default function SettingsPage() {
                   </p>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent className="space-y-4" value="diagnostics">
+              <DiagnosticsPanel />
             </TabsContent>
           </Tabs>
         </div>

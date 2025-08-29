@@ -29,34 +29,29 @@ function injectGatewayConfig<T extends Record<string, unknown>>(
   baseConfig: T
 ): T {
   const gateway = getGatewayConfig();
+  
+  // If gateway is not enabled or not configured, use direct API (BYOK)
   if (!gateway.enabled) {
+    console.log(`[Gateway] Not enabled, using direct ${provider} API`);
     return baseConfig;
   }
 
-  // Map provider names to gateway endpoints
-  const gatewayEndpoints: Record<string, string> = {
-    openai: 'openai',
-    anthropic: 'anthropic',
-    mistral: 'mistral',
-    google: 'google',
-    perplexity: 'perplexity',
-    xai: 'xai',
-    openrouter: 'openrouter',
-  };
-
-  const endpoint = gatewayEndpoints[provider];
-  if (!endpoint) {
-    return baseConfig;
-  }
-
-  return {
+  // For Vercel AI Gateway, we use the unified endpoint
+  // The gateway API key replaces the provider API key
+  console.log(`[Gateway] Using Vercel AI Gateway for ${provider}`);
+  
+  // The gateway uses a unified endpoint and the model name includes the provider
+  const gatewayConfig = {
     ...baseConfig,
-    baseURL: `${gateway.baseURL}/${endpoint}`,
+    baseURL: gateway.baseURL, // Use the base URL directly (https://ai-gateway.vercel.sh/v1)
+    apiKey: gateway.headers['Authorization']?.replace('Bearer ', '') || baseConfig.apiKey,
     headers: {
       ...((baseConfig as any).headers || {}),
-      ...gateway.headers,
+      // Don't include gateway headers here, the SDK will add Authorization automatically
     },
   } as T;
+  
+  return gatewayConfig;
 }
 
 export function openproviders<T extends SupportedModel>(
@@ -65,6 +60,10 @@ export function openproviders<T extends SupportedModel>(
   apiKey?: string
 ): LanguageModel {
   const provider = getProviderForModel(modelId);
+  const gateway = getGatewayConfig();
+  
+  // When using gateway, prefix model with provider name
+  const effectiveModelId = gateway.enabled ? `${provider}/${modelId}` : modelId;
 
   if (provider === 'openai') {
     type GPT5Extras = {
@@ -138,10 +137,11 @@ export function openproviders<T extends SupportedModel>(
           ...providerOptions,
         })
       );
-      // Use openai.responses() for GPT-5 models as recommended in the cookbook
-      return isGPT5Model
-        ? openaiProvider.responses(modelId as OpenAIModel)
-        : openaiProvider(modelId as OpenAIModel);
+      // When using gateway, always use standard API (gateway doesn't support /responses endpoint)
+      // For direct API, use openai.responses() for GPT-5 models as recommended in the cookbook
+      return isGPT5Model && !gateway.enabled
+        ? openaiProvider.responses(effectiveModelId as OpenAIModel)
+        : openaiProvider(effectiveModelId as OpenAIModel);
     }
 
     // For default OpenAI provider, use environment variable
@@ -154,10 +154,11 @@ export function openproviders<T extends SupportedModel>(
           ...providerOptions,
         })
       );
-      // Use openai.responses() for GPT-5 models as recommended in the cookbook
-      return isGPT5Model
-        ? openaiProvider.responses(modelId as OpenAIModel)
-        : openaiProvider(modelId as OpenAIModel);
+      // When using gateway, always use standard API (gateway doesn't support /responses endpoint)
+      // For direct API, use openai.responses() for GPT-5 models as recommended in the cookbook
+      return isGPT5Model && !gateway.enabled
+        ? openaiProvider.responses(effectiveModelId as OpenAIModel)
+        : openaiProvider(effectiveModelId as OpenAIModel);
     }
 
     // Fallback to default provider
@@ -171,10 +172,11 @@ export function openproviders<T extends SupportedModel>(
           )
         : openai;
 
-    // Use openai.responses() for GPT-5 models as recommended in the cookbook
-    return isGPT5Model
-      ? enhancedOpenAI.responses(modelId as OpenAIModel)
-      : enhancedOpenAI(modelId as OpenAIModel);
+    // When using gateway, always use standard API (gateway doesn't support /responses endpoint)
+    // For direct API, use openai.responses() for GPT-5 models as recommended in the cookbook
+    return isGPT5Model && !gateway.enabled
+      ? enhancedOpenAI.responses(effectiveModelId as OpenAIModel)
+      : enhancedOpenAI(effectiveModelId as OpenAIModel);
   }
 
   if (provider === 'mistral') {
@@ -182,9 +184,9 @@ export function openproviders<T extends SupportedModel>(
       const mistralProvider = createMistral(
         injectGatewayConfig('mistral', { apiKey })
       );
-      return mistralProvider(modelId as MistralModel);
+      return mistralProvider(effectiveModelId as MistralModel);
     }
-    return mistral(modelId as MistralModel);
+    return mistral(effectiveModelId as MistralModel);
   }
 
   if (provider === 'google') {
@@ -192,9 +194,9 @@ export function openproviders<T extends SupportedModel>(
       const googleProvider = createGoogleGenerativeAI(
         injectGatewayConfig('google', { apiKey })
       );
-      return googleProvider(modelId as GeminiModel);
+      return googleProvider(effectiveModelId as GeminiModel);
     }
-    return google(modelId as GeminiModel);
+    return google(effectiveModelId as GeminiModel);
   }
 
   if (provider === 'perplexity') {
@@ -202,9 +204,9 @@ export function openproviders<T extends SupportedModel>(
       const perplexityProvider = createPerplexity(
         injectGatewayConfig('perplexity', { apiKey })
       );
-      return perplexityProvider(modelId as PerplexityModel);
+      return perplexityProvider(effectiveModelId as PerplexityModel);
     }
-    return perplexity(modelId as PerplexityModel);
+    return perplexity(effectiveModelId as PerplexityModel);
   }
 
   if (provider === 'anthropic') {
@@ -212,17 +214,17 @@ export function openproviders<T extends SupportedModel>(
       const anthropicProvider = createAnthropic(
         injectGatewayConfig('anthropic', { apiKey })
       );
-      return anthropicProvider(modelId as AnthropicModel);
+      return anthropicProvider(effectiveModelId as AnthropicModel);
     }
-    return anthropic(modelId as AnthropicModel);
+    return anthropic(effectiveModelId as AnthropicModel);
   }
 
   if (provider === 'xai') {
     if (apiKey) {
       const xaiProvider = createXai(injectGatewayConfig('xai', { apiKey }));
-      return xaiProvider(modelId as XaiModel);
+      return xaiProvider(effectiveModelId as XaiModel);
     }
-    return xai(modelId as XaiModel);
+    return xai(effectiveModelId as XaiModel);
   }
 
   if (provider === 'openrouter') {

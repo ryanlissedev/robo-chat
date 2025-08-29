@@ -48,14 +48,20 @@ export function ModelsSettings() {
       return {};
     }
 
-    const availableModels = models
-      .filter(
-        (model) =>
-          !(currentFavoriteModels.includes(model.id) || isModelHidden(model.id))
-      )
-      .filter((model) =>
-        model.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+    // Build a unique list of available models (dedupe by id)
+    const availableModels = Array.from(
+      new Map(
+        models
+          .filter(
+            (model) =>
+              !(currentFavoriteModels.includes(model.id) || isModelHidden(model.id))
+          )
+          .filter((model) =>
+            model.name.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+          .map((m) => [m.id, m] as const)
+      ).values()
+    );
 
     return availableModels.reduce(
       (acc, model) => {
@@ -237,7 +243,7 @@ export function ModelsSettings() {
                   </div>
 
                   <div className="space-y-2 pl-7">
-                    {modelsGroup.map((model) => {
+                    {modelsGroup.map((model, idx) => {
                       const modelProvider = PROVIDERS.find(
                         (p) => p.id === model.provider
                       );
@@ -248,7 +254,7 @@ export function ModelsSettings() {
                           className="flex items-center justify-between py-1"
                           exit={{ opacity: 0, y: -10 }}
                           initial={{ opacity: 0, y: 10 }}
-                          key={model.id}
+                          key={`${model.id}-${idx}`}
                           layout
                           transition={{ duration: 0.2 }}
                         >

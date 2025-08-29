@@ -1,1 +1,1 @@
-export { createErrorResponse } from '../api/error-handler';
+export { createErrorResponse } from '../../app/api/chat/utils';

@@ -1,8 +1,10 @@
-import { render, screen } from '@testing-library/react';
-import { userEvent } from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import React from 'react';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ButtonFileUpload } from '@/components/app/chat-input/button-file-upload';
 import { isSupabaseEnabled } from '@/lib/supabase/config';
+import { getModelInfo } from '@/lib/models';
 
 // Mock Lucide React icons
 vi.mock('lucide-react', () => ({
@@ -16,15 +18,19 @@ vi.mock('@/components/prompt-kit/file-upload', () => ({
     <div
       data-testid="file-upload"
       data-accept={accept}
-      data-multiple={multiple}
-      data-disabled={disabled}
+      data-multiple={multiple ? 'true' : 'false'}
+      data-disabled={disabled ? 'true' : 'false'}
     >
       <input
         type="file"
+        accept={accept}
         multiple={multiple}
+        disabled={disabled}
         onChange={(e) => {
-          const files = Array.from(e.target.files || []);
-          onFilesAdded?.(files);
+          if (!disabled && e.target.files && e.target.files.length > 0) {
+            const files = Array.from(e.target.files);
+            onFilesAdded?.(files);
+          }
         }}
         data-testid="file-input"
       />
@@ -65,38 +71,44 @@ vi.mock('@/components/ui/button', () => ({
 }));
 
 vi.mock('@/components/ui/popover', () => ({
-  Popover: ({ children }: any) => <div data-testid="popover">{children}</div>,
-  PopoverContent: ({ children, className }: any) => (
-    <div data-testid="popover-content" className={className}>
-      {children}
-    </div>
-  ),
-  PopoverTrigger: ({ children, asChild }: any) => (
-    <div data-testid="popover-trigger">{children}</div>
+  Popover: ({ children, ...props }: any) => {
+    // Extract data-testid from props and use it, with fallback to 'popover'
+    const testId = props['data-testid'] || 'popover';
+    return <div data-testid={testId} {...props}>{children}</div>;
+  },
+  PopoverContent: ({ children, className, ...props }: any) => {
+    // Extract data-testid from props and use it, with fallback to 'popover-content'
+    const testId = props['data-testid'] || 'popover-content';
+    return (
+      <div data-testid={testId} className={className} {...props}>
+        {children}
+      </div>
+    );
+  },
+  PopoverTrigger: ({ children, asChild, ...props }: any) => (
+    <div data-testid="popover-trigger" {...props}>{children}</div>
   ),
 }));
 
 vi.mock('@/components/ui/tooltip', () => ({
-  Tooltip: ({ children }: any) => <div data-testid="tooltip">{children}</div>,
-  TooltipContent: ({ children }: any) => (
-    <div data-testid="tooltip-content">{children}</div>
-  ),
-  TooltipTrigger: ({ children, asChild }: any) => (
-    <div data-testid="tooltip-trigger">{children}</div>
+  Tooltip: ({ children, ...props }: any) => {
+    // Extract data-testid from props and use it, with fallback to 'tooltip'
+    const testId = props['data-testid'] || 'tooltip';
+    return <div data-testid={testId} {...props}>{children}</div>;
+  },
+  TooltipContent: ({ children, ...props }: any) => {
+    // Extract data-testid from props and use it, with fallback to 'tooltip-content'
+    const testId = props['data-testid'] || 'tooltip-content';
+    return <div data-testid={testId} {...props}>{children}</div>;
+  },
+  TooltipTrigger: ({ children, asChild, ...props }: any) => (
+    <div {...props}>{children}</div>
   ),
 }));
 
 // Mock lib functions
 vi.mock('@/lib/models', () => ({
-  getModelInfo: vi.fn((model: string) => {
-    const modelInfo = {
-      'gpt-4-vision': { vision: true },
-      'gpt-4': { vision: false },
-      'claude-3': { vision: true },
-      'claude-2': { vision: false },
-    };
-    return modelInfo[model as keyof typeof modelInfo] || { vision: false };
-  }),
+  getModelInfo: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/config', () => ({
@@ -125,12 +137,36 @@ function renderButtonFileUpload(props = {}) {
 }
 
 describe('ButtonFileUpload', () => {
-  const user = userEvent.setup();
+  let user: ReturnType<typeof userEvent.setup>;
 
   beforeEach(() => {
+    // Clean up DOM first
+    cleanup();
+    
+    // Clear mock call history but keep implementations
     vi.clearAllMocks();
-    // Reset Supabase config
+    
+    // Create fresh userEvent instance for each test
+    user = userEvent.setup();
+    
+    // Reset Supabase config to enabled for each test
     vi.mocked(isSupabaseEnabled).mockReturnValue(true);
+    
+    // Set default model info behavior - this will be the default for all tests
+    vi.mocked(getModelInfo).mockImplementation((model: string) => {
+      const modelInfo: Record<string, { vision: boolean }> = {
+        'gpt-4-vision': { vision: true },
+        'gpt-4': { vision: false },
+        'claude-3': { vision: true },
+        'claude-2': { vision: false },
+      };
+      return modelInfo[model] || { vision: false };
+    });
+  });
+
+  afterEach(() => {
+    // Clean up DOM
+    cleanup();
   });
 
   describe('Supabase disabled', () => {
@@ -143,9 +179,13 @@ describe('ButtonFileUpload', () => {
   });
 
   describe('Model without vision support', () => {
-    it('should show popover with message when model has no vision support', () => {
-      renderButtonFileUpload({ model: 'gpt-4' }); // No vision support
-
+    it('should show popover with message when model has no vision support', async () => {
+      // Ensure Supabase is enabled for this test
+      vi.mocked(isSupabaseEnabled).mockReturnValue(true);
+      
+      const { container } = renderButtonFileUpload({ model: 'gpt-4' }); // No vision support
+      
+      expect(container.firstChild).not.toBeNull();
       expect(screen.getByTestId('popover')).toBeInTheDocument();
       expect(screen.getByTestId('tooltip')).toBeInTheDocument();
       expect(screen.getByTestId('paperclip-icon')).toBeInTheDocument();
@@ -153,6 +193,9 @@ describe('ButtonFileUpload', () => {
     });
 
     it('should display model limitation message', () => {
+      // Ensure Supabase is enabled for this test
+      vi.mocked(isSupabaseEnabled).mockReturnValue(true);
+      
       renderButtonFileUpload({ model: 'gpt-4' });
 
       expect(screen.getByTestId('popover-content')).toBeInTheDocument();
@@ -165,6 +208,9 @@ describe('ButtonFileUpload', () => {
     });
 
     it('should have proper button styling for non-vision model', () => {
+      // Ensure Supabase is enabled for this test
+      vi.mocked(isSupabaseEnabled).mockReturnValue(true);
+      
       renderButtonFileUpload({ model: 'gpt-4' });
 
       const button = screen.getByLabelText('Add files');
@@ -179,6 +225,9 @@ describe('ButtonFileUpload', () => {
     });
 
     it('should show tooltip with "Add files" text', () => {
+      // Ensure Supabase is enabled for this test
+      vi.mocked(isSupabaseEnabled).mockReturnValue(true);
+      
       renderButtonFileUpload({ model: 'gpt-4' });
 
       expect(screen.getByTestId('tooltip-content')).toBeInTheDocument();
@@ -248,6 +297,10 @@ describe('ButtonFileUpload', () => {
     });
 
     it('should call onFileUpload when files are selected', async () => {
+      // Ensure proper test isolation
+      vi.mocked(isSupabaseEnabled).mockReturnValue(true);
+      vi.mocked(getModelInfo).mockReturnValue({ vision: true });
+      
       const onFileUpload = vi.fn();
       renderButtonFileUpload({
         isUserAuthenticated: true,
@@ -258,7 +311,20 @@ describe('ButtonFileUpload', () => {
       const fileInput = screen.getByTestId('file-input');
       const mockFile = new File(['test'], 'test.txt', { type: 'text/plain' });
 
-      await user.upload(fileInput, mockFile);
+      // Create a proper FileList-like object
+      const fileList = {
+        0: mockFile,
+        length: 1,
+        item: (index: number) => index === 0 ? mockFile : null,
+        [Symbol.iterator]: function* () {
+          for (let i = 0; i < this.length; i++) {
+            yield this[i];
+          }
+        }
+      } as FileList;
+
+      // Use fireEvent.change with proper FileList
+      fireEvent.change(fileInput, { target: { files: fileList } });
 
       expect(onFileUpload).toHaveBeenCalledWith([mockFile]);
     });
@@ -346,6 +412,10 @@ describe('ButtonFileUpload', () => {
 
   describe('File handling', () => {
     it('should handle multiple file selection', async () => {
+      // Ensure proper test isolation
+      vi.mocked(isSupabaseEnabled).mockReturnValue(true);
+      vi.mocked(getModelInfo).mockReturnValue({ vision: true });
+      
       const onFileUpload = vi.fn();
       renderButtonFileUpload({
         isUserAuthenticated: true,
@@ -359,12 +429,30 @@ describe('ButtonFileUpload', () => {
         new File(['test2'], 'test2.jpg', { type: 'image/jpeg' }),
       ];
 
-      await user.upload(fileInput, files);
+      // Create a proper FileList-like object for multiple files
+      const fileList = {
+        0: files[0],
+        1: files[1],
+        length: 2,
+        item: (index: number) => files[index] || null,
+        [Symbol.iterator]: function* () {
+          for (let i = 0; i < this.length; i++) {
+            yield this[i];
+          }
+        }
+      } as FileList;
+
+      // Use fireEvent.change with proper FileList
+      fireEvent.change(fileInput, { target: { files: fileList } });
 
       expect(onFileUpload).toHaveBeenCalledWith(files);
     });
 
     it('should handle different file types', async () => {
+      // Ensure proper test isolation
+      vi.mocked(isSupabaseEnabled).mockReturnValue(true);
+      vi.mocked(getModelInfo).mockReturnValue({ vision: true });
+      
       const onFileUpload = vi.fn();
       renderButtonFileUpload({
         isUserAuthenticated: true,
@@ -375,7 +463,20 @@ describe('ButtonFileUpload', () => {
       const fileInput = screen.getByTestId('file-input');
       const imageFile = new File(['image'], 'test.png', { type: 'image/png' });
 
-      await user.upload(fileInput, imageFile);
+      // Create a proper FileList-like object
+      const fileList = {
+        0: imageFile,
+        length: 1,
+        item: (index: number) => index === 0 ? imageFile : null,
+        [Symbol.iterator]: function* () {
+          for (let i = 0; i < this.length; i++) {
+            yield this[i];
+          }
+        }
+      } as FileList;
+
+      // Use fireEvent.change with proper FileList
+      fireEvent.change(fileInput, { target: { files: fileList } });
 
       expect(onFileUpload).toHaveBeenCalledWith([imageFile]);
     });

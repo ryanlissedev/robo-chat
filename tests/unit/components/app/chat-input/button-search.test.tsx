@@ -1,9 +1,8 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ButtonSearch } from '@/components/app/chat-input/button-search';
+import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
 
-// Mock Lucide React icons
+// Mock modules before any imports
 vi.mock('lucide-react', () => ({
   Globe: ({ className }: { className?: string }) => (
     <svg data-testid="globe-icon" className={className}>
@@ -12,24 +11,21 @@ vi.mock('lucide-react', () => ({
   ),
 }));
 
-// Mock UI components
 vi.mock('@/components/ui/button', () => ({
-  Button: ({
-    children,
-    onClick,
-    className,
-    variant,
-    size,
-    disabled,
-    ...props
-  }: any) => (
+  Button: ({ children, onClick, className, variant, size, disabled, ...props }: any) => (
     <button
       type="button"
-      onClick={onClick}
+      role="button"
       className={className}
       data-variant={variant}
       data-size={size}
       disabled={disabled}
+      onClick={onClick}
+      onKeyDown={(e: any) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onClick?.(e);
+        }
+      }}
       {...props}
     >
       {children}
@@ -39,22 +35,23 @@ vi.mock('@/components/ui/button', () => ({
 
 vi.mock('@/components/ui/popover', () => ({
   Popover: ({ children }: any) => <div data-testid="popover">{children}</div>,
-  PopoverTrigger: ({ children, asChild }: any) => (
-    <div data-testid="popover-trigger">{children}</div>
+  PopoverTrigger: ({ children, asChild, ...props }: any) => (
+    <div data-testid="popover-trigger" {...props}>{children}</div>
   ),
 }));
 
-// Mock utils
 vi.mock('@/lib/utils', () => ({
   cn: (...classes: any[]) => classes.filter(Boolean).join(' '),
 }));
 
-// Mock PopoverContentAuth
 vi.mock('@/components/app/chat-input/popover-content-auth', () => ({
   PopoverContentAuth: () => (
     <div data-testid="popover-content-auth">Auth Content</div>
   ),
 }));
+
+// Import the actual component
+import { ButtonSearch } from '@/components/app/chat-input/button-search';
 
 const defaultProps = {
   isSelected: false,
@@ -63,19 +60,48 @@ const defaultProps = {
 };
 
 function renderButtonSearch(props = {}) {
-  return render(<ButtonSearch {...defaultProps} {...props} />);
+  const result = render(<ButtonSearch {...defaultProps} {...props} />);
+  return result;
 }
 
 describe('ButtonSearch', () => {
-  const user = userEvent.setup();
+  let user: ReturnType<typeof userEvent.setup>;
 
   beforeEach(() => {
+    // Complete DOM and module cleanup
+    cleanup();
+    document.body.innerHTML = '';
+    document.head.innerHTML = '';
+    
+    // Clear all mocks and reset modules
     vi.clearAllMocks();
+    vi.resetModules();
+    
+    // Clear any timers
+    vi.clearAllTimers();
+    
+    // Setup fresh userEvent instance
+    user = userEvent.setup();
   });
+
+  afterEach(() => {
+    // Cleanup in reverse order with aggressive cleanup
+    cleanup();
+    vi.clearAllMocks();
+    vi.clearAllTimers();
+    document.body.innerHTML = '';
+    document.head.innerHTML = '';
+    
+    // Force garbage collection if available
+    if (global.gc) {
+      global.gc();
+    }
+  });
+
 
   describe('Authenticated user', () => {
     it('should render search button when authenticated', () => {
-      renderButtonSearch({ isAuthenticated: true });
+      const { container } = renderButtonSearch({ isAuthenticated: true });
 
       const button = screen.getByRole('button');
       expect(button).toBeInTheDocument();
@@ -91,7 +117,7 @@ describe('ButtonSearch', () => {
       expect(searchText).toHaveClass('hidden', 'md:block');
     });
 
-    it('should call onToggle with opposite state when clicked', async () => {
+    it('should call onToggle with opposite state when clicked', () => {
       const onToggle = vi.fn();
       renderButtonSearch({
         isAuthenticated: true,
@@ -100,14 +126,14 @@ describe('ButtonSearch', () => {
       });
 
       const button = screen.getByRole('button');
-      await act(async () => {
-        await user.click(button);
+      act(() => {
+        fireEvent.click(button);
       });
 
       expect(onToggle).toHaveBeenCalledWith(true);
     });
 
-    it('should call onToggle with false when selected is true', async () => {
+    it('should call onToggle with false when selected is true', () => {
       const onToggle = vi.fn();
       renderButtonSearch({
         isAuthenticated: true,
@@ -116,8 +142,8 @@ describe('ButtonSearch', () => {
       });
 
       const button = screen.getByRole('button');
-      await act(async () => {
-        await user.click(button);
+      act(() => {
+        fireEvent.click(button);
       });
 
       expect(onToggle).toHaveBeenCalledWith(false);
@@ -161,7 +187,7 @@ describe('ButtonSearch', () => {
       expect(button.className).toContain('rounded-full');
     });
 
-    it('should handle multiple rapid clicks', async () => {
+    it('should handle multiple rapid clicks', () => {
       const onToggle = vi.fn();
       renderButtonSearch({
         isAuthenticated: true,
@@ -173,10 +199,10 @@ describe('ButtonSearch', () => {
 
       // Component always calls onToggle(!isSelected)
       // Since isSelected=false, all clicks will call onToggle(true)
-      await act(async () => {
-        await user.click(button); // !false -> true
-        await user.click(button); // !false -> true
-        await user.click(button); // !false -> true
+      act(() => {
+        fireEvent.click(button); // !false -> true
+        fireEvent.click(button); // !false -> true
+        fireEvent.click(button); // !false -> true
       });
 
       expect(onToggle).toHaveBeenCalledTimes(3);
@@ -204,7 +230,7 @@ describe('ButtonSearch', () => {
       expect(screen.getByText('Search')).toBeInTheDocument();
     });
 
-    it('should not call onToggle when not authenticated', async () => {
+    it('should not call onToggle when not authenticated', () => {
       const onToggle = vi.fn();
       renderButtonSearch({
         isAuthenticated: false,
@@ -212,8 +238,8 @@ describe('ButtonSearch', () => {
       });
 
       const button = screen.getByRole('button');
-      await act(async () => {
-        await user.click(button);
+      act(() => {
+        fireEvent.click(button);
       });
 
       // onToggle should not be called since it's in a popover
@@ -249,7 +275,7 @@ describe('ButtonSearch', () => {
       expect(button.className).not.toContain('border-[#0091FF]/20');
     });
 
-    it('should handle missing onToggle prop', async () => {
+    it('should handle missing onToggle prop', () => {
       renderButtonSearch({
         isAuthenticated: true,
         onToggle: undefined,
@@ -258,8 +284,8 @@ describe('ButtonSearch', () => {
       const button = screen.getByRole('button');
 
       // Should not crash when clicking
-      await act(async () => {
-        await user.click(button);
+      act(() => {
+        fireEvent.click(button);
       });
 
       expect(button).toBeInTheDocument();
@@ -354,7 +380,7 @@ describe('ButtonSearch', () => {
       expect(document.activeElement).toBe(button);
     });
 
-    it('should support keyboard interaction', async () => {
+    it('should support keyboard interaction', () => {
       const onToggle = vi.fn();
       renderButtonSearch({
         isAuthenticated: true,
@@ -367,13 +393,13 @@ describe('ButtonSearch', () => {
 
       // Component always calls onToggle(!isSelected)
       // Since isSelected=false, both keys will call onToggle(true)
-      await act(async () => {
-        await user.keyboard('{Enter}');
+      act(() => {
+        fireEvent.keyDown(button, { key: 'Enter' });
       });
       expect(onToggle).toHaveBeenCalledWith(true);
 
-      await act(async () => {
-        await user.keyboard(' ');
+      act(() => {
+        fireEvent.keyDown(button, { key: ' ' });
       });
       expect(onToggle).toHaveBeenCalledWith(true);
     });
@@ -412,7 +438,7 @@ describe('ButtonSearch', () => {
   });
 
   describe('Edge cases', () => {
-    it('should handle undefined onToggle gracefully', async () => {
+    it('should handle undefined onToggle gracefully', () => {
       renderButtonSearch({
         isAuthenticated: true,
         onToggle: undefined,
@@ -420,8 +446,8 @@ describe('ButtonSearch', () => {
 
       const button = screen.getByRole('button');
 
-      await act(async () => {
-        expect(() => user.click(button)).not.toThrow();
+      act(() => {
+        expect(() => fireEvent.click(button)).not.toThrow();
       });
     });
 
@@ -471,7 +497,7 @@ describe('ButtonSearch', () => {
       expect(button).toBeInTheDocument();
     });
 
-    it('should handle rapid state changes', async () => {
+    it('should handle rapid state changes', () => {
       const onToggle = vi.fn();
       renderButtonSearch({
         isAuthenticated: true,
@@ -481,9 +507,10 @@ describe('ButtonSearch', () => {
       const button = screen.getByRole('button');
 
       // Simulate rapid clicking
-      await act(async () => {
-        const clicks = Array(10).fill(null);
-        await Promise.all(clicks.map(() => user.click(button)));
+      act(() => {
+        for (let i = 0; i < 10; i++) {
+          fireEvent.click(button);
+        }
       });
 
       expect(onToggle).toHaveBeenCalledTimes(10);

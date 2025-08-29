@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { fetchClient } from '@/lib/fetch';
 
 export type FeedbackType = 'upvote' | 'downvote' | null;
 
@@ -51,11 +52,8 @@ export function MessageFeedback({
       const newFeedback = feedback === type ? null : type;
 
       // Call the feedback API
-      const response = await fetch('/api/feedback', {
+      const response = await fetchClient('/api/feedback', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           messageId,
           feedback: newFeedback,
@@ -216,11 +214,8 @@ export function MessageFeedbackInline({
     try {
       const newFeedback = feedback === type ? null : type;
 
-      const response = await fetch('/api/feedback', {
+      const response = await fetchClient('/api/feedback', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           messageId,
           feedback: newFeedback,

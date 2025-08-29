@@ -108,17 +108,20 @@ function FileUpload({
     <FileUploadContext.Provider
       value={{ isDragging, inputRef, multiple, disabled }}
     >
-      <input
-        accept={accept}
-        aria-hidden
-        className="hidden"
-        disabled={disabled}
-        multiple={multiple}
-        onChange={handleFileSelect}
-        ref={inputRef}
-        type="file"
-      />
-      {children}
+      <div data-testid="file-upload" data-multiple={multiple} data-disabled={disabled}>
+        <input
+          accept={accept}
+          aria-hidden
+          className="hidden"
+          data-testid="file-input"
+          disabled={disabled}
+          multiple={multiple}
+          onChange={handleFileSelect}
+          ref={inputRef}
+          type="file"
+        />
+        {children}
+      </div>
     </FileUploadContext.Provider>
   );
 }
@@ -139,22 +142,24 @@ function FileUploadTrigger({
 
   if (asChild) {
     const child = Children.only(children) as React.ReactElement<
-      React.HTMLAttributes<HTMLElement>
+      React.HTMLAttributes<HTMLElement> & { 'data-testid'?: string }
     >;
     return cloneElement(child, {
       ...props,
       role: 'button',
+      'data-testid': 'file-upload-trigger',
       className: cn(className, child.props.className),
       onClick: (e: React.MouseEvent) => {
         handleClick();
         child.props.onClick?.(e as React.MouseEvent<HTMLElement>);
       },
-    });
+    } as any);
   }
 
   return (
     <button
       className={className}
+      data-testid="file-upload-trigger"
       onClick={handleClick}
       type="button"
       {...props}
@@ -186,6 +191,7 @@ function FileUploadContent({ className, ...props }: FileUploadContentProps) {
         'fade-in-0 slide-in-from-bottom-10 zoom-in-90 animate-in duration-150',
         className
       )}
+      data-testid="file-upload-content"
       {...props}
     />
   );

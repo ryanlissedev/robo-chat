@@ -111,12 +111,13 @@ describe('storeAssistantMessage - TDD London School', () => {
         chat_id: chatId,
         role: 'assistant',
         content: 'Hello world\n\nHow are you?',
-        parts: expect.arrayContaining([
+        parts: [
           { type: 'text', text: 'Hello world' },
           { type: 'text', text: 'How are you?' },
-        ]),
+        ],
         message_group_id: undefined,
         model: undefined,
+        langsmith_run_id: null,
       });
     });
   });
@@ -290,6 +291,7 @@ describe('storeAssistantMessage - TDD London School', () => {
         expect.objectContaining({
           content: '',
           parts: [],
+          langsmith_run_id: null,
         })
       );
     });
@@ -310,6 +312,7 @@ describe('storeAssistantMessage - TDD London School', () => {
         expect.objectContaining({
           content: '',
           parts: [],
+          langsmith_run_id: null,
         })
       );
     });
@@ -345,6 +348,7 @@ describe('storeAssistantMessage - TDD London School', () => {
       expect(mockSupabase.mocks.messageInsert).toHaveBeenCalledWith(
         expect.objectContaining({
           parts: [],
+          langsmith_run_id: null,
         })
       );
     });

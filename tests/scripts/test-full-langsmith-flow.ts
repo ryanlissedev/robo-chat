@@ -28,9 +28,10 @@ async function testFullFlow() {
   const BASE_URL = `http://localhost:${PORT}`;
   
   // First, check if the server is running
+  // Note: /api/chat only supports POST, so we expect 405 for GET
   try {
     const healthCheck = await fetch(`${BASE_URL}/api/chat`, { method: 'GET' });
-    console.log('Server status:', healthCheck.status === 405 ? '✅ Running' : '❌ Not responding as expected');
+    console.log('Server status:', healthCheck.status === 405 ? '✅ Running (405 expected for GET)' : '❌ Not responding as expected');
   } catch (error) {
     console.error('❌ Server not running. Please start the dev server first with: npm run dev');
     return false;

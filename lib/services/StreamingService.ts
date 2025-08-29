@@ -12,7 +12,7 @@ import {
 } from '@/lib/middleware/extract-reasoning-middleware';
 import logger from '@/lib/utils/logger';
 import { type Provider, trackCredentialUsage } from '@/lib/utils/metrics';
-import { storeAssistantMessage } from '../api';
+import { storeAssistantMessage } from '../../app/api/chat/api';
 import type { ResponseWithUsage, SupabaseClientType } from './types';
 
 /**
@@ -42,7 +42,7 @@ type StreamArgs = {
   model: LanguageModel;
   systemPrompt: string;
   messages: ModelMessage[];
-  tools?: Record<string, unknown> | undefined;
+  tools?: any;
   // For labeling logs only (e.g. "fallback" vs "main")
   phase: 'main' | 'fallback';
 } & StreamContext;
@@ -212,12 +212,12 @@ const handleLangSmithUpdates = async (
 ): Promise<void> => {
   if (!isLangSmithEnabled()) return;
 
-  const actualRunId = extractRunId(response) || langsmithRunId;
-  if (!actualRunId) return;
+  // ResponseWithUsage doesn't have metadata or headers, so just use the provided langsmithRunId
+  if (!langsmithRunId) return;
 
   try {
     await updateRun({
-      runId: actualRunId,
+      runId: langsmithRunId,
       outputs: {
         messages: response.messages,
         usage: response.usage,
@@ -227,7 +227,7 @@ const handleLangSmithUpdates = async (
     const usage = response.usage;
     if (usage) {
       await logMetrics({
-        runId: actualRunId,
+        runId: langsmithRunId,
         metrics: {
           totalTokens: usage.totalTokens,
           inputTokens: usage.inputTokens,
@@ -239,7 +239,7 @@ const handleLangSmithUpdates = async (
     }
   } catch (error) {
     logger.error(
-      { at: 'api.chat.langSmithUpdate', error, runId: actualRunId },
+      { at: 'api.chat.langSmithUpdate', error, runId: langsmithRunId },
       'Failed to update LangSmith run'
     );
   }
@@ -314,8 +314,8 @@ const stream = ({
       }
 
       // 3) Persist assistant message (if storage provided)
-      const actualRunId =
-        extractRunId(response as ResponseWithUsage) || langsmithRunId || null;
+      // ResponseWithUsage doesn't have metadata/headers for extractRunId, use langsmithRunId directly
+      const actualRunId = langsmithRunId || null;
 
       if (supabase) {
         await storeAssistantMessage({
@@ -327,7 +327,7 @@ const stream = ({
           message_group_id,
           model: resolvedModel,
           langsmithRunId: actualRunId,
-          reasoningEffort,
+          reasoningEffort: reasoningEffort as any,
         });
       }
 

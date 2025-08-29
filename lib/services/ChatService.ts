@@ -20,7 +20,7 @@ import { retrieveWithGpt41 } from '@/lib/retrieval/two-pass';
 import { performVectorRetrieval } from '@/lib/retrieval/vector-retrieval';
 import { fileSearchTool } from '@/lib/tools/file-search';
 import logger from '@/lib/utils/logger';
-import { createErrorResponse } from '../utils';
+import { createErrorResponse } from '@/app/api/chat/utils';
 import { CredentialService } from './CredentialService';
 import { MessageService } from './MessageService';
 import { StreamingService } from './StreamingService';
@@ -284,7 +284,7 @@ export class ChatService {
     isAuthenticated: boolean;
     hasGuestCredentials: boolean;
   }) {
-    const { validateAndTrackUsage } = await import('../api');
+    const { validateAndTrackUsage } = await import('../../app/api/chat/api');
     return await validateAndTrackUsage({
       userId,
       model,
@@ -308,9 +308,10 @@ export class ChatService {
   }) {
     if (!supabase) return;
 
-    const { incrementMessageCount, logUserMessage } = await import('../api');
+    const { incrementMessageCount, logUserMessage } = await import('../../app/api/chat/api');
     const { getMessageContent } = await import('@/app/types/ai-extended');
-    const { Attachment } = await import('@ai-sdk/ui-utils');
+    const uiUtils = await import('@ai-sdk/ui-utils');
+    type Attachment = import('@ai-sdk/ui-utils').Attachment;
 
     await incrementMessageCount({ supabase, userId });
 

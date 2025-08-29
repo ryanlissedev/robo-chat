@@ -24,7 +24,8 @@ export function FeedbackForm({ authUserId, onClose }: FeedbackFormProps) {
   >('idle');
   const [feedback, setFeedback] = useState('');
 
-  if (!isSupabaseEnabled()) {
+  const supabaseEnabled = isSupabaseEnabled();
+  if (!supabaseEnabled) {
     return null;
   }
 

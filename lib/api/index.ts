@@ -1,6 +1,6 @@
 // API utilities and handlers
-export { createErrorResponse } from './error-handler';
-export { incrementMessageCount, logUserMessage, storeAssistantMessage, validateAndTrackUsage } from './base';
+export { createErrorResponse } from '../../app/api/chat/utils';
+export { incrementMessageCount, logUserMessage, storeAssistantMessage, validateAndTrackUsage } from '../../app/api/chat/api';
 
 // Types
 export type { ExtendedUIMessage } from '../services/types';

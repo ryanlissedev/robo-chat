@@ -3,7 +3,11 @@
  * SECURITY: Tracks usage patterns without exposing actual credentials
  */
 
-export type CredentialSource = 'user-byok' | 'guest-header' | 'environment';
+export type CredentialSource =
+  | 'user-byok'
+  | 'guest-header'
+  | 'environment'
+  | 'gateway';
 export type Provider =
   | 'openai'
   | 'anthropic'
@@ -228,6 +232,7 @@ export function getMetricsSummary(since?: Date): MetricsSummary {
     'user-byok': { total: 0, successful: 0, errorRate: 0 },
     'guest-header': { total: 0, successful: 0, errorRate: 0 },
     environment: { total: 0, successful: 0, errorRate: 0 },
+    gateway: { total: 0, successful: 0, errorRate: 0 },
   };
 
   usageMetrics.forEach((metric) => {

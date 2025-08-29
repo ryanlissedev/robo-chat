@@ -49,7 +49,6 @@ const firstTextFromParts = (parts: MessagePart[]): string => {
 const genId = (radix = 36): string => {
   try {
     // 10 random bytes ≈ 16 chars in base36
-    // @ts-expect-error: crypto may not exist in all runtimes
     const cryptoObj: Crypto =
       globalThis.crypto ?? require('node:crypto').webcrypto;
     const arr = new Uint8Array(10);

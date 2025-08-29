@@ -91,7 +91,7 @@ export const openrouterModels: ModelConfig[] = [
         ? {
             ...baseConfig,
             baseURL: `${gateway.baseURL}/openrouter`,
-            headers: { ...(baseConfig.headers || {}), ...gateway.headers },
+            headers: gateway.headers,
           }
         : baseConfig;
       return createOpenRouter(config).chat('anthropic/claude-sonnet-4');

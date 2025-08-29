@@ -53,6 +53,7 @@ import {
   redactSensitiveHeaders,
   sanitizeLogEntry,
 } from '@/lib/utils/redaction';
+import { getGatewayConfig } from '@/lib/openproviders/env';
 import {
   incrementMessageCount,
   logUserMessage,
@@ -450,10 +451,11 @@ function extractGuestCredentials(headers: Headers): GuestCredentials {
 // Note: redactSensitiveHeaders is now imported from @/lib/utils/redaction
 
 /**
- * Resolve credentials with proper precedence logic
- * 1. Authenticated user BYOK (highest priority)
- * 2. Guest header override (if no user key)
- * 3. Environment variable fallback (handled downstream)
+ * Resolve credentials with precedence logic
+ * 1. Vercel AI Gateway (if configured) — default path
+ * 2. Authenticated user BYOK
+ * 3. Guest header override (if no user key)
+ * 4. Environment variable fallback (handled downstream)
  *
  * SECURITY: Never log actual API key values
  */
@@ -475,7 +477,30 @@ async function resolveCredentials(
   });
   logger.info(logContext, 'Resolving credentials');
 
-  // 1. Authenticated user BYOK (highest priority)
+  // 1. Gateway first (default)
+  try {
+    const gateway = getGatewayConfig();
+    if (gateway.enabled) {
+      logger.info(
+        sanitizeLogEntry({
+          at: 'api.chat.resolveCredentials',
+          source: 'gateway',
+          provider,
+          model,
+        }),
+        'Using Vercel AI Gateway credentials'
+      );
+      // Track gateway usage (success recorded on finish)
+      trackCredentialUsage('gateway', provider as Provider, model, {
+        success: true,
+      });
+      return { source: 'gateway' };
+    }
+  } catch {
+    // silently ignore gateway config errors
+  }
+
+  // 2. Authenticated user BYOK
   if (user?.isAuthenticated && user.userId) {
     try {
       const { getEffectiveApiKey } = await import('@/lib/user-keys');
@@ -525,7 +550,7 @@ async function resolveCredentials(
     }
   }
 
-  // 2. Guest header override (if no user key)
+  // 3. Guest header override (if no user key)
   const guestCredentials = extractGuestCredentials(headers);
   if (guestCredentials.apiKey && guestCredentials.provider === provider) {
     logger.info(
@@ -550,7 +575,7 @@ async function resolveCredentials(
     };
   }
 
-  // 3. No credentials found - will fallback to environment downstream
+  // 4. No credentials found - will fallback to environment downstream
   logger.info(
     sanitizeLogEntry({
       at: 'api.chat.resolveCredentials',
@@ -753,7 +778,12 @@ export async function POST(req: Request) {
       modelSupportsFileSearchTools,
       { context, personalityMode }
     );
-    const apiKey = await getApiKey(req, isAuthenticated, userId, resolvedModel);
+    const credentialResolution = await resolveCredentials(
+      { isAuthenticated, userId },
+      resolvedModel,
+      req.headers
+    );
+    const apiKey = credentialResolution.apiKey;
 
     // Create LangSmith run if enabled
     const langsmithRunId = await createLangSmithRun({
@@ -1060,9 +1090,14 @@ export async function POST(req: Request) {
             const responseTime = usage?.totalTokens
               ? usage.totalTokens * 10
               : undefined;
+            const providerUsed = inferProviderFromModel(resolvedModel);
+            let gatewayEnabled = false;
+            try {
+              gatewayEnabled = getGatewayConfig().enabled;
+            } catch {}
             trackCredentialUsage(
-              'environment',
-              inferProviderFromModel(resolvedModel),
+              gatewayEnabled ? 'gateway' : credentialResolution.source,
+              providerUsed,
               resolvedModel,
               { userId, success: true, responseTime }
             );
@@ -1438,6 +1473,63 @@ export async function POST(req: Request) {
 
     return createErrorResponse(error);
   }
+}
+
+// Diagnostics for method checks and env visibility (no secrets)
+const PROVIDER_ENV_MAPPING = {
+  openai: 'OPENAI_API_KEY',
+  anthropic: 'ANTHROPIC_API_KEY',
+  google: ['GOOGLE_API_KEY', 'GOOGLE_GENERATIVE_AI_API_KEY'],
+  mistral: 'MISTRAL_API_KEY',
+  perplexity: 'PERPLEXITY_API_KEY',
+  xai: 'XAI_API_KEY',
+  openrouter: 'OPENROUTER_API_KEY',
+} as const;
+
+function checkEnvAvailable(providerId: string): boolean {
+  const envKeys =
+    PROVIDER_ENV_MAPPING[providerId as keyof typeof PROVIDER_ENV_MAPPING];
+  if (!envKeys) return false;
+  if (Array.isArray(envKeys)) {
+    return envKeys.some((key) => Boolean(process.env[key]));
+  }
+  return Boolean(process.env[envKeys as string]);
+}
+
+export async function GET() {
+  let gatewayEnabled = false;
+  let gatewayBaseURL: string | null = null;
+  try {
+    const gw = getGatewayConfig();
+    gatewayEnabled = gw.enabled;
+    gatewayBaseURL = gw.baseURL;
+  } catch {}
+
+  const providers = Object.keys(PROVIDER_ENV_MAPPING);
+  const envStatus = providers.reduce<Record<string, boolean>>((acc, p) => {
+    acc[p] = checkEnvAvailable(p);
+    return acc;
+  }, {});
+
+  return new Response(
+    JSON.stringify({
+      ok: true,
+      message: 'Use POST to send chat messages',
+      gateway: { enabled: gatewayEnabled, baseURL: gatewayBaseURL },
+      envAvailable: envStatus,
+    }),
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        Allow: 'GET, POST, OPTIONS',
+      },
+    }
+  );
+}
+
+export function OPTIONS() {
+  return new Response(null, { status: 204, headers: { Allow: 'GET, POST, OPTIONS' } });
 }
 
 // Test-only exports (conditional to avoid Next.js type issues)

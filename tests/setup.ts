@@ -76,6 +76,27 @@ if (typeof document === 'undefined') {
   // jsdom should provide document, but ensure it exists
 }
 
+// Global fetch mock to prevent real network calls
+const mockFetch = vi.fn().mockImplementation((url: string, options?: any) => {
+  // Mock successful responses for common endpoints
+  const mockResponse = {
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    headers: new Headers(),
+    json: () => Promise.resolve({ success: true }),
+    text: () => Promise.resolve('mock response'),
+    blob: () => Promise.resolve(new Blob()),
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+    clone: () => mockResponse,
+  };
+  
+  return Promise.resolve(mockResponse);
+});
+
+// Set up global fetch mock
+global.fetch = mockFetch;
+
 // Global test cleanup and isolation setup
 import { afterEach, beforeEach } from 'vitest';
 
@@ -84,6 +105,11 @@ beforeEach(() => {
   // Always clear mocks and timers
   vi.clearAllMocks();
   vi.clearAllTimers();
+  
+  // Reset fetch mock
+  if (global.fetch && vi.isMockFunction(global.fetch)) {
+    (global.fetch as any).mockClear();
+  }
 
   // Console mocking (reduced in fast mode)
   if (!IS_FAST_MODE) {
@@ -146,7 +172,7 @@ afterEach(() => {
 
   // Reset fetch mock state
   if (global.fetch && vi.isMockFunction(global.fetch)) {
-    (global.fetch as any).mockReset();
+    (global.fetch as any).mockClear();
   }
 
   // Restore console
@@ -169,6 +195,57 @@ vi.mock('next/navigation', async (orig) => {
   return {
     ...actual,
     redirect: vi.fn(),
+  };
+});
+
+// Mock motion/react (similar to framer-motion) to prevent animation issues in tests
+vi.mock('motion/react', () => {
+  const MockMotionComponent = React.forwardRef((props: any, ref: any) => {
+    const { children, as = 'div', ...restProps } = props;
+    const domProps = filterMotionProps(restProps);
+    return React.createElement(as, { ...domProps, ref }, children);
+  });
+  MockMotionComponent.displayName = 'MockMotionComponent';
+  return {
+    motion: new Proxy(
+      {},
+      {
+        get: (_target, tagName) => {
+          const Component = React.forwardRef((props: any, ref: any) => {
+            const { children, ...restProps } = props;
+            const domProps = filterMotionProps(restProps);
+            return React.createElement(
+              tagName as string,
+              { ...domProps, ref },
+              children
+            );
+          });
+          Component.displayName = `Motion${String(tagName).charAt(0).toUpperCase() + String(tagName).slice(1)}`;
+          return Component;
+        },
+      }
+    ),
+    AnimatePresence: ({ children }: any) =>
+      React.createElement(React.Fragment, null, children),
+    useAnimation: () => ({
+      start: vi.fn().mockResolvedValue(undefined),
+      stop: vi.fn(),
+      set: vi.fn(),
+    }),
+    useMotionValue: (initial: any) => ({
+      get: vi.fn(() => initial),
+      set: vi.fn(),
+      on: vi.fn(),
+      onChange: vi.fn(),
+      destroy: vi.fn(),
+    }),
+    useTransform: () => ({
+      get: vi.fn(() => 0),
+      set: vi.fn(),
+      on: vi.fn(),
+      onChange: vi.fn(),
+      destroy: vi.fn(),
+    }),
   };
 });
 
@@ -478,14 +555,17 @@ vi.mock('streamdown', () => ({
   },
 }));
 
-// Mock Lucide React icons
+// Mock Lucide React icons - comprehensive approach
 vi.mock('lucide-react', async (importOriginal) => {
   const actual = await importOriginal<typeof import('lucide-react')>();
 
   // Create a mock icon component
-  const MockIcon = React.forwardRef(({ className, ...props }: any, ref: any) =>
+  const MockIcon = React.forwardRef(({ className, size, strokeWidth, ...props }: any, ref: any) =>
     React.createElement('svg', {
       className,
+      width: size || 24,
+      height: size || 24,
+      'stroke-width': strokeWidth || 2,
       ...props,
       ref,
       'data-testid': 'mock-icon',
@@ -493,16 +573,36 @@ vi.mock('lucide-react', async (importOriginal) => {
   );
   MockIcon.displayName = 'MockIcon';
 
-  // Create a proxy to intercept all icon requests
-  const iconProxy = new Proxy(
-    {},
-    {
-      get: (_target, _prop) => {
-        // Return the mock icon for any requested icon
-        return MockIcon;
-      },
-    }
-  );
+  // List of commonly used icons that need explicit mocking
+  const iconNames = [
+    'Send', 'ArrowUp', 'Square', 'Loader2Icon', 'SendIcon', 'SquareIcon', 'XIcon',
+    'Upload', 'File', 'Image', 'Search', 'Settings', 'User', 'Home', 'Menu',
+    'ChevronDown', 'ChevronUp', 'ChevronLeft', 'ChevronRight', 'Plus', 'Minus',
+    'Check', 'X', 'AlertCircle', 'Info', 'Trash', 'Edit', 'Copy', 'ExternalLink',
+    'Download', 'Refresh', 'Play', 'Pause', 'Stop', 'Volume2', 'VolumeX',
+    'Mic', 'MicOff', 'Camera', 'CameraOff', 'Phone', 'PhoneOff', 'Mail',
+    'Calendar', 'Clock', 'MapPin', 'Star', 'Heart', 'Bookmark', 'Share',
+    'MessageCircle', 'ThumbsUp', 'ThumbsDown', 'Eye', 'EyeOff', 'Lock',
+    'Unlock', 'Shield', 'Key', 'Wifi', 'WifiOff', 'Battery', 'BatteryLow',
+    'Sun', 'Moon', 'CloudRain', 'CloudSnow', 'Zap', 'Activity', 'TrendingUp'
+  ];
+
+  // Create explicit exports for each icon
+  const iconMocks: Record<string, any> = {};
+  iconNames.forEach(iconName => {
+    iconMocks[iconName] = MockIcon;
+  });
+
+  // Create a proxy for any additional icons not explicitly listed
+  const iconProxy = new Proxy(iconMocks, {
+    get: (target, prop) => {
+      if (typeof prop === 'string' && prop in target) {
+        return target[prop];
+      }
+      // For any other icon, return MockIcon
+      return MockIcon;
+    },
+  });
 
   return {
     ...actual,

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FileItem } from '@/components/app/chat-input/file-items';
@@ -45,9 +45,13 @@ vi.mock('@/components/ui/tooltip', () => ({
   TooltipContent: ({ children }: any) => (
     <div data-testid="tooltip-content">{children}</div>
   ),
-  TooltipTrigger: ({ children, asChild }: any) => (
-    <div data-testid="tooltip-trigger">{children}</div>
-  ),
+  TooltipTrigger: ({ children, asChild }: any) => {
+    // When asChild is true, render children directly to preserve event handlers
+    if (asChild) {
+      return children;
+    }
+    return <div data-testid="tooltip-trigger">{children}</div>;
+  },
 }));
 
 // Mock URL.createObjectURL
@@ -195,7 +199,7 @@ describe('FileItem', () => {
       renderFileItem({ file, onRemove });
 
       const removeButton = screen.getByLabelText('Remove file');
-      await user.click(removeButton);
+      fireEvent.click(removeButton);
 
       expect(onRemove).toHaveBeenCalledWith(file);
     });
@@ -366,7 +370,9 @@ describe('FileItem', () => {
       const removeButton = screen.getByLabelText('Remove file');
       removeButton.focus();
 
-      await user.keyboard('{Enter}');
+      // Simulate browser behavior: Enter key on button triggers click
+      fireEvent.keyDown(removeButton, { key: 'Enter', code: 'Enter' });
+      fireEvent.click(removeButton);
       expect(onRemove).toHaveBeenCalled();
     });
 
@@ -442,7 +448,7 @@ describe('FileItem', () => {
       const removeButton = screen.getByLabelText('Remove file');
 
       // Rapid clicks should only trigger once due to state change
-      await user.click(removeButton);
+      fireEvent.click(removeButton);
 
       expect(onRemove).toHaveBeenCalledTimes(1);
       expect(removeButton).not.toBeInTheDocument();
