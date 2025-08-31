@@ -6,7 +6,7 @@ import {
   enhancedRetrieval,
   type RetrievalPipelineConfig,
 } from '@/lib/retrieval/query-rewriting';
-import logger from '@/lib/utils/logger';
+import { logError, logInfo } from '@/lib/utils/logger';
 
 // OpenAI client defaults and retry helpers
 const OPENAI_CLIENT_DEFAULTS = {
@@ -122,33 +122,27 @@ export const file_search = tool({
     enable_reranking = true,
     reranking_method = 'semantic',
   }) => {
-    logger.info(
-      {
-        at: 'file_search.execute.start',
-        query,
-        max_results,
-        file_types,
-        vector_store_id,
-        enable_rewriting,
-        rewrite_strategy,
-        enable_reranking,
-        reranking_method,
-        timestamp: new Date().toISOString(),
-      },
-      'File search tool execution started'
-    );
+    logInfo('File search tool execution started', {
+      at: 'file_search.execute.start',
+      query,
+      max_results,
+      file_types,
+      vector_store_id,
+      enable_rewriting,
+      rewrite_strategy,
+      enable_reranking,
+      reranking_method,
+      timestamp: new Date().toISOString(),
+    });
 
     try {
       // Get API key from environment
       const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) {
-        logger.error(
-          {
-            at: 'file_search.execute.apiKeyMissing',
-            timestamp: new Date().toISOString(),
-          },
-          'OpenAI API key not found'
-        );
+        logError(new Error('OpenAI API key not found'), {
+          at: 'file_search.execute.apiKeyMissing',
+          timestamp: new Date().toISOString(),
+        });
         throw new Error(
           'OpenAI API key is required for file search. Set OPENAI_API_KEY environment variable.'
         );
@@ -159,40 +153,31 @@ export const file_search = tool({
       // If no vector store ID provided, get the default one or create a new one
       let storeId: string | undefined = vector_store_id;
       if (!storeId) {
-        logger.info(
-          {
-            at: 'file_search.execute.vectorStore.lookup',
-            timestamp: new Date().toISOString(),
-          },
-          'Looking up default vector store'
-        );
+        logInfo('Looking up default vector store', {
+          at: 'file_search.execute.vectorStore.lookup',
+          timestamp: new Date().toISOString(),
+        });
 
         // Try to get the user's default vector store
-        const stores = await withRetry(() =>
+        const stores = (await withRetry(async () =>
           openai.vectorStores.list({ limit: 1 })
-        );
+        )) as unknown as OpenAI.VectorStoresPage;
         if (stores.data.length > 0) {
           storeId = stores.data[0].id;
-          logger.info(
-            {
-              at: 'file_search.execute.vectorStore.found',
-              storeId,
-              storeName: stores.data[0].name,
-              timestamp: new Date().toISOString(),
-            },
-            'Using existing vector store'
-          );
+          logInfo('Using existing vector store', {
+            at: 'file_search.execute.vectorStore.found',
+            storeId,
+            storeName: stores.data[0].name,
+            timestamp: new Date().toISOString(),
+          });
         } else {
           // Create a new vector store if none exists
-          logger.info(
-            {
-              at: 'file_search.execute.vectorStore.creating',
-              timestamp: new Date().toISOString(),
-            },
-            'Creating new vector store'
-          );
+          logInfo('Creating new vector store', {
+            at: 'file_search.execute.vectorStore.creating',
+            timestamp: new Date().toISOString(),
+          });
 
-          const newStore = await withRetry(() =>
+          const newStore = await withRetry<OpenAI.VectorStore>(() =>
             openai.vectorStores.create({
               name: 'Base Chat Default Store',
               metadata: {
@@ -203,25 +188,19 @@ export const file_search = tool({
           );
           storeId = newStore.id;
 
-          logger.info(
-            {
-              at: 'file_search.execute.vectorStore.created',
-              storeId: newStore.id,
-              storeName: newStore.name,
-              timestamp: new Date().toISOString(),
-            },
-            'Created new vector store'
-          );
+          logInfo('Created new vector store', {
+            at: 'file_search.execute.vectorStore.created',
+            storeId: newStore.id,
+            storeName: newStore.name,
+            timestamp: new Date().toISOString(),
+          });
         }
       } else {
-        logger.info(
-          {
-            at: 'file_search.execute.vectorStore.provided',
-            storeId,
-            timestamp: new Date().toISOString(),
-          },
-          'Using provided vector store ID'
-        );
+        logInfo('Using provided vector store ID', {
+          at: 'file_search.execute.vectorStore.provided',
+          storeId,
+          timestamp: new Date().toISOString(),
+        });
       }
 
       // Configure retrieval pipeline
@@ -241,26 +220,20 @@ export const file_search = tool({
         metadataFilters: file_types ? { fileTypes: file_types } : undefined,
       };
 
-      logger.info(
-        {
-          at: 'file_search.execute.retrieval.config',
-          retrievalConfig,
-          timestamp: new Date().toISOString(),
-        },
-        'Configured retrieval pipeline'
-      );
+      logInfo('Configured retrieval pipeline', {
+        at: 'file_search.execute.retrieval.config',
+        retrievalConfig,
+        timestamp: new Date().toISOString(),
+      });
 
       // Use enhanced retrieval with query rewriting and reranking
       // Note: retrieval currently feature-gated; returns empty results if unsupported
-      logger.info(
-        {
-          at: 'file_search.execute.retrieval.calling',
-          query,
-          storeId,
-          timestamp: new Date().toISOString(),
-        },
-        'Calling enhanced retrieval'
-      );
+      logInfo('Calling enhanced retrieval', {
+        at: 'file_search.execute.retrieval.calling',
+        query,
+        storeId,
+        timestamp: new Date().toISOString(),
+      });
 
       const results = await withRetry(() =>
         enhancedRetrieval(query, storeId as string, openai, retrievalConfig)
@@ -269,25 +242,19 @@ export const file_search = tool({
       // Ensure results is always an array
       const safeResults = Array.isArray(results) ? results : [];
 
-      logger.info(
-        {
-          at: 'file_search.execute.retrieval.complete',
-          resultsCount: safeResults.length,
-          hasResults: safeResults.length > 0,
-          timestamp: new Date().toISOString(),
-        },
-        'Enhanced retrieval completed'
-      );
+      logInfo('Enhanced retrieval completed', {
+        at: 'file_search.execute.retrieval.complete',
+        resultsCount: safeResults.length,
+        hasResults: safeResults.length > 0,
+        timestamp: new Date().toISOString(),
+      });
 
       // Format results for output
-      logger.info(
-        {
-          at: 'file_search.execute.formatting.start',
-          rawResultsCount: safeResults.length,
-          timestamp: new Date().toISOString(),
-        },
-        'Formatting search results'
-      );
+      logInfo('Formatting search results', {
+        at: 'file_search.execute.formatting.start',
+        rawResultsCount: safeResults.length,
+        timestamp: new Date().toISOString(),
+      });
 
       const formattedResults = safeResults.map((result, index) => ({
         rank: index + 1,
@@ -298,16 +265,13 @@ export const file_search = tool({
         metadata: result.metadata,
       }));
 
-      logger.info(
-        {
-          at: 'file_search.execute.formatting.complete',
-          formattedResultsCount: formattedResults.length,
-          topResultScore:
-            formattedResults.length > 0 ? formattedResults[0].score : null,
-          timestamp: new Date().toISOString(),
-        },
-        'Formatted search results'
-      );
+      logInfo('Formatted search results', {
+        at: 'file_search.execute.formatting.complete',
+        formattedResultsCount: formattedResults.length,
+        topResultScore:
+          formattedResults.length > 0 ? formattedResults[0].score : null,
+        timestamp: new Date().toISOString(),
+      });
 
       // Create a summary of the search results
       const summary =
@@ -359,23 +323,20 @@ export const file_search = tool({
         },
       };
 
-      logger.info(
-        {
-          at: 'file_search.execute.success',
-          response: {
-            success: response.success,
-            query: response.query,
-            enhanced_query: response.enhanced_query,
-            total_results: response.total_results,
-            summary: response.summary,
-            sources: response.sources,
-            thinking: response.thinking,
-            search_config: response.search_config,
-          },
-          timestamp: new Date().toISOString(),
+      logInfo('File search completed successfully', {
+        at: 'file_search.execute.success',
+        response: {
+          success: response.success,
+          query: response.query,
+          enhanced_query: response.enhanced_query,
+          total_results: response.total_results,
+          summary: response.summary,
+          sources: response.sources,
+          thinking: response.thinking,
+          search_config: response.search_config,
         },
-        'File search completed successfully'
-      );
+        timestamp: new Date().toISOString(),
+      });
 
       return response;
     } catch (error) {
@@ -384,22 +345,12 @@ export const file_search = tool({
           ? error.message
           : 'Failed to perform file search';
 
-      logger.error(
-        {
-          at: 'file_search.execute.error',
-          query,
-          error: errorMessage,
-          errorDetails:
-            error instanceof Error
-              ? {
-                  name: error.name,
-                  stack: error.stack,
-                }
-              : error,
-          timestamp: new Date().toISOString(),
-        },
-        'File search failed'
-      );
+      logError(error, {
+        at: 'file_search.execute.error',
+        query,
+        error: errorMessage,
+        timestamp: new Date().toISOString(),
+      });
 
       return {
         success: false,
@@ -422,7 +373,7 @@ export async function createVectorStore(
   const openai = new OpenAI({ apiKey, ...OPENAI_CLIENT_DEFAULTS });
 
   try {
-    const vectorStore = await withRetry(() =>
+    const vectorStore = await withRetry<OpenAI.VectorStore>(() =>
       openai.vectorStores.create({
         name,
         file_ids: fileIds,
@@ -458,7 +409,7 @@ export async function uploadFileForSearch(
   const openai = new OpenAI({ apiKey, ...OPENAI_CLIENT_DEFAULTS });
 
   try {
-    const uploadedFile = await withRetry(() =>
+    const uploadedFile = await withRetry<OpenAI.FileObject>(() =>
       openai.files.create({
         file: file as File,
         purpose,

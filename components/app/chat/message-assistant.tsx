@@ -71,7 +71,7 @@ interface ImageResult {
 
 const isToolUIPart = (part: Part): part is ToolUIPart =>
   typeof (part as Record<string, unknown>)?.type === 'string' &&
-  (part as Record<string, unknown>).type.toString().startsWith('tool-') &&
+  String((part as Record<string, unknown>).type).startsWith('tool-') &&
   'toolCallId' in (part as Record<string, unknown>);
 
 // ========= Pure helpers (éénpass, herbruikbaar) =========
@@ -165,10 +165,16 @@ const extractFileSearchFailure = (toolParts: ToolUIPart[]) => {
         parsed = parseMaybeJson(out);
       }
 
-      if (parsed && parsed.success === false) {
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        'success' in (parsed as Record<string, unknown>) &&
+        (parsed as Record<string, unknown>).success === false
+      ) {
+        const pe = parsed as Record<string, unknown>;
         const description =
-          parsed.error ||
-          parsed.summary ||
+          (pe.error as string | undefined) ||
+          (pe.summary as string | undefined) ||
           'File search failed. Please try again.';
         return String(description);
       }
@@ -183,7 +189,7 @@ const extractReasoningText = (
   if (!parts || parts.length === 0) return undefined;
 
   for (const part of parts as TypedToolPart[]) {
-    const partRecord = part as Record<string, unknown>;
+    const partRecord = (part as unknown) as Record<string, unknown>;
     if (partRecord.type === 'reasoning') {
       const t =
         (partRecord.text as string) ?? (partRecord.reasoningText as string);

@@ -75,11 +75,10 @@ export function ProviderKeyInput({
         {hasKey && !hasNewKey ? (
           <div className="flex items-center gap-2">
             <Input
-              value={
-                showKey
-                  ? existingKey.encrypted_key
-                  : maskKey(existingKey.encrypted_key)
-              }
+              value={(() => {
+                const raw = (existingKey?.encrypted_key ?? existingKey?.masked_key ?? '') as string;
+                return showKey ? raw : maskKey(raw);
+              })()}
               readOnly
               className="font-mono text-sm"
             />
