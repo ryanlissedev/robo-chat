@@ -1,6 +1,6 @@
 import { ChatService } from '@/lib/services/ChatService';
 import type { ChatRequest } from '@/lib/services/types';
-import logger from '@/lib/utils/logger';
+import { logError } from '@/lib/utils/logger';
 import { createErrorResponse } from './utils';
 
 export const maxDuration = 60;
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     // Delegate to ChatService for processing
     return await ChatService.processChatRequest(req, requestData);
   } catch (error) {
-    logger.error('Chat API error:', error);
+    logError(error, { at: 'api.chat.POST' });
     return createErrorResponse({
       message: error instanceof Error ? error.message : 'Internal server error',
       statusCode: 500,
