@@ -8,7 +8,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { generateText, streamText } from 'ai';
-import { OpenAI } from 'openai';
+import OpenAI from 'openai';
 
 export interface GatewayConfig {
   mode: 'direct' | 'gateway' | 'auto';

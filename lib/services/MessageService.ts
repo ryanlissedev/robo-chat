@@ -191,7 +191,7 @@ export class MessageService {
     const now = new Date();
     return messages.map((msg) => {
       const id = msg.id ?? genId(radix);
-      const content = firstTextFromParts(msg.parts);
+      const content = firstTextFromParts((msg.parts ?? []) as MessagePart[]);
       return {
         id,
         role: msg.role,

@@ -2,7 +2,7 @@ import type { LanguageModel, ToolSet } from 'ai';
 import { convertToModelMessages, streamText } from 'ai';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import { createRun, isLangSmithEnabled } from '@/lib/langsmith/client';
-import logger from '@/lib/utils/logger';
+import { logError, logInfo } from '@/lib/utils/logger';
 import type { ModelConfiguration } from './ModelConfigurationService';
 
 export interface StreamingConfig {
@@ -105,7 +105,7 @@ export class StreamingResponseService {
       const runId = await createRun(runData);
       return runId as string | null;
     } catch (error) {
-      logger.error('Failed to create LangSmith run:', error as any);
+      logError(error, { at: 'streaming.createLangSmithRun' });
       return null;
     }
   }
@@ -175,10 +175,10 @@ export class StreamingResponseService {
       if (runId && isLangSmithEnabled()) {
         // TODO: Update LangSmith run with completion data
         const completionInfo = { runId, chatId };
-        logger.info('Stream completed', completionInfo as any);
+        logInfo('Stream completed', completionInfo as any);
       }
     } catch (error) {
-      logger.error('Error in stream finish handler:', error);
+      logError(error, { at: 'streaming.handleStreamFinish' });
     }
   }
 
@@ -197,9 +197,6 @@ export class StreamingResponseService {
       userId: params.userId,
       model: params.resolvedModel,
     };
-    logger.info(
-      'Reasoning extraction not yet implemented',
-      reasoningInfo as any
-    );
+    logInfo('Reasoning extraction not yet implemented', reasoningInfo as any);
   }
 }

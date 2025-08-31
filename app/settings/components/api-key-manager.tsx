@@ -51,8 +51,6 @@ export function ApiKeyManager({ userId }: ApiKeyManagerProps) {
             guestCredentials={apiKeyService.guestCredentials}
             isGuest={apiKeyService.isGuest}
             loading={apiKeyService.loading}
-            validation={apiKeyService.validation}
-            testResults={apiKeyService.testResults}
             newKeys={manager.newKeys}
             showKeys={manager.showKeys}
             onKeyChange={manager.handleKeyChange}

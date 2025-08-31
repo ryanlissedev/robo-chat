@@ -2,17 +2,22 @@
 
 import { Button } from '@/components/ui/button';
 import { API_PROVIDERS } from '@/lib/constants/api-providers';
-import type { ApiKeyTestResult, ValidationResult } from '@/lib/services/types';
+import type {
+  ApiKey,
+  GuestCredential,
+  ApiKeyTestResult,
+  ValidationResult,
+} from '@/lib/services/types';
 import { KeyTestResult } from './key-test-result';
 import { ProviderKeyInput } from './provider-key-input';
 
 type ProviderListProps = {
-  apiKeys: Record<string, string>;
-  guestCredentials: Record<string, string>;
+  apiKeys: Record<string, ApiKey>;
+  guestCredentials: Record<string, GuestCredential>;
   isGuest: boolean;
   loading: Record<string, boolean>;
-  validation: Record<string, ValidationResult>;
-  testResults: Record<string, ApiKeyTestResult>;
+  validation?: Record<string, ValidationResult>;
+  testResults?: Record<string, ApiKeyTestResult>;
   newKeys: Record<string, string>;
   showKeys: Record<string, boolean>;
   onKeyChange: (provider: string, key: string) => void;
@@ -38,7 +43,7 @@ export function ProviderList({
   onTestKey,
 }: ProviderListProps) {
   const getExistingKey = (provider: string) => {
-    return isGuest ? guestCredentials[provider] : apiKeys[provider];
+    return isGuest ? undefined : apiKeys[provider];
   };
 
   return (
@@ -55,14 +60,14 @@ export function ProviderList({
             onKeyChange={(key) => onKeyChange(provider.id, key)}
             onSave={() => onSaveKey(provider.id)}
             onDelete={() => onDeleteKey(provider.id)}
-            validation={validation[provider.id]}
+            validation={validation?.[provider.id]}
             showKey={showKeys[provider.id] || false}
             onToggleShowKey={() => onToggleShowKey(provider.id)}
             isLoading={loading[provider.id]}
           />
 
           <KeyTestResult
-            testResult={testResults[provider.id]}
+            testResult={testResults?.[provider.id]}
             isLoading={loading[`test-${provider.id}`]}
           />
 
