@@ -108,7 +108,11 @@ function FileUpload({
     <FileUploadContext.Provider
       value={{ isDragging, inputRef, multiple, disabled }}
     >
-      <div data-testid="file-upload" data-multiple={multiple} data-disabled={disabled}>
+      <div
+        data-testid="file-upload"
+        data-multiple={multiple}
+        data-disabled={disabled}
+      >
         <input
           accept={accept}
           aria-hidden

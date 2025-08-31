@@ -1,10 +1,4 @@
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiKeyManager } from '@/app/settings/components/api-key-manager';
 import * as webCrypto from '@/lib/security/web-crypto';
@@ -63,7 +57,9 @@ describe('ApiKeyManager', () => {
 
       // Use container.textContent to check for text that might be split across elements
       expect(container.textContent).toContain('Storage Settings (Guest Mode)');
-      expect(container.textContent).toContain('Choose how your API keys are stored');
+      expect(container.textContent).toContain(
+        'Choose how your API keys are stored'
+      );
     });
 
     it('should show storage scope selector for guests', async () => {
@@ -110,7 +106,7 @@ describe('ApiKeyManager', () => {
       // Check that API key inputs and save buttons are present
       expect(container.textContent).toContain('OpenAI');
       expect(container.textContent).toContain('Save API Key');
-      
+
       // For this test, we're just verifying the UI renders correctly
       // The actual save functionality would require more complex mocking
     });
@@ -121,7 +117,9 @@ describe('ApiKeyManager', () => {
       const { container } = render(<ApiKeyManager userId="test-user-id" />);
 
       // Should not show the guest mode storage settings card
-      expect(container.textContent).not.toContain('Storage Settings (Guest Mode)');
+      expect(container.textContent).not.toContain(
+        'Storage Settings (Guest Mode)'
+      );
     });
 
     it('should show different security message for authenticated users', async () => {
@@ -129,8 +127,12 @@ describe('ApiKeyManager', () => {
 
       // Check for authenticated mode security info in text content
       // The authenticated mode shows different security messages than guest mode
-      expect(container.textContent).toContain('Your API keys are encrypted and stored securely on our servers');
-      expect(container.textContent).toContain('Keys are never sent to third parties');
+      expect(container.textContent).toContain(
+        'Your API keys are encrypted and stored securely on our servers'
+      );
+      expect(container.textContent).toContain(
+        'Keys are never sent to third parties'
+      );
     });
   });
 
@@ -158,16 +160,24 @@ describe('ApiKeyManager', () => {
 
       // Check for guest mode security info in text content
       expect(container.textContent).toContain('Guest Mode');
-      expect(container.textContent).toContain('Keys are stored locally in your browser only');
-      expect(container.textContent).toContain('Keys are never transmitted to our servers');
+      expect(container.textContent).toContain(
+        'Keys are stored locally in your browser only'
+      );
+      expect(container.textContent).toContain(
+        'Keys are never transmitted to our servers'
+      );
     });
 
     it('should show authenticated mode security info for authenticated users', async () => {
       const { container } = render(<ApiKeyManager userId="test-user-id" />);
 
       // Check for authenticated mode security messages in text content
-      expect(container.textContent).toContain('Your API keys are encrypted and stored securely');
-      expect(container.textContent).toContain('Keys are never sent to third parties');
+      expect(container.textContent).toContain(
+        'Your API keys are encrypted and stored securely'
+      );
+      expect(container.textContent).toContain(
+        'Keys are never sent to third parties'
+      );
     });
   });
 });

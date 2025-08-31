@@ -5,23 +5,33 @@ import {
   render,
   screen,
 } from '@testing-library/react';
+import React from 'react';
 // userEvent import removed - using fireEvent for better fake timer compatibility
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import React from 'react';
 
 // Mock motion/react FIRST to prevent animation issues
 vi.mock('motion/react', () => ({
-  motion: new Proxy({}, {
-    get: (_target, tagName) => {
-      const Component = React.forwardRef(({ children, ...props }: any, ref: any) => {
-        const { animate, initial, exit, transition, ...domProps } = props;
-        return React.createElement(tagName as string, { ...domProps, ref }, children);
-      });
-      Component.displayName = `Motion${String(tagName).charAt(0).toUpperCase() + String(tagName).slice(1)}`;
-      return Component;
-    },
-  }),
-  AnimatePresence: ({ children }: any) => React.createElement(React.Fragment, null, children),
+  motion: new Proxy(
+    {},
+    {
+      get: (_target, tagName) => {
+        const Component = React.forwardRef(
+          ({ children, ...props }: any, ref: any) => {
+            const { animate, initial, exit, transition, ...domProps } = props;
+            return React.createElement(
+              tagName as string,
+              { ...domProps, ref },
+              children
+            );
+          }
+        );
+        Component.displayName = `Motion${String(tagName).charAt(0).toUpperCase() + String(tagName).slice(1)}`;
+        return Component;
+      },
+    }
+  ),
+  AnimatePresence: ({ children }: any) =>
+    React.createElement(React.Fragment, null, children),
 }));
 
 // Toast mock is now handled in tests/setup.ts - using global standardized mock
@@ -91,7 +101,7 @@ vi.mock('motion/react', () => ({
         ...domProps
       } = props;
       return (
-        <form onSubmit={onSubmit} role="form" {...domProps}>
+        <form onSubmit={onSubmit} {...domProps}>
           {children}
         </form>
       );
@@ -170,16 +180,16 @@ describe('FeedbackForm', () => {
     // Clean up timers synchronously
     vi.clearAllTimers();
     vi.useRealTimers();
-    
+
     // Clean up DOM first
     cleanup();
-    
+
     // Force clear any lingering DOM or React state
     document.body.innerHTML = '';
-    
+
     // Small delay to allow async cleanup
-    await new Promise(resolve => setTimeout(resolve, 10));
-    
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
     // Ensure mocks are consistently set after cleanup
     mockIsSupabaseEnabled.mockReturnValue(true);
 
@@ -198,28 +208,34 @@ describe('FeedbackForm', () => {
       mockIsSupabaseEnabled.mockReturnValue(true);
       const result = isSupabaseEnabled();
       console.log('isSupabaseEnabled returns:', result);
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
       console.log('Container HTML:', container.innerHTML);
-      
+
       // Check what's actually rendered
       const textarea = container.querySelector('textarea');
       const buttons = screen.getAllByRole('button');
-      
+
       expect(textarea).toBeInTheDocument();
       expect(buttons).toHaveLength(2); // Close and Submit buttons
     });
 
     it('should render feedback form when authenticated', () => {
       // Explicit mock check for this test
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Check for the form container instead of role="form"
       const formElement = container.querySelector('form');
       expect(formElement).toBeInTheDocument();
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
       expect(
@@ -234,13 +250,14 @@ describe('FeedbackForm', () => {
     // MOVED: Null test moved to end to prevent mock pollution
 
     it('should have correct initial state', () => {
-      
       const { container } = render(
         <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
       );
 
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement; // Get the first textbox
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement; // Get the first textbox
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
       });
@@ -252,7 +269,6 @@ describe('FeedbackForm', () => {
     });
 
     it('should show placeholder text initially', () => {
-      
       render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
 
       const placeholderTexts = screen.getAllByText(
@@ -262,8 +278,9 @@ describe('FeedbackForm', () => {
     });
 
     it('should have correct dimensions and styling', () => {
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // The root container has the h-[200px] and w-full classes
       const rootDiv = container.firstElementChild;
@@ -278,9 +295,11 @@ describe('FeedbackForm', () => {
       );
 
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument(); // Ensure textarea exists
-      
+
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
       });
@@ -299,15 +318,17 @@ describe('FeedbackForm', () => {
     it('should hide placeholder when typing', async () => {
       // Explicitly ensure mock is configured for this specific test
       mockIsSupabaseEnabled.mockReturnValue(true);
-      
+
       const { container } = render(
         <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
       );
 
       // Use container.querySelector instead of document.querySelector to ensure we're looking in the right DOM scope
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
-      
+
       const placeholders = screen.getAllByText(
         'What would make Zola better for you?'
       );
@@ -327,16 +348,18 @@ describe('FeedbackForm', () => {
     it('should show placeholder when text is cleared', async () => {
       // Explicitly ensure mock is configured for this specific test
       mockIsSupabaseEnabled.mockReturnValue(true);
-      
+
       const { container } = render(
         <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
       );
 
       // Use screen.getAllByRole to get the textarea
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
-      
+
       const placeholders = screen.getAllByText(
         'What would make Zola better for you?'
       );
@@ -357,16 +380,18 @@ describe('FeedbackForm', () => {
     it('should disable submit button for whitespace-only text', async () => {
       // Explicitly ensure mock is configured for this specific test
       mockIsSupabaseEnabled.mockReturnValue(true);
-      
+
       const { container } = render(
         <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
       );
 
       // Use screen.getAllByRole to get the textarea
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
-      
+
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
       });
@@ -379,7 +404,6 @@ describe('FeedbackForm', () => {
     });
 
     it('should call onClose when close button is clicked', async () => {
-      
       render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
 
       const closeButton = screen.getByRole('button', { name: 'Close' });
@@ -391,16 +415,17 @@ describe('FeedbackForm', () => {
     });
 
     it('should reset form state when closing', async () => {
-      
       const { container } = render(
         <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
       );
 
       // Use screen.getAllByRole to get the textarea
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
-      
+
       await act(async () => {
         fireEvent.change(textarea, { target: { value: 'Some feedback' } });
       });
@@ -419,16 +444,18 @@ describe('FeedbackForm', () => {
     it('should submit feedback successfully', async () => {
       // Explicitly ensure mock is configured for this specific test
       mockIsSupabaseEnabled.mockReturnValue(true);
-      
+
       const { container } = render(
         <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
       );
 
       // Use screen.getAllByRole to get the textarea
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
-      
+
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
       });
@@ -454,16 +481,18 @@ describe('FeedbackForm', () => {
 
     it('should show success state after submission', async () => {
       // This test focuses on the component structure rather than async behavior
-      
+
       const { container } = render(
         <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
       );
 
       // Use screen.getAllByRole to get the textarea
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
-      
+
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
       });
@@ -483,13 +512,17 @@ describe('FeedbackForm', () => {
 
     it('should auto-close after success', async () => {
       // This test focuses on the component's callback behavior rather than timing
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
-      
+
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
       });
@@ -509,22 +542,23 @@ describe('FeedbackForm', () => {
     });
 
     it('should handle submission without user ID', async () => {
-      
       const { container } = render(
         <FeedbackForm authUserId={undefined} onClose={mockOnClose} />
       );
 
       // Use screen.getAllByRole to get the textarea
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
-      
+
       const form = container.querySelector('form');
 
       await act(async () => {
         fireEvent.change(textarea, { target: { value: 'Some feedback' } });
       });
-      
+
       await act(async () => {
         fireEvent.submit(form);
       });
@@ -538,11 +572,12 @@ describe('FeedbackForm', () => {
     });
 
     it('should handle empty feedback submission', async () => {
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       const form = container.querySelector('form');
-      
+
       await act(async () => {
         fireEvent.submit(form);
       });
@@ -554,13 +589,17 @@ describe('FeedbackForm', () => {
     it('should disable form during submission', async () => {
       // Force mock reset and set to true immediately before render
       // This test focuses on the component's disabled state logic
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
-      
+
       const _closeButton = screen.getByRole('button', { name: 'Close' });
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
@@ -585,10 +624,14 @@ describe('FeedbackForm', () => {
       // This test focuses on the component's error handling structure
       mockCreateClient.mockReturnValue(null);
 
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
       });
@@ -612,13 +655,16 @@ describe('FeedbackForm', () => {
       const dbError = new Error('Database error');
       mockSupabaseClient.insert.mockResolvedValue({ error: dbError });
 
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
-      
+
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
       });
@@ -643,12 +689,16 @@ describe('FeedbackForm', () => {
       mockSupabaseClient.insert.mockRejectedValue(networkError);
       // Mock is set to true in beforeEach
 
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
-      
+
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
       });
@@ -670,13 +720,17 @@ describe('FeedbackForm', () => {
     it('should reset form state after error', async () => {
       // This test focuses on the component's form state management
       mockSupabaseClient.insert.mockRejectedValue(new Error('Error'));
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
-      
+
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
       });
@@ -707,13 +761,17 @@ describe('FeedbackForm', () => {
   describe('Keyboard Navigation', () => {
     it('should submit form with keyboard shortcut', async () => {
       // This test focuses on keyboard interaction structure
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
-      
+
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
       });
@@ -741,11 +799,15 @@ describe('FeedbackForm', () => {
 
     it('should navigate with Tab key', async () => {
       // This test focuses on form element accessibility structure
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       const closeButton = screen.getByRole('button', { name: 'Close' });
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
@@ -759,7 +821,7 @@ describe('FeedbackForm', () => {
       // Test that elements have proper tabindex (or can be focused)
       expect(textarea).not.toHaveAttribute('tabindex', '-1');
       expect(closeButton).not.toHaveAttribute('tabindex', '-1');
-      
+
       // Note: Submit button focus test is skipped when button is disabled
       // The disabled submit button cannot receive focus in test environment
       expect(submitButton).toBeDisabled();
@@ -767,12 +829,16 @@ describe('FeedbackForm', () => {
 
     it('should handle Escape key to close', async () => {
       // This test focuses on keyboard event handling structure
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       const form = container.querySelector('form');
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
 
       // Verify form is rendered
@@ -791,8 +857,9 @@ describe('FeedbackForm', () => {
 
   describe('Accessibility', () => {
     it('should have proper ARIA attributes', () => {
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       const closeButton = screen.getByRole('button', { name: 'Close' });
       const submitButton = screen.getByRole('button', {
@@ -808,12 +875,15 @@ describe('FeedbackForm', () => {
     });
 
     it('should have proper form semantics', () => {
-      
-      const { container } = render(<FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />);
+      const { container } = render(
+        <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
+      );
 
       const form = container.querySelector('form');
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       const submitButton = screen.getByRole('button', {
         name: 'Submit feedback',
       });
@@ -824,7 +894,6 @@ describe('FeedbackForm', () => {
     });
 
     it('should auto-focus textarea on render', () => {
-      
       const { container } = render(
         <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
       );
@@ -837,20 +906,21 @@ describe('FeedbackForm', () => {
     });
 
     it('should be keyboard navigable', async () => {
-      
       const { container } = render(
         <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
       );
 
       // All interactive elements should be accessible and focusable
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       const closeButton = screen.getByRole('button', { name: 'Close' });
 
       // Verify elements are present and can potentially be focused
       expect(textarea).toBeInTheDocument();
       expect(closeButton).toBeInTheDocument();
-      
+
       // Test accessibility attributes instead of focus behavior in test environment
       expect(textarea).not.toHaveAttribute('tabindex', '-1');
       expect(closeButton).not.toHaveAttribute('tabindex', '-1');
@@ -859,12 +929,13 @@ describe('FeedbackForm', () => {
 
   describe('Animation States', () => {
     it('should maintain proper z-index and positioning', async () => {
-      
       const { container } = render(
         <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
       );
 
-      const placeholder = screen.getByText('What would make Zola better for you?');
+      const placeholder = screen.getByText(
+        'What would make Zola better for you?'
+      );
       expect(placeholder).toBeInTheDocument();
       expect(placeholder).toHaveClass('absolute', 'pointer-events-none');
       expect(placeholder).toHaveClass('top-3.5', 'left-4');
@@ -873,7 +944,6 @@ describe('FeedbackForm', () => {
 
   describe('Performance', () => {
     it('should not cause memory leaks', () => {
-      
       const { unmount } = render(
         <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
       );
@@ -889,13 +959,14 @@ describe('FeedbackForm', () => {
     });
 
     it('should handle rapid state changes', async () => {
-      
       const { container } = render(
         <FeedbackForm authUserId={mockUserId} onClose={mockOnClose} />
       );
 
       // Use querySelector for textarea since it doesn't have textbox role
-      const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+      const textarea = container.querySelector(
+        'textarea'
+      ) as HTMLTextAreaElement;
       expect(textarea).toBeInTheDocument();
 
       // Use fireEvent for faster text input instead of userEvent

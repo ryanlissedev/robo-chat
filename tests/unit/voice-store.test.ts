@@ -1,141 +1,152 @@
-import { act, renderHook } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Mock fetch globally BEFORE importing the store
+const mockFetch = vi.fn();
+vi.stubGlobal('fetch', mockFetch);
+
 import { useVoiceStore } from '@/components/app/voice/store/voice-store';
 
-// Mock fetch globally
-const mockFetch = vi.fn();
+// Mock response data
+const sessionResponseData = { sessionId: 'test-session-123' };
+const transcriptResponseData = {
+  success: true,
+  vectorStoreId: 'vs-test123',
+  fileId: 'file-test456',
+};
+
+// Response builders
+const buildSuccessResponse = (data: any) => ({
+  ok: true,
+  status: 200,
+  json: async () => data,
+  text: async () => JSON.stringify(data),
+});
+
+const buildErrorResponse = (status: number, message: string) => ({
+  ok: false,
+  status,
+  statusText: message,
+  text: async () => message,
+});
+
+// Helper function to avoid nesting issues
+const attemptIndexWithoutUser = async (store: any) => {
+  await act(async () => {
+    await store.indexTranscript('Test transcript');
+  });
+};
 
 describe('Voice Store', () => {
-  beforeEach(() => {
-    // Clear all mocks first
+  beforeEach(async () => {
+    // Reset all mocks
     vi.clearAllMocks();
-    mockFetch.mockClear();
     mockFetch.mockReset();
-    
-    // Set up global fetch mock
-    global.fetch = mockFetch;
-    vi.stubGlobal('fetch', mockFetch);
 
-    // Setup default successful mock implementation
-    mockFetch.mockImplementation(async (url, options) => {
-      const method = options?.method || 'GET';
-      
-      if (url === '/api/voice/session' && method === 'POST') {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: async () => ({ sessionId: 'test-session-123' }),
-          text: async () => '{"sessionId":"test-session-123"}',
-        });
-      }
-      
-      if (url === '/api/voice/session' && method === 'DELETE') {
-        return Promise.resolve({ 
-          ok: true, 
-          status: 200,
-          json: async () => ({ success: true }),
-        });
-      }
-      
-      if (url === '/api/voice/transcripts' && method === 'POST') {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: async () => ({
-            success: true,
-            vectorStoreId: 'vs-test123',
-            fileId: 'file-test456',
-          }),
-        });
-      }
-      
-      // Default fallback
-      return Promise.resolve({ 
-        ok: true, 
-        status: 200,
-        json: async () => ({}),
-      });
+    // Reset store state using the reset method, then wait
+    await act(async () => {
+      useVoiceStore.getState().reset();
     });
 
-    // Reset store to initial state - call reset twice to ensure it works
-    useVoiceStore.getState().reset();
-    
-    // Wait a tick for any async operations
-    return new Promise(resolve => setTimeout(resolve, 0));
-  });
+    // Wait a bit to ensure state is fully reset
+    await new Promise(resolve => setTimeout(resolve, 10));
 
-  afterEach(() => {
-    // Clean up store state after each test
-    useVoiceStore.getState().reset();
+    // Ensure global fetch is properly mocked
+    global.fetch = mockFetch;
+    globalThis.fetch = mockFetch;
+
+    // Setup default successful mock implementation
+    mockFetch.mockImplementation(async (url: string, options?: any) => {
+      const method = options?.method || 'GET';
+
+      if (url === '/api/voice/session' && method === 'POST') {
+        return buildSuccessResponse(sessionResponseData);
+      }
+
+      if (url === '/api/voice/session' && method === 'DELETE') {
+        return buildSuccessResponse({ success: true });
+      }
+
+      if (url === '/api/voice/transcripts' && method === 'POST') {
+        return buildSuccessResponse(transcriptResponseData);
+      }
+
+      return buildSuccessResponse({});
+    });
   });
 
   describe('Initial State', () => {
-    it.concurrent('should have correct initial state', () => {
-      const { result } = renderHook(() => useVoiceStore());
+    it('should have correct initial state', () => {
+      const store = useVoiceStore.getState();
 
-      // Wrap all state reads in act() to prevent warnings
-      act(() => {
-        const state = result.current;
-
-        expect(state.status).toBe('idle');
-        expect(state.isRecording).toBe(false);
-        expect(state.sessionId).toBeNull();
-        expect(state.transcriptions).toEqual([]);
-        expect(state.currentTranscript).toBe('');
-        expect(state.finalTranscript).toBe('');
-        expect(state.error).toBeNull();
-        expect(state.vectorStoreId).toBeNull();
-        expect(state.indexingStatus).toBe('idle');
-      });
+      expect(store.status).toBe('idle');
+      expect(store.isRecording).toBe(false);
+      expect(store.sessionId).toBeNull();
+      expect(store.transcriptions).toEqual([]);
+      expect(store.currentTranscript).toBe('');
+      expect(store.finalTranscript).toBe('');
+      expect(store.error).toBeNull();
+      expect(store.vectorStoreId).toBeNull();
+      expect(store.indexingStatus).toBe('idle');
     });
 
-    it.concurrent('should have correct default configuration', () => {
-      const { result } = renderHook(() => useVoiceStore());
+    it('should have correct default configuration', () => {
+      const store = useVoiceStore.getState();
 
-      act(() => {
-        const { config } = result.current;
-
-        expect(config).toEqual({
-          model: 'gpt-4o-realtime-preview',
-          voice: 'nova',
-          language: 'en-US',
-          enableVAD: true,
-          noiseSuppressionLevel: 'medium',
-          echoReduction: true,
-          autoIndexTranscripts: true,
-        });
+      expect(store.config).toEqual({
+        model: 'gpt-4o-realtime-preview',
+        voice: 'nova',
+        language: 'en-US',
+        enableVAD: true,
+        noiseSuppressionLevel: 'medium',
+        echoReduction: true,
+        autoIndexTranscripts: true,
       });
     });
   });
 
   describe('Configuration Updates', () => {
     it('should update configuration partially', () => {
-      const { result } = renderHook(() => useVoiceStore());
+      const store = useVoiceStore.getState();
 
       act(() => {
-        result.current.updateConfig({ voice: 'alloy', enableVAD: false });
+        store.updateConfig({ voice: 'alloy', enableVAD: false });
       });
 
-      act(() => {
-        expect(result.current.config.voice).toBe('alloy');
-        expect(result.current.config.enableVAD).toBe(false);
-        expect(result.current.config.model).toBe('gpt-4o-realtime-preview'); // Should remain unchanged
-      });
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.config.voice).toBe('alloy');
+      expect(updatedStore.config.enableVAD).toBe(false);
+      expect(updatedStore.config.model).toBe('gpt-4o-realtime-preview'); // Should remain unchanged
     });
   });
 
   describe('Session Management', () => {
     it('should start session successfully', async () => {
+      mockFetch.mockResolvedValueOnce(
+        buildSuccessResponse(sessionResponseData)
+      );
+
       const store = useVoiceStore.getState();
 
-      // Ensure store is in initial state
+      // Verify initial state
       expect(store.sessionId).toBeNull();
       expect(store.status).toBe('idle');
 
-      // Call startSession and wait for completion
-      await store.startSession();
+      // Start session
+      await act(async () => {
+        await store.startSession();
+      });
 
-      // Verify the mock was called correctly
+      // Get updated state after the action
+      const updatedStore = useVoiceStore.getState();
+
+      // Verify final state
+      expect(updatedStore.sessionId).toBe('test-session-123');
+      expect(updatedStore.status).toBe('connected');
+      expect(updatedStore.error).toBeNull();
+
+      // Verify fetch was called correctly
+      expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(mockFetch).toHaveBeenCalledWith('/api/voice/session', {
         method: 'POST',
         headers: {
@@ -144,58 +155,38 @@ describe('Voice Store', () => {
         },
         body: expect.stringContaining('personalityMode'),
       });
-
-      // Get fresh state after action
-      const newState = useVoiceStore.getState();
-      
-      // Verify final state
-      expect(newState.sessionId).toBe('test-session-123');
-      expect(newState.status).toBe('connected');
-      expect(newState.error).toBeNull();
     });
 
     it('should handle session start failure', async () => {
-      // Override default mock for this test to simulate failure
-      mockFetch.mockImplementation(async (url, options) => {
-        const method = options?.method || 'GET';
-        if (url === '/api/voice/session' && method === 'POST') {
-          return Promise.resolve({
-            ok: false,
-            status: 500,
-            statusText: 'Internal Server Error',
-            text: async () => 'Server error details',
-          });
-        }
-        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) });
-      });
+      // Setup error response
+      mockFetch.mockResolvedValueOnce(buildErrorResponse(500, 'Server error'));
 
       const store = useVoiceStore.getState();
 
-      // Ensure store is in initial state
-      expect(store.status).toBe('idle');
+      // Start session (should fail)
+      await act(async () => {
+        await store.startSession();
+      });
 
-      await store.startSession();
+      // Get updated state after the failed action
+      const updatedStore = useVoiceStore.getState();
 
-      // Get fresh state after action
-      const newState = useVoiceStore.getState();
-
-      // Verify final error state
-      expect(newState.status).toBe('error');
-      expect(newState.error).toEqual({
+      expect(updatedStore.status).toBe('error');
+      expect(updatedStore.error).toEqual({
         code: 'SESSION_START_FAILED',
         message: expect.stringContaining('Failed to start session'),
         timestamp: expect.any(Number),
         details: expect.any(Object),
       });
-      expect(newState.sessionId).toBeNull();
+      expect(updatedStore.sessionId).toBeNull();
     });
 
     it('should stop session and clean up state', () => {
-      const { result } = renderHook(() => useVoiceStore());
+      const store = useVoiceStore.getState();
 
       // Set up session state
       act(() => {
-        result.current.setUserId('test-user');
+        store.setUserId('test-user');
         useVoiceStore.setState({
           sessionId: 'test-session',
           status: 'connected',
@@ -208,56 +199,56 @@ describe('Voice Store', () => {
       mockFetch.mockResolvedValueOnce({ ok: true });
 
       act(() => {
-        result.current.stopSession();
+        store.stopSession();
       });
 
-      act(() => {
-        expect(result.current.sessionId).toBeNull();
-        expect(result.current.status).toBe('idle');
-        expect(result.current.isRecording).toBe(false);
-        expect(result.current.currentTranscript).toBe('');
-      });
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.sessionId).toBeNull();
+      expect(updatedStore.status).toBe('idle');
+      expect(updatedStore.isRecording).toBe(false);
+      expect(updatedStore.currentTranscript).toBe('');
     });
   });
 
   describe('Recording Management', () => {
     it('should start recording when connected', () => {
-      const { result } = renderHook(() => useVoiceStore());
+      const store = useVoiceStore.getState();
 
-      // Set connected state
+      // Set connected state first
       act(() => {
         useVoiceStore.setState({ status: 'connected' });
       });
 
+      // Start recording
       act(() => {
-        result.current.startRecording();
+        store.startRecording();
       });
 
-      act(() => {
-        expect(result.current.isRecording).toBe(true);
-        expect(result.current.status).toBe('recording');
-        expect(result.current.currentTranscript).toBe('');
-      });
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.isRecording).toBe(true);
+      expect(updatedStore.status).toBe('recording');
+      expect(updatedStore.currentTranscript).toBe('');
     });
 
     it('should not start recording when not connected', () => {
       const store = useVoiceStore.getState();
-      
-      // Ensure we're in idle state initially
+
+      // Ensure we start with idle state
       expect(store.status).toBe('idle');
       expect(store.isRecording).toBe(false);
 
-      // Try to start recording
-      store.startRecording();
+      // Try to start recording (should not work)
+      act(() => {
+        store.startRecording();
+      });
 
-      // Get fresh state - should not change when not connected
-      const newState = useVoiceStore.getState();
-      expect(newState.isRecording).toBe(false);
-      expect(newState.status).toBe('idle');
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.isRecording).toBe(false);
+      expect(updatedStore.status).toBe('idle');
     });
 
     it('should stop recording', () => {
-      const { result } = renderHook(() => useVoiceStore());
+      const store = useVoiceStore.getState();
 
       // Set recording state
       act(() => {
@@ -268,31 +259,29 @@ describe('Voice Store', () => {
       });
 
       act(() => {
-        result.current.stopRecording();
+        store.stopRecording();
       });
 
-      act(() => {
-        expect(result.current.isRecording).toBe(false);
-        expect(result.current.status).toBe('connected');
-      });
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.isRecording).toBe(false);
+      expect(updatedStore.status).toBe('connected');
     });
   });
 
   describe('Transcription Management', () => {
     it('should update current transcript', () => {
-      const { result } = renderHook(() => useVoiceStore());
+      const store = useVoiceStore.getState();
 
       act(() => {
-        result.current.updateCurrentTranscript('Hello world');
+        store.updateCurrentTranscript('Hello world');
       });
 
-      act(() => {
-        expect(result.current.currentTranscript).toBe('Hello world');
-      });
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.currentTranscript).toBe('Hello world');
     });
 
     it('should add transcription entry', () => {
-      const { result } = renderHook(() => useVoiceStore());
+      const store = useVoiceStore.getState();
 
       const entry = {
         id: 'test-1',
@@ -303,30 +292,33 @@ describe('Voice Store', () => {
       };
 
       act(() => {
-        result.current.addTranscription(entry);
+        store.addTranscription(entry);
       });
 
-      act(() => {
-        expect(result.current.transcriptions).toContain(entry);
-      });
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.transcriptions).toContain(entry);
     });
 
     it('should finalize transcript without auto-indexing when user not set', async () => {
       const store = useVoiceStore.getState();
 
       // Set current transcript first
-      store.updateCurrentTranscript('Final transcript');
-      
+      act(() => {
+        store.updateCurrentTranscript('Final transcript');
+      });
+
       // Verify current transcript is set
       expect(useVoiceStore.getState().currentTranscript).toBe('Final transcript');
 
       // Finalize the transcript
-      await store.finalizeTranscript();
+      await act(async () => {
+        await store.finalizeTranscript();
+      });
 
       // Check final state
-      const finalState = useVoiceStore.getState();
-      expect(finalState.finalTranscript).toBe('Final transcript');
-      expect(finalState.currentTranscript).toBe('');
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.finalTranscript).toBe('Final transcript');
+      expect(updatedStore.currentTranscript).toBe('');
       // Should not make API call without userId
       expect(mockFetch).not.toHaveBeenCalled();
     });
@@ -335,23 +327,28 @@ describe('Voice Store', () => {
       const store = useVoiceStore.getState();
 
       // Set up state for auto-indexing
-      store.setUserId('test-user');
-      store.updateCurrentTranscript('Auto-indexed transcript');
-      store.updateConfig({ autoIndexTranscripts: true });
-      useVoiceStore.setState({ sessionId: 'test-session' });
+      act(() => {
+        store.setUserId('test-user');
+        store.updateCurrentTranscript('Auto-indexed transcript');
+        store.updateConfig({ autoIndexTranscripts: true });
+        useVoiceStore.setState({ sessionId: 'test-session' });
+      });
 
       // Verify setup
-      const setupState = useVoiceStore.getState();
-      expect(setupState.userId).toBe('test-user');
-      expect(setupState.currentTranscript).toBe('Auto-indexed transcript');
-      expect(setupState.config.autoIndexTranscripts).toBe(true);
+      const setupStore = useVoiceStore.getState();
+      expect(setupStore.userId).toBe('test-user');
+      expect(setupStore.currentTranscript).toBe('Auto-indexed transcript');
+      expect(setupStore.config.autoIndexTranscripts).toBe(true);
 
-      await store.finalizeTranscript();
+      await act(async () => {
+        await store.finalizeTranscript();
+      });
 
-      const finalState = useVoiceStore.getState();
-      expect(finalState.finalTranscript).toBe('Auto-indexed transcript');
-      expect(finalState.currentTranscript).toBe('');
-      
+      // Check final state
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.finalTranscript).toBe('Auto-indexed transcript');
+      expect(updatedStore.currentTranscript).toBe('');
+
       // Verify the API call was made
       expect(mockFetch).toHaveBeenCalledWith('/api/voice/transcripts', {
         method: 'POST',
@@ -364,12 +361,12 @@ describe('Voice Store', () => {
     });
 
     it('should clear transcriptions', () => {
-      const { result } = renderHook(() => useVoiceStore());
+      const store = useVoiceStore.getState();
 
       // Add some transcriptions
       act(() => {
-        result.current.updateCurrentTranscript('Current');
-        result.current.addTranscription({
+        store.updateCurrentTranscript('Current');
+        store.addTranscription({
           id: 'test-1',
           timestamp: Date.now(),
           text: 'Test',
@@ -380,43 +377,50 @@ describe('Voice Store', () => {
       });
 
       act(() => {
-        result.current.clearTranscriptions();
+        store.clearTranscriptions();
       });
 
-      act(() => {
-        expect(result.current.transcriptions).toEqual([]);
-        expect(result.current.currentTranscript).toBe('');
-        expect(result.current.finalTranscript).toBe('');
-      });
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.transcriptions).toEqual([]);
+      expect(updatedStore.currentTranscript).toBe('');
+      expect(updatedStore.finalTranscript).toBe('');
     });
   });
 
   describe('Vector Store Integration', () => {
     it('should set userId', () => {
-      const { result } = renderHook(() => useVoiceStore());
+      const store = useVoiceStore.getState();
 
       act(() => {
-        result.current.setUserId('test-user-123');
+        store.setUserId('test-user-123');
       });
 
-      act(() => {
-        expect(result.current.userId).toBe('test-user-123');
-      });
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.userId).toBe('test-user-123');
     });
 
     it('should index transcript successfully', async () => {
-      const store = useVoiceStore.getState();
+      mockFetch.mockResolvedValueOnce(
+        buildSuccessResponse(transcriptResponseData)
+      );
 
-      store.setUserId('test-user');
-      useVoiceStore.setState({ sessionId: 'test-session' });
-
-      await store.indexTranscript('Test transcript', {
-        custom: 'metadata',
+      // Set up required state
+      act(() => {
+        useVoiceStore.setState({
+          userId: 'test-user',
+          sessionId: 'test-session',
+        });
       });
 
-      const finalState = useVoiceStore.getState();
-      expect(finalState.indexingStatus).toBe('completed');
-      expect(finalState.vectorStoreId).toBe('vs-test123');
+      const store = useVoiceStore.getState();
+
+      await act(async () => {
+        await store.indexTranscript('Test transcript', { custom: 'metadata' });
+      });
+
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.indexingStatus).toBe('completed');
+      expect(updatedStore.vectorStoreId).toBe('vs-test123');
 
       expect(mockFetch).toHaveBeenCalledWith('/api/voice/transcripts', {
         method: 'POST',
@@ -435,25 +439,18 @@ describe('Voice Store', () => {
 
     it('should handle transcript indexing failure', async () => {
       // Override mock for this test to simulate failure
-      mockFetch.mockImplementation(async (url, options) => {
-        const method = options?.method || 'GET';
-        if (url === '/api/voice/transcripts' && method === 'POST') {
-          return Promise.resolve({
-            ok: false,
-            status: 400,
-            statusText: 'Bad Request',
-            text: async () => 'Invalid request data',
-          });
-        }
-        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) });
-      });
+      mockFetch.mockResolvedValueOnce(buildErrorResponse(400, 'Invalid request data'));
 
       const store = useVoiceStore.getState();
 
-      store.setUserId('test-user');
+      act(() => {
+        store.setUserId('test-user');
+      });
 
       try {
-        await store.indexTranscript('Test transcript');
+        await act(async () => {
+          await store.indexTranscript('Test transcript');
+        });
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
         expect((error as Error).message).toMatch(
@@ -461,55 +458,61 @@ describe('Voice Store', () => {
         );
       }
 
-      const finalState = useVoiceStore.getState();
-      expect(finalState.indexingStatus).toBe('failed');
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.indexingStatus).toBe('failed');
     });
 
     it('should require userId for transcript indexing', async () => {
       const store = useVoiceStore.getState();
 
-      await expect(async () => {
-        await store.indexTranscript('Test transcript');
-      }).rejects.toThrow('Valid User ID required for transcript indexing');
+      await expect(() => attemptIndexWithoutUser(store)).rejects.toThrow(
+        'Valid User ID required for transcript indexing'
+      );
 
-      const finalState = useVoiceStore.getState();
-      expect(finalState.indexingStatus).toBe('failed');
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.indexingStatus).toBe('failed');
     });
   });
 
   describe('Error Handling', () => {
     it('should set error state', () => {
-      const store = useVoiceStore.getState();
-
       const error = {
         code: 'TEST_ERROR',
         message: 'Test error message',
         timestamp: Date.now(),
       };
 
-      store.setError(error);
+      const store = useVoiceStore.getState();
 
-      const state = useVoiceStore.getState();
-      expect(state.error).toEqual(error);
-      expect(state.status).toBe('error');
+      act(() => {
+        store.setError(error);
+      });
+
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.error).toEqual(error);
+      expect(updatedStore.status).toBe('error');
     });
 
     it('should clear error state', () => {
       const store = useVoiceStore.getState();
 
       // Set error first
-      store.setError({
-        code: 'TEST_ERROR',
-        message: 'Test error',
-        timestamp: Date.now(),
+      act(() => {
+        store.setError({
+          code: 'TEST_ERROR',
+          message: 'Test error',
+          timestamp: Date.now(),
+        });
+        useVoiceStore.setState({ status: 'connected' });
       });
-      useVoiceStore.setState({ status: 'connected' });
 
-      store.setError(null);
+      act(() => {
+        store.setError(null);
+      });
 
-      const state = useVoiceStore.getState();
-      expect(state.error).toBeNull();
-      expect(state.lastErrorTime).toBe(0);
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.error).toBeNull();
+      expect(updatedStore.lastErrorTime).toBe(0);
     });
   });
 
@@ -517,11 +520,13 @@ describe('Voice Store', () => {
     it('should update audio levels', () => {
       const store = useVoiceStore.getState();
 
-      store.updateAudioLevels(0.8, 0.6);
+      act(() => {
+        store.updateAudioLevels(0.8, 0.6);
+      });
 
-      const state = useVoiceStore.getState();
-      expect(state.inputLevel).toBe(0.8);
-      expect(state.outputLevel).toBe(0.6);
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.inputLevel).toBe(0.8);
+      expect(updatedStore.outputLevel).toBe(0.6);
     });
 
     it('should update visualization data', () => {
@@ -529,10 +534,12 @@ describe('Voice Store', () => {
 
       const testData = new Float32Array([0.1, 0.2, 0.3, 0.4, 0.5]);
 
-      store.updateVisualizationData(testData);
+      act(() => {
+        store.updateVisualizationData(testData);
+      });
 
-      const state = useVoiceStore.getState();
-      expect(state.visualizationData).toBe(testData);
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.visualizationData).toBe(testData);
     });
   });
 
@@ -540,31 +547,35 @@ describe('Voice Store', () => {
     it('should set personality mode', () => {
       const store = useVoiceStore.getState();
 
-      store.setPersonalityMode('technical-expert');
+      act(() => {
+        store.setPersonalityMode('technical-expert');
+      });
 
-      const state = useVoiceStore.getState();
-      expect(state.personalityMode).toBe('technical-expert');
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.personalityMode).toBe('technical-expert');
     });
 
     it('should set safety protocols', () => {
       const store = useVoiceStore.getState();
 
-      store.setSafetyProtocols(false);
+      act(() => {
+        store.setSafetyProtocols(false);
+      });
 
-      const state = useVoiceStore.getState();
-      expect(state.safetyProtocols).toBe(false);
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.safetyProtocols).toBe(false);
     });
   });
 
   describe('Store Reset', () => {
     it('should reset store to initial state', () => {
-      const { result } = renderHook(() => useVoiceStore());
+      const store = useVoiceStore.getState();
 
       // Modify state
       act(() => {
-        result.current.setUserId('test-user');
-        result.current.updateCurrentTranscript('Test');
-        result.current.setPersonalityMode('friendly-assistant');
+        store.setUserId('test-user');
+        store.updateCurrentTranscript('Test');
+        store.setPersonalityMode('friendly-assistant');
         useVoiceStore.setState({
           status: 'connected',
           sessionId: 'test-session',
@@ -574,18 +585,16 @@ describe('Voice Store', () => {
 
       // Reset
       act(() => {
-        result.current.reset();
+        store.reset();
       });
 
-      // Check initial state
-      act(() => {
-        expect(result.current.status).toBe('idle');
-        expect(result.current.sessionId).toBeNull();
-        expect(result.current.isRecording).toBe(false);
-        expect(result.current.currentTranscript).toBe('');
-        expect(result.current.userId).toBeUndefined();
-        expect(result.current.personalityMode).toBe('safety-focused');
-      });
+      const updatedStore = useVoiceStore.getState();
+      expect(updatedStore.status).toBe('idle');
+      expect(updatedStore.sessionId).toBeNull();
+      expect(updatedStore.isRecording).toBe(false);
+      expect(updatedStore.currentTranscript).toBe('');
+      expect(updatedStore.userId).toBeUndefined();
+      expect(updatedStore.personalityMode).toBe('safety-focused');
     });
   });
 });

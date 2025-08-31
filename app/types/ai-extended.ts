@@ -50,6 +50,27 @@ export interface ExtendedUIMessage extends UIMessage {
 }
 
 /**
+ * Chat request interface for API endpoints
+ */
+export interface ChatRequest {
+  messages: ExtendedUIMessage[];
+  chatId: string;
+  userId: string;
+  model: string;
+  isAuthenticated: boolean;
+  systemPrompt: string;
+  enableSearch: boolean;
+  message_group_id?: string;
+  reasoningEffort?: 'low' | 'medium' | 'high';
+  verbosity?: 'low' | 'medium' | 'high';
+  context?: 'chat' | 'voice';
+  personalityMode?:
+    | 'safety-focused'
+    | 'technical-expert'
+    | 'friendly-assistant';
+}
+
+/**
  * Tool invocation UI part interface for AI SDK v5 compatibility
  * Custom interface that extends the AI SDK's built-in tool parts
  * This allows our components to work with both custom and AI SDK tool data

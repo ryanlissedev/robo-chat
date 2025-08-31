@@ -12,8 +12,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
 import { fetchClient } from '@/lib/fetch';
+import { cn } from '@/lib/utils';
 
 export type FeedbackType = 'upvote' | 'downvote' | null;
 

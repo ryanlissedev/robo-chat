@@ -7,7 +7,10 @@ export const env = {
   XAI_API_KEY: process.env.XAI_API_KEY ?? '',
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY ?? '',
   // Support both AI_GATEWAY_API_KEY and VERCEL_AI_GATEWAY_API_KEY for compatibility
-  AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY ?? process.env.VERCEL_AI_GATEWAY_API_KEY ?? '',
+  AI_GATEWAY_API_KEY:
+    process.env.AI_GATEWAY_API_KEY ??
+    process.env.VERCEL_AI_GATEWAY_API_KEY ??
+    '',
   AI_GATEWAY_BASE_URL:
     process.env.AI_GATEWAY_BASE_URL ?? 'https://ai-gateway.vercel.sh/v1',
 };
@@ -36,9 +39,10 @@ export function getGatewayConfig(): {
 } {
   // Read dynamic env for testability and runtime overrides
   // Support both AI_GATEWAY_API_KEY and VERCEL_AI_GATEWAY_API_KEY
-  const key = process.env.AI_GATEWAY_API_KEY || 
-              process.env.VERCEL_AI_GATEWAY_API_KEY || 
-              env.AI_GATEWAY_API_KEY;
+  const key =
+    process.env.AI_GATEWAY_API_KEY ||
+    process.env.VERCEL_AI_GATEWAY_API_KEY ||
+    env.AI_GATEWAY_API_KEY;
   const enabled = !!key;
   return {
     enabled,

@@ -1,15 +1,12 @@
 import type { LanguageModel, ToolSet } from 'ai';
 import { convertToModelMessages } from 'ai';
+import { createErrorResponse } from '@/app/api/chat/utils';
 import { getMessageContent } from '@/app/types/ai-extended';
 import {
-  FILE_SEARCH_SYSTEM_PROMPT,
   RETRIEVAL_MAX_TOKENS,
   RETRIEVAL_TOP_K,
   RETRIEVAL_TWO_PASS_ENABLED,
-  SYSTEM_PROMPT_DEFAULT,
 } from '@/lib/config';
-import { createRun, isLangSmithEnabled } from '@/lib/langsmith/client';
-import { getAllModels } from '@/lib/models';
 import { buildAugmentedSystemPrompt } from '@/lib/retrieval/augment';
 import {
   selectRetrievalMode,
@@ -18,18 +15,18 @@ import {
 } from '@/lib/retrieval/gating';
 import { retrieveWithGpt41 } from '@/lib/retrieval/two-pass';
 import { performVectorRetrieval } from '@/lib/retrieval/vector-retrieval';
-import { fileSearchTool } from '@/lib/tools/file-search';
+import { file_search } from '@/lib/tools/file-search';
 import logger from '@/lib/utils/logger';
-import { createErrorResponse } from '@/app/api/chat/utils';
 import { CredentialService } from './CredentialService';
+import { LangSmithService } from './LangSmithService';
 import { MessageService } from './MessageService';
+import { ModelConfigurationService } from './ModelConfigurationService';
 import { StreamingService } from './StreamingService';
+import { SystemPromptService } from './SystemPromptService';
 import type {
   ChatRequest,
   ExtendedUIMessage,
-  ModelConfiguration,
   SupabaseClientType,
-  TransformedMessage,
 } from './types';
 
 export class ChatService {
@@ -65,8 +62,8 @@ export class ChatService {
       } = requestData;
 
       // Resolve model and get configuration
-      const resolvedModel = this.resolveModelId(model);
-      const supabase = await this.validateAndTrackUsage({
+      const resolvedModel = ModelConfigurationService.resolveModelId(model);
+      const supabase = await ChatService.validateAndTrackUsage({
         userId,
         model: resolvedModel,
         isAuthenticated,
@@ -79,7 +76,7 @@ export class ChatService {
       });
 
       // Handle user message logging
-      await this.handleUserMessageLogging({
+      await ChatService.handleUserMessageLogging({
         supabase,
         userId,
         chatId,
@@ -88,20 +85,21 @@ export class ChatService {
       });
 
       // Get model configuration
-      const modelConfig = await this.getModelConfiguration(
+      const modelConfig = await ModelConfigurationService.getModelConfiguration(
         resolvedModel,
         model
       );
 
       // Set GPT-5 defaults
-      const effectiveSettings = this.calculateEffectiveSettings(
-        reasoningEffort,
-        verbosity,
-        modelConfig.isGPT5Model
-      );
+      const effectiveSettings =
+        ModelConfigurationService.calculateEffectiveSettings(
+          reasoningEffort,
+          verbosity,
+          modelConfig.isGPT5Model
+        );
 
       // Log request context
-      this.logRequestContext({
+      ChatService.logRequestContext({
         resolvedModel,
         enableSearch,
         reasoningEffort: effectiveSettings.reasoningEffort,
@@ -111,25 +109,26 @@ export class ChatService {
       });
 
       // Log user query preview
-      this.logUserQuery(messages, chatId, userId, resolvedModel);
+      ChatService.logUserQuery(messages, chatId, userId, resolvedModel);
 
       // Get effective system prompt and API key
-      const effectiveSystemPrompt = await this.getEffectiveSystemPrompt(
-        systemPrompt,
-        enableSearch,
-        modelConfig.modelSupportsFileSearchTools,
-        { context, personalityMode }
-      );
+      const effectiveSystemPrompt =
+        await SystemPromptService.getEffectiveSystemPrompt(
+          systemPrompt,
+          enableSearch,
+          modelConfig.modelSupportsFileSearchTools,
+          { context, personalityMode }
+        );
 
-      const apiKey = await CredentialService.getApiKey(
-        req,
-        isAuthenticated,
-        userId,
-        resolvedModel
+      const credentialResult = await CredentialService.resolveCredentials(
+        { isAuthenticated, userId },
+        resolvedModel,
+        req.headers
       );
+      const apiKey = credentialResult.apiKey;
 
       // Create LangSmith run
-      const langsmithRunId = await this.createLangSmithRun({
+      const langsmithRunId = await LangSmithService.createLangSmithRun({
         resolvedModel,
         messages,
         reasoningEffort: effectiveSettings.reasoningEffort,
@@ -139,14 +138,14 @@ export class ChatService {
       });
 
       // Configure tools and model settings
-      const tools = this.configureTools(
+      const tools = ChatService.configureTools(
         enableSearch,
         modelConfig.modelSupportsFileSearchTools
       );
-      const modelSettings = this.configureModelSettings(
+      const modelSettings = ModelConfigurationService.getModelSettings(
+        modelConfig,
         effectiveSettings.reasoningEffort,
-        effectiveSettings.verbosity,
-        modelConfig.isReasoningCapable
+        effectiveSettings.verbosity
       );
 
       // Process messages
@@ -174,10 +173,10 @@ export class ChatService {
         MessageService.createCompatibleMessages(uiMessages);
 
       // Create language model
-      const languageModel = this.requireApiSdk(modelConfig.modelConfig)(
+      const languageModel = ChatService.requireApiSdk(modelConfig.modelConfig)(
         apiKey,
         modelSettings
-      ) as LanguageModel;
+      );
 
       // Handle fallback retrieval if needed
       if (
@@ -186,7 +185,7 @@ export class ChatService {
           modelConfig.modelSupportsFileSearchTools
         )
       ) {
-        return await this.handleFallbackRetrieval({
+        return await ChatService.handleFallbackRetrieval({
           compatibleMessages,
           languageModel,
           effectiveSystemPrompt,
@@ -209,9 +208,7 @@ export class ChatService {
       // Convert to model messages and stream
       let modelMessages;
       try {
-        modelMessages = convertToModelMessages(
-          compatibleMessages as ExtendedUIMessage[]
-        );
+        modelMessages = convertToModelMessages(compatibleMessages);
       } catch {
         return new Response(
           JSON.stringify({
@@ -252,7 +249,9 @@ export class ChatService {
         userIdToUse = requestData.userId || 'unknown-user';
 
         try {
-          modelToUse = this.resolveModelId(requestData.model);
+          modelToUse = ModelConfigurationService.resolveModelId(
+            requestData.model
+          );
         } catch {
           // Use original model if resolution fails
         }
@@ -268,10 +267,7 @@ export class ChatService {
     }
   }
 
-  // ... existing private methods (keeping them for now, will refactor later)
-  private static resolveModelId(model: string): string {
-    return model === 'gpt-4o-mini' ? 'gpt-5-mini' : model;
-  }
+  // Private helper methods
 
   private static async validateAndTrackUsage({
     userId,
@@ -308,9 +304,10 @@ export class ChatService {
   }) {
     if (!supabase) return;
 
-    const { incrementMessageCount, logUserMessage } = await import('../../app/api/chat/api');
+    const { incrementMessageCount, logUserMessage } = await import(
+      '../../app/api/chat/api'
+    );
     const { getMessageContent } = await import('@/app/types/ai-extended');
-    const uiUtils = await import('@ai-sdk/ui-utils');
     type Attachment = import('@ai-sdk/ui-utils').Attachment;
 
     await incrementMessageCount({ supabase, userId });
@@ -329,51 +326,6 @@ export class ChatService {
         message_group_id,
       });
     }
-  }
-
-  private static async getModelConfiguration(
-    resolvedModel: string,
-    originalModel: string
-  ): Promise<ModelConfiguration> {
-    const allModels = await getAllModels();
-    const modelConfig = allModels.find((m) => m.id === resolvedModel);
-
-    if (!modelConfig?.apiSdk) {
-      throw new Error(`Model ${originalModel} not found`);
-    }
-
-    const isGPT5Model = resolvedModel.startsWith('gpt-5');
-    const isReasoningCapable = Boolean(modelConfig?.reasoningText);
-    const modelSupportsFileSearchTools = Boolean(
-      (modelConfig as { fileSearchTools?: boolean })?.fileSearchTools
-    );
-
-    return {
-      modelConfig,
-      isGPT5Model,
-      isReasoningCapable,
-      modelSupportsFileSearchTools,
-    };
-  }
-
-  private static calculateEffectiveSettings(
-    reasoningEffort: string,
-    verbosity: string,
-    isGPT5Model: boolean
-  ) {
-    let effectiveReasoningEffort = reasoningEffort;
-    let effectiveVerbosity = verbosity;
-
-    if (isGPT5Model) {
-      effectiveReasoningEffort =
-        reasoningEffort === 'medium' ? 'low' : reasoningEffort;
-      effectiveVerbosity = verbosity === 'medium' ? 'low' : verbosity;
-    }
-
-    return {
-      reasoningEffort: effectiveReasoningEffort,
-      verbosity: effectiveVerbosity,
-    };
   }
 
   private static logRequestContext(options: {
@@ -432,97 +384,12 @@ export class ChatService {
           chatId,
           userId,
           model: resolvedModel,
-          preview: this.getPreview(userText),
+          preview: ChatService.getPreview(userText),
         },
         'User query preview'
       );
     } catch {
       // ignore logging errors
-    }
-  }
-
-  private static async getEffectiveSystemPrompt(
-    systemPrompt: string,
-    enableSearch: boolean,
-    modelSupportsFileSearchTools: boolean,
-    options?: {
-      context?: 'chat' | 'voice';
-      personalityMode?:
-        | 'safety-focused'
-        | 'technical-expert'
-        | 'friendly-assistant';
-    }
-  ): Promise<string> {
-    const context = options?.context;
-    const personalityMode = options?.personalityMode;
-
-    if (context === 'voice' && personalityMode) {
-      try {
-        const { PERSONALITY_CONFIGS } = await import(
-          '@/components/app/voice/config/personality-configs'
-        );
-        if (PERSONALITY_CONFIGS[personalityMode]) {
-          return PERSONALITY_CONFIGS[personalityMode].instructions.systemPrompt;
-        }
-      } catch {
-        // Fall back to default prompt selection
-      }
-    }
-
-    const useSearchPrompt = shouldEnableFileSearchTools(
-      enableSearch,
-      modelSupportsFileSearchTools
-    );
-
-    return useSearchPrompt
-      ? FILE_SEARCH_SYSTEM_PROMPT
-      : systemPrompt || SYSTEM_PROMPT_DEFAULT;
-  }
-
-  private static async createLangSmithRun({
-    resolvedModel,
-    messages,
-    reasoningEffort,
-    enableSearch,
-    userId,
-    chatId,
-  }: {
-    resolvedModel: string;
-    messages: ExtendedUIMessage[];
-    reasoningEffort: string;
-    enableSearch: boolean;
-    userId: string;
-    chatId: string;
-  }): Promise<string | null> {
-    if (!isLangSmithEnabled()) {
-      return null;
-    }
-
-    try {
-      const run = (await createRun({
-        name: 'chat-completion',
-        inputs: {
-          model: resolvedModel,
-          messages: messages.map((m: ExtendedUIMessage) => ({
-            role: m.role,
-            content: getMessageContent(m),
-          })),
-          reasoningEffort,
-          enableSearch,
-        },
-        runType: 'chain',
-        metadata: {
-          userId,
-          chatId,
-          model: resolvedModel,
-          reasoningEffort,
-          enableSearch,
-        },
-      })) as { id?: string } | null;
-
-      return run?.id || null;
-    } catch {
-      return null;
     }
   }
 
@@ -548,25 +415,7 @@ export class ChatService {
       );
     }
 
-    return useTools ? { fileSearch: fileSearchTool } : ({} as ToolSet);
-  }
-
-  private static configureModelSettings(
-    reasoningEffort: string,
-    verbosity?: string,
-    isReasoningCapable?: boolean
-  ) {
-    return {
-      enableSearch: false,
-      reasoningEffort,
-      verbosity,
-      headers: isReasoningCapable
-        ? {
-            'X-Reasoning-Effort': reasoningEffort,
-            ...(verbosity ? { 'X-Text-Verbosity': verbosity } : {}),
-          }
-        : undefined,
-    };
+    return useTools ? { fileSearch: file_search } : ({} as ToolSet);
   }
 
   private static requireApiSdk(modelConfig: unknown) {
@@ -629,7 +478,7 @@ export class ChatService {
     const lastUserMessage = messages.at(-1);
     const userQuery = lastUserMessage ? getMessageContent(lastUserMessage) : '';
 
-    let retrieved = [] as {
+    let retrieved: {
       fileId: string;
       fileName: string;
       score: number;
@@ -662,9 +511,7 @@ export class ChatService {
     const systemForInjection = augmentedSystem;
 
     try {
-      const modelMessages = convertToModelMessages(
-        compatibleMessages as ExtendedUIMessage[]
-      );
+      const modelMessages = convertToModelMessages(compatibleMessages);
 
       return await StreamingService.createStreamingResponseWithFallback(
         languageModel,

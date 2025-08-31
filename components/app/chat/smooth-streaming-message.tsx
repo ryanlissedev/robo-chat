@@ -1,10 +1,18 @@
 import { memo, useEffect, useRef } from 'react';
+import { Response } from '@/components/ai-elements/response';
 import { useSmoothStream } from './hooks/use-smooth-stream';
 
 interface SmoothStreamingMessageProps {
   text: string;
   animate?: boolean;
   onComplete?: () => void;
+  sources?: Array<{
+    id: string;
+    url: string;
+    title: string;
+    description?: string;
+    quote?: string;
+  }>;
 }
 
 /**
@@ -12,7 +20,12 @@ interface SmoothStreamingMessageProps {
  * Buffers chunks and displays them character-by-character for natural reading experience
  */
 export const SmoothStreamingMessage = memo(
-  ({ text, animate = false, onComplete }: SmoothStreamingMessageProps) => {
+  ({
+    text,
+    animate = false,
+    onComplete,
+    sources,
+  }: SmoothStreamingMessageProps) => {
     const contentRef = useRef('');
     const { stream, addPart, reset, isAnimating } = useSmoothStream();
 
@@ -43,8 +56,18 @@ export const SmoothStreamingMessage = memo(
       }
     }, [text, reset]);
 
-    if (!animate) return <>{text}</>;
+    if (!animate) {
+      return (
+        <Response parseIncompleteMarkdown={false} sources={sources}>
+          {text}
+        </Response>
+      );
+    }
 
-    return <>{stream || text || ''}</>;
+    return (
+      <Response parseIncompleteMarkdown={true} sources={sources}>
+        {stream || text || ''}
+      </Response>
+    );
   }
 );

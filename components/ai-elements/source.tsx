@@ -53,11 +53,23 @@ export const SourcesContent = ({
   />
 );
 
-export type SourceProps = ComponentProps<'a'>;
+export type SourceProps = ComponentProps<'a'> & {
+  description?: string;
+  chunk?: string;
+  index?: number;
+};
 
-export const Source = ({ href, title, children, ...props }: SourceProps) => (
+export const Source = ({
+  href,
+  title,
+  description,
+  chunk,
+  index,
+  children,
+  ...props
+}: SourceProps) => (
   <a
-    className="flex items-center gap-2"
+    className="flex flex-col gap-2 p-3 rounded-md border bg-card hover:bg-accent/50 transition-colors"
     href={href}
     rel="noreferrer"
     target="_blank"
@@ -65,8 +77,30 @@ export const Source = ({ href, title, children, ...props }: SourceProps) => (
   >
     {children ?? (
       <>
-        <BookIcon className="h-4 w-4" />
-        <span className="block font-medium">{title}</span>
+        <div className="flex items-center gap-2">
+          <BookIcon className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-sm truncate flex-1">{title}</span>
+          {index !== undefined && (
+            <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+              {index + 1}
+            </span>
+          )}
+        </div>
+        {href && (
+          <div className="text-xs text-muted-foreground truncate">
+            {new URL(href).hostname}
+          </div>
+        )}
+        {description && (
+          <div className="text-xs text-muted-foreground line-clamp-2">
+            {description}
+          </div>
+        )}
+        {chunk && (
+          <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded border-l-2 border-primary/20 line-clamp-3">
+            "{chunk}"
+          </div>
+        )}
       </>
     )}
   </a>

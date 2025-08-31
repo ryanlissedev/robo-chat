@@ -1,41 +1,28 @@
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type MockedFunction,
-  vi,
-} from 'vitest';
-import { GET, POST } from '@/app/api/feedback/route';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Use vi.hoisted to ensure mocks are available for dynamic imports
+const mockCreateClient = vi.hoisted(() => vi.fn());
+const mockCreateLangSmithFeedback = vi.hoisted(() => vi.fn());
+
 // Mock modules before importing
 vi.mock('@/lib/langsmith/client', () => ({
-  createFeedback: vi.fn()
+  createFeedback: mockCreateLangSmithFeedback,
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn()
+  createClient: mockCreateClient,
 }));
 
-// Import after mocking
-import * as langsmithModule from '@/lib/langsmith/client';
-import * as supabaseServerModule from '@/lib/supabase/server';
+import { GET, POST } from '@/app/api/feedback/route';
 
 describe('Feedback API Route', () => {
-  const mockCreateClient =
-    supabaseServerModule.createClient as MockedFunction<
-      typeof supabaseServerModule.createClient
-    >;
-  const mockCreateLangSmithFeedback =
-    langsmithModule.createFeedback as MockedFunction<
-      typeof langsmithModule.createFeedback
-    >;
+  // Use the hoisted mocks directly
 
-  // Create a proper mock using the working pattern from debug test  
+  // Create a proper mock using the working pattern from debug test
   const createMockSupabaseClient = (options: { singleResponse?: any } = {}) => {
     // Create completely fresh spies each time and assign to global variables
     upsertSpy = vi.fn().mockResolvedValue({ error: null });
-    
+
     const defaultSingleResponse = {
       data: {
         message: 'upvote: Great response!',
@@ -43,11 +30,11 @@ describe('Feedback API Route', () => {
       },
       error: null,
     };
-    
-    singleSpy = vi.fn().mockResolvedValue(
-      options.singleResponse || defaultSingleResponse
-    );
-    
+
+    singleSpy = vi
+      .fn()
+      .mockResolvedValue(options.singleResponse || defaultSingleResponse);
+
     selectSpy = vi.fn();
     eqSpy = vi.fn();
     orderSpy = vi.fn();
@@ -91,12 +78,12 @@ describe('Feedback API Route', () => {
       comment: 'Great response!',
       runId: 'run-456',
     };
-    
+
     // Create the final body, handling undefined values properly
     const finalBody = { ...defaultBody };
-    
+
     // Apply overrides and remove undefined values
-    Object.keys(overrides).forEach(key => {
+    Object.keys(overrides).forEach((key) => {
       const value = overrides[key];
       if (value === undefined) {
         delete finalBody[key];
@@ -113,7 +100,7 @@ describe('Feedback API Route', () => {
   };
 
   let mockSupabaseClient: any;
-  
+
   // Global spy variables for accessing in tests
   let upsertSpy: any;
   let selectSpy: any;
@@ -123,17 +110,67 @@ describe('Feedback API Route', () => {
   let singleSpy: any;
   let fromSpy: any;
 
-  // Individual tests will handle their own mock setup to avoid conflicts
+  beforeEach(() => {
+    // Clear only our specific mocks, not all mocks
+    mockCreateClient.mockClear();
+    mockCreateLangSmithFeedback.mockClear();
+
+    // Set up fresh spy instances for each test
+    upsertSpy = vi.fn().mockResolvedValue({ error: null });
+    singleSpy = vi.fn().mockResolvedValue({
+      data: {
+        message: 'upvote: Great response!',
+        created_at: '2024-01-01T00:00:00Z',
+      },
+      error: null,
+    });
+
+    selectSpy = vi.fn();
+    eqSpy = vi.fn();
+    orderSpy = vi.fn();
+    limitSpy = vi.fn();
+
+    // Create the query chain mock that properly chains all methods
+    const queryChainMock = {
+      upsert: upsertSpy,
+      select: selectSpy,
+      eq: eqSpy,
+      order: orderSpy,
+      limit: limitSpy,
+      single: singleSpy,
+    };
+
+    // Set up proper chaining - each method returns the chain
+    selectSpy.mockReturnValue(queryChainMock);
+    eqSpy.mockReturnValue(queryChainMock);
+    orderSpy.mockReturnValue(queryChainMock);
+    limitSpy.mockReturnValue(queryChainMock);
+
+    // fromSpy returns the full query chain
+    fromSpy = vi.fn().mockReturnValue(queryChainMock);
+
+    // Create standard mock client
+    mockSupabaseClient = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: 'user-123' } },
+          error: null,
+        }),
+      },
+      from: fromSpy,
+    };
+
+    // Set up the mock to return our client for all tests
+    mockCreateClient.mockResolvedValue(mockSupabaseClient);
+
+    // Setup LangSmith mock to resolve successfully
+    mockCreateLangSmithFeedback.mockResolvedValue({ success: true });
+  });
 
   describe('POST /api/feedback', () => {
     it('should successfully submit upvote feedback', async () => {
-      vi.clearAllMocks();
-      mockSupabaseClient = createMockSupabaseClient();
-      mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      mockCreateLangSmithFeedback.mockResolvedValue({
-        id: 'feedback-123',
-      });
-      
+      // Mock setup is now handled in beforeEach
+
       const request = createValidRequest();
       const response = await POST(request);
 
@@ -144,24 +181,16 @@ describe('Feedback API Route', () => {
       expect(responseData.message).toBe('Feedback submitted successfully');
 
       expect(mockSupabaseClient.auth.getUser).toHaveBeenCalled();
-      expect(mockSupabaseClient.from).toHaveBeenCalledWith('feedback');
-      
-      // Get the query chain returned by from()
-      const upvoteQueryChain = mockSupabaseClient.from('feedback');
-      expect(upvoteQueryChain.upsert).toHaveBeenCalledWith({
+      expect(fromSpy).toHaveBeenCalledWith('feedback');
+      expect(upsertSpy).toHaveBeenCalledWith({
         message: 'upvote: Great response!',
         user_id: 'user-123',
-      } as never);
+      });
     });
 
     it('should successfully submit downvote feedback', async () => {
-      vi.clearAllMocks();
-      mockSupabaseClient = createMockSupabaseClient();
-      mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      mockCreateLangSmithFeedback.mockResolvedValue({
-        id: 'feedback-123',
-      });
-      
+      // Mock setup is now handled in beforeEach
+
       const request = createValidRequest({
         feedback: 'downvote',
         comment: 'Could be better',
@@ -170,22 +199,16 @@ describe('Feedback API Route', () => {
       const response = await POST(request);
       expect(response.status).toBe(200);
 
-      // Get the query chain returned by from()
-      const downvoteQueryChain = mockSupabaseClient.from('feedback');
-      expect(downvoteQueryChain.upsert).toHaveBeenCalledWith({
+      expect(fromSpy).toHaveBeenCalledWith('feedback');
+      expect(upsertSpy).toHaveBeenCalledWith({
         message: 'downvote: Could be better',
         user_id: 'user-123',
-      } as never);
+      });
     });
 
     it('should handle feedback without comment', async () => {
-      vi.clearAllMocks();
-      mockSupabaseClient = createMockSupabaseClient();
-      mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      mockCreateLangSmithFeedback.mockResolvedValue({
-        id: 'feedback-123',
-      });
-      
+      // Mock setup is now handled in beforeEach
+
       const request = createValidRequest({
         comment: undefined,
       });
@@ -193,12 +216,11 @@ describe('Feedback API Route', () => {
       const response = await POST(request);
       expect(response.status).toBe(200);
 
-      // Get the query chain returned by from()
-      const noCommentQueryChain = mockSupabaseClient.from('feedback');
-      expect(noCommentQueryChain.upsert).toHaveBeenCalledWith({
+      expect(fromSpy).toHaveBeenCalledWith('feedback');
+      expect(upsertSpy).toHaveBeenCalledWith({
         message: 'upvote',
         user_id: 'user-123',
-      } as never);
+      });
     });
 
     it('should validate required fields', async () => {
@@ -236,11 +258,7 @@ describe('Feedback API Route', () => {
     });
 
     it('should handle authentication failure', async () => {
-      vi.clearAllMocks();
-      mockSupabaseClient = createMockSupabaseClient();
-      mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      mockCreateLangSmithFeedback.mockResolvedValue({ id: 'feedback-123' });
-      
+      // Use the existing mockSupabaseClient from beforeEach, just modify the auth behavior
       mockSupabaseClient.auth.getUser.mockResolvedValueOnce({
         data: { user: null },
         error: null,
@@ -257,11 +275,7 @@ describe('Feedback API Route', () => {
     });
 
     it('should handle user authentication error', async () => {
-      vi.clearAllMocks();
-      mockSupabaseClient = createMockSupabaseClient();
-      mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      mockCreateLangSmithFeedback.mockResolvedValue({ id: 'feedback-123' });
-      
+      // Use the existing mockSupabaseClient from beforeEach, just modify the auth behavior
       mockSupabaseClient.auth.getUser.mockResolvedValueOnce({
         data: { user: null },
         error: new Error('Auth failed'),
@@ -278,14 +292,8 @@ describe('Feedback API Route', () => {
     });
 
     it('should handle database error', async () => {
-      vi.clearAllMocks();
-      mockSupabaseClient = createMockSupabaseClient();
-      mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      mockCreateLangSmithFeedback.mockResolvedValue({ id: 'feedback-123' });
-      
-      // Get the query chain and mock its upsert to return an error
-      const dbErrorQueryChain = mockSupabaseClient.from('feedback');
-      dbErrorQueryChain.upsert.mockResolvedValueOnce({
+      // Use the existing mockSupabaseClient from beforeEach, just modify the upsert behavior
+      upsertSpy.mockResolvedValueOnce({
         error: new Error('Database connection failed'),
       });
 
@@ -300,13 +308,11 @@ describe('Feedback API Route', () => {
     });
 
     it('should send feedback to LangSmith when run ID is provided', async () => {
-      vi.clearAllMocks();
-      mockSupabaseClient = createMockSupabaseClient();
-      mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      mockCreateLangSmithFeedback.mockResolvedValue({
+      // Use the existing mocks from beforeEach, just set up the specific LangSmith response
+      mockCreateLangSmithFeedback.mockResolvedValueOnce({
         id: 'feedback-123',
       });
-      
+
       const request = createValidRequest({
         runId: 'langsmith-run-123',
       });
@@ -327,27 +333,12 @@ describe('Feedback API Route', () => {
     });
 
     it('should handle LangSmith error silently', async () => {
-      // Simple mock setup like the working debug test
-      vi.clearAllMocks();
-      
-      // Create simple mocks without complex spy tracking
-      const upsertSpy = vi.fn().mockResolvedValue({ error: null });
-      const fromSpy = vi.fn().mockReturnValue({ upsert: upsertSpy });
-      
-      mockSupabaseClient = {
-        auth: {
-          getUser: vi.fn().mockResolvedValue({
-            data: { user: { id: 'user-123' } },
-            error: null,
-          }),
-        },
-        from: fromSpy,
-      };
-      
-      mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      
+      // Use the existing mocks from beforeEach, just override specific behaviors
+
       // Set up LangSmith to reject - this is the key part being tested
-      mockCreateLangSmithFeedback.mockRejectedValue(new Error('LangSmith API error'));
+      mockCreateLangSmithFeedback.mockRejectedValue(
+        new Error('LangSmith API error')
+      );
 
       const request = createValidRequest({
         runId: 'test-run-id',
@@ -360,8 +351,8 @@ describe('Feedback API Route', () => {
 
       const responseData = await response.json();
       expect(responseData.success).toBe(true);
-      expect(responseData.langsmith).toBeNull();
-      
+      expect(responseData.langsmith).toBeUndefined();
+
       // Verify LangSmith was attempted
       expect(mockCreateLangSmithFeedback).toHaveBeenCalledWith({
         runId: 'test-run-id',
@@ -373,18 +364,11 @@ describe('Feedback API Route', () => {
     });
 
     it('should not send to LangSmith when run ID is missing', async () => {
-      // Clear mocks and ensure fresh state
-      vi.clearAllMocks();
-      mockSupabaseClient = createMockSupabaseClient();
-      mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      
+      // Use the existing mocks from beforeEach
+
       const request = createValidRequest({
         runId: undefined,
       });
-
-      // Debug: Let's log what's actually in the request
-      const requestBody = await request.clone().json();
-      console.log('Request body for no runId test:', requestBody);
 
       const response = await POST(request);
       expect(response.status).toBe(200);
@@ -410,13 +394,11 @@ describe('Feedback API Route', () => {
     });
 
     it('should handle missing user gracefully', async () => {
-      vi.clearAllMocks();
-      mockSupabaseClient = createMockSupabaseClient();
-      mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      mockCreateLangSmithFeedback.mockResolvedValue({
+      // Use the existing mocks from beforeEach, just override specific behaviors
+      mockCreateLangSmithFeedback.mockResolvedValueOnce({
         id: 'feedback-123',
       });
-      
+
       // Mock auth.getUser to return null user (simulating no authentication)
       mockSupabaseClient.auth.getUser.mockResolvedValueOnce({
         data: { user: null },
@@ -433,78 +415,66 @@ describe('Feedback API Route', () => {
     });
 
     it('should map feedback scores correctly', async () => {
-      // Simple mock setup like the working debug test
-      vi.clearAllMocks();
-      
-      // Test upvote
-      const upsertSpy1 = vi.fn().mockResolvedValue({ error: null });
-      const fromSpy1 = vi.fn().mockReturnValue({ upsert: upsertSpy1 });
-      
-      mockSupabaseClient = {
-        auth: {
-          getUser: vi.fn().mockResolvedValue({
-            data: { user: { id: 'user-123' } },
-            error: null,
-          }),
-        },
-        from: fromSpy1,
-      };
+      // Use the existing mocks from beforeEach
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      mockCreateLangSmithFeedback.mockResolvedValue({ id: 'feedback-123' });
+      // Test upvote (score: 1)
+      const request1 = createValidRequest({
+        feedback: 'upvote',
+        runId: 'test-run-1',
+        comment: 'Good response',
+      });
+      await POST(request1);
 
-      let request = createValidRequest({ feedback: 'upvote', runId: 'test-run-1' });
-      await POST(request);
       expect(mockCreateLangSmithFeedback).toHaveBeenCalledWith(
-        expect.objectContaining({ score: 1, feedback: 'upvote', runId: 'test-run-1' })
+        expect.objectContaining({
+          score: 1,
+          feedback: 'upvote',
+          runId: 'test-run-1',
+          comment: 'Good response',
+          userId: 'user-123',
+        })
       );
 
-      // Test downvote - fresh mock setup
-      vi.clearAllMocks();
-      const upsertSpy2 = vi.fn().mockResolvedValue({ error: null });
-      const fromSpy2 = vi.fn().mockReturnValue({ upsert: upsertSpy2 });
-      
-      mockSupabaseClient = {
-        auth: {
-          getUser: vi.fn().mockResolvedValue({
-            data: { user: { id: 'user-123' } },
-            error: null,
-          }),
-        },
-        from: fromSpy2,
-      };
+      // Clear just the LangSmith mock call history to test downvote
+      mockCreateLangSmithFeedback.mockClear();
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      mockCreateLangSmithFeedback.mockResolvedValue({ id: 'feedback-123' });
+      // Test downvote (score: 0)
+      const request2 = createValidRequest({
+        feedback: 'downvote',
+        runId: 'test-run-2',
+        comment: 'Could be better',
+      });
+      await POST(request2);
 
-      request = createValidRequest({ feedback: 'downvote', runId: 'test-run-2' });
-      await POST(request);
       expect(mockCreateLangSmithFeedback).toHaveBeenCalledWith(
-        expect.objectContaining({ score: 0, feedback: 'downvote', runId: 'test-run-2' })
+        expect.objectContaining({
+          score: 0,
+          feedback: 'downvote',
+          runId: 'test-run-2',
+          comment: 'Could be better',
+          userId: 'user-123',
+        })
       );
 
-      // Test null feedback - fresh mock setup
-      vi.clearAllMocks();
-      const upsertSpy3 = vi.fn().mockResolvedValue({ error: null });
-      const fromSpy3 = vi.fn().mockReturnValue({ upsert: upsertSpy3 });
-      
-      mockSupabaseClient = {
-        auth: {
-          getUser: vi.fn().mockResolvedValue({
-            data: { user: { id: 'user-123' } },
-            error: null,
-          }),
-        },
-        from: fromSpy3,
-      };
+      // Clear just the LangSmith mock call history to test null feedback
+      mockCreateLangSmithFeedback.mockClear();
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      mockCreateLangSmithFeedback.mockResolvedValue({ id: 'feedback-123' });
+      // Test null feedback (score: undefined)
+      const request3 = createValidRequest({
+        feedback: null,
+        runId: 'test-run-3',
+        comment: 'Neutral feedback',
+      });
+      await POST(request3);
 
-      request = createValidRequest({ feedback: null, runId: 'test-run-3' });
-      await POST(request);
       expect(mockCreateLangSmithFeedback).toHaveBeenCalledWith(
-        expect.objectContaining({ score: undefined, feedback: null, runId: 'test-run-3' })
+        expect.objectContaining({
+          score: undefined,
+          feedback: null,
+          runId: 'test-run-3',
+          comment: 'Neutral feedback',
+          userId: 'user-123',
+        })
       );
     });
   });
@@ -522,7 +492,7 @@ describe('Feedback API Route', () => {
     it('should successfully retrieve feedback', async () => {
       // Simple mock setup for GET request
       vi.clearAllMocks();
-      
+
       // Set up successful auth response
       const getResponse = {
         message: 'upvote: Great response!',
@@ -530,7 +500,9 @@ describe('Feedback API Route', () => {
       };
 
       // Create mock chain for GET request (.select().eq().order().limit().single())
-      const singleSpy = vi.fn().mockResolvedValue({ data: getResponse, error: null });
+      const singleSpy = vi
+        .fn()
+        .mockResolvedValue({ data: getResponse, error: null });
       const limitSpy = vi.fn().mockReturnValue({ single: singleSpy });
       const orderSpy = vi.fn().mockReturnValue({ limit: limitSpy });
       const eqSpy = vi.fn().mockReturnValue({ order: orderSpy });
@@ -590,7 +562,7 @@ describe('Feedback API Route', () => {
       vi.clearAllMocks();
       mockSupabaseClient = createMockSupabaseClient();
       mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      
+
       mockSupabaseClient.auth.getUser.mockResolvedValueOnce({
         data: { user: null },
         error: null,
@@ -610,7 +582,7 @@ describe('Feedback API Route', () => {
       vi.clearAllMocks();
       mockSupabaseClient = createMockSupabaseClient();
       mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      
+
       mockSupabaseClient.auth.getUser.mockResolvedValueOnce({
         data: { user: null },
         error: new Error('Auth failed'),
@@ -640,11 +612,11 @@ describe('Feedback API Route', () => {
     it('should handle no feedback found (PGRST116)', async () => {
       // Simple mock setup for GET request with PGRST116 error
       vi.clearAllMocks();
-      
+
       // Create mock chain for GET request that returns PGRST116 error
-      const singleSpy = vi.fn().mockResolvedValue({ 
-        data: null, 
-        error: { code: 'PGRST116', message: 'No rows found' } 
+      const singleSpy = vi.fn().mockResolvedValue({
+        data: null,
+        error: { code: 'PGRST116', message: 'No rows found' },
       });
       const limitSpy = vi.fn().mockReturnValue({ single: singleSpy });
       const orderSpy = vi.fn().mockReturnValue({ limit: limitSpy });
@@ -686,11 +658,11 @@ describe('Feedback API Route', () => {
     it('should handle database errors', async () => {
       // Simple mock setup for GET request with database error
       vi.clearAllMocks();
-      
+
       // Create mock chain for GET request that returns database error (not PGRST116)
-      const singleSpy = vi.fn().mockResolvedValue({ 
-        data: null, 
-        error: { code: 'PGRST001', message: 'Database error' } 
+      const singleSpy = vi.fn().mockResolvedValue({
+        data: null,
+        error: { code: 'PGRST001', message: 'Database error' },
       });
       const limitSpy = vi.fn().mockReturnValue({ single: singleSpy });
       const orderSpy = vi.fn().mockReturnValue({ limit: limitSpy });
@@ -723,7 +695,7 @@ describe('Feedback API Route', () => {
       vi.clearAllMocks();
       mockSupabaseClient = createMockSupabaseClient();
       mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      
+
       mockSupabaseClient.auth.getUser.mockRejectedValue(
         new Error('Unexpected error')
       );
@@ -740,13 +712,15 @@ describe('Feedback API Route', () => {
     it('should query feedback with correct ordering', async () => {
       // Simple mock setup for GET request to verify ordering
       vi.clearAllMocks();
-      
+
       // Create mock chain for GET request with spy tracking
       const getResponse = {
         message: 'upvote: Great response!',
         created_at: '2024-01-01T00:00:00Z',
       };
-      const singleSpy = vi.fn().mockResolvedValue({ data: getResponse, error: null });
+      const singleSpy = vi
+        .fn()
+        .mockResolvedValue({ data: getResponse, error: null });
       const limitSpy = vi.fn().mockReturnValue({ single: singleSpy });
       const orderSpy = vi.fn().mockReturnValue({ limit: limitSpy });
       const eqSpy = vi.fn().mockReturnValue({ order: orderSpy });
@@ -764,7 +738,7 @@ describe('Feedback API Route', () => {
       };
 
       mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      
+
       const request = createGetRequest();
       await GET(request);
 
@@ -787,7 +761,7 @@ describe('Feedback API Route', () => {
       mockCreateLangSmithFeedback.mockResolvedValue({
         id: 'feedback-123',
       });
-      
+
       const request1 = createValidRequest({ messageId: 'msg-1' });
       const request2 = createValidRequest({ messageId: 'msg-2' });
 
@@ -803,12 +777,12 @@ describe('Feedback API Route', () => {
     it('should handle very long comments', async () => {
       // Simple mock setup like the working debug test
       vi.clearAllMocks();
-      
+
       const longComment = 'x'.repeat(10000); // Very long comment
-      
+
       const upsertSpy = vi.fn().mockResolvedValue({ error: null });
       const fromSpy = vi.fn().mockReturnValue({ upsert: upsertSpy });
-      
+
       mockSupabaseClient = {
         auth: {
           getUser: vi.fn().mockResolvedValue({
@@ -846,9 +820,12 @@ describe('Feedback API Route', () => {
       vi.clearAllMocks();
       mockSupabaseClient = createMockSupabaseClient();
       mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      
+
       const specialComment = 'Comment with émojis 🎉 and "quotes" & symbols!';
-      const request = createValidRequest({ comment: specialComment, runId: undefined });
+      const request = createValidRequest({
+        comment: specialComment,
+        runId: undefined,
+      });
 
       const response = await POST(request);
       expect(response.status).toBe(200);
@@ -866,7 +843,7 @@ describe('Feedback API Route', () => {
       vi.clearAllMocks();
       mockSupabaseClient = createMockSupabaseClient();
       mockCreateClient.mockResolvedValue(mockSupabaseClient);
-      
+
       // Get the query chain and mock its upsert to return an error
       const constraintQueryChain = mockSupabaseClient.from('feedback');
       constraintQueryChain.upsert.mockResolvedValueOnce({

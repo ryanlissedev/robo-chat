@@ -6,17 +6,44 @@ type Summary = {
   totalRequests: number;
   successfulRequests: number;
   errorRate: number;
-  bySource: Record<string, { total: number; successful: number; errorRate: number }>;
-  byProvider: Record<string, { total: number; successful: number; errorRate: number; avgResponseTime: number }>;
-  errors: { total: number; byType: Record<string, number>; byProvider: Record<string, number> };
+  bySource: Record<
+    string,
+    { total: number; successful: number; errorRate: number }
+  >;
+  byProvider: Record<
+    string,
+    {
+      total: number;
+      successful: number;
+      errorRate: number;
+      avgResponseTime: number;
+    }
+  >;
+  errors: {
+    total: number;
+    byType: Record<string, number>;
+    byProvider: Record<string, number>;
+  };
   timeRange: { start: string; end: string } | { start: Date; end: Date };
 };
 
 type ApiResponse = {
   summary: Summary;
   recent: {
-    usage: Array<{ timestamp: string | Date; source: string; provider: string; model: string; success: boolean; responseTime?: number }>;
-    errors: Array<{ timestamp: string | Date; provider: string; errorType: string; errorMessage: string }>;
+    usage: Array<{
+      timestamp: string | Date;
+      source: string;
+      provider: string;
+      model: string;
+      success: boolean;
+      responseTime?: number;
+    }>;
+    errors: Array<{
+      timestamp: string | Date;
+      provider: string;
+      errorType: string;
+      errorMessage: string;
+    }>;
   };
 };
 
@@ -34,7 +61,9 @@ export function DiagnosticsPanel() {
         const res = await fetch('/api/diagnostics/credentials');
         if (!res.ok) {
           if (res.status === 403) {
-            setError('Not authorized. Ask an admin to add your email to ADMIN_EMAILS.');
+            setError(
+              'Not authorized. Ask an admin to add your email to ADMIN_EMAILS.'
+            );
           } else {
             setError(`Failed to load diagnostics (${res.status})`);
           }
@@ -96,7 +125,9 @@ export function DiagnosticsPanel() {
                   <td className="py-2 pr-4">{src}</td>
                   <td className="py-2 pr-4">{v.total}</td>
                   <td className="py-2 pr-4">{v.successful}</td>
-                  <td className="py-2 pr-4">{Math.round(v.errorRate * 100)}%</td>
+                  <td className="py-2 pr-4">
+                    {Math.round(v.errorRate * 100)}%
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -123,7 +154,9 @@ export function DiagnosticsPanel() {
                   <td className="py-2 pr-4">{p}</td>
                   <td className="py-2 pr-4">{v.total}</td>
                   <td className="py-2 pr-4">{v.successful}</td>
-                  <td className="py-2 pr-4">{Math.round(v.errorRate * 100)}%</td>
+                  <td className="py-2 pr-4">
+                    {Math.round(v.errorRate * 100)}%
+                  </td>
                   <td className="py-2 pr-4">{Math.round(v.avgResponseTime)}</td>
                 </tr>
               ))}
@@ -147,18 +180,21 @@ export function DiagnosticsPanel() {
               </tr>
             </thead>
             <tbody>
-              {recent.usage.slice(-50).reverse().map((u, idx) => (
-                <tr key={idx} className="border-b/50">
-                  <td className="py-2 pr-4">
-                    {new Date(u.timestamp as any).toLocaleTimeString()}
-                  </td>
-                  <td className="py-2 pr-4">{u.source}</td>
-                  <td className="py-2 pr-4">{u.provider}</td>
-                  <td className="py-2 pr-4">{u.model}</td>
-                  <td className="py-2 pr-4">{u.success ? 'Yes' : 'No'}</td>
-                  <td className="py-2 pr-4">{u.responseTime ?? '-'}</td>
-                </tr>
-              ))}
+              {recent.usage
+                .slice(-50)
+                .reverse()
+                .map((u, idx) => (
+                  <tr key={idx} className="border-b/50">
+                    <td className="py-2 pr-4">
+                      {new Date(u.timestamp as any).toLocaleTimeString()}
+                    </td>
+                    <td className="py-2 pr-4">{u.source}</td>
+                    <td className="py-2 pr-4">{u.provider}</td>
+                    <td className="py-2 pr-4">{u.model}</td>
+                    <td className="py-2 pr-4">{u.success ? 'Yes' : 'No'}</td>
+                    <td className="py-2 pr-4">{u.responseTime ?? '-'}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -175,4 +211,3 @@ function StatCard({ title, value }: { title: string; value: number | string }) {
     </div>
   );
 }
-

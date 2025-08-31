@@ -1,5 +1,4 @@
-import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
-import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // Create a minimal test focused on specific functionality
 describe('Chat Route Utilities', () => {

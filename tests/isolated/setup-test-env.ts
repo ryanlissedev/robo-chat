@@ -2,16 +2,15 @@
 
 /**
  * Test Environment Setup Script
- * 
+ *
  * This script helps set up environment variables for testing the AI gateway.
  * It can be used to quickly configure test environments without modifying .env.local
- * 
+ *
  * Usage:
  *   npx tsx tests/isolated/setup-test-env.ts
  */
 
-import { writeFileSync, existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 // Colors for console output
 const colors = {
@@ -50,10 +49,10 @@ class TestEnvSetup {
 
   async checkCurrentEnv(): Promise<EnvConfig> {
     const config: EnvConfig = {};
-    
+
     if (existsSync(this.envPath)) {
       const content = readFileSync(this.envPath, 'utf-8');
-      
+
       // Simple parsing - look for key=value pairs
       const lines = content.split('\n');
       for (const line of lines) {
@@ -61,7 +60,7 @@ class TestEnvSetup {
         if (trimmed && !trimmed.startsWith('#')) {
           const [key, ...valueParts] = trimmed.split('=');
           const value = valueParts.join('=');
-          
+
           if (key === 'OPENAI_API_KEY') config.OPENAI_API_KEY = value;
           if (key === 'AI_GATEWAY_API_KEY') config.AI_GATEWAY_API_KEY = value;
           if (key === 'AI_GATEWAY_BASE_URL') config.AI_GATEWAY_BASE_URL = value;
@@ -69,64 +68,81 @@ class TestEnvSetup {
         }
       }
     }
-    
+
     return config;
   }
 
   async displayCurrentConfig() {
     log('\n🔍 Current Environment Configuration', 'bold');
-    log('=' .repeat(50), 'cyan');
-    
+    log('='.repeat(50), 'cyan');
+
     const config = await this.checkCurrentEnv();
-    
-    log(`OpenAI API Key: ${config.OPENAI_API_KEY ? '✅ Set' : '❌ Not set'}`, 
-        config.OPENAI_API_KEY ? 'green' : 'red');
-    
-    log(`AI Gateway API Key: ${config.AI_GATEWAY_API_KEY ? '✅ Set' : '❌ Not set'}`, 
-        config.AI_GATEWAY_API_KEY ? 'green' : 'red');
-    
-    log(`AI Gateway URL: ${config.AI_GATEWAY_BASE_URL || 'Default (Vercel AI Gateway)'}`, 'blue');
-    
-    log(`Anthropic API Key: ${config.ANTHROPIC_API_KEY ? '✅ Set' : '❌ Not set'}`, 
-        config.ANTHROPIC_API_KEY ? 'green' : 'red');
+
+    log(
+      `OpenAI API Key: ${config.OPENAI_API_KEY ? '✅ Set' : '❌ Not set'}`,
+      config.OPENAI_API_KEY ? 'green' : 'red'
+    );
+
+    log(
+      `AI Gateway API Key: ${config.AI_GATEWAY_API_KEY ? '✅ Set' : '❌ Not set'}`,
+      config.AI_GATEWAY_API_KEY ? 'green' : 'red'
+    );
+
+    log(
+      `AI Gateway URL: ${config.AI_GATEWAY_BASE_URL || 'Default (Vercel AI Gateway)'}`,
+      'blue'
+    );
+
+    log(
+      `Anthropic API Key: ${config.ANTHROPIC_API_KEY ? '✅ Set' : '❌ Not set'}`,
+      config.ANTHROPIC_API_KEY ? 'green' : 'red'
+    );
   }
 
   async createTestEnv() {
     log('\n🛠️  Creating Test Environment', 'bold');
     log('This will create a .env.test.local file for testing', 'yellow');
-    
+
     const config: EnvConfig = {};
-    
+
     // OpenAI API Key
-    const openaiKey = await prompt('Enter OpenAI API Key (or press Enter to skip):');
+    const openaiKey = await prompt(
+      'Enter OpenAI API Key (or press Enter to skip):'
+    );
     if (openaiKey) {
       config.OPENAI_API_KEY = openaiKey;
     }
-    
+
     // AI Gateway API Key
-    const gatewayKey = await prompt('Enter AI Gateway API Key (or press Enter to skip):');
+    const gatewayKey = await prompt(
+      'Enter AI Gateway API Key (or press Enter to skip):'
+    );
     if (gatewayKey) {
       config.AI_GATEWAY_API_KEY = gatewayKey;
     }
-    
+
     // AI Gateway URL
-    const gatewayUrl = await prompt('Enter AI Gateway URL (or press Enter for default):');
+    const gatewayUrl = await prompt(
+      'Enter AI Gateway URL (or press Enter for default):'
+    );
     if (gatewayUrl) {
       config.AI_GATEWAY_BASE_URL = gatewayUrl;
     } else {
       config.AI_GATEWAY_BASE_URL = 'https://ai-gateway.vercel.sh/v1/ai';
     }
-    
+
     // Anthropic API Key
-    const anthropicKey = await prompt('Enter Anthropic API Key (or press Enter to skip):');
+    const anthropicKey = await prompt(
+      'Enter Anthropic API Key (or press Enter to skip):'
+    );
     if (anthropicKey) {
       config.ANTHROPIC_API_KEY = anthropicKey;
     }
-    
+
     // Write test env file
     const envContent = this.generateEnvContent(config);
     writeFileSync(this.testEnvPath, envContent);
-    
+
     log(`\n✅ Test environment created: ${this.testEnvPath}`, 'green');
     log('You can now run tests with: npm run test:gateway-live', 'blue');
   }
@@ -138,35 +154,35 @@ class TestEnvSetup {
       '# This file is for testing only - do not commit to version control',
       '',
     ];
-    
+
     if (config.OPENAI_API_KEY) {
       lines.push(`OPENAI_API_KEY=${config.OPENAI_API_KEY}`);
     }
-    
+
     if (config.AI_GATEWAY_API_KEY) {
       lines.push(`AI_GATEWAY_API_KEY=${config.AI_GATEWAY_API_KEY}`);
     }
-    
+
     if (config.AI_GATEWAY_BASE_URL) {
       lines.push(`AI_GATEWAY_BASE_URL=${config.AI_GATEWAY_BASE_URL}`);
     }
-    
+
     if (config.ANTHROPIC_API_KEY) {
       lines.push(`ANTHROPIC_API_KEY=${config.ANTHROPIC_API_KEY}`);
     }
-    
+
     lines.push(''); // Empty line at end
     return lines.join('\n');
   }
 
   async runQuickTest() {
     log('\n🧪 Running Quick Gateway Test', 'bold');
-    
+
     // Load test environment
     if (existsSync(this.testEnvPath)) {
       const content = readFileSync(this.testEnvPath, 'utf-8');
       const lines = content.split('\n');
-      
+
       for (const line of lines) {
         const trimmed = line.trim();
         if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
@@ -176,24 +192,32 @@ class TestEnvSetup {
         }
       }
     }
-    
+
     try {
       const { AIGateway } = await import('../../lib/ai/gateway');
       const gateway = new AIGateway();
       const status = await gateway.getStatus();
-      
+
       log('Gateway Status:', 'cyan');
-      log(`  Configured: ${status.gateway.configured}`, status.gateway.configured ? 'green' : 'red');
+      log(
+        `  Configured: ${status.gateway.configured}`,
+        status.gateway.configured ? 'green' : 'red'
+      );
       log(`  URL: ${status.gateway.url || 'Not set'}`, 'blue');
-      log(`  OpenAI: ${status.openai.configured}`, status.openai.configured ? 'green' : 'red');
-      
+      log(
+        `  OpenAI: ${status.openai.configured}`,
+        status.openai.configured ? 'green' : 'red'
+      );
+
       if (status.gateway.configured && status.openai.configured) {
         log('\n✅ Configuration looks good! Run full tests with:', 'green');
         log('  npm run test:gateway-live', 'blue');
       } else {
-        log('\n⚠️  Some configuration is missing. Check your API keys.', 'yellow');
+        log(
+          '\n⚠️  Some configuration is missing. Check your API keys.',
+          'yellow'
+        );
       }
-      
     } catch (error) {
       log(`\n❌ Error testing gateway: ${error.message}`, 'red');
     }
@@ -201,11 +225,14 @@ class TestEnvSetup {
 
   async showHelp() {
     log('\n📖 AI Gateway Testing Help', 'bold');
-    log('=' .repeat(50), 'cyan');
+    log('='.repeat(50), 'cyan');
     log('Available commands:', 'blue');
     log('  npm run test:isolated-gateway  - Run isolated unit tests', 'green');
     log('  npm run test:gateway-live      - Run live API tests', 'green');
-    log('  npx tsx tests/isolated/setup-test-env.ts - This setup script', 'green');
+    log(
+      '  npx tsx tests/isolated/setup-test-env.ts - This setup script',
+      'green'
+    );
     log('');
     log('Required environment variables:', 'blue');
     log('  OPENAI_API_KEY        - Your OpenAI API key', 'yellow');
@@ -220,18 +247,20 @@ class TestEnvSetup {
 
 async function main() {
   log('🚀 AI Gateway Test Environment Setup', 'bold');
-  
+
   const setup = new TestEnvSetup();
-  
+
   // Enable stdin
   process.stdin.setRawMode(false);
   process.stdin.resume();
   process.stdin.setEncoding('utf8');
-  
+
   await setup.displayCurrentConfig();
-  
-  const action = await prompt('\nWhat would you like to do?\n1) Create test environment\n2) Run quick test\n3) Show help\n4) Exit\nChoice (1-4):');
-  
+
+  const action = await prompt(
+    '\nWhat would you like to do?\n1) Create test environment\n2) Run quick test\n3) Show help\n4) Exit\nChoice (1-4):'
+  );
+
   switch (action) {
     case '1':
       await setup.createTestEnv();
@@ -248,13 +277,13 @@ async function main() {
     default:
       log('Invalid choice. Run the script again.', 'red');
   }
-  
+
   process.exit(0);
 }
 
 // Run if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(error => {
+  main().catch((error) => {
     log(`\n💥 Error: ${error.message}`, 'red');
     process.exit(1);
   });

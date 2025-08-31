@@ -75,7 +75,7 @@ type FileSearchResult = {
   metadata?: Record<string, unknown>;
 };
 
-export const fileSearchTool = tool({
+export const file_search = tool({
   description:
     'Advanced search through uploaded documents using OpenAI vector stores with query rewriting and reranking',
   inputSchema: z.object({
@@ -124,7 +124,7 @@ export const fileSearchTool = tool({
   }) => {
     logger.info(
       {
-        at: 'fileSearchTool.execute.start',
+        at: 'file_search.execute.start',
         query,
         max_results,
         file_types,
@@ -144,7 +144,7 @@ export const fileSearchTool = tool({
       if (!apiKey) {
         logger.error(
           {
-            at: 'fileSearchTool.execute.apiKeyMissing',
+            at: 'file_search.execute.apiKeyMissing',
             timestamp: new Date().toISOString(),
           },
           'OpenAI API key not found'
@@ -161,7 +161,7 @@ export const fileSearchTool = tool({
       if (!storeId) {
         logger.info(
           {
-            at: 'fileSearchTool.execute.vectorStore.lookup',
+            at: 'file_search.execute.vectorStore.lookup',
             timestamp: new Date().toISOString(),
           },
           'Looking up default vector store'
@@ -175,7 +175,7 @@ export const fileSearchTool = tool({
           storeId = stores.data[0].id;
           logger.info(
             {
-              at: 'fileSearchTool.execute.vectorStore.found',
+              at: 'file_search.execute.vectorStore.found',
               storeId,
               storeName: stores.data[0].name,
               timestamp: new Date().toISOString(),
@@ -186,7 +186,7 @@ export const fileSearchTool = tool({
           // Create a new vector store if none exists
           logger.info(
             {
-              at: 'fileSearchTool.execute.vectorStore.creating',
+              at: 'file_search.execute.vectorStore.creating',
               timestamp: new Date().toISOString(),
             },
             'Creating new vector store'
@@ -205,7 +205,7 @@ export const fileSearchTool = tool({
 
           logger.info(
             {
-              at: 'fileSearchTool.execute.vectorStore.created',
+              at: 'file_search.execute.vectorStore.created',
               storeId: newStore.id,
               storeName: newStore.name,
               timestamp: new Date().toISOString(),
@@ -216,7 +216,7 @@ export const fileSearchTool = tool({
       } else {
         logger.info(
           {
-            at: 'fileSearchTool.execute.vectorStore.provided',
+            at: 'file_search.execute.vectorStore.provided',
             storeId,
             timestamp: new Date().toISOString(),
           },
@@ -243,7 +243,7 @@ export const fileSearchTool = tool({
 
       logger.info(
         {
-          at: 'fileSearchTool.execute.retrieval.config',
+          at: 'file_search.execute.retrieval.config',
           retrievalConfig,
           timestamp: new Date().toISOString(),
         },
@@ -254,7 +254,7 @@ export const fileSearchTool = tool({
       // Note: retrieval currently feature-gated; returns empty results if unsupported
       logger.info(
         {
-          at: 'fileSearchTool.execute.retrieval.calling',
+          at: 'file_search.execute.retrieval.calling',
           query,
           storeId,
           timestamp: new Date().toISOString(),
@@ -266,11 +266,14 @@ export const fileSearchTool = tool({
         enhancedRetrieval(query, storeId as string, openai, retrievalConfig)
       );
 
+      // Ensure results is always an array
+      const safeResults = Array.isArray(results) ? results : [];
+
       logger.info(
         {
-          at: 'fileSearchTool.execute.retrieval.complete',
-          resultsCount: results.length,
-          hasResults: results.length > 0,
+          at: 'file_search.execute.retrieval.complete',
+          resultsCount: safeResults.length,
+          hasResults: safeResults.length > 0,
           timestamp: new Date().toISOString(),
         },
         'Enhanced retrieval completed'
@@ -279,14 +282,14 @@ export const fileSearchTool = tool({
       // Format results for output
       logger.info(
         {
-          at: 'fileSearchTool.execute.formatting.start',
-          rawResultsCount: results.length,
+          at: 'file_search.execute.formatting.start',
+          rawResultsCount: safeResults.length,
           timestamp: new Date().toISOString(),
         },
         'Formatting search results'
       );
 
-      const formattedResults = results.map((result, index) => ({
+      const formattedResults = safeResults.map((result, index) => ({
         rank: index + 1,
         file_id: result.file_id || result.id,
         file_name: result.file_name || `Document ${index + 1}`,
@@ -297,7 +300,7 @@ export const fileSearchTool = tool({
 
       logger.info(
         {
-          at: 'fileSearchTool.execute.formatting.complete',
+          at: 'file_search.execute.formatting.complete',
           formattedResultsCount: formattedResults.length,
           topResultScore:
             formattedResults.length > 0 ? formattedResults[0].score : null,
@@ -358,7 +361,7 @@ export const fileSearchTool = tool({
 
       logger.info(
         {
-          at: 'fileSearchTool.execute.success',
+          at: 'file_search.execute.success',
           response: {
             success: response.success,
             query: response.query,
@@ -383,7 +386,7 @@ export const fileSearchTool = tool({
 
       logger.error(
         {
-          at: 'fileSearchTool.execute.error',
+          at: 'file_search.execute.error',
           query,
           error: errorMessage,
           errorDetails:

@@ -60,7 +60,7 @@ describe('useChatDraft', () => {
     it('should use "new" key when chatId is null', () => {
       // Ensure clean mock state for this specific test
       localStorageMock.getItem.mockReturnValue(null);
-      
+
       const { result } = renderHook(() => useChatDraft(null));
 
       expect(result.current.draftValue).toBe('');
@@ -121,7 +121,7 @@ describe('useChatDraft', () => {
       // Ensure clean mock state for this specific test
       localStorageMock.getItem.mockReturnValue(null);
       vi.clearAllMocks();
-      
+
       const { result } = renderHook(() => useChatDraft('test-chat-id'));
 
       act(() => {
@@ -291,7 +291,7 @@ describe('useChatDraft', () => {
           result.current.setDraftValue('Test content');
         });
       }).toThrow('Storage quota exceeded');
-      
+
       // Reset mock after test to prevent leakage
       localStorageMock.setItem.mockReset();
       localStorageMock.setItem.mockImplementation(vi.fn());
@@ -301,7 +301,7 @@ describe('useChatDraft', () => {
       // Ensure clean mock state
       localStorageMock.getItem.mockReturnValue(null);
       vi.clearAllMocks();
-      
+
       const longContent = 'a'.repeat(10000);
       const { result } = renderHook(() => useChatDraft('test-chat-id'));
 
@@ -320,7 +320,7 @@ describe('useChatDraft', () => {
       // Ensure clean mock state
       localStorageMock.getItem.mockReturnValue(null);
       vi.clearAllMocks();
-      
+
       const whitespaceContent = '   \n\t  \n  ';
       const { result } = renderHook(() => useChatDraft('test-chat-id'));
 

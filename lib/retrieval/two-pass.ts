@@ -2,7 +2,7 @@ import { type LanguageModel, streamText } from 'ai';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import { RETRIEVAL_RETRIEVER_MODEL_ID } from '@/lib/config';
 import { getModelInfo } from '@/lib/models';
-import { fileSearchTool } from '@/lib/tools/file-search';
+import { file_search } from '@/lib/tools/file-search';
 import logger from '@/lib/utils/logger';
 import { performVectorRetrieval, type RetrievedDoc } from './vector-retrieval';
 
@@ -58,7 +58,7 @@ export async function retrieveWithGpt41(
             content: `Retrieve top ${options?.topK ?? 5} documents relevant to: ${query}`,
           },
         ],
-        tools: { fileSearch: fileSearchTool },
+        tools: { fileSearch: file_search },
         onFinish: async ({ response }) => {
           try {
             const msgs = (response.messages || []) as Array<

@@ -97,16 +97,18 @@ class ProviderTester {
       gateway: {
         enabled: false,
         configured: false,
-      }
+      },
     };
-    
+
     // Check gateway configuration
     const gateway = getGatewayConfig();
     this.results.gateway.enabled = gateway.enabled;
     this.results.gateway.configured = !!gateway.baseURL;
-    
+
     console.log('\n🚀 AI Provider Test Suite Starting...\n');
-    console.log(`Gateway Status: ${gateway.enabled ? '✅ Enabled' : '❌ Disabled'}`);
+    console.log(
+      `Gateway Status: ${gateway.enabled ? '✅ Enabled' : '❌ Disabled'}`
+    );
     if (gateway.enabled) {
       console.log(`Gateway URL: ${gateway.baseURL}\n`);
     }
@@ -114,30 +116,36 @@ class ProviderTester {
 
   checkEnvironmentVariables() {
     console.log('📋 Environment Variable Check:');
-    
+
     Object.entries(providerConfigs).forEach(([provider, config]) => {
       const hasKey = !!process.env[config.envKey];
       const keyValue = process.env[config.envKey];
       const maskedKey = keyValue ? `${keyValue.substring(0, 8)}...` : 'Not set';
-      
-      console.log(`   ${provider.padEnd(12)}: ${hasKey ? '✅' : '❌'} ${maskedKey}`);
-      
+
+      console.log(
+        `   ${provider.padEnd(12)}: ${hasKey ? '✅' : '❌'} ${maskedKey}`
+      );
+
       this.results.summary[provider] = {
         configured: hasKey,
         keyPrefix: hasKey ? keyValue.substring(0, 8) : null,
       };
     });
-    
+
     // Check gateway API key
     const gatewayKey = process.env.AI_GATEWAY_API_KEY;
-    const maskedGateway = gatewayKey ? `${gatewayKey.substring(0, 8)}...` : 'Not set';
-    console.log(`   gateway     : ${!!gatewayKey ? '✅' : '❌'} ${maskedGateway}`);
+    const maskedGateway = gatewayKey
+      ? `${gatewayKey.substring(0, 8)}...`
+      : 'Not set';
+    console.log(
+      `   gateway     : ${gatewayKey ? '✅' : '❌'} ${maskedGateway}`
+    );
     console.log('');
   }
 
   async testProvider(provider, config) {
     console.log(`🧪 Testing ${provider.toUpperCase()}...`);
-    
+
     const providerResults = {
       configured: !!process.env[config.envKey],
       models: {},
@@ -146,7 +154,7 @@ class ProviderTester {
         totalTests: 0,
         successfulTests: 0,
         failedTests: 0,
-      }
+      },
     };
 
     if (!providerResults.configured && config.requiredEnv) {
@@ -156,9 +164,10 @@ class ProviderTester {
     }
 
     // Test each model
-    for (const modelName of config.models.slice(0, 2)) { // Test first 2 models only
+    for (const modelName of config.models.slice(0, 2)) {
+      // Test first 2 models only
       console.log(`   📊 Model: ${modelName}`);
-      
+
       const modelResults = {
         initialization: null,
         generation: null,
@@ -167,7 +176,7 @@ class ProviderTester {
         gateway: {
           directAccess: null,
           gatewayRouted: null,
-        }
+        },
       };
 
       providerResults.performance.totalTests += 4; // 4 tests per model
@@ -177,24 +186,27 @@ class ProviderTester {
         const startTime = Date.now();
         const languageModel = openproviders(modelName);
         const initTime = Date.now() - startTime;
-        
+
         modelResults.initialization = {
           success: true,
           duration: initTime,
           hasDoGenerate: typeof languageModel.doGenerate === 'function',
           hasDoStream: typeof languageModel.doStream === 'function',
         };
-        
+
         console.log(`      ✅ Initialization (${initTime}ms)`);
         providerResults.performance.successfulTests++;
-        
       } catch (error) {
         modelResults.initialization = {
           success: false,
           error: error.message,
         };
         console.log(`      ❌ Initialization failed: ${error.message}`);
-        providerResults.errors.push({ model: modelName, type: 'initialization', error: error.message });
+        providerResults.errors.push({
+          model: modelName,
+          type: 'initialization',
+          error: error.message,
+        });
         providerResults.performance.failedTests++;
       }
 
@@ -205,21 +217,25 @@ class ProviderTester {
           const languageModel = openproviders(modelName);
           const result = await languageModel.doGenerate(testMessage);
           const genTime = Date.now() - startTime;
-          
+
           modelResults.generation = {
             success: true,
             duration: genTime,
             finishReason: result.finishReason,
             promptTokens: result.usage?.promptTokens || 0,
             completionTokens: result.usage?.completionTokens || 0,
-            totalTokens: (result.usage?.promptTokens || 0) + (result.usage?.completionTokens || 0),
+            totalTokens:
+              (result.usage?.promptTokens || 0) +
+              (result.usage?.completionTokens || 0),
             responseLength: result.text?.length || 0,
-            containsExpected: result.text?.toLowerCase().includes('test_success') || false,
+            containsExpected:
+              result.text?.toLowerCase().includes('test_success') || false,
           };
-          
-          console.log(`      ✅ Generation (${genTime}ms, ${modelResults.generation.totalTokens} tokens)`);
+
+          console.log(
+            `      ✅ Generation (${genTime}ms, ${modelResults.generation.totalTokens} tokens)`
+          );
           providerResults.performance.successfulTests++;
-          
         } catch (error) {
           modelResults.generation = {
             success: false,
@@ -227,7 +243,11 @@ class ProviderTester {
             statusCode: error.statusCode || null,
           };
           console.log(`      ❌ Generation failed: ${error.message}`);
-          providerResults.errors.push({ model: modelName, type: 'generation', error: error.message });
+          providerResults.errors.push({
+            model: modelName,
+            type: 'generation',
+            error: error.message,
+          });
           providerResults.performance.failedTests++;
         }
       }
@@ -238,11 +258,11 @@ class ProviderTester {
           const startTime = Date.now();
           const languageModel = openproviders(modelName);
           const result = await languageModel.doStream(streamTestMessage);
-          
+
           let chunks = 0;
           let fullText = '';
           let finishChunk = null;
-          
+
           for await (const chunk of result.stream) {
             chunks++;
             if (chunk.type === 'text-delta') {
@@ -251,9 +271,9 @@ class ProviderTester {
               finishChunk = chunk;
             }
           }
-          
+
           const streamTime = Date.now() - startTime;
-          
+
           modelResults.streaming = {
             success: true,
             duration: streamTime,
@@ -264,10 +284,9 @@ class ProviderTester {
             completionTokens: finishChunk?.usage?.completionTokens || 0,
             containsNumbers: /1.*2.*3/s.test(fullText),
           };
-          
+
           console.log(`      ✅ Streaming (${streamTime}ms, ${chunks} chunks)`);
           providerResults.performance.successfulTests++;
-          
         } catch (error) {
           modelResults.streaming = {
             success: false,
@@ -275,7 +294,11 @@ class ProviderTester {
             statusCode: error.statusCode || null,
           };
           console.log(`      ❌ Streaming failed: ${error.message}`);
-          providerResults.errors.push({ model: modelName, type: 'streaming', error: error.message });
+          providerResults.errors.push({
+            model: modelName,
+            type: 'streaming',
+            error: error.message,
+          });
           providerResults.performance.failedTests++;
         }
       }
@@ -287,7 +310,7 @@ class ProviderTester {
           ...testMessage,
           maxTokens: -1, // Invalid parameter
         });
-        
+
         // Should not reach here
         modelResults.errorHandling = {
           success: false,
@@ -295,7 +318,6 @@ class ProviderTester {
         };
         console.log(`      ❌ Error handling: Expected error but got none`);
         providerResults.performance.failedTests++;
-        
       } catch (error) {
         modelResults.errorHandling = {
           success: true,
@@ -303,7 +325,9 @@ class ProviderTester {
           statusCode: error.statusCode,
           handled: error.statusCode >= 400 && error.statusCode < 500,
         };
-        console.log(`      ✅ Error handling (Status: ${error.statusCode || 'N/A'})`);
+        console.log(
+          `      ✅ Error handling (Status: ${error.statusCode || 'N/A'})`
+        );
         providerResults.performance.successfulTests++;
       }
 
@@ -311,79 +335,97 @@ class ProviderTester {
     }
 
     this.results.detailed[provider] = providerResults;
-    
-    const successRate = ((providerResults.performance.successfulTests / providerResults.performance.totalTests) * 100).toFixed(1);
-    console.log(`   📈 Success Rate: ${successRate}% (${providerResults.performance.successfulTests}/${providerResults.performance.totalTests})`);
+
+    const successRate = (
+      (providerResults.performance.successfulTests /
+        providerResults.performance.totalTests) *
+      100
+    ).toFixed(1);
+    console.log(
+      `   📈 Success Rate: ${successRate}% (${providerResults.performance.successfulTests}/${providerResults.performance.totalTests})`
+    );
     console.log('');
-    
+
     return providerResults;
   }
 
   async runAllTests() {
     const startTime = Date.now();
-    
+
     this.checkEnvironmentVariables();
-    
+
     console.log('🔄 Running Provider Tests...\n');
-    
+
     for (const [provider, config] of Object.entries(providerConfigs)) {
       await this.testProvider(provider, config);
     }
-    
+
     const totalTime = Date.now() - startTime;
     this.results.performance.totalDuration = totalTime;
-    
+
     this.generateReport();
   }
 
   generateReport() {
     console.log('📊 TEST RESULTS SUMMARY');
     console.log('========================\n');
-    
+
     let totalProviders = 0;
     let workingProviders = 0;
     let totalTests = 0;
     let successfulTests = 0;
-    
+
     Object.entries(this.results.detailed).forEach(([provider, results]) => {
       totalProviders++;
       totalTests += results.performance.totalTests;
       successfulTests += results.performance.successfulTests;
-      
+
       if (results.configured && results.performance.successfulTests > 0) {
         workingProviders++;
-        console.log(`✅ ${provider.toUpperCase()}: Working (${results.performance.successfulTests}/${results.performance.totalTests} tests passed)`);
+        console.log(
+          `✅ ${provider.toUpperCase()}: Working (${results.performance.successfulTests}/${results.performance.totalTests} tests passed)`
+        );
       } else if (!results.configured) {
         console.log(`⏭️  ${provider.toUpperCase()}: Not configured`);
       } else {
-        console.log(`❌ ${provider.toUpperCase()}: Failed (${results.performance.successfulTests}/${results.performance.totalTests} tests passed)`);
+        console.log(
+          `❌ ${provider.toUpperCase()}: Failed (${results.performance.successfulTests}/${results.performance.totalTests} tests passed)`
+        );
       }
     });
-    
+
     console.log('\n📈 Overall Statistics:');
     console.log(`   Total Providers: ${totalProviders}`);
     console.log(`   Working Providers: ${workingProviders}`);
-    console.log(`   Success Rate: ${((successfulTests / totalTests) * 100).toFixed(1)}%`);
-    console.log(`   Total Duration: ${this.results.performance.totalDuration}ms`);
-    console.log(`   Gateway: ${this.results.gateway.enabled ? 'Enabled' : 'Disabled'}`);
-    
+    console.log(
+      `   Success Rate: ${((successfulTests / totalTests) * 100).toFixed(1)}%`
+    );
+    console.log(
+      `   Total Duration: ${this.results.performance.totalDuration}ms`
+    );
+    console.log(
+      `   Gateway: ${this.results.gateway.enabled ? 'Enabled' : 'Disabled'}`
+    );
+
     if (this.results.errors.length > 0) {
       console.log('\n❌ Error Summary:');
-      this.results.errors.forEach(error => {
+      this.results.errors.forEach((error) => {
         console.log(`   ${error.provider}: ${error.error}`);
       });
     }
-    
-    console.log('\n💾 Detailed results saved to: tests/results/provider-test-results.json');
+
+    console.log(
+      '\n💾 Detailed results saved to: tests/results/provider-test-results.json'
+    );
   }
 
   async saveResults() {
-    const fs = require('fs/promises');
-    const path = require('path');
-    
+    const fs = require('node:fs/promises');
+    const path = require('node:path');
+
     const resultsDir = 'tests/results';
     const resultsPath = path.join(resultsDir, 'provider-test-results.json');
-    
+
     try {
       await fs.mkdir(resultsDir, { recursive: true });
       await fs.writeFile(resultsPath, JSON.stringify(this.results, null, 2));
@@ -396,7 +438,7 @@ class ProviderTester {
 // Run the tests
 async function main() {
   const tester = new ProviderTester();
-  
+
   try {
     await tester.runAllTests();
     await tester.saveResults();

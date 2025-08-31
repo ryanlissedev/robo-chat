@@ -1,5 +1,5 @@
-import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 // Mock TextMorph to just render children
@@ -26,10 +26,10 @@ describe('ButtonCopy', () => {
 
     const testCode = 'console.log("test");';
     render(<ButtonCopy code={testCode} />);
-    
+
     const button = screen.getByRole('button');
     fireEvent.click(button);
-    
+
     // Wait a bit for async operation
     await waitFor(() => {
       expect(mockWriteText).toHaveBeenCalledWith(testCode);
@@ -45,17 +45,17 @@ describe('ButtonCopy', () => {
 
     render(<ButtonCopy code="test" />);
     expect(screen.getByText('Copy')).toBeInTheDocument();
-    
+
     const button = screen.getByRole('button');
-    
+
     // Click the button
     fireEvent.click(button);
-    
+
     // Wait for the clipboard operation to be called and state to update
     await waitFor(() => {
       expect(mockWriteText).toHaveBeenCalledWith('test');
     });
-    
+
     // Check that the button text changed to "Copied"
     await waitFor(() => {
       expect(button.textContent).toBe('Copied');

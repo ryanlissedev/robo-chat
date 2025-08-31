@@ -33,6 +33,7 @@ export type OptimisticMessageData = {
   content: string;
   role: 'user';
   createdAt: Date;
+  // biome-ignore lint/style/useNamingConvention: external AI SDK API name
   experimental_attachments?: Array<{
     name: string;
     contentType: string;
@@ -55,6 +56,7 @@ export type ChatRequestOptions = {
       | 'technical-expert'
       | 'friendly-assistant';
   };
+  // biome-ignore lint/style/useNamingConvention: external AI SDK API name
   experimental_attachments?: Attachment[];
 };
 
@@ -167,6 +169,7 @@ export async function submitMessageScenario(
       content: input,
       role: 'user',
       createdAt: new Date(),
+      // biome-ignore lint/style/useNamingConvention: external AI SDK API name
       experimental_attachments:
         optimisticAttachments.length > 0 ? optimisticAttachments : undefined,
     };
@@ -183,6 +186,7 @@ export async function submitMessageScenario(
         reasoningEffort,
         context: 'chat' as const, // Explicitly set chat context for immediate response
       },
+      // biome-ignore lint/style/useNamingConvention: external AI SDK API name
       experimental_attachments: fileResult.data || undefined,
     };
 

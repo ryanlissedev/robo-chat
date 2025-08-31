@@ -1,17 +1,17 @@
 #!/usr/bin/env tsx
 
 /**
- * Test OpenAI API directly and through Vercel AI Gateway
+ * Test OpenAI direct API without gateway to verify baseline functionality
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 // Load .env.local manually
 const envPath = path.join(process.cwd(), '.env.local');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf-8');
-  envContent.split('\n').forEach(line => {
+  envContent.split('\n').forEach((line) => {
     const [key, ...valueParts] = line.split('=');
     if (key && valueParts.length > 0) {
       const value = valueParts.join('=').replace(/^["']|["']$/g, '');
@@ -21,98 +21,58 @@ if (fs.existsSync(envPath)) {
 }
 
 async function testOpenAIDirect() {
-  console.log('=== Testing OpenAI API Directly ===\n');
-  
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
+  console.log('=== Testing OpenAI Direct API ===\n');
+
+  const openaiKey = process.env.OPENAI_API_KEY;
+
+  if (!openaiKey) {
     console.error('❌ OPENAI_API_KEY not found');
     return false;
   }
+
+  console.log(`OpenAI Key: ${openaiKey.substring(0, 8)}...`);
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${openaiKey}`,
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: 'Say "test successful" in 3 words' }],
+        messages: [{ role: 'user', content: 'Say "test successful"' }],
         stream: false,
         max_tokens: 10,
       }),
     });
 
-    const data = await response.json();
     console.log('Status:', response.status);
-    console.log('Response:', JSON.stringify(data, null, 2));
-    
+
     if (response.ok) {
-      console.log('\n✅ Direct OpenAI API call successful');
+      const data = await response.json();
+      console.log(
+        'Response:',
+        data.choices?.[0]?.message?.content || 'No content'
+      );
+      console.log('✅ Direct OpenAI API successful');
       return true;
     } else {
-      console.log('\n❌ Direct OpenAI API call failed');
+      const errorText = await response.text();
+      console.log('Error response:', errorText);
+      console.log('❌ Direct OpenAI API failed');
       return false;
     }
   } catch (error) {
-    console.error('❌ Error calling OpenAI directly:', error);
-    return false;
-  }
-}
-
-async function testGateway() {
-  console.log('\n=== Testing Vercel AI Gateway ===\n');
-  
-  const apiKey = process.env.AI_GATEWAY_API_KEY;
-  const baseUrl = process.env.AI_GATEWAY_BASE_URL;
-  
-  if (!apiKey || !baseUrl) {
-    console.error('❌ AI_GATEWAY_API_KEY or AI_GATEWAY_BASE_URL not found');
-    return false;
-  }
-
-  try {
-    const response = await fetch(`${baseUrl}/openai/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: 'Say "gateway test successful"' }],
-        stream: false,
-        max_tokens: 10,
-      }),
-    });
-
-    const data = await response.json();
-    console.log('Status:', response.status);
-    console.log('Response:', JSON.stringify(data, null, 2));
-    
-    if (response.ok) {
-      console.log('\n✅ Gateway API call successful');
-      return true;
-    } else {
-      console.log('\n❌ Gateway API call failed');
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Error calling Gateway:', error);
+    console.error('Error:', error);
+    console.log('❌ Direct OpenAI API failed');
     return false;
   }
 }
 
 async function main() {
-  const directSuccess = await testOpenAIDirect();
-  const gatewaySuccess = await testGateway();
-  
-  console.log('\n=== Summary ===');
-  console.log('Direct OpenAI:', directSuccess ? '✅' : '❌');
-  console.log('Vercel Gateway:', gatewaySuccess ? '✅' : '❌');
-  
-  process.exit(directSuccess || gatewaySuccess ? 0 : 1);
+  const success = await testOpenAIDirect();
+  process.exit(success ? 0 : 1);
 }
 
 main();

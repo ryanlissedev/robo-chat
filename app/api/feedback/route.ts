@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       supabase = null;
     }
     let user: { id: string } | null = null;
-    
+
     if (supabase) {
       try {
         const result = await supabase.auth.getUser();
@@ -131,10 +131,7 @@ export async function GET(req: Request) {
       error: authError,
     } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get feedback from database

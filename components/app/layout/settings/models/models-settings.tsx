@@ -54,7 +54,10 @@ export function ModelsSettings() {
         models
           .filter(
             (model) =>
-              !(currentFavoriteModels.includes(model.id) || isModelHidden(model.id))
+              !(
+                currentFavoriteModels.includes(model.id) ||
+                isModelHidden(model.id)
+              )
           )
           .filter((model) =>
             model.name.toLowerCase().includes(searchQuery.toLowerCase())

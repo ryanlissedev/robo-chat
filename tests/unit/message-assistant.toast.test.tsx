@@ -1,6 +1,5 @@
 import userEvent from '@testing-library/user-event';
 import type React from 'react';
-import { useMemo } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock streamdown (which pulls in katex CSS) BEFORE importing MessageAssistant

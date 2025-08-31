@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { resolveCredentials, GET as chatGET } from '@/app/api/chat/route';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { GET as chatGET, resolveCredentials } from '@/app/api/chat/route';
 
 function headers(init?: Record<string, string>) {
   const h = new Headers();
@@ -8,25 +8,21 @@ function headers(init?: Record<string, string>) {
 }
 
 describe('chat credential resolution & diagnostics', () => {
-  const OLD_ENV = process.env;
+  const OldEnv = process.env;
 
   beforeEach(() => {
     vi.restoreAllMocks();
-    process.env = { ...OLD_ENV };
+    process.env = { ...OldEnv };
     delete process.env.AI_GATEWAY_API_KEY;
   });
 
   afterEach(() => {
-    process.env = OLD_ENV;
+    process.env = OldEnv;
   });
 
   it('prefers gateway when AI_GATEWAY_API_KEY is set', async () => {
     process.env.AI_GATEWAY_API_KEY = 'test-gw';
-    const res = await resolveCredentials(
-      null,
-      'gpt-5-mini',
-      headers()
-    );
+    const res = await resolveCredentials(null, 'gpt-5-mini', headers());
     expect(res.source).toBe('gateway');
   });
 
@@ -57,4 +53,3 @@ describe('chat credential resolution & diagnostics', () => {
     expect(json?.envAvailable).toBeTypeOf('object');
   });
 });
-

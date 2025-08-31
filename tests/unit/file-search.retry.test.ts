@@ -16,46 +16,40 @@ vi.mock('openai', () => ({
   },
 }));
 
-describe('fileSearchTool retry/backoff', () => {
-  beforeEach(() => {
+describe.sequential('fileSearchTool retry/backoff', () => {
+  beforeEach(async () => {
     process.env.OPENAI_API_KEY = 'test-key';
-    vi.restoreAllMocks();
+    enhancedRetrievalMock.mockReset();
+    vi.clearAllMocks();
+    // Clear module cache to ensure fresh imports
+    vi.resetModules();
   });
 
   afterEach(() => {
-    // no timers manipulation
+    vi.clearAllMocks();
   });
 
   it('retries retriable errors and eventually succeeds', async () => {
-    enhancedRetrievalMock.mockReset();
     let calls = 0;
     const retriable = Object.assign(new Error('Server error'), { status: 500 });
-    enhancedRetrievalMock
-      .mockImplementationOnce(() => {
-        calls++;
-        return Promise.reject(retriable);
-      })
-      .mockImplementationOnce(() => {
-        calls++;
-        return Promise.reject(retriable);
-      })
-      .mockImplementationOnce(() => {
-        calls++;
-        return Promise.resolve([] as any);
-      });
 
-    const { fileSearchTool } = await import('@/lib/tools/file-search');
-    const exec = (fileSearchTool as any).execute as Function;
-    const result = await exec(
-      {
-        query: 'hello',
-        vector_store_id: 'vs_123',
-        enable_rewriting: false,
-        enable_reranking: false,
-        max_results: 3,
-      },
-      {}
-    );
+    // Mock the function to track calls and simulate retry behavior
+    enhancedRetrievalMock.mockImplementation(() => {
+      calls++;
+      if (calls < 3) {
+        throw retriable;
+      }
+      return Promise.resolve([]);
+    });
+
+    const { file_search } = await import('@/lib/tools/file-search');
+    const result = await file_search.execute({
+      query: 'hello',
+      vector_store_id: 'vs_123',
+      enable_rewriting: false,
+      enable_reranking: false,
+      max_results: 3,
+    });
 
     expect(calls).toBe(3);
     expect(result.success).toBe(true);
@@ -63,30 +57,28 @@ describe('fileSearchTool retry/backoff', () => {
   });
 
   it('does not retry on non-retriable error and returns failure payload', async () => {
-    enhancedRetrievalMock.mockReset();
     let calls = 0;
     const nonRetriable = Object.assign(new Error('Bad request'), {
       status: 400,
     });
-    enhancedRetrievalMock.mockImplementationOnce(() => {
+
+    // Mock the function to throw non-retriable error immediately
+    enhancedRetrievalMock.mockImplementation(() => {
       calls++;
-      return Promise.reject(nonRetriable);
+      throw nonRetriable;
     });
 
-    const { fileSearchTool } = await import('@/lib/tools/file-search');
-    const exec = (fileSearchTool as any).execute as Function;
-    const result = await exec(
-      {
-        query: 'hello',
-        vector_store_id: 'vs_123',
-        enable_rewriting: false,
-        enable_reranking: false,
-      },
-      {}
-    );
+    const { file_search } = await import('@/lib/tools/file-search');
+    const result = await file_search.execute({
+      query: 'hello',
+      vector_store_id: 'vs_123',
+      enable_rewriting: false,
+      enable_reranking: false,
+    });
 
     expect(calls).toBe(1);
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
+    expect(result.error).toBe('Bad request');
   });
 });

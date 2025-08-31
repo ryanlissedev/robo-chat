@@ -1,103 +1,38 @@
-import type { Attachment } from '@ai-sdk/ui-utils';
-import type {
-  LanguageModel,
-  LanguageModelUsage,
-  ModelMessage,
-  ToolSet,
-  UIDataTypes,
-  UIMessagePart,
-  UITools,
-} from 'ai';
-import { convertToModelMessages, streamText } from 'ai';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
-import { getMessageContent } from '@/app/types/ai-extended';
-import type { SupabaseClientType } from '@/app/types/api.types';
-import {
-  FILE_SEARCH_SYSTEM_PROMPT,
-  RETRIEVAL_MAX_TOKENS,
-  RETRIEVAL_TOP_K,
-  RETRIEVAL_TWO_PASS_ENABLED,
-  SYSTEM_PROMPT_DEFAULT,
-} from '@/lib/config';
-import {
-  createRun,
-  extractRunId,
-  isLangSmithEnabled,
-  logMetrics,
-  updateRun,
-} from '@/lib/langsmith/client';
-import {
-  extractReasoningFromResponse,
-  type ReasoningContext,
-} from '@/lib/middleware/extract-reasoning-middleware';
-import { getAllModels } from '@/lib/models';
-import { getProviderForModel } from '@/lib/openproviders/provider-map';
-import { buildAugmentedSystemPrompt } from '@/lib/retrieval/augment';
-import {
-  selectRetrievalMode,
-  shouldEnableFileSearchTools,
-  shouldUseFallbackRetrieval,
-} from '@/lib/retrieval/gating';
-import { retrieveWithGpt41 } from '@/lib/retrieval/two-pass';
-import { performVectorRetrieval } from '@/lib/retrieval/vector-retrieval';
-import { fileSearchTool } from '@/lib/tools/file-search';
-import type { ProviderWithoutOllama } from '@/lib/user-keys';
-import logger from '@/lib/utils/logger';
-import {
-  type CredentialSource,
-  type Provider,
-  trackCredentialError,
-  trackCredentialUsage,
-} from '@/lib/utils/metrics';
-import {
-  redactSensitiveHeaders,
-  sanitizeLogEntry,
-} from '@/lib/utils/redaction';
-// Export types that are imported by other modules
-export type { ExtendedUIMessage } from '@/app/types/ai-extended';
-export type { SupabaseClientType } from '@/app/types/api.types';
+import type { CredentialSource } from '@/lib/utils/metrics';
 
-export const maxDuration = 60;
-// Lint constants
-const ID_RADIX = 36;
-const PREVIEW_SNIPPET_LENGTH = 100;
+// Re-export commonly used types
+export type { ChatRequest, ExtendedUIMessage } from '@/app/types/ai-extended';
 
-export type ChatRequest = {
-  messages: ExtendedUIMessage[];
-  chatId: string;
-  userId: string;
-  model: string;
-  isAuthenticated: boolean;
-  systemPrompt: string;
-  enableSearch: boolean;
-  message_group_id?: string;
-  reasoningEffort?: 'low' | 'medium' | 'high';
-  verbosity?: 'low' | 'medium' | 'high';
-  context?: 'chat' | 'voice';
-  personalityMode?:
-    | 'safety-focused'
-    | 'technical-expert'
-    | 'friendly-assistant';
-};
+// Supabase client type
+export type SupabaseClientType = any; // TODO: Import proper Supabase type
 
+// Message transformation types
 export type TransformedMessage = {
   role: 'user' | 'assistant' | 'system';
-  parts: UIMessagePart<UIDataTypes, UITools>[];
+  content?: string | Array<{ type: string; text?: string; [key: string]: any }>;
+  parts?: any[];
   id?: string;
+  [key: string]: any;
 };
 
+// Response types
 export type ResponseWithUsage = {
-  usage?: LanguageModelUsage;
-  messages: unknown[];
+  response: any;
+  messages: any[];
+  usage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+    inputTokens?: number;
+    outputTokens?: number;
+  };
 };
 
-export type ModelConfiguration = {
-  modelConfig: any;
-  isGPT5Model: boolean;
-  isReasoningCapable: boolean;
-  modelSupportsFileSearchTools: boolean;
-};
+// Service layer types for API Key management
+export type StorageScope = 'request' | 'tab' | 'session' | 'persistent';
 
+// Types for credential resolution
 export type GuestCredentials = {
   provider?: string;
   apiKey?: string;
@@ -109,3 +44,66 @@ export type CredentialResult = {
   source: CredentialSource;
   error?: string;
 };
+
+export type ApiKey = {
+  id: string;
+  provider: string;
+  masked_key: string;
+  encrypted_key?: string;
+  last_used?: string | null;
+  created_at: string;
+  is_active: boolean;
+};
+
+export type GuestCredential = {
+  masked: string;
+  plaintext: string;
+  scope: StorageScope;
+  passphrase?: string;
+};
+
+export type SaveApiKeyRequest = {
+  provider: string;
+  key: string;
+  storageScope?: StorageScope;
+  passphrase?: string;
+};
+
+export type ApiKeyTestResult = {
+  success: boolean;
+  error?: string;
+};
+
+export type ValidationResult = {
+  isValid: boolean;
+  error?: string;
+  message?: string;
+};
+
+// Service interfaces for mocking
+export interface IApiKeyService {
+  loadApiKeys(): Promise<Record<string, ApiKey>>;
+  saveApiKey(request: SaveApiKeyRequest): Promise<ApiKey>;
+  deleteApiKey(provider: string): Promise<void>;
+  testApiKey(provider: string): Promise<ApiKeyTestResult>;
+}
+
+export interface IGuestCredentialService {
+  loadCredentials(): Promise<Record<string, GuestCredential>>;
+  saveCredential(request: SaveApiKeyRequest): Promise<GuestCredential>;
+  deleteCredential(provider: string): Promise<void>;
+  loadPersistentCredential(
+    provider: string,
+    passphrase: string
+  ): Promise<GuestCredential>;
+}
+
+export interface IValidationService {
+  validateApiKey(provider: string, key: string): ValidationResult;
+  validateStorageRequest(request: SaveApiKeyRequest): ValidationResult;
+}
+
+export interface ICredentialResolver {
+  isGuestMode(): boolean;
+  getApiKeyService(): IApiKeyService | IGuestCredentialService;
+}

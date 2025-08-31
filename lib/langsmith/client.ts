@@ -36,20 +36,24 @@ type ResponseMetadata = {
   };
 };
 
-// Initialize LangSmith client
-export const langsmithClient = process.env.LANGSMITH_API_KEY
+// Initialize LangSmith client (support both LANGSMITH_* and LANGCHAIN_* env vars)
+const LANGSMITH_API_KEY =
+  process.env.LANGSMITH_API_KEY || process.env.LANGCHAIN_API_KEY;
+export const langsmithClient = LANGSMITH_API_KEY
   ? new Client({
-      apiKey: process.env.LANGSMITH_API_KEY,
-      apiUrl: 'https://api.smith.langchain.com',
+      apiKey: LANGSMITH_API_KEY,
+      apiUrl:
+        process.env.LANGSMITH_ENDPOINT || 'https://api.smith.langchain.com',
     })
   : null;
 
 // Check if LangSmith is enabled
 export const isLangSmithEnabled = () => {
-  return !!(
-    process.env.LANGSMITH_API_KEY && 
-    (process.env.LANGSMITH_TRACING === 'true' || process.env.LANGSMITH_TRACING_V2 === 'true')
-  );
+  const enabled =
+    process.env.LANGSMITH_TRACING === 'true' ||
+    process.env.LANGSMITH_TRACING_V2 === 'true' ||
+    process.env.LANGCHAIN_TRACING === 'true';
+  return Boolean(LANGSMITH_API_KEY && enabled);
 };
 
 // Get the current project name

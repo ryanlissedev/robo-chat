@@ -25,7 +25,7 @@ export function SearchImages({ results }: { results: ImageResult[] }) {
         const favicon = getFavicon(img.sourceUrl);
         const shouldShowFavicon = favicon && img.sourceUrl.trim();
         return hiddenIndexes.has(i) ? null : (
-          <div key={i} className="relative">
+          <div key={`${img.imageUrl}-${img.sourceUrl}`} className="relative">
             <a
               className="group/image relative block overflow-hidden rounded-xl"
               href={addUTM(img.sourceUrl)}

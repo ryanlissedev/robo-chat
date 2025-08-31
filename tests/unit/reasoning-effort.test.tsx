@@ -1,8 +1,8 @@
-import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { ChatInput } from '@/components/app/chat-input/chat-input';
-import { getModelInfo } from '@/lib/models';
 import { ModelProvider } from '@/lib/model-store/provider';
+import { getModelInfo } from '@/lib/models';
 
 // Mock radix-ui tooltip
 vi.mock('@radix-ui/react-tooltip', async (importOriginal) => {

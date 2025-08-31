@@ -27,6 +27,25 @@ export type FileUploadFixture = {
   getUploadedFiles: () => Promise<string[]>;
 };
 
+// Helper function for retry logic
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  maxAttempts: number = 3,
+  delay: number = 500
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt === maxAttempts) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, delay * attempt));
+    }
+  }
+  throw new Error('Retry logic failed unexpectedly');
+}
+
 // Extend the base test with our custom fixtures
 export const test = base.extend<{
   chatPage: ChatPageFixture;
@@ -37,79 +56,98 @@ export const test = base.extend<{
     const chatPage: ChatPageFixture = {
       chatInput: async () => {
         await page.goto('/');
+        // Wait for page to be fully loaded and interactive
+        await page.waitForLoadState('networkidle');
         await page.waitForSelector('[data-testid="chat-input"]', {
           state: 'visible',
+          timeout: 15_000,
         });
       },
 
       sendMessage: async (message: string) => {
         const input = page.locator('[data-testid="chat-input"]');
+        const sendButton = page.locator('[data-testid="send-button"]');
 
-        // Focus the input first
-        await input.click();
-        await page.waitForTimeout(100);
+        // Reliable input filling with retry mechanism
+        await withRetry(async () => {
+          // Focus and clear the input
+          await input.click();
+          await input.clear();
 
-        // Use Playwright's native methods to avoid DOM context issues
-        await input.fill(''); // Clear first
-        await input.fill(message);
-
-        // Trigger additional events to ensure React state updates
-        await input.press('Space'); // Trigger any onChange handlers
-        await input.press('Backspace'); // Remove the space
-
-        // Alternative approach: use keyboard to type character by character
-        // This is more reliable for React components
-        await input.fill(''); // Clear again
-        await input.type(message, { delay: 10 });
-
-        // Wait for React state to update
-        await page.waitForTimeout(300);
-
-        // Verify the input has the expected value
-        const inputValue = await input.inputValue();
-        if (inputValue !== message) {
-          // Try one more time with direct fill
+          // Fill the message
           await input.fill(message);
-          await page.waitForTimeout(100);
-        }
 
-        // Wait for the send button to become enabled
-        await page.waitForSelector(
-          '[data-testid="send-button"]:not([disabled])',
-          {
-            timeout: 5000,
+          // Verify the input value
+          const inputValue = await input.inputValue();
+          if (inputValue !== message) {
+            throw new Error(
+              `Failed to fill input. Expected: "${message}", Got: "${inputValue}"`
+            );
           }
+        });
+
+        // Wait for send button to be enabled
+        await sendButton.waitFor({ state: 'visible', timeout: 10_000 });
+        await page.waitForFunction(
+          (button) => button && !button.disabled,
+          sendButton.elementHandle(),
+          { timeout: 10_000 }
         );
 
-        await page.click('[data-testid="send-button"]');
+        await sendButton.click();
       },
 
       waitForResponse: async () => {
-        // Wait for the loading indicator to appear and then disappear
-        await page
-          .waitForSelector('[data-testid="message-loading"]', {
+        // More robust response waiting with multiple fallback strategies
+        try {
+          // Strategy 1: Wait for loading indicator lifecycle
+          await page.waitForSelector('[data-testid="message-loading"]', {
             state: 'visible',
-          })
-          .catch(() => {}); // Might already be present
-        await page
-          .waitForSelector('[data-testid="message-loading"]', {
+            timeout: 5_000,
+          });
+
+          await page.waitForSelector('[data-testid="message-loading"]', {
             state: 'hidden',
-          })
-          .catch(() => {}); // Might already be hidden
+            timeout: 45_000,
+          });
+        } catch (_error) {
+          // Strategy 2: Wait for message count to increase
+          const initialCount = await page
+            .locator('[data-testid="chat-message"]')
+            .count();
+          await page.waitForFunction(
+            (count) => {
+              const messages = document.querySelectorAll(
+                '[data-testid="chat-message"]'
+              );
+              return messages.length > count;
+            },
+            initialCount,
+            { timeout: 45_000 }
+          );
+        }
       },
 
       getLastMessage: async () => {
         const messages = page.locator('[data-testid="chat-message"]');
-        const lastMessage = messages.last();
-        return (await lastMessage.textContent()) || '';
+        await messages.last().waitFor({ state: 'visible', timeout: 10_000 });
+        return (await messages.last().textContent()) || '';
       },
 
       selectModel: async (modelName: string) => {
-        await page.click('[data-testid="model-selector-trigger"]');
+        const trigger = page.locator('[data-testid="model-selector-trigger"]');
+        await trigger.click();
+
         await page.waitForSelector('[data-testid="model-selector-content"]', {
           state: 'visible',
+          timeout: 10_000,
         });
-        await page.click(`[data-testid="model-option-${modelName}"]`);
+
+        const option = page.locator(
+          `[data-testid="model-option-${modelName}"]`
+        );
+        await option.waitFor({ state: 'visible', timeout: 10_000 });
+        await option.click();
       },
 
       uploadFile: async (filePath: string) => {
@@ -118,9 +156,21 @@ export const test = base.extend<{
       },
 
       clearChat: async () => {
-        await page.click('[data-testid="clear-chat-button"]');
-        if (await page.isVisible('[data-testid="confirm-clear-dialog"]')) {
-          await page.click('[data-testid="confirm-clear-button"]');
+        const clearButton = page.locator('[data-testid="clear-chat-button"]');
+
+        if (await clearButton.isVisible({ timeout: 2_000 })) {
+          await clearButton.click();
+
+          // Handle confirmation dialog if it appears
+          try {
+            const confirmDialog = page.locator(
+              '[data-testid="confirm-clear-dialog"]'
+            );
+            await confirmDialog.waitFor({ state: 'visible', timeout: 3_000 });
+            await page.click('[data-testid="confirm-clear-button"]');
+          } catch {
+            // No confirmation dialog appeared, that's fine
+          }
         }
       },
     };
@@ -131,16 +181,24 @@ export const test = base.extend<{
   modelSelector: async ({ page }, use) => {
     const modelSelector: ModelSelectorFixture = {
       openModelSelector: async () => {
-        await page.click('[data-testid="model-selector-trigger"]');
+        const trigger = page.locator('[data-testid="model-selector-trigger"]');
+        await trigger.click();
         await page.waitForSelector('[data-testid="model-selector-content"]', {
           state: 'visible',
+          timeout: 10_000,
         });
       },
 
       selectModel: async (modelName: string) => {
-        await page.click(`[data-testid="model-option-${modelName}"]`);
+        const option = page.locator(
+          `[data-testid="model-option-${modelName}"]`
+        );
+        await option.waitFor({ state: 'visible', timeout: 10_000 });
+        await option.click();
+
         await page.waitForSelector('[data-testid="model-selector-content"]', {
           state: 'hidden',
+          timeout: 10_000,
         });
       },
 
@@ -148,6 +206,7 @@ export const test = base.extend<{
         await page.keyboard.press('Escape');
         await page.waitForSelector('[data-testid="model-selector-content"]', {
           state: 'hidden',
+          timeout: 10_000,
         });
       },
 
@@ -155,6 +214,7 @@ export const test = base.extend<{
         const selectedModel = page.locator(
           '[data-testid="selected-model-name"]'
         );
+        await selectedModel.waitFor({ state: 'visible', timeout: 10_000 });
         return (await selectedModel.textContent()) || '';
       },
     };
@@ -165,7 +225,8 @@ export const test = base.extend<{
   fileUpload: async ({ page }, use) => {
     const fileUpload: FileUploadFixture = {
       openFileDialog: async () => {
-        await page.click('[data-testid="file-upload-button"]');
+        const uploadButton = page.locator('[data-testid="file-upload-button"]');
+        await uploadButton.click();
       },
 
       selectFile: async (filePath: string) => {
@@ -181,11 +242,15 @@ export const test = base.extend<{
         // Wait for the file to be processed and appear in the UI
         await page.waitForSelector('[data-testid="uploaded-file"]', {
           state: 'visible',
+          timeout: 15_000,
         });
       },
 
       removeFile: async (fileName: string) => {
-        await page.click(`[data-testid="remove-file-${fileName}"]`);
+        const removeButton = page.locator(
+          `[data-testid="remove-file-${fileName}"]`
+        );
+        await removeButton.click();
       },
 
       getUploadedFiles: async () => {
@@ -215,16 +280,36 @@ export { expect } from '@playwright/test';
 export async function waitForPageReady(page: Page) {
   await page.waitForLoadState('networkidle');
   await page.waitForSelector('body', { state: 'visible' });
+
+  // Additional check for app-specific readiness
+  try {
+    await page.waitForSelector('[data-testid="app-ready"]', {
+      timeout: 10_000,
+      state: 'attached',
+    });
+  } catch {
+    // Fallback: just ensure basic elements are loaded
+    await page.waitForSelector('main, #root, [data-testid="chat-input"]', {
+      timeout: 10_000,
+    });
+  }
 }
 
 export async function mockApiResponse(
   page: Page,
   endpoint: string,
-  response: any
+  response: any,
+  options: { status?: number; delay?: number } = {}
 ) {
+  const { status = 200, delay = 0 } = options;
+
   await page.route(`**${endpoint}`, async (route) => {
+    if (delay > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
     await route.fulfill({
-      status: 200,
+      status,
       contentType: 'application/json',
       body: JSON.stringify(response),
     });
@@ -240,6 +325,7 @@ export async function interceptNetworkRequests(page: Page) {
       method: request.method(),
       headers: request.headers(),
       postData: request.postData(),
+      timestamp: Date.now(),
     });
   });
 
@@ -248,24 +334,25 @@ export async function interceptNetworkRequests(page: Page) {
 
 export async function takeScreenshotOnFailure(page: Page, testInfo: TestInfo) {
   if (testInfo.status !== 'passed') {
-    const screenshot = await page.screenshot();
+    const screenshot = await page.screenshot({ fullPage: true });
     await testInfo.attach('screenshot', {
       body: screenshot,
       contentType: 'image/png',
     });
+
+    // Also capture HTML for debugging
+    const html = await page.content();
+    await testInfo.attach('page-source', {
+      body: html,
+      contentType: 'text/html',
+    });
   }
 }
 
-// Mock API routes for testing
+// Optimized API mocking patterns
 export async function mockApiRoutes(page: Page) {
   // Mock authentication endpoints
-  await page.route('**/api/auth/**', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ success: true }),
-    });
-  });
+  await mockApiResponse(page, '/api/auth/**', { success: true });
 
   // Mock user settings endpoints
   await page.route('**/api/user/settings', async (route) => {
@@ -289,18 +376,31 @@ export async function mockApiRoutes(page: Page) {
     }
   });
 
-  // Mock chat endpoints
-  await page.route('**/api/chat/**', async (route) => {
+  // Mock chat endpoints with realistic streaming
+  await page.route('**/api/chat', async (route) => {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start(controller) {
+        // Simulate realistic streaming response
+        controller.enqueue(
+          encoder.encode(
+            'data: {"type":"content.delta","delta":{"type":"text-delta","textDelta":"Test response"}}\n\n'
+          )
+        );
+        setTimeout(() => controller.close(), 100);
+      },
+    });
+
     await route.fulfill({
       status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ message: 'Test response' }),
+      contentType: 'text/plain',
+      body: stream as any,
     });
   });
 }
 
 // Create test user for authentication tests
-export async function createTestUser() {
+export function createTestUser() {
   return {
     id: 'test-user-123',
     email: 'test@example.com',
@@ -310,24 +410,16 @@ export async function createTestUser() {
   };
 }
 
-// Setup test chat environment
+// Setup optimized test chat environment
 export async function setupTestChat(page: Page) {
   // Navigate to chat page
   await page.goto('/');
 
-  // Wait for chat interface to load
-  await page.waitForSelector('[data-testid="chat-input"]', {
-    state: 'visible',
-  });
+  // Wait for full page load
+  await waitForPageReady(page);
 
-  // Mock chat API responses
-  await page.route('**/api/chat/stream', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'text/plain',
-      body: 'Test response message',
-    });
-  });
+  // Setup comprehensive mocking
+  await mockApiRoutes(page);
 
   return { ready: true };
 }

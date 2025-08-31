@@ -70,9 +70,9 @@ interface ImageResult {
 }
 
 const isToolUIPart = (part: Part): part is ToolUIPart =>
-  typeof (part as any)?.type === 'string' &&
-  (part as any).type.startsWith('tool-') &&
-  'toolCallId' in (part as any);
+  typeof (part as Record<string, unknown>)?.type === 'string' &&
+  (part as Record<string, unknown>).type.toString().startsWith('tool-') &&
+  'toolCallId' in (part as Record<string, unknown>);
 
 // ========= Pure helpers (éénpass, herbruikbaar) =========
 
@@ -144,12 +144,21 @@ const extractFileSearchFailure = (toolParts: ToolUIPart[]) => {
       tp.state === 'output-available' &&
       'output' in tp
     ) {
-      let parsed: any | undefined;
+      let parsed: unknown | undefined;
 
       // Output kan string of { content: [{type:'text', text:string}]} zijn
-      const out: any = tp.output as any;
-      if (out && typeof out === 'object' && Array.isArray(out.content)) {
-        const textNode = out.content.find((c: any) => c?.type === 'text');
+      const out = tp.output;
+      if (
+        out &&
+        typeof out === 'object' &&
+        out !== null &&
+        'content' in out &&
+        Array.isArray((out as Record<string, unknown>).content)
+      ) {
+        const content = (out as Record<string, unknown>).content as Array<
+          Record<string, unknown>
+        >;
+        const textNode = content.find((c) => c?.type === 'text');
         parsed = parseMaybeJson(textNode?.text);
         if (!parsed) parsed = out; // val terug op object
       } else {
@@ -174,8 +183,10 @@ const extractReasoningText = (
   if (!parts || parts.length === 0) return undefined;
 
   for (const part of parts as TypedToolPart[]) {
-    if ((part as any).type === 'reasoning') {
-      const t = (part as any).text ?? (part as any).reasoningText;
+    const partRecord = part as Record<string, unknown>;
+    if (partRecord.type === 'reasoning') {
+      const t =
+        (partRecord.text as string) ?? (partRecord.reasoningText as string);
       if (typeof t === 'string' && t) return t;
     }
 
@@ -221,7 +232,9 @@ const extractSearchImageResults = (
 };
 
 // Dedup urls zodat Sources niet explodeert
-const dedupSources = (sources: Array<{ url: string; title?: string }>) => {
+const dedupSources = (
+  sources: Array<{ id: string; url: string; title: string }>
+) => {
   if (!sources.length) return sources;
   const seen = new Set<string>();
   const out: typeof sources = [];
@@ -250,7 +263,11 @@ const ToolInvocationCard = memo(function ToolInvocationCard({
 
     if (typeof out === 'string') {
       return (
-        <pre className="whitespace-pre-wrap text-xs" aria-label="tool-output">
+        <pre
+          className="whitespace-pre-wrap text-xs"
+          role="log"
+          aria-describedby="tool-output"
+        >
           {out}
         </pre>
       );
@@ -263,7 +280,11 @@ const ToolInvocationCard = memo(function ToolInvocationCard({
         text = '[Unserializable output]';
       }
       return (
-        <pre className="whitespace-pre-wrap text-xs" aria-label="tool-output">
+        <pre
+          className="whitespace-pre-wrap text-xs"
+          role="log"
+          aria-describedby="tool-output"
+        >
           {text}
         </pre>
       );
@@ -436,19 +457,24 @@ export function MessageAssistant({
           <SearchImages results={searchImageResults} />
         )}
 
-        {/* Tekstinhoud */}
+        {/* Text content */}
         {!contentNullOrEmpty && (
-          <div
-            className={cn(
-              'prose dark:prose-invert relative min-w-full bg-transparent p-0',
-              'prose-h2:mt-8 prose-h2:mb-3 prose-table:block prose-h1:scroll-m-20 prose-h2:scroll-m-20 prose-h3:scroll-m-20 prose-h4:scroll-m-20 prose-h5:scroll-m-20 prose-h6:scroll-m-20 prose-table:overflow-y-auto prose-h1:font-semibold prose-h2:font-medium prose-h3:font-medium prose-strong:font-medium prose-h1:text-2xl prose-h2:text-xl prose-h3:text-base'
-            )}
-          >
-            <SmoothStreamingMessage text={children} animate={isLastStreaming} />
+          <div className="relative min-w-full">
+            <SmoothStreamingMessage
+              text={children}
+              animate={isLastStreaming}
+              sources={sources.map((source, _index) => ({
+                id: source.id,
+                url: source.url,
+                title: source.title,
+                description: undefined, // Add description if available in source
+                quote: undefined, // Add quote if available in source
+              }))}
+            />
           </div>
         )}
 
-        {/* Bronnen */}
+        {/* Sources */}
         {sources.length > 0 && (
           <Sources>
             <SourcesTrigger count={sources.length} />
@@ -458,6 +484,9 @@ export function MessageAssistant({
                   href={source.url}
                   key={`${source.url}-${index}`}
                   title={source.title || source.url}
+                  description={undefined} // Add description if available in source data
+                  chunk={undefined} // Add chunk/excerpt if available in source data
+                  index={index}
                 />
               ))}
             </SourcesContent>

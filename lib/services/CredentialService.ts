@@ -1,8 +1,11 @@
-import { getEffectiveApiKey } from '@/lib/user-keys';
+import { getGatewayConfig } from '@/lib/openproviders/env';
 import { getProviderForModel } from '@/lib/openproviders/provider-map';
+import {
+  getEffectiveApiKey,
+  type ProviderWithoutOllama,
+} from '@/lib/user-keys';
 import logger from '@/lib/utils/logger';
 import {
-  type CredentialSource,
   type Provider,
   trackCredentialError,
   trackCredentialUsage,
@@ -41,7 +44,47 @@ export class CredentialService {
   }
 
   /**
-   * Resolves credentials with proper precedence logic
+   * Validate API key format for different providers
+   */
+  static validateApiKeyFormat(apiKey: string, provider: string): boolean {
+    if (!apiKey || typeof apiKey !== 'string') {
+      return false;
+    }
+
+    switch (provider.toLowerCase()) {
+      case 'openai':
+        return apiKey.startsWith('sk-') && apiKey.length > 20;
+      case 'anthropic':
+        return apiKey.startsWith('sk-ant-') && apiKey.length > 20;
+      case 'google':
+        return apiKey.length > 20; // Google keys don't have a standard prefix
+      case 'groq':
+        return apiKey.startsWith('gsk_') && apiKey.length > 20;
+      case 'perplexity':
+        return apiKey.startsWith('pplx-') && apiKey.length > 20;
+      default:
+        return apiKey.length > 10; // Basic length check
+    }
+  }
+
+  /**
+   * Mask API key for logging purposes
+   */
+  static maskApiKey(apiKey: string): string {
+    if (!apiKey || apiKey.length <= 8) {
+      return '***';
+    }
+    return `${apiKey.slice(0, 4)}...${apiKey.slice(-4)}`;
+  }
+
+  /**
+   * Resolve credentials with precedence logic
+   * 1. Vercel AI Gateway (if configured) — default path
+   * 2. Authenticated user BYOK
+   * 3. Guest header override (if no user key)
+   * 4. Environment variable fallback (handled downstream)
+   *
+   * SECURITY: Never log actual API key values
    */
   static async resolveCredentials(
     user: { isAuthenticated: boolean; userId: string } | null,
@@ -61,12 +104,35 @@ export class CredentialService {
     });
     logger.info(logContext, 'Resolving credentials');
 
-    // 1. Authenticated user BYOK (highest priority)
-    if (user?.isAuthenticated && user.userId) {
+    // 1. Gateway first (default)
+    try {
+      const gateway = getGatewayConfig();
+      if (gateway.enabled) {
+        logger.info(
+          sanitizeLogEntry({
+            at: 'api.chat.resolveCredentials',
+            source: 'gateway',
+            provider,
+            model,
+          }),
+          'Using Vercel AI Gateway credentials'
+        );
+        // Track gateway usage (success recorded on finish)
+        trackCredentialUsage('gateway', provider as Provider, model, {
+          success: true,
+        });
+        return { source: 'gateway' };
+      }
+    } catch {
+      // silently ignore gateway config errors
+    }
+
+    // 2. Authenticated user BYOK
+    if (user?.isAuthenticated && user.userId && user.userId.trim() !== '') {
       try {
         const userKey = await getEffectiveApiKey(
           user.userId,
-          provider as any // ProviderWithoutOllama type
+          provider as ProviderWithoutOllama
         );
 
         if (userKey) {
@@ -110,8 +176,8 @@ export class CredentialService {
       }
     }
 
-    // 2. Guest header override (if no user key)
-    const guestCredentials = this.extractGuestCredentials(headers);
+    // 3. Guest header override (if no user key)
+    const guestCredentials = CredentialService.extractGuestCredentials(headers);
     if (guestCredentials.apiKey && guestCredentials.provider === provider) {
       logger.info(
         sanitizeLogEntry({
@@ -135,7 +201,7 @@ export class CredentialService {
       };
     }
 
-    // 3. No credentials found - will fallback to environment downstream
+    // 4. No credentials found - will fallback to environment downstream
     logger.info(
       sanitizeLogEntry({
         at: 'api.chat.resolveCredentials',
@@ -165,7 +231,7 @@ export class CredentialService {
     userId: string,
     resolvedModel: string
   ): Promise<string | undefined> {
-    const result = await this.resolveCredentials(
+    const result = await CredentialService.resolveCredentials(
       { isAuthenticated, userId },
       resolvedModel,
       req.headers
@@ -175,21 +241,19 @@ export class CredentialService {
   }
 
   /**
-   * Tracks credential errors for metrics
+   * Track credential errors for metrics and debugging
    */
   static trackCredentialError(
-    err: unknown,
-    modelToUse: string,
-    userIdToUse: string
+    error: unknown,
+    model: string,
+    userId?: string
   ): void {
-    try {
-      const provider = getProviderForModel(modelToUse) as Provider;
-      trackCredentialError(err, provider, {
-        model: modelToUse,
-        userId: userIdToUse,
-      });
-    } catch {
-      // Silently handle provider resolution errors to prevent error loops
-    }
+    const provider = getProviderForModel(model);
+
+    trackCredentialError(error, provider as Provider, {
+      source: 'user-byok',
+      userId,
+      model,
+    });
   }
 }

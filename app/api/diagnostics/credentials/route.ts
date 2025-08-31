@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getRecentMetrics, getMetricsSummary } from '@/lib/utils/metrics';
 import { createClient } from '@/lib/supabase/server';
+import { getMetricsSummary, getRecentMetrics } from '@/lib/utils/metrics';
 
 function isDev() {
   return process.env.NODE_ENV !== 'production';
@@ -42,7 +42,9 @@ export async function GET() {
 
     return NextResponse.json({ summary, recent });
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
-

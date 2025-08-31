@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { openproviders } from '@/lib/openproviders';
-import type { SupportedModel, Provider } from '@/lib/openproviders/types';
+import type { SupportedModel } from '@/lib/openproviders/types';
 
 // Test configuration for each provider
 const providerConfigs = {
@@ -365,7 +365,7 @@ test.describe('Provider API Key Validation and Real Responses', () => {
             stopSequences: [],
           });
 
-          if (result && result.text) {
+          if (result?.text) {
             workingProviders.push(provider);
           }
         } catch (error: any) {

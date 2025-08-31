@@ -3,11 +3,9 @@
  * Implements proper Vercel AI Gateway integration using AI SDK
  */
 
-import { createOpenAI } from '@ai-sdk/openai';
-import { createAnthropic } from '@ai-sdk/anthropic';
-import { generateText, streamText, LanguageModel } from 'ai';
-import { openai } from '@ai-sdk/openai';
-import { anthropic } from '@ai-sdk/anthropic';
+import { anthropic, createAnthropic } from '@ai-sdk/anthropic';
+import { createOpenAI, openai } from '@ai-sdk/openai';
+import { generateText, type LanguageModel, streamText } from 'ai';
 
 export interface GatewayProviderConfig {
   provider: 'openai' | 'anthropic';
@@ -40,7 +38,7 @@ export class VercelGatewayProvider {
     if (useGateway && gatewayApiKey) {
       // Set gateway API key for authentication
       process.env.AI_GATEWAY_API_KEY = gatewayApiKey;
-      
+
       // Use the native provider with gateway configuration
       if (provider === 'openai') {
         return openai(model || 'gpt-4o-mini');
@@ -103,7 +101,11 @@ export class VercelGatewayProvider {
   /**
    * Test the provider connection
    */
-  async test(): Promise<{ success: boolean; error?: string; response?: string }> {
+  async test(): Promise<{
+    success: boolean;
+    error?: string;
+    response?: string;
+  }> {
     try {
       const result = await this.generate('Say "OK"', { maxTokens: 5 });
       return {
@@ -174,8 +176,11 @@ export function createRoutedProvider(
     exclude?: string[];
   }
 ): VercelGatewayProvider {
-  const [provider, modelName] = model.split('/') as ['openai' | 'anthropic', string];
-  
+  const [provider, modelName] = model.split('/') as [
+    'openai' | 'anthropic',
+    string,
+  ];
+
   return new VercelGatewayProvider({
     provider,
     model: modelName,

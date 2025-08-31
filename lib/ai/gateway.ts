@@ -6,9 +6,9 @@
  * and falls back to direct API calls when needed.
  */
 
-import { OpenAI } from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { generateText, streamText } from 'ai';
+import { OpenAI } from 'openai';
 
 export interface GatewayConfig {
   mode: 'direct' | 'gateway' | 'auto';
@@ -39,10 +39,10 @@ export class AIGateway {
   private openaiClient?: OpenAI;
   private anthropicClient?: Anthropic;
   private gatewayClient?: OpenAI;
-  
+
   constructor(config?: Partial<GatewayConfig>) {
     this.config = {
-      mode: config?.mode || process.env.AI_GATEWAY_MODE as any || 'auto',
+      mode: config?.mode || (process.env.AI_GATEWAY_MODE as any) || 'auto',
       gatewayUrl: config?.gatewayUrl || process.env.AI_GATEWAY_BASE_URL,
       gatewayApiKey: config?.gatewayApiKey || process.env.AI_GATEWAY_API_KEY,
       openaiApiKey: config?.openaiApiKey || process.env.OPENAI_API_KEY,
@@ -55,7 +55,11 @@ export class AIGateway {
    */
   async getOpenAIClient(): Promise<ProviderClient> {
     // Try gateway first if configured
-    if (this.config.mode !== 'direct' && this.config.gatewayUrl && this.config.gatewayApiKey) {
+    if (
+      this.config.mode !== 'direct' &&
+      this.config.gatewayUrl &&
+      this.config.gatewayApiKey
+    ) {
       try {
         if (!this.gatewayClient) {
           // Test gateway connection
@@ -66,13 +70,24 @@ export class AIGateway {
               baseURL: this.config.gatewayUrl, // Use OpenAI-compatible API directly
               dangerouslyAllowBrowser: process.env.NODE_ENV === 'test',
             });
-            return { type: 'openai', client: this.gatewayClient, isGateway: true };
+            return {
+              type: 'openai',
+              client: this.gatewayClient,
+              isGateway: true,
+            };
           }
         } else {
-          return { type: 'openai', client: this.gatewayClient, isGateway: true };
+          return {
+            type: 'openai',
+            client: this.gatewayClient,
+            isGateway: true,
+          };
         }
       } catch (error) {
-        console.warn('Gateway connection failed, falling back to direct API:', error instanceof Error ? error.message : String(error));
+        console.warn(
+          'Gateway connection failed, falling back to direct API:',
+          error instanceof Error ? error.message : String(error)
+        );
       }
     }
 
@@ -107,13 +122,19 @@ export class AIGateway {
       throw new Error('No Anthropic configuration available');
     }
 
-    return { type: 'anthropic', client: this.anthropicClient, isGateway: false };
+    return {
+      type: 'anthropic',
+      client: this.anthropicClient,
+      isGateway: false,
+    };
   }
 
   /**
    * Test gateway connection
    */
-  private async testGatewayConnection(provider: 'openai' | 'anthropic'): Promise<{ success: boolean; error?: string }> {
+  private async testGatewayConnection(
+    provider: 'openai' | 'anthropic'
+  ): Promise<{ success: boolean; error?: string }> {
     if (!this.config.gatewayUrl || !this.config.gatewayApiKey) {
       return { success: false, error: 'Gateway not configured' };
     }
@@ -132,7 +153,7 @@ export class AIGateway {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -141,7 +162,9 @@ export class AIGateway {
    * Test AI SDK Gateway (Recommended Approach)
    * Uses the AI SDK which automatically routes through Vercel AI Gateway
    */
-  async testAISDKGateway(prompt: string = 'Say "Hello from AI Gateway"'): Promise<AISDKResponse> {
+  async testAISDKGateway(
+    prompt: string = 'Say "Hello from AI Gateway"'
+  ): Promise<AISDKResponse> {
     if (!this.config.gatewayApiKey) {
       throw new Error('AI_GATEWAY_API_KEY is required for AI SDK Gateway');
     }
@@ -156,15 +179,21 @@ export class AIGateway {
 
       return {
         text: result.text,
-        usage: result.usage ? {
-          promptTokens: result.usage.inputTokens || 0,
-          completionTokens: result.usage.outputTokens || 0,
-          totalTokens: (result.usage.inputTokens || 0) + (result.usage.outputTokens || 0),
-        } : undefined,
+        usage: result.usage
+          ? {
+              promptTokens: result.usage.inputTokens || 0,
+              completionTokens: result.usage.outputTokens || 0,
+              totalTokens:
+                (result.usage.inputTokens || 0) +
+                (result.usage.outputTokens || 0),
+            }
+          : undefined,
         finishReason: result.finishReason,
       };
     } catch (error) {
-      throw new Error(`AI SDK Gateway test failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `AI SDK Gateway test failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -255,9 +284,12 @@ export function getAIGateway(config?: Partial<GatewayConfig>): AIGateway {
 }
 
 // Helper function to create provider with fallback
-export async function createAIProvider(provider: 'openai' | 'anthropic', config?: Partial<GatewayConfig>) {
+export async function createAIProvider(
+  provider: 'openai' | 'anthropic',
+  config?: Partial<GatewayConfig>
+) {
   const gateway = getAIGateway(config);
-  
+
   if (provider === 'openai') {
     return await gateway.getOpenAIClient();
   } else {

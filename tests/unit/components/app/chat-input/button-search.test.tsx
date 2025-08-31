@@ -1,6 +1,12 @@
-import { act, render, screen, cleanup, fireEvent } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock modules before any imports
 vi.mock('lucide-react', () => ({
@@ -12,10 +18,17 @@ vi.mock('lucide-react', () => ({
 }));
 
 vi.mock('@/components/ui/button', () => ({
-  Button: ({ children, onClick, className, variant, size, disabled, ...props }: any) => (
+  Button: ({
+    children,
+    onClick,
+    className,
+    variant,
+    size,
+    disabled,
+    ...props
+  }: any) => (
     <button
       type="button"
-      role="button"
       className={className}
       data-variant={variant}
       data-size={size}
@@ -36,7 +49,9 @@ vi.mock('@/components/ui/button', () => ({
 vi.mock('@/components/ui/popover', () => ({
   Popover: ({ children }: any) => <div data-testid="popover">{children}</div>,
   PopoverTrigger: ({ children, asChild, ...props }: any) => (
-    <div data-testid="popover-trigger" {...props}>{children}</div>
+    <div data-testid="popover-trigger" {...props}>
+      {children}
+    </div>
   ),
 }));
 
@@ -65,23 +80,23 @@ function renderButtonSearch(props = {}) {
 }
 
 describe('ButtonSearch', () => {
-  let user: ReturnType<typeof userEvent.setup>;
+  let _user: ReturnType<typeof userEvent.setup>;
 
   beforeEach(() => {
     // Complete DOM and module cleanup
     cleanup();
     document.body.innerHTML = '';
     document.head.innerHTML = '';
-    
+
     // Clear all mocks and reset modules
     vi.clearAllMocks();
     vi.resetModules();
-    
+
     // Clear any timers
     vi.clearAllTimers();
-    
+
     // Setup fresh userEvent instance
-    user = userEvent.setup();
+    _user = userEvent.setup();
   });
 
   afterEach(() => {
@@ -91,13 +106,12 @@ describe('ButtonSearch', () => {
     vi.clearAllTimers();
     document.body.innerHTML = '';
     document.head.innerHTML = '';
-    
+
     // Force garbage collection if available
     if (global.gc) {
       global.gc();
     }
   });
-
 
   describe('Authenticated user', () => {
     it('should render search button when authenticated', () => {

@@ -7,6 +7,7 @@ import { createXai, xai } from '@ai-sdk/xai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 // Import the actual LanguageModel type from AI SDK v5
 import type { LanguageModel } from 'ai';
+import { createGatewayOpenAIProvider } from './custom-openai-chat';
 import { getGatewayConfig } from './env';
 import { getProviderForModel } from './provider-map';
 import type {
@@ -14,7 +15,6 @@ import type {
   GeminiModel,
   MistralModel,
   OpenAIModel,
-  OpenRouterModel,
   PerplexityModel,
   SupportedModel,
   XaiModel,
@@ -25,32 +25,33 @@ export type OpenProvidersOptions = unknown;
 
 // Gateway configuration injection helper
 function injectGatewayConfig<T extends Record<string, unknown>>(
-  provider: string,
+  _provider: string,
   baseConfig: T
 ): T {
   const gateway = getGatewayConfig();
-  
+
   // If gateway is not enabled or not configured, use direct API (BYOK)
   if (!gateway.enabled) {
-    console.log(`[Gateway] Not enabled, using direct ${provider} API`);
     return baseConfig;
   }
 
-  // For Vercel AI Gateway, we use the unified endpoint
-  // The gateway API key replaces the provider API key
-  console.log(`[Gateway] Using Vercel AI Gateway for ${provider}`);
-  
   // The gateway uses a unified endpoint and the model name includes the provider
   const gatewayConfig = {
     ...baseConfig,
     baseURL: gateway.baseURL, // Use the base URL directly (https://ai-gateway.vercel.sh/v1)
-    apiKey: gateway.headers['Authorization']?.replace('Bearer ', '') || baseConfig.apiKey,
+    apiKey:
+      gateway.headers.Authorization?.replace('Bearer ', '') ||
+      baseConfig.apiKey,
     headers: {
-      ...((baseConfig as any).headers || {}),
+      ...(typeof baseConfig === 'object' &&
+      baseConfig &&
+      'headers' in baseConfig
+        ? (baseConfig.headers as Record<string, string> | undefined) || {}
+        : {}),
       // Don't include gateway headers here, the SDK will add Authorization automatically
     },
   } as T;
-  
+
   return gatewayConfig;
 }
 
@@ -61,7 +62,7 @@ export function openproviders<T extends SupportedModel>(
 ): LanguageModel {
   const provider = getProviderForModel(modelId);
   const gateway = getGatewayConfig();
-  
+
   // When using gateway, prefix model with provider name
   const effectiveModelId = gateway.enabled ? `${provider}/${modelId}` : modelId;
 
@@ -71,22 +72,32 @@ export function openproviders<T extends SupportedModel>(
       reasoningEffort?: 'low' | 'medium' | 'high';
       verbosity?: 'low' | 'medium' | 'high';
       textVerbosity?: 'low' | 'medium' | 'high';
-      reasoningSummary?: 'auto' | 'none';
+      reasoningSummary?: 'auto' | 'detailed' | undefined;
       serviceTier?: 'auto' | 'flex' | 'priority';
+      parallelToolCalls?: boolean;
+      store?: boolean;
+      previousResponseId?: string;
+      forceDirect?: boolean; // force direct API (bypass gateway) for fallback
       headers?: Record<string, string>;
+      vectorStoreIds?: string[];
+      fileSearchOptions?: {
+        maxNumResults?: number;
+        ranker?: 'auto' | 'default-2024-08-21';
+      };
     };
     const merged = (settings ?? {}) as GPT5Extras & Record<string, unknown>;
     const {
-      enableSearch: _,
+      enableSearch,
       reasoningEffort,
       verbosity,
       textVerbosity,
       reasoningSummary,
       serviceTier,
       headers,
+      vectorStoreIds,
+      fileSearchOptions,
       ...rest
     } = merged;
-    void _; // Mark as intentionally unused
     const openaiSettings = rest as Record<string, unknown>;
 
     // For GPT-5 models, use the Responses API format
@@ -99,13 +110,36 @@ export function openproviders<T extends SupportedModel>(
       ? {
           ...openaiSettings,
           openai: {
-            textVerbosity: textVerbosity || verbosity || 'low', // Default to low verbosity
-            reasoningSummary: reasoningSummary || 'concise', // Default to concise reasoning
+            textVerbosity: textVerbosity || verbosity || 'low',
+            reasoningSummary: reasoningSummary ?? 'auto',
             serviceTier: serviceTier || 'auto',
+            parallelToolCalls: merged.parallelToolCalls ?? true,
+            store: merged.store ?? false,
+            previousResponseId: merged.previousResponseId,
             ...(openaiSettings.openai || {}),
           },
         }
       : openaiSettings;
+
+    // Configure file search tools if enabled
+    const _tools =
+      enableSearch && vectorStoreIds && vectorStoreIds.length > 0
+        ? {
+            file_search: openai.tools.fileSearch({
+              vectorStoreIds,
+              maxNumResults: fileSearchOptions?.maxNumResults || 10,
+              ...(fileSearchOptions?.ranker
+                ? {
+                    ranking: {
+                      ranker: fileSearchOptions.ranker as
+                        | 'auto'
+                        | 'default-2024-08-21',
+                    },
+                  }
+                : {}),
+            }),
+          }
+        : undefined;
 
     // Configure headers (for backwards compatibility)
     // - GPT-5: add reasoning/text verbosity headers
@@ -130,53 +164,108 @@ export function openproviders<T extends SupportedModel>(
     }
 
     if (apiKey) {
-      const openaiProvider = createOpenAI(
-        injectGatewayConfig('openai', {
+      // GPT-5 models have compatibility issues with the gateway in AI SDK v5.
+      // Allow opt-in via ALLOW_GPT5_GATEWAY=true to attempt gateway first with fallback.
+      const allowGpt5Gateway = process.env.ALLOW_GPT5_GATEWAY === 'true';
+      const forceDirect = merged.forceDirect === true;
+      const shouldUseGateway =
+        gateway.enabled && (!isGPT5Model || allowGpt5Gateway) && !forceDirect;
+
+      if (shouldUseGateway) {
+        // When using gateway, use custom provider that forces chat completions API
+        const gatewayProvider = createGatewayOpenAIProvider({
+          apiKey,
+          baseURL: gateway.baseURL || undefined,
+          headers: {
+            ...customHeaders,
+            Authorization: `Bearer ${gateway.headers.Authorization?.replace('Bearer ', '') || apiKey}`,
+          },
+          ...providerOptions,
+        });
+        return gatewayProvider(effectiveModelId as OpenAIModel);
+      } else {
+        // Direct API: use standard provider with responses API for GPT-5
+        if (isGPT5Model && gateway.enabled) {
+        }
+        const openaiProvider = createOpenAI({
           apiKey,
           headers: customHeaders,
           ...providerOptions,
-        })
-      );
-      // When using gateway, always use standard API (gateway doesn't support /responses endpoint)
-      // For direct API, use openai.responses() for GPT-5 models as recommended in the cookbook
-      return isGPT5Model && !gateway.enabled
-        ? openaiProvider.responses(effectiveModelId as OpenAIModel)
-        : openaiProvider(effectiveModelId as OpenAIModel);
+        });
+        // For direct API, use the original modelId without provider prefix
+        const directModelId = modelId;
+
+        // For GPT-5 models, use responses API
+        if (isGPT5Model) {
+          return openaiProvider.responses(directModelId as OpenAIModel);
+        }
+        return openaiProvider(directModelId as OpenAIModel);
+      }
     }
 
     // For default OpenAI provider, use environment variable
     const envApiKey = process.env.OPENAI_API_KEY;
     if (envApiKey) {
-      const openaiProvider = createOpenAI(
-        injectGatewayConfig('openai', {
+      // GPT-5 models have compatibility issues with the gateway in AI SDK v5
+      // Force direct API for GPT-5 models to avoid 'developer' role errors
+      const shouldUseGateway = gateway.enabled && !isGPT5Model;
+
+      if (shouldUseGateway) {
+        // When using gateway, use custom provider that forces chat completions API
+        const gatewayProvider = createGatewayOpenAIProvider({
+          apiKey: envApiKey,
+          baseURL: gateway.baseURL || undefined,
+          headers: {
+            ...customHeaders,
+            Authorization: `Bearer ${gateway.headers.Authorization?.replace('Bearer ', '') || envApiKey}`,
+          },
+          ...providerOptions,
+        });
+        return gatewayProvider(effectiveModelId as OpenAIModel);
+      } else {
+        // Direct API: use standard provider with responses API for GPT-5
+        if (isGPT5Model && gateway.enabled) {
+        }
+        const openaiProvider = createOpenAI({
           apiKey: envApiKey,
           headers: customHeaders,
           ...providerOptions,
-        })
-      );
-      // When using gateway, always use standard API (gateway doesn't support /responses endpoint)
-      // For direct API, use openai.responses() for GPT-5 models as recommended in the cookbook
-      return isGPT5Model && !gateway.enabled
-        ? openaiProvider.responses(effectiveModelId as OpenAIModel)
-        : openaiProvider(effectiveModelId as OpenAIModel);
+        });
+        // For direct API, use the original modelId without provider prefix
+        const directModelId = modelId;
+        return isGPT5Model
+          ? openaiProvider.responses(directModelId as OpenAIModel)
+          : openaiProvider(directModelId as OpenAIModel);
+      }
     }
-
-    // Fallback to default provider
-    const enhancedOpenAI =
-      customHeaders || Object.keys(providerOptions).length > 0
-        ? createOpenAI(
-            injectGatewayConfig('openai', {
+    if (gateway.enabled) {
+      // When using gateway, use custom provider that forces chat completions API
+      const gatewayProvider = createGatewayOpenAIProvider({
+        baseURL: gateway.baseURL || undefined,
+        headers: {
+          ...customHeaders,
+          Authorization: gateway.headers.Authorization || 'Bearer fallback-key',
+        },
+        ...providerOptions,
+      });
+      return gatewayProvider(effectiveModelId as OpenAIModel);
+    } else {
+      // Direct API: create explicit provider to avoid responses API default for non-GPT5
+      const enhancedOpenAI =
+        customHeaders || Object.keys(providerOptions).length > 0
+          ? createOpenAI({
               headers: customHeaders,
               ...providerOptions,
             })
-          )
-        : openai;
+          : createOpenAI({});
 
-    // When using gateway, always use standard API (gateway doesn't support /responses endpoint)
-    // For direct API, use openai.responses() for GPT-5 models as recommended in the cookbook
-    return isGPT5Model && !gateway.enabled
-      ? enhancedOpenAI.responses(effectiveModelId as OpenAIModel)
-      : enhancedOpenAI(effectiveModelId as OpenAIModel);
+      // For direct API, use openai.responses() for GPT-5 models as recommended in the cookbook
+      // Use the original modelId without provider prefix for direct API
+      const directModelId = modelId;
+      return isGPT5Model
+        ? enhancedOpenAI.responses(directModelId as OpenAIModel)
+        : enhancedOpenAI(directModelId as OpenAIModel);
+    }
   }
 
   if (provider === 'mistral') {
@@ -230,10 +319,10 @@ export function openproviders<T extends SupportedModel>(
   if (provider === 'openrouter') {
     // OpenRouter models use the format "openrouter:provider/model"
     // Extract the actual model part after "openrouter:"
-    const actualModel = modelId.startsWith('openrouter:') 
-      ? modelId.slice('openrouter:'.length) 
+    const actualModel = modelId.startsWith('openrouter:')
+      ? modelId.slice('openrouter:'.length)
       : modelId;
-    
+
     if (apiKey) {
       const openrouterProvider = createOpenRouter(
         injectGatewayConfig('openrouter', { apiKey })

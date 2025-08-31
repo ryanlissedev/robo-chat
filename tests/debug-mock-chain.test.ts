@@ -1,13 +1,13 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from '@/app/api/feedback/route';
 
 // Mock modules
 vi.mock('@/lib/langsmith/client', () => ({
-  createFeedback: vi.fn()
+  createFeedback: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn()
+  createClient: vi.fn(),
 }));
 
 import * as langsmithModule from '@/lib/langsmith/client';
@@ -25,7 +25,7 @@ describe('Debug Mock Chain', () => {
     // Create a simple spy-based mock
     const upsertSpy = vi.fn().mockResolvedValue({ error: null });
     const fromSpy = vi.fn().mockReturnValue({ upsert: upsertSpy });
-    
+
     const mockSupabaseClient = {
       auth: {
         getUser: vi.fn().mockResolvedValue({
@@ -53,7 +53,7 @@ describe('Debug Mock Chain', () => {
 
     // Make the call
     const response = await POST(request);
-    
+
     // Debug the calls
     console.log('Response status:', response.status);
     console.log('from() calls:', fromSpy.mock.calls);

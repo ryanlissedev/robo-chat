@@ -1,23 +1,22 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import {
+  createApiResponse,
+  handleApiRoute,
+  parseRequestBody,
+} from '@/lib/utils/api-response-utils';
 
 export async function GET() {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: 'OPENAI_API_KEY not set' },
-      { status: 500 }
-    );
-  }
-  const openai = new OpenAI({ apiKey });
-  try {
+  return handleApiRoute(async () => {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY not set');
+    }
+
+    const openai = new OpenAI({ apiKey });
     const stores = await openai.vectorStores.list({ limit: 50 });
-    return NextResponse.json({ stores: stores.data });
-  } catch (e) {
-    const message =
-      e instanceof Error ? e.message : 'Failed to list vector stores';
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+    return { stores: stores.data };
+  });
 }
 
 export async function POST(req: Request) {
@@ -28,21 +27,24 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+
+  // Parse and validate body
+  const validation = await parseRequestBody<{ name: string }>(req, ['name']);
+  if (!validation.isValid) {
+    return createApiResponse(validation);
+  }
+
   const openai = new OpenAI({ apiKey });
-  try {
-    const body = await req.json();
-    const name = body?.name as string | undefined;
-    if (!name) {
-      return NextResponse.json({ error: 'name is required' }, { status: 400 });
+  return handleApiRoute(async () => {
+    if (!validation.data) {
+      throw new Error('Invalid request');
     }
+    const { name } = validation.data as { name: string };
+
     const store = await openai.vectorStores.create({
       name,
       metadata: { created_by: 'settings-ui' },
     });
-    return NextResponse.json({ store });
-  } catch (e) {
-    const message =
-      e instanceof Error ? e.message : 'Failed to create vector store';
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+    return { store };
+  });
 }

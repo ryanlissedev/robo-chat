@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { getGatewayConfig } from '@/lib/openproviders/env';
 
 describe('getGatewayConfig', () => {
-  const OLD_ENV = process.env;
+  const OldEnv = process.env;
   beforeEach(() => {
-    process.env = { ...OLD_ENV };
+    process.env = { ...OldEnv };
   });
   afterEach(() => {
-    process.env = OLD_ENV;
+    process.env = OldEnv;
   });
 
   it('is disabled when no AI_GATEWAY_API_KEY is set', () => {
@@ -27,4 +27,3 @@ describe('getGatewayConfig', () => {
     expect(gw.headers.Authorization).toContain('Bearer');
   });
 });
-

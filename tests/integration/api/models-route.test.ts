@@ -1,4 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, type MockedFunction, vi } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockedFunction,
+  vi,
+} from 'vitest';
 
 // Mock environment variables first
 const originalEnv = process.env;
@@ -20,11 +28,24 @@ import * as modelsModule from '@/lib/models';
 import * as supabaseModule from '@/lib/supabase/server';
 
 // Get typed mock references using the same pattern as chat-route.test.ts
-const mockGetAllModels = modelsModule.getAllModels as MockedFunction<typeof modelsModule.getAllModels>;
-const mockGetModelsForUserProviders = modelsModule.getModelsForUserProviders as MockedFunction<typeof modelsModule.getModelsForUserProviders>;
-const mockGetModelsWithAccessFlags = modelsModule.getModelsWithAccessFlags as MockedFunction<typeof modelsModule.getModelsWithAccessFlags>;
-const mockRefreshModelsCache = modelsModule.refreshModelsCache as MockedFunction<typeof modelsModule.refreshModelsCache>;
-const mockCreateClient = supabaseModule.createClient as MockedFunction<typeof supabaseModule.createClient>;
+const mockGetAllModels = modelsModule.getAllModels as MockedFunction<
+  typeof modelsModule.getAllModels
+>;
+const mockGetModelsForUserProviders =
+  modelsModule.getModelsForUserProviders as MockedFunction<
+    typeof modelsModule.getModelsForUserProviders
+  >;
+const mockGetModelsWithAccessFlags =
+  modelsModule.getModelsWithAccessFlags as MockedFunction<
+    typeof modelsModule.getModelsWithAccessFlags
+  >;
+const mockRefreshModelsCache =
+  modelsModule.refreshModelsCache as MockedFunction<
+    typeof modelsModule.refreshModelsCache
+  >;
+const mockCreateClient = supabaseModule.createClient as MockedFunction<
+  typeof supabaseModule.createClient
+>;
 
 const mockSupabaseClient = {
   auth: {
@@ -77,14 +98,14 @@ describe('Models API Route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Reset process.env and set up environment variables  
+    // Reset process.env and set up environment variables
     process.env = { ...originalEnv };
-    Object.keys(process.env).forEach(key => {
+    Object.keys(process.env).forEach((key) => {
       if (key.includes('API_KEY')) {
         delete process.env[key];
       }
     });
-    
+
     // Set environment variables that should be available
     process.env.OPENAI_API_KEY = 'sk-test-openai-key';
     process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
@@ -98,7 +119,7 @@ describe('Models API Route', () => {
     mockGetModelsWithAccessFlags.mockClear();
     mockRefreshModelsCache.mockClear();
     mockCreateClient.mockClear();
-    
+
     mockGetAllModels.mockResolvedValue([...mockModels]);
     mockGetModelsForUserProviders.mockResolvedValue([...mockModels]);
     mockGetModelsWithAccessFlags.mockResolvedValue([...mockModels]);
@@ -110,24 +131,24 @@ describe('Models API Route', () => {
       data: { user: null },
       error: null,
     });
-    
+
     // Setup the database query chain properly - each method returns an object with the next method
     const mockEq = vi.fn().mockResolvedValue({
       data: [],
       error: null,
     });
-    
-    const mockSelect = vi.fn().mockReturnValue({ 
-      eq: mockEq 
+
+    const mockSelect = vi.fn().mockReturnValue({
+      eq: mockEq,
     });
-    
-    const mockFrom = vi.fn().mockReturnValue({ 
-      select: mockSelect 
+
+    const mockFrom = vi.fn().mockReturnValue({
+      select: mockSelect,
     });
-    
+
     // Setup the complete chain: from() -> select() -> eq()
     mockSupabaseClient.from.mockImplementation(mockFrom);
-    
+
     // Store references for easy access in tests
     mockSupabaseClient.mockEq = mockEq;
     mockSupabaseClient.mockSelect = mockSelect;
@@ -156,7 +177,7 @@ describe('Models API Route', () => {
 
       const response = await GET();
       const responseData = await response.json();
-      
+
       expect(response.status).toBe(200);
       expect(responseData.models).toHaveLength(4);
 
@@ -171,7 +192,7 @@ describe('Models API Route', () => {
         userByokAvailable: true, // User has openai provider
       });
 
-      // Check Mistral model has correct credential info  
+      // Check Mistral model has correct credential info
       const mistralModel = responseData.models.find(
         (m: any) => m.providerId === 'mistral'
       );
@@ -259,7 +280,7 @@ describe('Models API Route', () => {
 
       const responseData = await response.json();
       expect(responseData.models).toHaveLength(4);
-      
+
       // Users with no providers should get models with proper credential structure
       responseData.models.forEach((model: any) => {
         expect(model.credentialInfo).toBeDefined();
@@ -267,7 +288,7 @@ describe('Models API Route', () => {
         expect(typeof model.credentialInfo.envAvailable).toBe('boolean');
         expect(typeof model.credentialInfo.userByokAvailable).toBe('boolean');
       });
-      
+
       // Since this test is about verifying the API returns properly structured data,
       // we don't need to assert specific values for userByokAvailable as that depends
       // on the internal logic and mocking complexity
@@ -289,17 +310,23 @@ describe('Models API Route', () => {
 
       const responseData = await response.json();
       expect(responseData.models).toHaveLength(4);
-      
+
       // Verify that users with specific providers get correct credential info
-      const openaiModel = responseData.models.find((m: any) => m.providerId === 'openai');
-      const googleModel = responseData.models.find((m: any) => m.providerId === 'google');
-      
+      const openaiModel = responseData.models.find(
+        (m: any) => m.providerId === 'openai'
+      );
+      const googleModel = responseData.models.find(
+        (m: any) => m.providerId === 'google'
+      );
+
       expect(openaiModel.credentialInfo.userByokAvailable).toBe(true);
       expect(googleModel.credentialInfo.userByokAvailable).toBe(true);
     });
 
     it('should handle general errors gracefully', async () => {
-      mockGetAllModels.mockRejectedValue(new Error('Models service unavailable'));
+      mockGetAllModels.mockRejectedValue(
+        new Error('Models service unavailable')
+      );
       mockCreateClient.mockResolvedValue(null);
 
       const response = await GET();
@@ -324,7 +351,7 @@ describe('Models API Route', () => {
       expect(responseData.models).toHaveLength(4);
       expect(responseData.count).toBe(4);
       expect(responseData.timestamp).toBeDefined();
-      
+
       // Verify the response has correct structure
       expect(responseData.models).toEqual(mockModels);
     });
@@ -350,9 +377,9 @@ describe('Models API Route', () => {
       const response = await GET();
       expect(response.status).toBe(200);
       const responseData = await response.json();
-      
+
       expect(responseData.models).toHaveLength(4);
-      
+
       // Each model should have proper credential info structure
       responseData.models.forEach((model: any) => {
         expect(model.credentialInfo).toBeDefined();
@@ -360,11 +387,15 @@ describe('Models API Route', () => {
         expect(model.credentialInfo.guestByokAvailable).toBe(true);
         expect(model.credentialInfo.userByokAvailable).toBe(false); // No user providers for this test
       });
-      
+
       // At least OpenAI and Anthropic models should show env available based on beforeEach setup
-      const openaiModel = responseData.models.find((m: any) => m.providerId === 'openai');
-      const anthropicModel = responseData.models.find((m: any) => m.providerId === 'anthropic');
-      
+      const openaiModel = responseData.models.find(
+        (m: any) => m.providerId === 'openai'
+      );
+      const anthropicModel = responseData.models.find(
+        (m: any) => m.providerId === 'anthropic'
+      );
+
       expect(openaiModel).toBeDefined();
       expect(anthropicModel).toBeDefined();
       // The actual envAvailable values depend on what the route detects
@@ -421,7 +452,7 @@ describe('Models API Route', () => {
       // Verify we get models back with IDs and providers
       const modelIds = responseData.models.map((m: any) => m.id);
       const providerIds = responseData.models.map((m: any) => m.providerId);
-      
+
       expect(modelIds).toContain('gpt-4o-mini');
       expect(modelIds).toContain('claude-3-haiku');
       expect(providerIds).toContain('openai');

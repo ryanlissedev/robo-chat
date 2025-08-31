@@ -1,10 +1,10 @@
-import { describe, expect, it, vi, beforeAll, afterAll } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders, createTestQueryClient } from '@/tests/test-utils';
-import { ChatInput } from '@/components/app/chat-input/chat-input';
+import { screen, waitFor } from '@testing-library/react';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { MessageAssistant } from '@/components/app/chat/message-assistant';
+import { ChatInput } from '@/components/app/chat-input/chat-input';
 import { getModelInfo } from '@/lib/models';
 import { fileSearchTool } from '@/lib/tools/file-search';
+import { createTestQueryClient, renderWithProviders } from '@/tests/test-utils';
 
 // Mock the models
 vi.mock('@/lib/models', () => ({

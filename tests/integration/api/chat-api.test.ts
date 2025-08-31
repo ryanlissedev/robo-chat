@@ -89,7 +89,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
     vi.mocked(getProviderForModel).mockClear();
     vi.mocked(sanitizeUserInput).mockClear();
     vi.mocked(storeAssistantMessageToDb).mockClear();
-    
+
     // Reset environment variables
     vi.unstubAllEnvs();
 
@@ -109,7 +109,9 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
     mockSupabaseClient.from.mockReturnValue({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: { id: mockChatId }, error: null }),
+      single: vi
+        .fn()
+        .mockResolvedValue({ data: { id: mockChatId }, error: null }),
       insert: vi.fn().mockResolvedValue({ data: {}, error: null }),
     } as any);
   });
@@ -148,7 +150,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
         dailyProCount: 0,
         limit: 10,
       });
-      
+
       const params: ChatApiParams = {
         userId: mockUserId,
         model: 'gpt-3.5-turbo', // Free model, no API key needed
@@ -174,14 +176,17 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
       // Clear all mocks and set up defaults for authenticated users
       vi.clearAllMocks();
       vi.mocked(validateUserIdentity).mockResolvedValue(mockSupabaseClient);
-      vi.mocked(checkUsageByModel).mockResolvedValue({ dailyProCount: 0, limit: 10 });
+      vi.mocked(checkUsageByModel).mockResolvedValue({
+        dailyProCount: 0,
+        limit: 10,
+      });
     });
 
     it('should allow authenticated user with API key for paid model', async () => {
       // Configure mocks for this specific test
       vi.mocked(getProviderForModel).mockReturnValue('openai');
       vi.mocked(getUserKey).mockResolvedValue('sk-test-api-key');
-      
+
       const result = await validateAndTrackUsage({
         userId: mockUserId,
         model: 'gpt-4', // This is not in mocked FREE_MODELS_IDS, so requires API key
@@ -266,7 +271,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
         // Clear mocks for each iteration
         vi.mocked(getProviderForModel).mockClear();
         vi.mocked(getUserKey).mockClear();
-        
+
         // Configure mocks for this iteration
         vi.mocked(getProviderForModel).mockReturnValue(provider);
         vi.mocked(getUserKey).mockResolvedValue('test-key');
@@ -391,7 +396,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
         dailyProCount: 0,
         limit: 10,
       });
-      
+
       const params: ChatApiParams = {
         userId: mockUserId,
         model: 'gpt-4o-mini', // Free model
@@ -433,7 +438,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
         dailyProCount: 0,
         limit: 10,
       });
-      
+
       const params: ChatApiParams = {
         userId: mockGuestUserId,
         model: 'gpt-3.5-turbo',

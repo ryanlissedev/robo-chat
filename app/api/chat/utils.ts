@@ -71,37 +71,64 @@ export function cleanMessagesForTools(
 }
 
 export function extractErrorMessage(error: unknown): string {
+  // Handle Error instances with specific message patterns
   if (error instanceof Error) {
-    if (error.message?.includes('Incorrect API key')) {
-      return 'Invalid API key. Please check your settings.';
-    }
-    if (error.message?.includes('rate limit')) {
-      return 'Rate limit exceeded. Please try again later.';
-    }
-    if (error.message?.includes('context length')) {
-      return 'Message too long. Please shorten your input.';
-    }
-    return error.message;
+    return getErrorMessageFromError(error);
   }
 
+  // Handle object-like errors
   if (typeof error === 'object' && error !== null) {
-    const err = error as {
-      error?: { message?: string };
-      message?: string;
-      statusText?: string;
-    };
-    if (err.error?.message) {
-      return err.error.message;
-    }
-    if (err.message) {
-      return err.message;
-    }
-    if (err.statusText) {
-      return err.statusText;
-    }
+    return getErrorMessageFromObject(error);
+  }
+
+  // Handle string errors
+  if (typeof error === 'string') {
+    return error;
   }
 
   return 'An unexpected error occurred';
+}
+
+function getErrorMessageFromError(error: Error): string {
+  const message = error.message;
+
+  const errorPatterns = [
+    {
+      pattern: 'Incorrect API key',
+      message: 'Invalid API key. Please check your settings.',
+    },
+    {
+      pattern: 'rate limit',
+      message: 'Rate limit exceeded. Please try again later.',
+    },
+    {
+      pattern: 'context length',
+      message: 'Message too long. Please shorten your input.',
+    },
+  ];
+
+  for (const { pattern, message: errorMessage } of errorPatterns) {
+    if (message?.includes(pattern)) {
+      return errorMessage;
+    }
+  }
+
+  return message;
+}
+
+function getErrorMessageFromObject(error: object): string {
+  const err = error as {
+    error?: { message?: string };
+    message?: string;
+    statusText?: string;
+  };
+
+  return (
+    err.error?.message ||
+    err.message ||
+    err.statusText ||
+    'An unexpected error occurred'
+  );
 }
 
 export function createErrorResponse(error: {

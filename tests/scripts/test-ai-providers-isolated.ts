@@ -5,14 +5,14 @@
  * Tests direct API connections and gateway configurations
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 // Load .env.local manually
 const envPath = path.join(process.cwd(), '.env.local');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf-8');
-  envContent.split('\n').forEach(line => {
+  envContent.split('\n').forEach((line) => {
     const [key, ...valueParts] = line.split('=');
     if (key && valueParts.length > 0) {
       const value = valueParts.join('=').replace(/^["']|["']$/g, '');
@@ -36,13 +36,13 @@ const results: TestResult[] = [];
 async function testOpenAIDirect(): Promise<TestResult> {
   console.log('\n📝 Testing OpenAI Direct API...');
   const apiKey = process.env.OPENAI_API_KEY;
-  
+
   if (!apiKey) {
-    return { 
-      provider: 'OpenAI', 
-      method: 'Direct API', 
-      success: false, 
-      error: 'OPENAI_API_KEY not found' 
+    return {
+      provider: 'OpenAI',
+      method: 'Direct API',
+      success: false,
+      error: 'OPENAI_API_KEY not found',
     };
   }
 
@@ -51,7 +51,7 @@ async function testOpenAIDirect(): Promise<TestResult> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
@@ -83,13 +83,13 @@ async function testOpenAIDirect(): Promise<TestResult> {
 async function testAnthropicDirect(): Promise<TestResult> {
   console.log('\n📝 Testing Anthropic Direct API...');
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  
+
   if (!apiKey) {
-    return { 
-      provider: 'Anthropic', 
-      method: 'Direct API', 
-      success: false, 
-      error: 'ANTHROPIC_API_KEY not found' 
+    return {
+      provider: 'Anthropic',
+      method: 'Direct API',
+      success: false,
+      error: 'ANTHROPIC_API_KEY not found',
     };
   }
 
@@ -132,14 +132,16 @@ async function testVercelGateway(): Promise<TestResult[]> {
   const apiKey = process.env.AI_GATEWAY_API_KEY;
   const baseUrl = process.env.AI_GATEWAY_BASE_URL;
   const openaiKey = process.env.OPENAI_API_KEY;
-  
+
   if (!apiKey || !baseUrl) {
-    return [{
-      provider: 'OpenAI',
-      method: 'Vercel Gateway',
-      success: false,
-      error: 'AI_GATEWAY_API_KEY or AI_GATEWAY_BASE_URL not found',
-    }];
+    return [
+      {
+        provider: 'OpenAI',
+        method: 'Vercel Gateway',
+        success: false,
+        error: 'AI_GATEWAY_API_KEY or AI_GATEWAY_BASE_URL not found',
+      },
+    ];
   }
 
   const configs = [
@@ -157,7 +159,7 @@ async function testVercelGateway(): Promise<TestResult[]> {
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
-        'Authorization': `Bearer ${openaiKey}`,
+        Authorization: `Bearer ${openaiKey}`,
       },
     },
     {
@@ -167,13 +169,13 @@ async function testVercelGateway(): Promise<TestResult[]> {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
         'x-provider': 'openai',
-        'Authorization': `Bearer ${openaiKey}`,
+        Authorization: `Bearer ${openaiKey}`,
       },
     },
   ];
 
   const results: TestResult[] = [];
-  
+
   for (const config of configs) {
     try {
       console.log(`  Testing: ${config.name}`);
@@ -200,7 +202,8 @@ async function testVercelGateway(): Promise<TestResult[]> {
         method: `Gateway: ${config.name}`,
         success: response.ok,
         status: response.status,
-        response: typeof data === 'object' ? data.choices?.[0]?.message?.content : data,
+        response:
+          typeof data === 'object' ? data.choices?.[0]?.message?.content : data,
       });
     } catch (error) {
       results.push({
@@ -218,7 +221,7 @@ async function testVercelGateway(): Promise<TestResult[]> {
 // Test 4: Check Vercel deployment config
 async function checkVercelConfig(): Promise<void> {
   console.log('\n📋 Checking Vercel Configuration...');
-  
+
   const vercelJsonPath = path.join(process.cwd(), 'vercel.json');
   if (fs.existsSync(vercelJsonPath)) {
     const config = JSON.parse(fs.readFileSync(vercelJsonPath, 'utf-8'));
@@ -229,52 +232,70 @@ async function checkVercelConfig(): Promise<void> {
 
   // Check for AI SDK configuration
   console.log('\n  Environment variables:');
-  console.log('    AI_GATEWAY_API_KEY:', process.env.AI_GATEWAY_API_KEY ? '✅ Set' : '❌ Not set');
-  console.log('    AI_GATEWAY_BASE_URL:', process.env.AI_GATEWAY_BASE_URL || '❌ Not set');
-  console.log('    OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? '✅ Set' : '❌ Not set');
-  console.log('    ANTHROPIC_API_KEY:', process.env.ANTHROPIC_API_KEY ? '✅ Set' : '❌ Not set');
+  console.log(
+    '    AI_GATEWAY_API_KEY:',
+    process.env.AI_GATEWAY_API_KEY ? '✅ Set' : '❌ Not set'
+  );
+  console.log(
+    '    AI_GATEWAY_BASE_URL:',
+    process.env.AI_GATEWAY_BASE_URL || '❌ Not set'
+  );
+  console.log(
+    '    OPENAI_API_KEY:',
+    process.env.OPENAI_API_KEY ? '✅ Set' : '❌ Not set'
+  );
+  console.log(
+    '    ANTHROPIC_API_KEY:',
+    process.env.ANTHROPIC_API_KEY ? '✅ Set' : '❌ Not set'
+  );
 }
 
 // Main test runner
 async function main() {
   console.log('🚀 AI Provider Isolated Tests');
-  console.log('=' .repeat(50));
+  console.log('='.repeat(50));
 
   // Run all tests
   results.push(await testOpenAIDirect());
   results.push(await testAnthropicDirect());
-  results.push(...await testVercelGateway());
-  
+  results.push(...(await testVercelGateway()));
+
   await checkVercelConfig();
 
   // Print summary
   console.log('\n📊 Test Results Summary');
-  console.log('=' .repeat(50));
-  
-  const table = results.map(r => ({
+  console.log('='.repeat(50));
+
+  const table = results.map((r) => ({
     '✓': r.success ? '✅' : '❌',
-    'Provider': r.provider,
-    'Method': r.method,
-    'Status': r.status || '-',
-    'Response': r.response || r.error || 'No response',
+    Provider: r.provider,
+    Method: r.method,
+    Status: r.status || '-',
+    Response: r.response || r.error || 'No response',
   }));
-  
+
   console.table(table);
 
   // Recommendations
   console.log('\n💡 Recommendations');
-  console.log('=' .repeat(50));
-  
-  const directAPIsWork = results.some(r => r.method.includes('Direct') && r.success);
-  const gatewayWorks = results.some(r => r.method.includes('Gateway') && r.success);
-  
+  console.log('='.repeat(50));
+
+  const directAPIsWork = results.some(
+    (r) => r.method.includes('Direct') && r.success
+  );
+  const gatewayWorks = results.some(
+    (r) => r.method.includes('Gateway') && r.success
+  );
+
   if (directAPIsWork && !gatewayWorks) {
     console.log('✅ Direct API connections work');
     console.log('❌ Vercel AI Gateway is not configured correctly');
     console.log('\nRecommended approach:');
     console.log('1. Use direct API connections as fallback');
     console.log('2. Implement provider switching logic');
-    console.log('3. Consider configuring Vercel AI Gateway properly or removing it');
+    console.log(
+      '3. Consider configuring Vercel AI Gateway properly or removing it'
+    );
   } else if (gatewayWorks) {
     console.log('✅ Vercel AI Gateway is working');
     console.log('Use the gateway for rate limiting and analytics');
@@ -285,7 +306,7 @@ async function main() {
 
   // Create implementation strategy
   console.log('\n📝 Implementation Strategy');
-  console.log('=' .repeat(50));
+  console.log('='.repeat(50));
   console.log(`
 Based on the test results, here's the recommended implementation:
 
@@ -315,7 +336,7 @@ Based on the test results, here's the recommended implementation:
    - E2E tests for the complete flow
   `);
 
-  process.exit(results.some(r => r.success) ? 0 : 1);
+  process.exit(results.some((r) => r.success) ? 0 : 1);
 }
 
 main().catch(console.error);

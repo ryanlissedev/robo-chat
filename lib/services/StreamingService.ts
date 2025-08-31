@@ -286,13 +286,22 @@ const stream = ({
     },
     onFinish: async ({ response }) => {
       // 1) Tools log
-      logToolInvocations(response as ResponseWithUsage, phase);
+      logToolInvocations(
+        {
+          response,
+          messages: response.messages,
+          usage: (response as any).usage,
+        } as ResponseWithUsage,
+        phase
+      );
 
       // 2) Reasoning & assistant preview
       try {
-        const assistantText = extractAssistantText(
-          response as ResponseWithUsage
-        );
+        const assistantText = extractAssistantText({
+          response,
+          messages: response.messages,
+          usage: (response as any).usage,
+        } as ResponseWithUsage);
         const reasoningContext = handleReasoningExtraction(
           assistantText,
           isGPT5Model,
@@ -300,7 +309,11 @@ const stream = ({
           chatId,
           userId,
           reasoningEffort,
-          response as ResponseWithUsage
+          {
+            response,
+            messages: response.messages,
+            usage: (response as any).usage,
+          } as ResponseWithUsage
         );
         logAssistantResponse(
           assistantText,
@@ -321,8 +334,7 @@ const stream = ({
         await storeAssistantMessage({
           supabase,
           chatId,
-          messages: (response as ResponseWithUsage)
-            .messages as unknown as any[], // retained external shape
+          messages: response.messages as unknown as any[], // retained external shape
           userId,
           message_group_id,
           model: resolvedModel,
@@ -332,7 +344,7 @@ const stream = ({
       }
 
       // 4) Metrics
-      const usage = (response as ResponseWithUsage).usage;
+      const usage = (response as any).usage;
       const responseTime = usage?.totalTokens
         ? usage.totalTokens * 10
         : undefined;
@@ -345,7 +357,11 @@ const stream = ({
       );
 
       await handleLangSmithUpdates(
-        response as ResponseWithUsage,
+        {
+          response,
+          messages: response.messages,
+          usage: (response as any).usage,
+        } as ResponseWithUsage,
         actualRunId,
         reasoningEffort,
         enableSearch

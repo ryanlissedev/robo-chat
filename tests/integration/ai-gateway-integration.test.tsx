@@ -9,7 +9,6 @@ import { getGatewayConfig } from '@/lib/openproviders/env';
 import type { SupportedModel } from '@/lib/openproviders/types';
 
 test.describe('AI Gateway Integration Tests', () => {
-  
   test.beforeEach(() => {
     // Reset environment for each test
     delete process.env.AI_GATEWAY_API_KEY;
@@ -26,7 +25,7 @@ test.describe('AI Gateway Integration Tests', () => {
     // Test with gateway configured
     process.env.AI_GATEWAY_API_KEY = 'test-key';
     process.env.AI_GATEWAY_BASE_URL = 'https://gateway.example.com/v1/ai';
-    
+
     config = getGatewayConfig();
     expect(config.enabled).toBe(true);
     expect(config.baseURL).toBe('https://gateway.example.com/v1/ai');
@@ -40,7 +39,14 @@ test.describe('AI Gateway Integration Tests', () => {
     process.env.AI_GATEWAY_API_KEY = 'test-gateway-key';
     process.env.AI_GATEWAY_BASE_URL = 'https://ai-gateway.test.com/v1/ai';
 
-    const providers = ['openai', 'anthropic', 'google', 'mistral', 'perplexity', 'xai'];
+    const providers = [
+      'openai',
+      'anthropic',
+      'google',
+      'mistral',
+      'perplexity',
+      'xai',
+    ];
     const testModels: Record<string, SupportedModel> = {
       openai: 'gpt-5-mini',
       anthropic: 'claude-3-5-sonnet-latest',
@@ -50,10 +56,10 @@ test.describe('AI Gateway Integration Tests', () => {
       xai: 'grok-3',
     };
 
-    providers.forEach(provider => {
+    providers.forEach((provider) => {
       const model = testModels[provider];
       const languageModel = openproviders(model);
-      
+
       expect(languageModel).toBeDefined();
       expect(typeof languageModel.doGenerate).toBe('function');
       expect(typeof languageModel.doStream).toBe('function');
@@ -67,14 +73,14 @@ test.describe('AI Gateway Integration Tests', () => {
   test('should handle direct provider access when gateway is disabled', () => {
     // Ensure gateway is disabled
     delete process.env.AI_GATEWAY_API_KEY;
-    
+
     const config = getGatewayConfig();
     expect(config.enabled).toBe(false);
 
     // Test that providers still work without gateway
     const model = 'gpt-5-mini' as SupportedModel;
     const languageModel = openproviders(model);
-    
+
     expect(languageModel).toBeDefined();
     expect(typeof languageModel.doGenerate).toBe('function');
     expect(typeof languageModel.doStream).toBe('function');
@@ -87,13 +93,13 @@ test.describe('AI Gateway Integration Tests', () => {
 
     const customApiKey = 'custom-api-key';
     const model = 'gpt-5-mini' as SupportedModel;
-    
+
     // Test with custom API key
     const languageModel = openproviders(model, {}, customApiKey);
-    
+
     expect(languageModel).toBeDefined();
     expect(typeof languageModel.doGenerate).toBe('function');
-    
+
     // Cleanup
     delete process.env.AI_GATEWAY_API_KEY;
     delete process.env.AI_GATEWAY_BASE_URL;
@@ -105,17 +111,17 @@ test.describe('AI Gateway Integration Tests', () => {
     process.env.AI_GATEWAY_BASE_URL = 'https://gateway.test.com/v1/ai';
 
     const gpt5Model = 'gpt-5-mini' as SupportedModel;
-    
+
     // Test with reasoning effort settings
     const modelWithReasoning = openproviders(gpt5Model, {
       reasoningEffort: 'medium',
       verbosity: 'low',
       textVerbosity: 'low',
     });
-    
+
     expect(modelWithReasoning).toBeDefined();
     expect(modelWithReasoning).toHaveProperty('doGenerate');
-    
+
     // Test responses API for GPT-5
     const modelWithResponses = openproviders(gpt5Model, {
       openai: {
@@ -123,9 +129,9 @@ test.describe('AI Gateway Integration Tests', () => {
         reasoningSummary: 'concise',
       },
     });
-    
+
     expect(modelWithResponses).toBeDefined();
-    
+
     // Cleanup
     delete process.env.AI_GATEWAY_API_KEY;
     delete process.env.AI_GATEWAY_BASE_URL;
@@ -136,19 +142,18 @@ test.describe('AI Gateway Integration Tests', () => {
     process.env.AI_GATEWAY_API_KEY = 'gateway-key';
 
     const reasoningModel = 'o1' as SupportedModel;
-    
+
     const model = openproviders(reasoningModel, {
       headers: { 'OpenAI-Beta': 'reasoning=v1' },
     });
-    
+
     expect(model).toBeDefined();
-    
+
     // Cleanup
     delete process.env.AI_GATEWAY_API_KEY;
   });
 
   test.describe('Error Handling and Fallbacks', () => {
-    
     test('should handle invalid gateway configuration gracefully', () => {
       // Set invalid gateway configuration
       process.env.AI_GATEWAY_API_KEY = '';
@@ -162,7 +167,7 @@ test.describe('AI Gateway Integration Tests', () => {
         const languageModel = openproviders(model);
         expect(languageModel).toBeDefined();
       }).not.toThrow();
-      
+
       // Cleanup
       delete process.env.AI_GATEWAY_API_KEY;
       delete process.env.AI_GATEWAY_BASE_URL;
@@ -171,10 +176,10 @@ test.describe('AI Gateway Integration Tests', () => {
     test('should fallback to direct provider when gateway fails', () => {
       // This test would need actual API calls to test properly
       // For now, we test that the provider can be created without gateway
-      
+
       const model = 'gpt-5-mini' as SupportedModel;
       const languageModel = openproviders(model);
-      
+
       expect(languageModel).toBeDefined();
       expect(typeof languageModel.doGenerate).toBe('function');
       expect(typeof languageModel.doStream).toBe('function');
@@ -182,7 +187,6 @@ test.describe('AI Gateway Integration Tests', () => {
   });
 
   test.describe('Performance and Load Testing', () => {
-    
     test('should handle concurrent provider initializations', () => {
       const models: SupportedModel[] = [
         'gpt-5-mini',
@@ -191,12 +195,12 @@ test.describe('AI Gateway Integration Tests', () => {
         'gemini-2.0-flash-001',
       ];
 
-      const initPromises = models.map(model => {
+      const initPromises = models.map((model) => {
         return new Promise((resolve) => {
           const startTime = Date.now();
           const languageModel = openproviders(model);
           const initTime = Date.now() - startTime;
-          
+
           resolve({
             model,
             initTime,
@@ -206,8 +210,8 @@ test.describe('AI Gateway Integration Tests', () => {
         });
       });
 
-      return Promise.all(initPromises).then(results => {
-        results.forEach(result => {
+      return Promise.all(initPromises).then((results) => {
+        results.forEach((result) => {
           expect(result).toHaveProperty('success', true);
           expect(result).toHaveProperty('hasDoGenerate', true);
           expect(result).toHaveProperty('initTime');
@@ -218,19 +222,18 @@ test.describe('AI Gateway Integration Tests', () => {
   });
 
   test.describe('Environment Variable Handling', () => {
-    
     test('should respect environment variable precedence', () => {
       // Test that user-provided API keys override environment variables
       const originalKey = process.env.OPENAI_API_KEY;
       process.env.OPENAI_API_KEY = 'env-key';
-      
+
       const customKey = 'custom-key';
       const model = 'gpt-5-mini' as SupportedModel;
-      
+
       // When providing custom key, it should be used instead of env var
       const languageModel = openproviders(model, {}, customKey);
       expect(languageModel).toBeDefined();
-      
+
       // Restore original environment
       if (originalKey) {
         process.env.OPENAI_API_KEY = originalKey;
@@ -246,15 +249,19 @@ test.describe('AI Gateway Integration Tests', () => {
         ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
         GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
       };
-      
+
       delete process.env.OPENAI_API_KEY;
       delete process.env.ANTHROPIC_API_KEY;
       delete process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
       // Should still be able to create models (though they won't work for actual API calls)
-      const models: SupportedModel[] = ['gpt-5-mini', 'claude-3-5-sonnet-latest', 'gemini-2.0-flash-001'];
-      
-      models.forEach(model => {
+      const models: SupportedModel[] = [
+        'gpt-5-mini',
+        'claude-3-5-sonnet-latest',
+        'gemini-2.0-flash-001',
+      ];
+
+      models.forEach((model) => {
         expect(() => {
           const languageModel = openproviders(model);
           expect(languageModel).toBeDefined();
@@ -271,7 +278,6 @@ test.describe('AI Gateway Integration Tests', () => {
   });
 
   test.describe('Model Provider Mapping', () => {
-    
     test('should correctly map models to providers', () => {
       const testCases: Array<[SupportedModel, string]> = [
         ['gpt-5-mini', 'openai'],
@@ -284,7 +290,7 @@ test.describe('AI Gateway Integration Tests', () => {
         ['grok-3', 'xai'],
       ];
 
-      testCases.forEach(([model, expectedProvider]) => {
+      testCases.forEach(([model, _expectedProvider]) => {
         const languageModel = openproviders(model);
         expect(languageModel).toBeDefined();
         // We can't directly test the provider mapping without access to internals,
@@ -294,7 +300,7 @@ test.describe('AI Gateway Integration Tests', () => {
 
     test('should handle unknown models with fallback to OpenAI', () => {
       const unknownModel = 'unknown-model-123' as SupportedModel;
-      
+
       // Should not throw and should fallback to OpenAI
       expect(() => {
         const languageModel = openproviders(unknownModel);

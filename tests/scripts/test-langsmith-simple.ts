@@ -4,15 +4,15 @@
  * Simple LangSmith connection test
  */
 
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { Client } from 'langsmith';
-import * as fs from 'fs';
-import * as path from 'path';
 
 // Load .env.local manually
 const envPath = path.join(process.cwd(), '.env.local');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf-8');
-  envContent.split('\n').forEach(line => {
+  envContent.split('\n').forEach((line) => {
     const [key, ...valueParts] = line.split('=');
     if (key && valueParts.length > 0) {
       const value = valueParts.join('=').replace(/^["']|["']$/g, '');
@@ -22,10 +22,10 @@ if (fs.existsSync(envPath)) {
 }
 
 async function test() {
-  console.log('API Key:', process.env.LANGSMITH_API_KEY?.slice(0, 10) + '...');
+  console.log('API Key:', `${process.env.LANGSMITH_API_KEY?.slice(0, 10)}...`);
   console.log('Project:', process.env.LANGSMITH_PROJECT);
   console.log('Endpoint:', process.env.LANGSMITH_ENDPOINT);
-  
+
   const client = new Client({
     apiKey: process.env.LANGSMITH_API_KEY!,
     apiUrl: process.env.LANGSMITH_ENDPOINT || 'https://api.smith.langchain.com',
@@ -34,13 +34,18 @@ async function test() {
   try {
     // Try to list runs to verify connection
     console.log('\nTrying to list runs...');
-    const projectName = process.env.LANGSMITH_PROJECT || 'hgg-robo-chat';
-    
+    const _projectName = process.env.LANGSMITH_PROJECT || 'hgg-robo-chat';
+
     // Use hasDataset to check if we can connect
     console.log('\nChecking connection by querying datasets...');
-    const hasTestDataset = await client.hasDataset({ datasetName: 'test-dataset' });
-    console.log('Can query datasets:', typeof hasTestDataset === 'boolean' ? '✅' : '❌');
-    
+    const hasTestDataset = await client.hasDataset({
+      datasetName: 'test-dataset',
+    });
+    console.log(
+      'Can query datasets:',
+      typeof hasTestDataset === 'boolean' ? '✅' : '❌'
+    );
+
     // Try creating a dataset as a simpler test
     console.log('\nTrying to create a test dataset...');
     const datasetName = `test-connection-${Date.now()}`;
@@ -48,13 +53,13 @@ async function test() {
       description: 'Test dataset for connection verification',
     });
     console.log('Dataset created:', dataset ? '✅' : '❌');
-    
+
     if (dataset) {
       // Clean up - delete the test dataset
       await client.deleteDataset({ datasetName });
       console.log('Dataset cleaned up: ✅');
     }
-    
+
     console.log('\n✅ Successfully connected to LangSmith!');
     return true;
   } catch (error: any) {
@@ -67,6 +72,6 @@ async function test() {
   }
 }
 
-test().then(success => {
+test().then((success) => {
   process.exit(success ? 0 : 1);
 });

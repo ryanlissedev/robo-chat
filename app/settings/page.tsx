@@ -5,9 +5,9 @@ import { Header } from '@/components/app/layout/header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/lib/user-store/provider';
 import { ApiKeyManager } from './components/api-key-manager';
+import { DiagnosticsPanel } from './components/diagnostics';
 import { RetrievalSettings } from './components/retrieval-settings';
 import { SecuritySettings } from './components/security-settings';
-import { DiagnosticsPanel } from './components/diagnostics';
 import { VectorStoreManager } from './components/vector-store-manager';
 
 export default function SettingsPage() {

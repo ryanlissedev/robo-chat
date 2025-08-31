@@ -878,7 +878,7 @@ describe('ModelSelector', () => {
 
     // Tooltip should appear synchronously after hover - no need for waitFor
     await waitFor(() => {
-      const tooltipElements = screen.getAllByText((content, element) => {
+      const tooltipElements = screen.getAllByText((_content, element) => {
         const hasText =
           element?.textContent?.includes('Switch model') &&
           element?.textContent?.includes('⌘⇧P');

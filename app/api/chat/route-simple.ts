@@ -1,4 +1,4 @@
-import type { ExtendedUIMessage } from '@/app/types/ai-extended';
+import type { ChatRequest, ExtendedUIMessage } from '@/app/types/ai-extended';
 import type { SupabaseClientType } from '@/app/types/api.types';
 import { ChatService } from '@/lib/services/ChatService';
 import { CredentialService } from '@/lib/services/CredentialService';
@@ -11,43 +11,11 @@ export const maxDuration = 60;
  * Delegates business logic to service classes for better maintainability
  */
 export async function POST(req: Request): Promise<Response> {
-  let requestData: {
-    messages: ExtendedUIMessage[];
-    chatId: string;
-    userId: string;
-    model: string;
-    isAuthenticated: boolean;
-    systemPrompt: string;
-    enableSearch: boolean;
-    message_group_id?: string;
-    reasoningEffort?: 'low' | 'medium' | 'high';
-    verbosity?: 'low' | 'medium' | 'high';
-    context?: 'chat' | 'voice';
-    personalityMode?:
-      | 'safety-focused'
-      | 'technical-expert'
-      | 'friendly-assistant';
-  } | undefined;
+  let requestData: ChatRequest | undefined;
 
   try {
     // Parse and validate request
-    requestData = (await req.json()) as {
-      messages: ExtendedUIMessage[];
-      chatId: string;
-      userId: string;
-      model: string;
-      isAuthenticated: boolean;
-      systemPrompt: string;
-      enableSearch: boolean;
-      message_group_id?: string;
-      reasoningEffort?: 'low' | 'medium' | 'high';
-      verbosity?: 'low' | 'medium' | 'high';
-      context?: 'chat' | 'voice';
-      personalityMode?:
-        | 'safety-focused'
-        | 'technical-expert'
-        | 'friendly-assistant';
-    };
+    requestData = (await req.json()) as ChatRequest;
 
     // Validate request using service
     const validationError = MessageService.validateChatRequest(requestData);

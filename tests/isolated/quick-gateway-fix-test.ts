@@ -2,21 +2,21 @@
 
 /**
  * Quick Gateway Fix Test
- * 
+ *
  * Test the correct AI Gateway URL format
  */
 
-import { readFileSync, existsSync } from 'fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 // Load environment variables
 function loadEnv() {
   const envFiles = ['.env.local', '.env.test.local', '.env'];
-  
+
   for (const file of envFiles) {
     if (existsSync(file)) {
       const content = readFileSync(file, 'utf-8');
       const lines = content.split('\n');
-      
+
       for (const line of lines) {
         const trimmed = line.trim();
         if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
@@ -37,27 +37,27 @@ loadEnv();
 async function testGatewayURL() {
   const apiKey = process.env.AI_GATEWAY_API_KEY;
   const baseUrl = process.env.AI_GATEWAY_BASE_URL;
-  
+
   console.log('🔍 Current configuration:');
   console.log(`   Base URL: ${baseUrl}`);
   console.log(`   API Key: ${apiKey ? 'Set' : 'Not set'}`);
-  
+
   if (!apiKey) {
     console.log('❌ No AI_GATEWAY_API_KEY found');
     return;
   }
-  
+
   // Test different URL formats
   const urlsToTest = [
     baseUrl,
-    baseUrl + '/ai',
+    `${baseUrl}/ai`,
     baseUrl.replace('/v1/', '/v1/ai/'),
     'https://ai-gateway.vercel.sh/v1/ai',
   ];
-  
+
   for (const testUrl of urlsToTest) {
     console.log(`\n🧪 Testing: ${testUrl}`);
-    
+
     try {
       const response = await fetch(`${testUrl}/openai/chat/completions`, {
         method: 'POST',
@@ -71,9 +71,9 @@ async function testGatewayURL() {
           max_tokens: 5,
         }),
       });
-      
+
       console.log(`   Status: ${response.status}`);
-      
+
       if (response.ok) {
         const data = await response.json();
         const content = data.choices?.[0]?.message?.content;
@@ -90,7 +90,7 @@ async function testGatewayURL() {
       console.log(`   ❌ Network error: ${error.message}`);
     }
   }
-  
+
   console.log('\n💡 None of the URLs worked. The gateway might be:');
   console.log('   1. Requiring different authentication');
   console.log('   2. Not publicly accessible');

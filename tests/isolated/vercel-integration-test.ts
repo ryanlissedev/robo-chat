@@ -2,16 +2,16 @@
 
 /**
  * Vercel Integration Test
- * 
+ *
  * This script tests integration with Vercel CLI and AI Gateway deployment.
  * It can help verify that the gateway is properly deployed and accessible.
- * 
+ *
  * Usage:
  *   npx tsx tests/isolated/vercel-integration-test.ts
  */
 
-import { execSync } from 'child_process';
-import { existsSync } from 'fs';
+import { execSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 
 // Colors for console output
 const colors = {
@@ -29,13 +29,14 @@ function log(message: string, color: keyof typeof colors = 'reset') {
 }
 
 class VercelIntegrationTester {
-  
   async checkVercelCLI(): Promise<boolean> {
     try {
-      const version = execSync('vercel --version', { encoding: 'utf-8' }).trim();
+      const version = execSync('vercel --version', {
+        encoding: 'utf-8',
+      }).trim();
       log(`✅ Vercel CLI found: ${version}`, 'green');
       return true;
-    } catch (error) {
+    } catch (_error) {
       log('❌ Vercel CLI not found. Install with: npm i -g vercel', 'red');
       return false;
     }
@@ -46,7 +47,7 @@ class VercelIntegrationTester {
       const whoami = execSync('vercel whoami', { encoding: 'utf-8' }).trim();
       log(`✅ Logged in as: ${whoami}`, 'green');
       return true;
-    } catch (error) {
+    } catch (_error) {
       log('❌ Not logged in to Vercel. Run: vercel login', 'red');
       return false;
     }
@@ -57,30 +58,37 @@ class VercelIntegrationTester {
       log('✅ vercel.json found', 'green');
       return true;
     } else {
-      log('⚠️  No vercel.json found. This is optional for Next.js projects.', 'yellow');
+      log(
+        '⚠️  No vercel.json found. This is optional for Next.js projects.',
+        'yellow'
+      );
       return true;
     }
   }
 
   async checkEnvironmentVariables(): Promise<void> {
     log('\n🔍 Checking Environment Variables', 'bold');
-    
+
     try {
       const envOutput = execSync('vercel env ls', { encoding: 'utf-8' });
       log('Environment variables:', 'blue');
       console.log(envOutput);
-    } catch (error) {
-      log('❌ Could not list environment variables. Make sure you have a Vercel project.', 'red');
+    } catch (_error) {
+      log(
+        '❌ Could not list environment variables. Make sure you have a Vercel project.',
+        'red'
+      );
       log('   Run: vercel link', 'yellow');
     }
   }
 
   async testGatewayDeployment(): Promise<void> {
     log('\n🚀 Testing Gateway Deployment', 'bold');
-    
+
     // Check if we have a deployment URL
-    const gatewayUrl = process.env.AI_GATEWAY_BASE_URL || 'https://ai-gateway.vercel.sh/v1/ai';
-    
+    const gatewayUrl =
+      process.env.AI_GATEWAY_BASE_URL || 'https://ai-gateway.vercel.sh/v1/ai';
+
     try {
       const response = await fetch(`${gatewayUrl}/health`);
       if (response.ok) {
@@ -90,44 +98,47 @@ class VercelIntegrationTester {
       }
     } catch (error) {
       log(`❌ Gateway health check failed: ${error.message}`, 'red');
-      log('   This might be expected if using a custom gateway deployment.', 'yellow');
+      log(
+        '   This might be expected if using a custom gateway deployment.',
+        'yellow'
+      );
     }
   }
 
   async suggestDeploymentSteps(): void {
     log('\n📋 Deployment Steps for AI Gateway', 'bold');
-    log('=' .repeat(50), 'cyan');
-    
+    log('='.repeat(50), 'cyan');
+
     log('1. Install Vercel CLI:', 'blue');
     log('   npm i -g vercel', 'cyan');
-    
+
     log('\n2. Login to Vercel:', 'blue');
     log('   vercel login', 'cyan');
-    
+
     log('\n3. Link your project:', 'blue');
     log('   vercel link', 'cyan');
-    
+
     log('\n4. Set environment variables:', 'blue');
     log('   vercel env add OPENAI_API_KEY', 'cyan');
     log('   vercel env add AI_GATEWAY_API_KEY', 'cyan');
-    
+
     log('\n5. Deploy:', 'blue');
     log('   vercel --prod', 'cyan');
-    
+
     log('\n6. Test your deployment:', 'blue');
     log('   npm run test:gateway-live', 'cyan');
   }
 
   async runDiagnostics(): Promise<void> {
     log('🔧 Vercel Integration Diagnostics', 'bold');
-    log('=' .repeat(50), 'cyan');
-    
+    log('='.repeat(50), 'cyan');
+
     const cliInstalled = await this.checkVercelCLI();
     if (!cliInstalled) {
       this.suggestDeploymentSteps();
       return;
     }
-    
+
     const authenticated = await this.checkVercelAuth();
     if (!authenticated) {
       log('\n💡 Next steps:', 'yellow');
@@ -135,11 +146,11 @@ class VercelIntegrationTester {
       log('   2. Run this test again', 'cyan');
       return;
     }
-    
+
     await this.checkProjectConfig();
     await this.checkEnvironmentVariables();
     await this.testGatewayDeployment();
-    
+
     log('\n✅ Vercel integration check complete!', 'green');
     log('💡 To deploy your AI gateway:', 'blue');
     log('   vercel --prod', 'cyan');
@@ -153,7 +164,7 @@ async function main() {
 
 // Run if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(error => {
+  main().catch((error) => {
     log(`\n💥 Error: ${error.message}`, 'red');
     process.exit(1);
   });

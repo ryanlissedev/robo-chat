@@ -195,7 +195,7 @@ export class MessageService {
       return {
         id,
         role: msg.role,
-        parts: msg.parts as UIMessagePart<UIDataTypes, UITools>[],
+        parts: (msg.parts || []) as UIMessagePart<UIDataTypes, UITools>[],
         createdAt: now, // same timestamp for a batch; stable and cheap
         content,
       };

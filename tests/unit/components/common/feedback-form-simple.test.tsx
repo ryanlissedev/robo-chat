@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import React from 'react';
+import { describe, expect, it, vi } from 'vitest';
 
 // Mock everything that could cause issues
 vi.mock('motion/react', () => ({
@@ -25,8 +25,10 @@ vi.mock('@/lib/supabase/client', () => ({
 }));
 
 vi.mock('lucide-react', () => ({
-  ChevronLeft: () => React.createElement('div', { 'data-testid': 'chevron-left' }),
-  CircleCheck: () => React.createElement('div', { 'data-testid': 'circle-check' }),
+  ChevronLeft: () =>
+    React.createElement('div', { 'data-testid': 'chevron-left' }),
+  CircleCheck: () =>
+    React.createElement('div', { 'data-testid': 'circle-check' }),
   Loader2: () => React.createElement('div', { 'data-testid': 'loader2' }),
 }));
 
@@ -38,7 +40,11 @@ vi.mock('@/components/ui/button', () => ({
 
 // Simple test component
 function SimpleFeedbackForm() {
-  return React.createElement('div', { 'data-testid': 'feedback-form' }, 'Simple Form');
+  return React.createElement(
+    'div',
+    { 'data-testid': 'feedback-form' },
+    'Simple Form'
+  );
 }
 
 describe('Simple FeedbackForm Test', () => {

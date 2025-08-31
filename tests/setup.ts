@@ -77,7 +77,7 @@ if (typeof document === 'undefined') {
 }
 
 // Global fetch mock to prevent real network calls
-const mockFetch = vi.fn().mockImplementation((url: string, options?: any) => {
+const mockFetch = vi.fn().mockImplementation((_url: string, _options?: any) => {
   // Mock successful responses for common endpoints
   const mockResponse = {
     ok: true,
@@ -90,7 +90,7 @@ const mockFetch = vi.fn().mockImplementation((url: string, options?: any) => {
     arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
     clone: () => mockResponse,
   };
-  
+
   return Promise.resolve(mockResponse);
 });
 
@@ -105,7 +105,7 @@ beforeEach(() => {
   // Always clear mocks and timers
   vi.clearAllMocks();
   vi.clearAllTimers();
-  
+
   // Reset fetch mock
   if (global.fetch && vi.isMockFunction(global.fetch)) {
     (global.fetch as any).mockClear();
@@ -560,41 +560,102 @@ vi.mock('lucide-react', async (importOriginal) => {
   const actual = await importOriginal<typeof import('lucide-react')>();
 
   // Create a mock icon component
-  const MockIcon = React.forwardRef(({ className, size, strokeWidth, ...props }: any, ref: any) =>
-    React.createElement('svg', {
-      className,
-      width: size || 24,
-      height: size || 24,
-      'stroke-width': strokeWidth || 2,
-      ...props,
-      ref,
-      'data-testid': 'mock-icon',
-    })
+  const MockIcon = React.forwardRef(
+    ({ className, size, strokeWidth, ...props }: any, ref: any) =>
+      React.createElement('svg', {
+        className,
+        width: size || 24,
+        height: size || 24,
+        'stroke-width': strokeWidth || 2,
+        ...props,
+        ref,
+        'data-testid': 'mock-icon',
+      })
   );
   MockIcon.displayName = 'MockIcon';
 
   // List of commonly used icons that need explicit mocking
   const iconNames = [
-    'Send', 'ArrowUp', 'Square', 'Loader2Icon', 'SendIcon', 'SquareIcon', 'XIcon',
-    'Upload', 'File', 'Image', 'Search', 'Settings', 'User', 'Home', 'Menu',
-    'ChevronDown', 'ChevronUp', 'ChevronLeft', 'ChevronRight', 'Plus', 'Minus',
-    'Check', 'X', 'AlertCircle', 'Info', 'Trash', 'Edit', 'Copy', 'ExternalLink',
-    'Download', 'Refresh', 'Play', 'Pause', 'Stop', 'Volume2', 'VolumeX',
-    'Mic', 'MicOff', 'Camera', 'CameraOff', 'Phone', 'PhoneOff', 'Mail',
-    'Calendar', 'Clock', 'MapPin', 'Star', 'Heart', 'Bookmark', 'Share',
-    'MessageCircle', 'ThumbsUp', 'ThumbsDown', 'Eye', 'EyeOff', 'Lock',
-    'Unlock', 'Shield', 'Key', 'Wifi', 'WifiOff', 'Battery', 'BatteryLow',
-    'Sun', 'Moon', 'CloudRain', 'CloudSnow', 'Zap', 'Activity', 'TrendingUp'
+    'Send',
+    'ArrowUp',
+    'Square',
+    'Loader2Icon',
+    'SendIcon',
+    'SquareIcon',
+    'XIcon',
+    'Upload',
+    'File',
+    'Image',
+    'Search',
+    'Settings',
+    'User',
+    'Home',
+    'Menu',
+    'ChevronDown',
+    'ChevronUp',
+    'ChevronLeft',
+    'ChevronRight',
+    'Plus',
+    'Minus',
+    'Check',
+    'X',
+    'AlertCircle',
+    'Info',
+    'Trash',
+    'Edit',
+    'Copy',
+    'ExternalLink',
+    'Download',
+    'Refresh',
+    'Play',
+    'Pause',
+    'Stop',
+    'Volume2',
+    'VolumeX',
+    'Mic',
+    'MicOff',
+    'Camera',
+    'CameraOff',
+    'Phone',
+    'PhoneOff',
+    'Mail',
+    'Calendar',
+    'Clock',
+    'MapPin',
+    'Star',
+    'Heart',
+    'Bookmark',
+    'Share',
+    'MessageCircle',
+    'ThumbsUp',
+    'ThumbsDown',
+    'Eye',
+    'EyeOff',
+    'Lock',
+    'Unlock',
+    'Shield',
+    'Key',
+    'Wifi',
+    'WifiOff',
+    'Battery',
+    'BatteryLow',
+    'Sun',
+    'Moon',
+    'CloudRain',
+    'CloudSnow',
+    'Zap',
+    'Activity',
+    'TrendingUp',
   ];
 
   // Create explicit exports for each icon
   const iconMocks: Record<string, any> = {};
-  iconNames.forEach(iconName => {
+  iconNames.forEach((iconName) => {
     iconMocks[iconName] = MockIcon;
   });
 
   // Create a proxy for any additional icons not explicitly listed
-  const iconProxy = new Proxy(iconMocks, {
+  const _iconProxy = new Proxy(iconMocks, {
     get: (target, prop) => {
       if (typeof prop === 'string' && prop in target) {
         return target[prop];
@@ -604,10 +665,29 @@ vi.mock('lucide-react', async (importOriginal) => {
     },
   });
 
-  return {
-    ...actual,
-    ...iconProxy,
-  };
+  // Return the actual module spread with explicit icon overrides and proxy fallback
+  return new Proxy(
+    {
+      ...actual,
+      ...iconMocks,
+    },
+    {
+      get(target, prop) {
+        if (typeof prop === 'string') {
+          // If the property exists in our target, return it
+          if (prop in target) {
+            return target[prop];
+          }
+          // If it's an icon name (starts with capital letter), return MockIcon
+          if (/^[A-Z]/.test(prop)) {
+            return MockIcon;
+          }
+        }
+        // Return undefined for non-icon properties
+        return target[prop];
+      },
+    }
+  );
 });
 
 // Helper function to filter DOM props

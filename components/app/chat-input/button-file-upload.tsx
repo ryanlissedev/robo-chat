@@ -54,7 +54,9 @@ export function ButtonFileUpload({
               </Button>
             </PopoverTrigger>
           </TooltipTrigger>
-          <TooltipContent data-testid="tooltip-content">Add files</TooltipContent>
+          <TooltipContent data-testid="tooltip-content">
+            Add files
+          </TooltipContent>
         </Tooltip>
         <PopoverContent className="p-2" data-testid="popover-content">
           <div className="text-secondary-foreground text-sm">
@@ -120,7 +122,10 @@ export function ButtonFileUpload({
       </Tooltip>
       <FileUploadContent>
         <div className="flex flex-col items-center rounded-lg border border-input border-dashed bg-background p-8">
-          <FileUp className="size-8 text-muted-foreground" data-testid="file-up-icon" />
+          <FileUp
+            className="size-8 text-muted-foreground"
+            data-testid="file-up-icon"
+          />
           <span className="mt-4 mb-1 font-medium text-lg">Drop files here</span>
           <span className="text-muted-foreground text-sm">
             Drop any files here to add it to the conversation

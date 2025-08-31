@@ -105,14 +105,22 @@ async function createRealtimeAnswer(
   offer: string,
   config: VoiceSessionConfig
 ): Promise<string | null> {
+  validateOfferInput(offer);
+  const realtimeConfig = buildRealtimeConfig(config);
+
+  return createWebSocketConnection(offer, realtimeConfig);
+}
+
+function validateOfferInput(offer: string): void {
   if (!offer || typeof offer !== 'string' || !offer.trim()) {
     throw new Error('Invalid offer provided to createRealtimeAnswer');
   }
-  // Validate and sanitize config
+}
+
+function buildRealtimeConfig(config: VoiceSessionConfig) {
   const safeConfig = config || {};
 
-  // Configuration for OpenAI Realtime API
-  const realtimeConfig = {
+  return {
     model:
       typeof safeConfig.model === 'string'
         ? safeConfig.model
@@ -137,93 +145,151 @@ async function createRealtimeAnswer(
     max_response_output_tokens:
       typeof safeConfig.maxTokens === 'number' ? safeConfig.maxTokens : 4096,
   };
+}
 
+function createWebSocketConnection(
+  offer: string,
+  realtimeConfig: any
+): Promise<string | null> {
   // Create WebSocket connection to OpenAI Realtime API
   // Note: Node.js WebSocket doesn't support headers in constructor
   const ws = new WebSocket(OPENAI_REALTIME_ENDPOINT);
 
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
-      reject(new Error('WebRTC offer timeout after 10 seconds'));
-    }, 10000); // 10 second timeout
+    const timeout = setupConnectionTimeout(ws, reject);
 
-    ws.onopen = () => {
-      try {
-        // Send session configuration
-        ws.send(
-          JSON.stringify({
-            type: 'session.update',
-            session: realtimeConfig,
-          })
-        );
+    ws.onopen = () =>
+      handleWebSocketOpen(ws, offer, realtimeConfig, timeout, reject);
 
-        // Send WebRTC offer
-        ws.send(
-          JSON.stringify({
-            type: 'webrtc.offer',
-            offer: {
-              type: 'offer',
-              sdp: offer,
-            },
-          })
-        );
-      } catch (sendError) {
-        clearTimeout(timeout);
-        ws.close();
-        reject(new Error(`Failed to send WebRTC messages: ${sendError}`));
-      }
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        if (!event.data) {
-          return;
-        }
-
-        const data = JSON.parse(event.data);
-
-        if (data.type === 'webrtc.answer') {
-          if (!data.answer || !data.answer.sdp) {
-            clearTimeout(timeout);
-            ws.close();
-            reject(new Error('Invalid WebRTC answer: missing SDP'));
-            return;
-          }
-
-          clearTimeout(timeout);
-          ws.close();
-          resolve(data.answer.sdp);
-        } else if (data.type === 'error') {
-          clearTimeout(timeout);
-          ws.close();
-          const errorMsg =
-            data.error?.message || data.error || 'OpenAI Realtime API error';
-          reject(new Error(`OpenAI API Error: ${errorMsg}`));
-        }
-      } catch (_parseError) {
-        // Don't reject here, wait for timeout or proper message
-      }
-    };
-
-    ws.onerror = (_error) => {
-      clearTimeout(timeout);
-      reject(new Error('WebSocket connection error'));
-    };
-
-    ws.onclose = (event) => {
-      clearTimeout(timeout);
-      if (event.code !== 1000) {
-        reject(
-          new Error(
-            `WebSocket closed unexpectedly with code ${event.code}: ${event.reason || 'Unknown reason'}`
-          )
-        );
-      }
-    };
+    ws.onmessage = (event) =>
+      handleWebSocketMessage(event, timeout, ws, resolve, reject);
+    ws.onerror = () => handleWebSocketError(timeout, reject);
+    ws.onclose = (event) => handleWebSocketClose(event, timeout, reject);
   });
+}
+
+function setupConnectionTimeout(
+  ws: WebSocket,
+  reject: (error: Error) => void
+): NodeJS.Timeout {
+  return setTimeout(() => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.close();
+    }
+    reject(new Error('WebRTC offer timeout after 10 seconds'));
+  }, 10000);
+}
+
+function handleWebSocketOpen(
+  ws: WebSocket,
+  offer: string,
+  realtimeConfig: any,
+  timeout: NodeJS.Timeout,
+  reject: (error: Error) => void
+): void {
+  try {
+    // Send session configuration
+    ws.send(
+      JSON.stringify({
+        type: 'session.update',
+        session: realtimeConfig,
+      })
+    );
+
+    // Send WebRTC offer
+    ws.send(
+      JSON.stringify({
+        type: 'webrtc.offer',
+        offer: {
+          type: 'offer',
+          sdp: offer,
+        },
+      })
+    );
+  } catch (sendError) {
+    clearTimeout(timeout);
+    ws.close();
+    reject(new Error(`Failed to send WebRTC messages: ${sendError}`));
+  }
+}
+
+function handleWebSocketMessage(
+  event: MessageEvent,
+  timeout: NodeJS.Timeout,
+  ws: WebSocket,
+  resolve: (value: string) => void,
+  reject: (error: Error) => void
+): void {
+  try {
+    if (!event.data) {
+      return;
+    }
+
+    const data = JSON.parse(event.data);
+
+    if (data.type === 'webrtc.answer') {
+      handleWebRTCAnswer(data, timeout, ws, resolve, reject);
+    } else if (data.type === 'error') {
+      handleWebSocketErrorMessage(data, timeout, ws, reject);
+    }
+  } catch (_parseError) {
+    // Don't reject here, wait for timeout or proper message
+  }
+}
+
+function handleWebRTCAnswer(
+  data: any,
+  timeout: NodeJS.Timeout,
+  ws: WebSocket,
+  resolve: (value: string) => void,
+  reject: (error: Error) => void
+): void {
+  if (!data.answer || !data.answer.sdp) {
+    clearTimeout(timeout);
+    ws.close();
+    reject(new Error('Invalid WebRTC answer: missing SDP'));
+    return;
+  }
+
+  clearTimeout(timeout);
+  ws.close();
+  resolve(data.answer.sdp);
+}
+
+function handleWebSocketErrorMessage(
+  data: any,
+  timeout: NodeJS.Timeout,
+  ws: WebSocket,
+  reject: (error: Error) => void
+): void {
+  clearTimeout(timeout);
+  ws.close();
+  const errorMsg =
+    data.error?.message || data.error || 'OpenAI Realtime API error';
+  reject(new Error(`OpenAI API Error: ${errorMsg}`));
+}
+
+function handleWebSocketError(
+  timeout: NodeJS.Timeout,
+  reject: (error: Error) => void
+): void {
+  clearTimeout(timeout);
+  reject(new Error('WebSocket connection error'));
+}
+
+function handleWebSocketClose(
+  event: CloseEvent,
+  timeout: NodeJS.Timeout,
+  reject: (error: Error) => void
+): void {
+  clearTimeout(timeout);
+  if (event.code !== 1000) {
+    reject(
+      new Error(
+        `WebSocket closed unexpectedly with code ${event.code}: ${event.reason || 'Unknown reason'}`
+      )
+    );
+  }
 }
 
 function generateInstructions(config: VoiceSessionConfig): string {

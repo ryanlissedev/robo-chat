@@ -1,5 +1,6 @@
 import type { UIMessage as Message } from '@ai-sdk/react';
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useChatDraft } from '@/app/hooks/use-chat-draft';
@@ -93,6 +94,10 @@ export function useChatCore({
   const [inputValue, setInputValue] = useState(draftValue);
 
   const { messages, status, error, stop, setMessages, sendMessage } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+    }),
+    // biome-ignore lint/style/useNamingConvention: external AI SDK API name
     experimental_throttle: 60,
     onFinish: ({ message }) => {
       cacheAndAddMessage(message);
@@ -190,7 +195,8 @@ export function useChatCore({
       }
 
       // Operation succeeded - proceed with submission
-      const { chatId: currentChatId, requestOptions } = result.data!;
+      if (!result.data) return;
+      const { chatId: currentChatId, requestOptions } = result.data;
 
       // In v5, use sendMessage which handles everything including optimistic updates
       // v5 expects an object with text property. Optionally attach guest BYOK headers (session scope).
@@ -276,7 +282,8 @@ export function useChatCore({
         }
 
         // Operation succeeded - proceed with sendMessage
-        const { requestOptions } = result.data!;
+        if (!result.data) return;
+        const { requestOptions } = result.data;
 
         // v5 sendMessage expects an object with text property for proper formatting
         await sendMessage({ text: suggestion }, requestOptions);
