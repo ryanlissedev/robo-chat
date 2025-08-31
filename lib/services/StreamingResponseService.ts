@@ -2,7 +2,7 @@ import type { LanguageModel, ToolSet } from 'ai';
 import { convertToModelMessages, streamText } from 'ai';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import { createRun, isLangSmithEnabled } from '@/lib/langsmith/client';
-import logger from '@/lib/utils/logger';
+import logger, { logError } from '@/lib/utils/logger';
 import type { ModelConfiguration } from './ModelConfigurationService';
 
 export interface StreamingConfig {
@@ -64,9 +64,9 @@ export class StreamingResponseService {
       tools,
       ...providerSettings,
       temperature: StreamingResponseService.getTemperature(modelConfig),
-      onFinish: async ({ response }) => {
+      onFinish: async ({ response }: { response?: unknown }) => {
         await StreamingResponseService.handleStreamFinish({
-          response,
+          response: response as any,
           modelConfig,
           chatId,
           userId,
@@ -178,7 +178,7 @@ export class StreamingResponseService {
         logger.info('Stream completed', completionInfo as any);
       }
     } catch (error) {
-      logger.error('Error in stream finish handler:', error);
+      logError(error, { at: 'stream.finish' });
     }
   }
 

@@ -15,7 +15,7 @@ export async function GET(
   const openai = new OpenAI({ apiKey });
   const { id } = await params;
   try {
-    const files = await openai.vectorStores.files.list(id, { limit: 100 });
+    const files = await openai.beta.vectorStores.files.list(id, { limit: 100 });
     return NextResponse.json({ files: files.data });
   } catch (e) {
     const message =
@@ -46,7 +46,7 @@ export async function POST(
     }
 
     const uploaded = await openai.files.create({ file, purpose: 'assistants' });
-    const attached = await openai.vectorStores.files.create(id, {
+    const attached = await openai.beta.vectorStores.files.create(id, {
       file_id: uploaded.id,
     });
 

@@ -13,9 +13,12 @@ export async function POST(req: Request) {
     // Delegate to ChatService for processing
     return await ChatService.processChatRequest(req, requestData);
   } catch (error) {
-    logger.error('Chat API error:', error);
+    logger.error(error as any, 'Chat API error');
     return createErrorResponse({
-      message: error instanceof Error ? error.message : 'Internal server error',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Internal server error',
       statusCode: 500,
     });
   }

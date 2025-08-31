@@ -38,7 +38,7 @@ const createTextPart = (text: string): MessagePart => ({ type: 'text', text });
 const fallbackTextForRole = (role?: string): string =>
   toRole(role) === 'assistant' ? '[Assistant response]' : '[User message]';
 
-const firstTextFromParts = (parts: MessagePart[]): string => {
+const firstTextFromParts = (parts: MessagePart[] = []): string => {
   const p = parts.find(
     (x) => isObject(x) && (x as Record<string, unknown>).type === 'text'
   );
@@ -195,7 +195,7 @@ export class MessageService {
       return {
         id,
         role: msg.role,
-        parts: (msg.parts || []) as UIMessagePart<UIDataTypes, UITools>[],
+        parts: (msg.parts ?? []) as UIMessagePart<UIDataTypes, UITools>[],
         createdAt: now, // same timestamp for a batch; stable and cheap
         content,
       };

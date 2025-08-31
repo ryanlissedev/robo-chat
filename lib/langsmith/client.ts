@@ -78,8 +78,11 @@ export function createTracedOpenAI(apiKey: string) {
     return new OpenAI({ apiKey });
   }
 
-  const client = wrapOpenAI(new OpenAI({ apiKey }));
-  return client;
+  // types for wrapOpenAI are broad; cast to unknown to satisfy differences between versions
+  const client = wrapOpenAI(new OpenAI({ apiKey }) as unknown as Parameters<
+    typeof wrapOpenAI
+  >[0]);
+  return client as unknown as OpenAI;
 }
 
 // Create a feedback entry

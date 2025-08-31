@@ -69,10 +69,14 @@ interface ImageResult {
   sourceUrl: string;
 }
 
-const isToolUIPart = (part: Part): part is ToolUIPart =>
-  typeof (part as Record<string, unknown>)?.type === 'string' &&
-  (part as Record<string, unknown>).type.toString().startsWith('tool-') &&
-  'toolCallId' in (part as Record<string, unknown>);
+const isToolUIPart = (part: Part): part is ToolUIPart => {
+  const rec = part as unknown as Record<string, unknown>;
+  return (
+    typeof rec?.type === 'string' &&
+    String(rec.type).startsWith('tool-') &&
+    'toolCallId' in rec
+  );
+};
 
 // ========= Pure helpers (éénpass, herbruikbaar) =========
 
@@ -165,10 +169,15 @@ const extractFileSearchFailure = (toolParts: ToolUIPart[]) => {
         parsed = parseMaybeJson(out);
       }
 
-      if (parsed && parsed.success === false) {
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        (parsed as Record<string, unknown>).success === false
+      ) {
+        const obj = parsed as Record<string, unknown>;
         const description =
-          parsed.error ||
-          parsed.summary ||
+          (obj.error as string | undefined) ||
+          (obj.summary as string | undefined) ||
           'File search failed. Please try again.';
         return String(description);
       }
@@ -182,8 +191,8 @@ const extractReasoningText = (
 ): string | undefined => {
   if (!parts || parts.length === 0) return undefined;
 
-  for (const part of parts as TypedToolPart[]) {
-    const partRecord = part as Record<string, unknown>;
+  for (const part of parts as unknown as TypedToolPart[]) {
+    const partRecord = part as unknown as Record<string, unknown>;
     if (partRecord.type === 'reasoning') {
       const t =
         (partRecord.text as string) ?? (partRecord.reasoningText as string);
@@ -198,7 +207,7 @@ const extractReasoningText = (
       }
       if (part.output && typeof part.output === 'object') {
         const out = part.output as Record<string, unknown>;
-        if (out.reasoning != null) return String(out.reasoning);
+        if (out.reasoning != null) return String(out.reasoning as unknown);
       }
     }
   }
