@@ -82,7 +82,8 @@ export function openproviders<T extends SupportedModel>(
       vectorStoreIds?: string[];
       fileSearchOptions?: {
         maxNumResults?: number;
-        ranker?: 'auto' | 'default-2024-08-21';
+        // Accept latest ranker; map to current AI SDK supported value when needed
+        ranker?: 'auto' | 'default-2024-11-15' | 'default-2024-08-21';
       };
     };
     const merged = (settings ?? {}) as GPT5Extras & Record<string, unknown>;
@@ -131,7 +132,11 @@ export function openproviders<T extends SupportedModel>(
               ...(fileSearchOptions?.ranker
                 ? {
                     ranking: {
-                      ranker: fileSearchOptions.ranker as
+                      // Map new default to currently supported constant until AI SDK updates
+                      ranker: ((fileSearchOptions.ranker ===
+                        'default-2024-11-15'
+                        ? 'default-2024-08-21'
+                        : fileSearchOptions.ranker) || 'auto') as
                         | 'auto'
                         | 'default-2024-08-21',
                     },

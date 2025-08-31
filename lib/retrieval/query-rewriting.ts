@@ -481,13 +481,38 @@ export async function enhancedRetrieval(
     queries = await rewriteQuery(query, { strategy: rewriteStrategy }, openai);
   }
 
-  // Step 2: Retrieval from Vector Store
+  // Step 2: Retrieval from Vector Store (OpenAI v5 stable search)
   const allResults: RetrievalResult[] = [];
-  // Placeholder: beta vector store search API may change; feature-gate and return empty results
-  for (const _query of queries) {
-    // Skip live retrieval to avoid unsupported API usage
-    // Prefix with underscore to indicate intentionally unused
-    void _query;
+  try {
+    for (const q of queries) {
+      const search = await openai.vectorStores.search(_vectorStoreId, {
+        query: q,
+        max_num_results: topK,
+        rewrite_query: false,
+        // Basic filter mapping: support single file type via eq comparison
+        ...(metadataFilters?.fileTypes && metadataFilters.fileTypes.length === 1
+          ? { filters: { type: 'eq', key: 'file_type', value: metadataFilters.fileTypes[0] } }
+          : {}),
+        ranking_options: {
+          // Keep defaults; allow server-side ranker to decide
+          ranker: 'auto',
+        },
+      });
+
+      for (const [idx, item] of search.data.entries()) {
+        const text = (item.content?.[0]?.text as string | undefined) || '';
+        allResults.push({
+          id: `${item.file_id}:${idx}`,
+          file_id: item.file_id,
+          file_name: item.filename,
+          content: text,
+          score: item.score,
+          metadata: item.attributes as Record<string, unknown> | undefined,
+        });
+      }
+    }
+  } catch {
+    // If search is unavailable, fall back to no results; reranking will be a no-op
   }
 
   // Remove duplicates

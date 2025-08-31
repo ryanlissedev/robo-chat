@@ -21,7 +21,7 @@ const OPENAI_CLIENT_DEFAULTS = {
 
 async function getDefaultVectorStoreId(openai: OpenAI): Promise<string | null> {
   try {
-    const stores = await openai.beta.vectorStores.list({ limit: 1 });
+    const stores = await openai.vectorStores.list({ limit: 1 });
     if (stores.data.length > 0) return stores.data[0].id;
   } catch (err) {
     logger.error(
