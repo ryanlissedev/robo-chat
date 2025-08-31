@@ -44,11 +44,12 @@ function Dot({ delay }: { delay: number }) {
   return (
     <motion.div
       animate={ANIMATION}
-      className={`${DOT_SIZE} ${DOT_COLOR} rounded-full`}
       transition={{
         ...TRANSITION,
         delay,
       }}
-    />
+    >
+      <div className={`${DOT_SIZE} ${DOT_COLOR} rounded-full`} />
+    </motion.div>
   );
 }

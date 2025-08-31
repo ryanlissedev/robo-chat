@@ -1,7 +1,10 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
 import { Activity, Brain, Database, Key, Shield } from 'lucide-react';
 import { Header } from '@/components/app/layout/header';
+import { MessagesProvider } from '@/lib/chat-store/messages/provider';
+import { ChatSessionProvider } from '@/lib/chat-store/session/provider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/lib/user-store/provider';
 import { ApiKeyManager } from './components/api-key-manager';
@@ -16,11 +19,13 @@ export default function SettingsPage() {
   // Guest users can access the API Keys tab, but other tabs require authentication
 
   return (
-    <div className="flex h-full flex-col">
-      <Header hasSidebar={false} />
+    <ChatSessionProvider>
+      <MessagesProvider>
+        <div className="flex h-full flex-col">
+          <Header hasSidebar={false} />
 
-      <main className="flex-1 overflow-y-auto pt-app-header">
-        <div className="container mx-auto max-w-4xl px-4 py-8">
+          <main className="flex-1 overflow-y-auto pt-app-header">
+            <div className="container mx-auto max-w-4xl px-4 py-8">
           <div className="mb-8">
             <h1 className="font-bold text-3xl">Settings</h1>
             <p className="mt-2 text-muted-foreground">
@@ -96,8 +101,10 @@ export default function SettingsPage() {
               <DiagnosticsPanel />
             </TabsContent>
           </Tabs>
+            </div>
+          </main>
         </div>
-      </main>
-    </div>
+      </MessagesProvider>
+    </ChatSessionProvider>
   );
 }

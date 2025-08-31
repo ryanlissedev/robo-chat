@@ -17,7 +17,7 @@ type ProviderKeyInputProps = {
     description: string;
     badge: string;
   };
-  existingKey?: ApiKey;
+  existingKey?: ApiKey | { encrypted_key?: string };
   newKey: string;
   onKeyChange: (key: string) => void;
   onSave: () => void;
@@ -77,8 +77,8 @@ export function ProviderKeyInput({
             <Input
               value={
                 showKey
-                  ? existingKey.encrypted_key
-                  : maskKey(existingKey.encrypted_key)
+                  ? (existingKey?.encrypted_key as string | undefined) ?? ''
+                  : maskKey((existingKey?.encrypted_key as string | undefined) ?? '')
               }
               readOnly
               className="font-mono text-sm"

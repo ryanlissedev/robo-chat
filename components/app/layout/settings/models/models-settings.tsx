@@ -1,5 +1,6 @@
 'use client';
 
+// framer-motion v11 types are stricter; import specific components
 import { AnimatePresence, motion, Reorder } from 'framer-motion';
 import { GripVertical, Minus, Plus, Star } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -136,17 +137,14 @@ export function ModelsSettings() {
         </h4>
         <AnimatePresence initial={false}>
           {favoriteModels.length > 0 ? (
-            <Reorder.Group
-              axis="y"
-              className="space-y-2"
-              onReorder={handleReorder}
-              values={favoriteModels}
-            >
+            <Reorder.Group axis="y" onReorder={handleReorder} values={favoriteModels}>
+              <div className="space-y-2">
               {favoriteModels.map((model) => {
                 const ProviderIcon = getProviderIcon(model);
 
                 return (
-                  <Reorder.Item className="group" key={model.id} value={model}>
+                  <Reorder.Item key={model.id} value={model}>
+                    <div className="group">
                     <div className="flex items-center gap-3 rounded-lg border border-border bg-transparent p-3">
                       {/* Drag Handle */}
                       <div className="cursor-grab text-muted-foreground opacity-60 transition-opacity active:cursor-grabbing group-hover:opacity-100">
@@ -190,20 +188,20 @@ export function ModelsSettings() {
                         <Minus className="size-4" />
                       </button>
                     </div>
+                    </div>
                   </Reorder.Item>
                 );
               })}
+              </div>
             </Reorder.Group>
           ) : (
-            <motion.div
-              animate={{ opacity: 1 }}
-              className="flex h-32 items-center justify-center rounded-lg border-2 border-border border-dashed text-muted-foreground"
-              initial={{ opacity: 0 }}
-            >
+            <motion.div animate={{ opacity: 1 }} initial={{ opacity: 0 }}>
+              <div className="flex h-32 items-center justify-center rounded-lg border-2 border-border border-dashed text-muted-foreground">
               <div className="text-center">
                 <Star className="mx-auto mb-2 size-8 opacity-50" />
                 <p className="text-sm">No favorite models yet</p>
                 <p className="text-xs">Add models from the list below</p>
+              </div>
               </div>
             </motion.div>
           )}
@@ -254,13 +252,13 @@ export function ModelsSettings() {
                       return (
                         <motion.div
                           animate={{ opacity: 1, y: 0 }}
-                          className="flex items-center justify-between py-1"
                           exit={{ opacity: 0, y: -10 }}
                           initial={{ opacity: 0, y: 10 }}
                           key={`${model.id}-${idx}`}
                           layout
                           transition={{ duration: 0.2 }}
                         >
+                          <div className="flex items-center justify-between py-1">
                           <div className="flex flex-col">
                             <div className="flex items-center gap-2">
                               <span className="text-sm">{model.name}</span>
@@ -282,6 +280,7 @@ export function ModelsSettings() {
                           >
                             <Plus className="size-4" />
                           </button>
+                          </div>
                         </motion.div>
                       );
                     })}

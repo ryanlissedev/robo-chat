@@ -169,7 +169,7 @@ export const file_search = tool({
 
         // Try to get the user's default vector store
         const stores = await withRetry(() =>
-          openai.vectorStores.list({ limit: 1 })
+          openai.beta.vectorStores.list({ limit: 1 })
         );
         if (stores.data.length > 0) {
           storeId = stores.data[0].id;
@@ -193,7 +193,7 @@ export const file_search = tool({
           );
 
           const newStore = await withRetry(() =>
-            openai.vectorStores.create({
+            openai.beta.vectorStores.create({
               name: 'Base Chat Default Store',
               metadata: {
                 created_by: 'Base Chat',
@@ -423,7 +423,7 @@ export async function createVectorStore(
 
   try {
     const vectorStore = await withRetry(() =>
-      openai.vectorStores.create({
+      openai.beta.vectorStores.create({
         name,
         file_ids: fileIds,
         metadata: {

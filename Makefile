@@ -3,6 +3,18 @@
 
 .PHONY: help setup install dev build test test-all lint typecheck clean kill-ports start quick-start ci-test pre-commit
 
+# Detect available package manager (prefer bun, then pnpm, then npm)
+PKG ?=
+ifeq (,$(shell command -v bun 2>/dev/null))
+  ifeq (,$(shell command -v pnpm 2>/dev/null))
+    PKG := npm
+  else
+    PKG := pnpm
+  endif
+else
+  PKG := bun
+endif
+
 # Default target - show help
 help:
 	@echo "RoboChat AI Assistant - Available Commands"
@@ -29,18 +41,18 @@ kill-ports:
 
 # Install dependencies
 install:
-	@echo "Installing dependencies with bun..."
-	@bun install
+	@echo "Installing dependencies with $(PKG)..."
+	@$(PKG) install
 
 # Development server
 dev: kill-ports
-	@echo "Starting development server..."
-	@bun run dev
+	@echo "Starting development server with $(PKG)..."
+	@$(PKG) run dev
 
 # Build production
 build:
-	@echo "Building production bundle..."
-	@bun run build
+	@echo "Building production bundle with $(PKG)..."
+	@$(PKG) run build
 
 # Run tests (using npm for compatibility with vitest)
 test:
@@ -54,13 +66,13 @@ test-all:
 
 # Lint code
 lint:
-	@echo "Running linter..."
-	@bun run lint
+	@echo "Running linter with $(PKG)..."
+	@$(PKG) run lint
 
 # Type checking
 typecheck:
-	@echo "Running TypeScript type checking..."
-	@bun run type-check
+	@echo "Running TypeScript type checking with $(PKG)..."
+	@$(PKG) run type-check
 
 # Clean build artifacts
 clean:
@@ -74,14 +86,14 @@ clean:
 
 # Start production server
 start: build kill-ports
-	@echo "Starting production server..."
-	@bun run start
+	@echo "Starting production server with $(PKG)..."
+	@$(PKG) run start
 
 # Fix common issues
 fix: kill-ports
-	@echo "Fixing common issues..."
-	@bun run lint:fix
-	@bun run format
+	@echo "Fixing common issues with $(PKG)..."
+	@$(PKG) run lint:fix
+	@$(PKG) run format
 	@echo "Fixes applied"
 
 # Run test suite and fix issues iteratively
