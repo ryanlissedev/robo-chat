@@ -14,7 +14,7 @@ export async function GET() {
     }
 
     const openai = new OpenAI({ apiKey });
-    const stores = await openai.beta.vectorStores.list({ limit: 50 });
+    const stores = await openai.vectorStores.list({ limit: 50 });
     return { stores: stores.data };
   });
 }
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     }
     const { name } = validation.data as { name: string };
 
-    const store = await openai.beta.vectorStores.create({
+    const store = await openai.vectorStores.create({
       name,
       metadata: { created_by: 'settings-ui' },
     });

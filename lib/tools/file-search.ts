@@ -169,7 +169,7 @@ export const file_search = tool({
 
         // Try to get the user's default vector store
         const stores = await withRetry(() =>
-          openai.beta.vectorStores.list({ limit: 1 })
+          openai.vectorStores.list({ limit: 1 })
         );
         if (stores.data.length > 0) {
           storeId = stores.data[0].id;
@@ -193,7 +193,7 @@ export const file_search = tool({
           );
 
           const newStore = await withRetry(() =>
-            openai.beta.vectorStores.create({
+            openai.vectorStores.create({
               name: 'Base Chat Default Store',
               metadata: {
                 created_by: 'Base Chat',
@@ -419,11 +419,11 @@ export async function createVectorStore(
   fileIds: string[],
   metadata?: Record<string, unknown>
 ): Promise<string> {
-  const openai = new OpenAI({ apiKey, ...OPENAI_CLIENT_DEFAULTS });
+      const openai = new OpenAI({ apiKey, ...OPENAI_CLIENT_DEFAULTS });
 
   try {
     const vectorStore = await withRetry(() =>
-      openai.beta.vectorStores.create({
+      openai.vectorStores.create({
         name,
         file_ids: fileIds,
         metadata: {
@@ -489,7 +489,7 @@ export function enableFileSearchForAssistant(
         file_search: {
           max_num_results: 10,
           ranking_options: {
-            ranker: 'default_2024_08_21',
+            ranker: 'default-2024-11-15',
             score_threshold: 0.5,
           },
         },
