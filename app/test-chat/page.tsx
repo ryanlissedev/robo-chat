@@ -1,6 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import {
+  DefaultChatTransport,
+  readUIMessageStream,
+  type UIMessage,
+  type UIMessageChunk,
+} from 'ai';
+import { getMessageContent } from '@/app/types/ai-extended';
 import type { TestChatMessage } from '@/lib/types/models';
 
 type TestResult = {
@@ -59,78 +66,34 @@ export default function TestChatPage() {
 
         const responseTime = Date.now() - startTime;
 
-        if (response.ok) {
-          const reader = response.body?.getReader();
-          const decoder = new TextDecoder();
+        if (response.ok && response.body) {
+          // Parse AI SDK UI message stream (v5)
           let assistantContent = '';
-
-          if (reader) {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) {
-                break;
-              }
-
-              const chunk = decoder.decode(value);
-              const lines = chunk.split('\n');
-
-              for (const line of lines) {
-                if (!line.startsWith('data: ')) {
-                  continue;
-                }
-                const raw = line.slice(6);
-                if (raw === '[DONE]') {
-                  continue;
-                }
-                try {
-                  const evt = JSON.parse(raw);
-                  // 1) Legacy shape
-                  if (
-                    evt?.type === 'content' &&
-                    typeof evt?.data === 'string'
-                  ) {
-                    assistantContent += evt.data;
-                    continue;
-                  }
-                  // 2) v5 delta
-                  if (evt?.type === 'content.delta' && evt?.delta) {
-                    const d = evt.delta;
-                    if (d.type === 'text-delta' && (d.textDelta || d.text)) {
-                      assistantContent += d.textDelta || d.text;
-                      continue;
-                    }
-                  }
-                  // 3) direct text-delta
-                  if (
-                    evt?.type === 'text-delta' &&
-                    (evt.textDelta || evt.text)
-                  ) {
-                    assistantContent += evt.textDelta || evt.text;
-                    continue;
-                  }
-                  // 4) message.delta with parts
-                  if (evt?.type === 'message.delta' && evt?.delta?.content) {
-                    const parts = Array.isArray(evt.delta.content)
-                      ? evt.delta.content
-                      : [];
-                    for (const p of parts) {
-                      if (p?.type === 'text' && typeof p?.text === 'string') {
-                        assistantContent += p.text;
-                      }
-                    }
-                    continue;
-                  }
-                  // 5) UI content event variant
-                  if (
-                    evt?.type === 'content' &&
-                    evt?.content?.type === 'text' &&
-                    typeof evt.content.text === 'string'
-                  ) {
-                    assistantContent += evt.content.text;
-                  }
-                } catch {}
-              }
+          // Convert raw response stream into UIMessageChunk stream using transport parser
+          class Parser extends DefaultChatTransport<UIMessage> {
+            public parse(
+              s: ReadableStream<Uint8Array>
+            ): ReadableStream<UIMessageChunk> {
+              return this.processResponseStream(
+                s as unknown as ReadableStream<Uint8Array<ArrayBufferLike>>
+              );
             }
+          }
+          const parser = new Parser();
+          const chunkStream = parser.parse(response.body as ReadableStream<Uint8Array>);
+          const stream = readUIMessageStream<UIMessage>({
+            stream: chunkStream,
+            onError: () => {
+              // ignore for test page
+            },
+            message: {
+              id: 'assistant-0',
+              role: 'assistant',
+              parts: [],
+            } as unknown as UIMessage,
+          });
+          for await (const message of stream) {
+            assistantContent = getMessageContent(message as any);
           }
 
           if (assistantContent) {
