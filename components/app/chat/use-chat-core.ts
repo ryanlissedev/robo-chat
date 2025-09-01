@@ -67,8 +67,9 @@ export function useChatCore({
   const [reasoningEffort, setReasoningEffort] = useState<
     'low' | 'medium' | 'high'
   >('medium');
+  // Default to short responses by design
   const [verbosity, setVerbosity] = useState<'low' | 'medium' | 'high'>(
-    'medium'
+    'low'
   );
   const [reasoningSummary, setReasoningSummary] = useState<
     'auto' | 'detailed'

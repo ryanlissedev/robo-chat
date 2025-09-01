@@ -57,7 +57,8 @@ export class ChatService {
         enableSearch,
         message_group_id,
         reasoningEffort = 'medium',
-        verbosity = 'medium',
+        // Default short verbosity across models
+        verbosity = 'low',
         reasoningSummary = 'auto',
         context = 'chat',
         personalityMode,

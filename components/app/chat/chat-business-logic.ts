@@ -186,7 +186,8 @@ export async function submitMessageScenario(
         systemPrompt: systemPrompt || SYSTEM_PROMPT_DEFAULT,
         enableSearch,
         reasoningEffort,
-        verbosity: context.verbosity ?? 'medium',
+        // Default to short responses
+        verbosity: context.verbosity ?? 'low',
         reasoningSummary: context.reasoningSummary ?? 'auto',
         context: 'chat' as const, // Explicitly set chat context for immediate response
       },
@@ -370,7 +371,8 @@ export async function submitSuggestionScenario(
         isAuthenticated,
         systemPrompt: SYSTEM_PROMPT_DEFAULT,
         reasoningEffort,
-        verbosity: context.verbosity ?? 'medium',
+        // Default to short responses
+        verbosity: context.verbosity ?? 'low',
         reasoningSummary: context.reasoningSummary ?? 'auto',
         context: 'chat' as const, // Explicitly set chat context for immediate response
       },

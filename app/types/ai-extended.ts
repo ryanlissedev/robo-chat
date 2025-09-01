@@ -136,15 +136,41 @@ export function hasAttachments(
  * Safely extracts text content from a message, handling both v4 and v5 formats
  */
 export function getMessageContent(message: ExtendedUIMessage): string {
-  if (hasContent(message)) {
-    return message.content;
-  }
+  // v4-style: direct content string
+  if (hasContent(message)) return message.content;
 
+  // v5-style: aggregate from parts with best-effort handling of deltas
   if (hasParts(message)) {
-    const textParts = message.parts.filter(
-      (part) => part.type === 'text' && 'text' in part
-    );
-    return textParts.map((part) => ('text' in part ? part.text : '')).join('');
+    let out = '';
+    for (const part of message.parts as Array<Record<string, unknown>>) {
+      const type = String(part?.type ?? '');
+
+      // Common case: consolidated text part
+      if (type === 'text' && typeof part.text === 'string') {
+        out += part.text;
+        continue;
+      }
+
+      // Streaming delta during in-flight updates
+      // Some SDK versions emit { type: 'text-delta', delta: string }
+      if (type === 'text-delta') {
+        const delta =
+          typeof part.delta === 'string'
+            ? part.delta
+            : typeof part.text === 'string'
+              ? part.text
+              : '';
+        out += delta;
+        continue;
+      }
+
+      // Fallback: any object with a text field
+      if (typeof part.text === 'string') {
+        out += part.text;
+        continue;
+      }
+    }
+    return out;
   }
 
   return '';
