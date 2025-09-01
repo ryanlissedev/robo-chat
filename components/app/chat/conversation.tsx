@@ -57,6 +57,19 @@ export function Conversation({
               isLast && messages.length > initialMessageCount.current;
 
             const extendedMessage = message as ExtendedUIMessage;
+            const messageContent = getMessageContent(extendedMessage);
+            
+            // Debug logging for message content
+            if (typeof window !== 'undefined' && message.role === 'assistant' && !messageContent) {
+              console.warn('Conversation: Empty assistant message', {
+                id: message.id,
+                role: message.role,
+                hasContent: 'content' in extendedMessage,
+                content: extendedMessage.content,
+                hasParts: Array.isArray(extendedMessage.parts),
+                partsCount: extendedMessage.parts?.length || 0
+              });
+            }
 
             return (
               <Message
@@ -78,7 +91,7 @@ export function Conversation({
                 status={status}
                 variant={message.role}
               >
-                {getMessageContent(extendedMessage)}
+                {messageContent}
               </Message>
             );
           })}

@@ -18,8 +18,7 @@ import {
 } from '../chat/reasoning-effort-selector';
 import { PromptSystem } from '../suggestions/prompt-system';
 import { ButtonFileUpload } from './button-file-upload';
-import { VerbositySelector } from '../chat/verbosity-selector';
-import { ReasoningSummarySelector } from '../chat/reasoning-summary-selector';
+// Verbosity and summary controls removed - using defaults
 // Search is always enabled; toggle removed
 import { FileList } from './file-list';
 
@@ -257,20 +256,7 @@ export function ChatInput({
                   value={currentReasoningEffort}
                 />
               )}
-              {showVerbosity && (
-                <VerbositySelector
-                  className="rounded-full"
-                  onChange={(v) => onVerbosityChange?.(v)}
-                  value={verbosity || 'medium'}
-                />
-              )}
-              {showVerbosity && (
-                <ReasoningSummarySelector
-                  className="rounded-full"
-                  onChange={(v) => onReasoningSummaryChange?.(v)}
-                  value={reasoningSummary || 'auto'}
-                />
-              )}
+              {/* Verbosity and summary controls removed - using defaults: low verbosity and auto summaries */}
             </div>
             <div className="flex items-center gap-2">
               {status === 'streaming' || (value && !isOnlyWhitespace(value)) ? (

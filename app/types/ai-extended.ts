@@ -136,15 +136,35 @@ export function hasAttachments(
  * Safely extracts text content from a message, handling both v4 and v5 formats
  */
 export function getMessageContent(message: ExtendedUIMessage): string {
+  // First check if message has direct content property (v4 compatibility)
   if (hasContent(message)) {
     return message.content;
   }
 
+  // Check if message has parts array (v5 format)
   if (hasParts(message)) {
     const textParts = message.parts.filter(
       (part) => part.type === 'text' && 'text' in part
     );
-    return textParts.map((part) => ('text' in part ? part.text : '')).join('');
+    const textContent = textParts.map((part) => ('text' in part ? part.text : '')).join('');
+    if (textContent) {
+      return textContent;
+    }
+  }
+
+  // AI SDK v5 might store content directly in message.text
+  if ('text' in message && typeof (message as any).text === 'string') {
+    return (message as any).text;
+  }
+
+  // For debugging: log if we can't find content
+  if (typeof window !== 'undefined' && message.role === 'assistant') {
+    console.warn('getMessageContent: Unable to extract content from message', {
+      hasContent: hasContent(message),
+      hasParts: hasParts(message),
+      messageKeys: Object.keys(message),
+      message
+    });
   }
 
   return '';

@@ -68,11 +68,11 @@ export function useChatCore({
     'low' | 'medium' | 'high'
   >('medium');
   const [verbosity, setVerbosity] = useState<'low' | 'medium' | 'high'>(
-    'medium'
+    'low'  // Default to short verbosity
   );
   const [reasoningSummary, setReasoningSummary] = useState<
     'auto' | 'detailed'
-  >('auto');
+  >('auto');  // Default to auto summaries
 
   // Warn once per session if search is enabled but no vector stores are configured
   const warnedNoVectorStoresRef = useRef(false);
