@@ -281,11 +281,20 @@ const stream = ({
     return 800; // medium/default
   })();
 
+  // Decide if we should force the native file_search tool.
+  // Only force when tools include the native 'file_search' entry.
+  const shouldForceFileSearch = Boolean(
+    enableSearch && tools && Object.prototype.hasOwnProperty.call(tools, 'file_search')
+  );
+
   const result = streamText({
     model,
     system: systemPrompt,
     messages,
     tools, // undefined for fallback path is OK; don't send `{}` needlessly
+    ...(shouldForceFileSearch
+      ? { toolChoice: { type: 'tool', toolName: 'file_search' as const } }
+      : {}),
     temperature: isGPT5Model ? 1 : undefined,
     maxOutputTokens,
     onError: () => {
