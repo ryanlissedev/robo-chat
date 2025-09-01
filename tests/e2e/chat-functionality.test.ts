@@ -2,8 +2,9 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Chat Functionality', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the main chat page
-    await page.goto('http://localhost:3000');
+    // Navigate to the main chat page - use port 3001 if 3000 is busy
+    const port = process.env.PORT || '3001';
+    await page.goto(`http://localhost:${port}`);
     
     // Wait for the page to load
     await page.waitForLoadState('networkidle');

@@ -168,16 +168,6 @@ export function getMessageContent(message: ExtendedUIMessage): string {
     return (message as any).text;
   }
 
-  // For debugging: log if we can't find content
-  if (typeof window !== 'undefined' && message.role === 'assistant') {
-    console.warn('getMessageContent: Unable to extract content from message', {
-      hasContent: hasContent(message),
-      hasParts: hasParts(message),
-      contentType: typeof (message as any).content,
-      messageKeys: Object.keys(message),
-      message
-    });
-  }
 
   return '';
 }

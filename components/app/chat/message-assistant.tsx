@@ -370,18 +370,6 @@ export function MessageAssistant({
 
   const contentNullOrEmpty = children == null || children === '';
   const isLastStreaming = status === 'streaming' && isLast;
-  
-  // Debug logging to understand message display issues
-  if (typeof window !== 'undefined' && contentNullOrEmpty && status === 'ready') {
-    console.warn('MessageAssistant: Empty content detected', {
-      messageId,
-      status,
-      hasChildren: children != null,
-      childrenLength: children?.length,
-      partsCount: parts?.length || 0,
-      toolPartsCount: toolInvocationParts.length
-    });
-  }
   const showTools =
     groupedToolParts.length > 0 && preferences.showToolInvocations;
 
