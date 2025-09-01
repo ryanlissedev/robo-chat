@@ -424,10 +424,6 @@ export function useChatCore({
     setVerbosity,
     reasoningSummary,
     setReasoningSummary,
-    verbosity,
-    setVerbosity,
-    reasoningSummary,
-    setReasoningSummary,
 
     // Actions
     submit,
