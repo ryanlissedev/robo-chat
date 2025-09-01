@@ -111,16 +111,27 @@ export function openproviders<T extends SupportedModel>(
       ? {
           ...openaiSettings,
           openai: {
+            // For GPT-5 and reasoning models, prefer provider-level options
             textVerbosity: textVerbosity || verbosity || 'low',
             reasoningSummary: reasoningSummary ?? 'auto',
             serviceTier: serviceTier || 'auto',
             parallelToolCalls: merged.parallelToolCalls ?? true,
             store: merged.store ?? false,
             previousResponseId: merged.previousResponseId,
+            // Pass through reasoningEffort when available
+            ...(reasoningEffort ? { reasoningEffort } : {}),
             ...(openaiSettings.openai || {}),
           },
         }
-      : openaiSettings;
+      : // Non-GPT5 OpenAI models still accept providerOptions.openai
+        // (AI SDK forwards these to the provider);
+        // include reasoningEffort if set
+        ({
+          ...openaiSettings,
+          ...(reasoningEffort
+            ? { openai: { reasoningEffort, ...(openaiSettings.openai || {}) } }
+            : {}),
+        } as Record<string, unknown>);
 
     // Configure file search tools if enabled
     const _tools =

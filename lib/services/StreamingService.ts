@@ -272,12 +272,22 @@ const stream = ({
   message_group_id,
   langsmithRunId,
 }: StreamArgs): Response => {
+  // Heuristic: cap output tokens to reduce latency; AI SDK maps to
+  // max_completion_tokens for reasoning models automatically.
+  const maxOutputTokens = (() => {
+    const effort = String(reasoningEffort || '').toLowerCase();
+    if (effort === 'high') return 1200;
+    if (effort === 'low') return 500;
+    return 800; // medium/default
+  })();
+
   const result = streamText({
     model,
     system: systemPrompt,
     messages,
     tools, // undefined for fallback path is OK; don't send `{}` needlessly
     temperature: isGPT5Model ? 1 : undefined,
+    maxOutputTokens,
     onError: () => {
       logger.warn(
         { at: 'api.chat.streamText', phase, event: 'error' },
@@ -343,8 +353,10 @@ const stream = ({
         });
       }
 
-      // 4) Metrics
+      // 4) Metrics (+ reasoning tokens if provided)
       const usage = (response as any).usage;
+      const providerMetadata = (response as any).providerMetadata;
+      const reasoningTokens = providerMetadata?.openai?.reasoningTokens;
       const responseTime = usage?.totalTokens
         ? usage.totalTokens * 10
         : undefined;
@@ -353,7 +365,7 @@ const stream = ({
         'environment',
         inferProviderFromModel(resolvedModel),
         resolvedModel,
-        { userId, success: true, responseTime }
+        { userId, success: true, responseTime, reasoningTokens }
       );
 
       await handleLangSmithUpdates(
