@@ -52,6 +52,9 @@ export type ChatRequestOptions = {
     systemPrompt: string;
     enableSearch?: boolean;
     reasoningEffort: 'low' | 'medium' | 'high';
+    // Defaults controlled by UI and server: concise responses and auto summaries
+    verbosity?: 'low' | 'medium' | 'high';
+    reasoningSummary?: 'auto' | 'detailed';
     context?: 'chat' | 'voice';
     personalityMode?:
       | 'safety-focused'
