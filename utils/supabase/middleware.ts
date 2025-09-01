@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { isSupabaseEnabled } from '@/lib/supabase/config';
 
 export async function updateSession(request: NextRequest) {
-  if (!isSupabaseEnabled) {
+  if (!isSupabaseEnabled()) {
     return NextResponse.next({
       request,
     });
