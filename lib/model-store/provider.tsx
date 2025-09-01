@@ -102,7 +102,7 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
     refetchOnWindowFocus: false,
   });
 
-  const { data: favoriteModels = [], isLoading: isLoadingFavorites } = useQuery<
+  const { data: favoriteModels = ['gpt-5-mini'], isLoading: isLoadingFavorites } = useQuery<
     string[]
   >({
     queryKey: ['favorite-models'],
@@ -112,12 +112,12 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
           '/api/user-preferences/favorite-models'
         );
         if (!response.ok) {
-          return [];
+          return ['gpt-5-mini'];
         }
         const data = await response.json();
-        return data.favorite_models || [];
+        return data.favorite_models || ['gpt-5-mini'];
       } catch {
-        return [];
+        return ['gpt-5-mini'];
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
