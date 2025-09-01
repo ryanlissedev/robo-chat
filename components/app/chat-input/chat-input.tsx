@@ -18,8 +18,7 @@ import {
 } from '../chat/reasoning-effort-selector';
 import { PromptSystem } from '../suggestions/prompt-system';
 import { ButtonFileUpload } from './button-file-upload';
-import { VerbositySelector } from '../chat/verbosity-selector';
-import { ReasoningSummarySelector } from '../chat/reasoning-summary-selector';
+// Verbosity and summary controls are hidden; defaults are applied server-side
 // Search is always enabled; toggle removed
 import { FileList } from './file-list';
 
@@ -211,7 +210,7 @@ export function ChatInput({
   // Determine if selected model supports reasoning
   const selectedModelInfo = getModelInfo(selectedModel);
   const showReasoningEffort = Boolean(selectedModelInfo?.reasoningText);
-  const showVerbosity = showReasoningEffort;
+  const showVerbosity = false; // Hidden: default short verbosity and auto summaries
 
   return (
     <div className="relative flex w-full flex-col gap-4">
@@ -257,20 +256,7 @@ export function ChatInput({
                   value={currentReasoningEffort}
                 />
               )}
-              {showVerbosity && (
-                <VerbositySelector
-                  className="rounded-full"
-                  onChange={(v) => onVerbosityChange?.(v)}
-                  value={verbosity || 'medium'}
-                />
-              )}
-              {showVerbosity && (
-                <ReasoningSummarySelector
-                  className="rounded-full"
-                  onChange={(v) => onReasoningSummaryChange?.(v)}
-                  value={reasoningSummary || 'auto'}
-                />
-              )}
+              {/* Verbosity/Summary controls removed from UI */}
             </div>
             <div className="flex items-center gap-2">
               {status === 'streaming' || (value && !isOnlyWhitespace(value)) ? (
