@@ -17,6 +17,7 @@ import { retrieveWithGpt41 } from '@/lib/retrieval/two-pass';
 import { performVectorRetrieval } from '@/lib/retrieval/vector-retrieval';
 import { file_search } from '@/lib/tools/file-search';
 import logger from '@/lib/utils/logger';
+import { getModelTemperature } from '@/lib/models/temperature-utils';
 import { CredentialService } from './CredentialService';
 import { LangSmithService } from './LangSmithService';
 import { MessageService } from './MessageService';
@@ -359,7 +360,7 @@ export class ChatService {
           enableSearch,
           reasoningEffort,
           verbosity,
-          temperature: isGPT5Model ? 1 : undefined,
+          temperature: getModelTemperature(resolvedModel),
           fileSearchToolsCapable: modelSupportsFileSearchTools,
         },
         'chat request'

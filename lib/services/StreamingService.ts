@@ -11,6 +11,7 @@ import {
   type ReasoningContext,
 } from '@/lib/middleware/extract-reasoning-middleware';
 import logger from '@/lib/utils/logger';
+import { getModelTemperature } from '@/lib/models/temperature-utils';
 import { type Provider, trackCredentialUsage } from '@/lib/utils/metrics';
 import { storeAssistantMessage } from '../../app/api/chat/api';
 import type { ResponseWithUsage, SupabaseClientType } from './types';
@@ -295,7 +296,7 @@ const stream = ({
     ...(shouldForceFileSearch
       ? { toolChoice: { type: 'tool', toolName: 'file_search' as const } }
       : {}),
-    temperature: isGPT5Model ? 1 : undefined,
+    temperature: getModelTemperature(resolvedModel),
     maxOutputTokens,
     onError: () => {
       logger.warn(

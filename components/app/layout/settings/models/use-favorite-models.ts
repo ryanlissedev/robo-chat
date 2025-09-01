@@ -16,10 +16,10 @@ export function useFavoriteModels() {
     useModel();
   const { refreshUser } = useUser();
 
-  // Ensure we always have an array
-  const safeInitialData = Array.isArray(initialFavoriteModels)
+  // Ensure we always have an array with default gpt-5-mini
+  const safeInitialData = Array.isArray(initialFavoriteModels) && initialFavoriteModels.length > 0
     ? initialFavoriteModels
-    : [];
+    : ['gpt-5-mini'];
 
   // Query to fetch favorite models
   const {
@@ -38,7 +38,7 @@ export function useFavoriteModels() {
       }
 
       const data: FavoriteModelsResponse = await response.json();
-      return data.favorite_models || [];
+      return data.favorite_models || ['gpt-5-mini'];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
