@@ -364,8 +364,6 @@ const stream = ({
 
       // 4) Metrics (+ reasoning tokens if provided)
       const usage = (response as any).usage;
-      const providerMetadata = (response as any).providerMetadata;
-      const reasoningTokens = providerMetadata?.openai?.reasoningTokens;
       const responseTime = usage?.totalTokens
         ? usage.totalTokens * 10
         : undefined;
@@ -374,7 +372,7 @@ const stream = ({
         'environment',
         inferProviderFromModel(resolvedModel),
         resolvedModel,
-        { userId, success: true, responseTime, reasoningTokens }
+        { userId, success: true, responseTime }
       );
 
       await handleLangSmithUpdates(
