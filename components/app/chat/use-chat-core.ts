@@ -67,6 +67,12 @@ export function useChatCore({
   const [reasoningEffort, setReasoningEffort] = useState<
     'low' | 'medium' | 'high'
   >('medium');
+  const [verbosity, setVerbosity] = useState<'low' | 'medium' | 'high'>(
+    'medium'
+  );
+  const [reasoningSummary, setReasoningSummary] = useState<
+    'auto' | 'detailed'
+  >('auto');
 
   // Refs and derived state
   const hasSentFirstMessageRef = useRef(false);
@@ -174,6 +180,8 @@ export function useChatCore({
         systemPrompt,
         enableSearch,
         reasoningEffort,
+        verbosity,
+        reasoningSummary,
         chatId,
       };
 
@@ -261,6 +269,8 @@ export function useChatCore({
           chatId,
           enableSearch,
           systemPrompt,
+          verbosity,
+          reasoningSummary,
         };
 
         const dependencies = {
@@ -318,6 +328,10 @@ export function useChatCore({
         isAuthenticated,
         systemPrompt,
         reasoningEffort,
+        // include UI-controlled verbosity for reload consistency
+        // not strictly required but keeps defaults aligned
+        // with the last used settings
+        verbosity,
       };
 
       const result = await prepareReloadScenario(context);
@@ -378,6 +392,14 @@ export function useChatCore({
     setEnableSearch,
     reasoningEffort,
     setReasoningEffort,
+    verbosity,
+    setVerbosity,
+    reasoningSummary,
+    setReasoningSummary,
+    verbosity,
+    setVerbosity,
+    reasoningSummary,
+    setReasoningSummary,
 
     // Actions
     submit,

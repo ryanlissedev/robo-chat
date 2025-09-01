@@ -57,6 +57,7 @@ export class ChatService {
         message_group_id,
         reasoningEffort = 'medium',
         verbosity = 'medium',
+        reasoningSummary = 'auto',
         context = 'chat',
         personalityMode,
       } = requestData;
@@ -145,7 +146,8 @@ export class ChatService {
       const modelSettings = ModelConfigurationService.getModelSettings(
         modelConfig,
         effectiveSettings.reasoningEffort,
-        effectiveSettings.verbosity
+        effectiveSettings.verbosity,
+        reasoningSummary
       );
 
       // Process messages

@@ -25,6 +25,8 @@ export type MessageSubmissionContext = {
   systemPrompt?: string;
   enableSearch: boolean;
   reasoningEffort: 'low' | 'medium' | 'high';
+  verbosity?: 'low' | 'medium' | 'high';
+  reasoningSummary?: 'auto' | 'detailed';
   chatId: string | null;
 };
 
@@ -184,6 +186,8 @@ export async function submitMessageScenario(
         systemPrompt: systemPrompt || SYSTEM_PROMPT_DEFAULT,
         enableSearch,
         reasoningEffort,
+        verbosity: context.verbosity ?? 'medium',
+        reasoningSummary: context.reasoningSummary ?? 'auto',
         context: 'chat' as const, // Explicitly set chat context for immediate response
       },
       // biome-ignore lint/style/useNamingConvention: external AI SDK API name
@@ -366,6 +370,8 @@ export async function submitSuggestionScenario(
         isAuthenticated,
         systemPrompt: SYSTEM_PROMPT_DEFAULT,
         reasoningEffort,
+        verbosity: context.verbosity ?? 'medium',
+        reasoningSummary: context.reasoningSummary ?? 'auto',
         context: 'chat' as const, // Explicitly set chat context for immediate response
       },
     };

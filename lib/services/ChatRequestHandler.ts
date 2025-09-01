@@ -60,6 +60,7 @@ export class ChatRequestHandler {
       message_group_id,
       reasoningEffort = 'medium',
       verbosity = 'medium',
+      reasoningSummary = 'auto',
       context = 'chat',
       personalityMode,
     } = requestData;
@@ -75,6 +76,7 @@ export class ChatRequestHandler {
       message_group_id,
       reasoningEffort,
       verbosity,
+      reasoningSummary,
       context,
       personalityMode,
     };

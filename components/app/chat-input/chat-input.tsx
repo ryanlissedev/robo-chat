@@ -18,6 +18,8 @@ import {
 } from '../chat/reasoning-effort-selector';
 import { PromptSystem } from '../suggestions/prompt-system';
 import { ButtonFileUpload } from './button-file-upload';
+import { VerbositySelector } from '../chat/verbosity-selector';
+import { ReasoningSummarySelector } from '../chat/reasoning-summary-selector';
 // Search is always enabled; toggle removed
 import { FileList } from './file-list';
 
@@ -43,6 +45,10 @@ type ChatInputProps = {
   quotedText?: { text: string; messageId: string } | null;
   reasoningEffort?: ReasoningEffort;
   onReasoningEffortChange?: (effort: ReasoningEffort) => void;
+  verbosity?: 'low' | 'medium' | 'high';
+  onVerbosityChange?: (v: 'low' | 'medium' | 'high') => void;
+  reasoningSummary?: 'auto' | 'detailed';
+  onReasoningSummaryChange?: (v: 'auto' | 'detailed') => void;
 };
 
 export function ChatInput({
@@ -65,6 +71,10 @@ export function ChatInput({
   quotedText,
   reasoningEffort,
   onReasoningEffortChange,
+  verbosity,
+  onVerbosityChange,
+  reasoningSummary,
+  onReasoningSummaryChange,
 }: ChatInputProps) {
   // Search is always enabled regardless of model webSearch capability
   const isOnlyWhitespace = useCallback(
@@ -201,6 +211,7 @@ export function ChatInput({
   // Determine if selected model supports reasoning
   const selectedModelInfo = getModelInfo(selectedModel);
   const showReasoningEffort = Boolean(selectedModelInfo?.reasoningText);
+  const showVerbosity = showReasoningEffort;
 
   return (
     <div className="relative flex w-full flex-col gap-4">
@@ -244,6 +255,20 @@ export function ChatInput({
                   className="rounded-full"
                   onChange={handleReasoningEffortChange}
                   value={currentReasoningEffort}
+                />
+              )}
+              {showVerbosity && (
+                <VerbositySelector
+                  className="rounded-full"
+                  onChange={(v) => onVerbosityChange?.(v)}
+                  value={verbosity || 'medium'}
+                />
+              )}
+              {showVerbosity && (
+                <ReasoningSummarySelector
+                  className="rounded-full"
+                  onChange={(v) => onReasoningSummaryChange?.(v)}
+                  value={reasoningSummary || 'auto'}
                 />
               )}
             </div>
