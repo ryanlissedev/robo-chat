@@ -1,6 +1,7 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { useQuery } from '@tanstack/react-query';
 import { MessageCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -87,6 +88,9 @@ export function ProjectView({ projectId }: ProjectViewProps) {
   }, []);
 
   const { messages, status, stop, setMessages, sendMessage } = useChat({
+    transport: new DefaultChatTransport({ api: '/api/chat' }),
+    // biome-ignore lint/style/useNamingConvention: external AI SDK API name
+    experimental_throttle: 60,
     id: `project-${projectId}-${currentChatId}`,
     onFinish: ({ message }) => cacheAndAddMessage(message),
     onError: handleError,
