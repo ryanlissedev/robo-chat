@@ -272,12 +272,31 @@ const stream = ({
   message_group_id,
   langsmithRunId,
 }: StreamArgs): Response => {
+  // Heuristic: cap output tokens to reduce latency; AI SDK maps to
+  // max_completion_tokens for reasoning models automatically.
+  const maxOutputTokens = (() => {
+    const effort = String(reasoningEffort || '').toLowerCase();
+    if (effort === 'high') return 1200;
+    if (effort === 'low') return 500;
+    return 800; // medium/default
+  })();
+
+  // Decide if we should force the native file_search tool.
+  // Only force when tools include the native 'file_search' entry.
+  const shouldForceFileSearch = Boolean(
+    enableSearch && tools && Object.prototype.hasOwnProperty.call(tools, 'file_search')
+  );
+
   const result = streamText({
     model,
     system: systemPrompt,
     messages,
     tools, // undefined for fallback path is OK; don't send `{}` needlessly
+    ...(shouldForceFileSearch
+      ? { toolChoice: { type: 'tool', toolName: 'file_search' as const } }
+      : {}),
     temperature: isGPT5Model ? 1 : undefined,
+    maxOutputTokens,
     onError: () => {
       logger.warn(
         { at: 'api.chat.streamText', phase, event: 'error' },
@@ -343,7 +362,7 @@ const stream = ({
         });
       }
 
-      // 4) Metrics
+      // 4) Metrics (+ reasoning tokens if provided)
       const usage = (response as any).usage;
       const responseTime = usage?.totalTokens
         ? usage.totalTokens * 10

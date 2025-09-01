@@ -117,6 +117,10 @@ export function Chat() {
     setEnableSearch,
     reasoningEffort,
     setReasoningEffort,
+    verbosity,
+    setVerbosity,
+    reasoningSummary,
+    setReasoningSummary,
     submit,
     handleSuggestion,
     handleReload,
@@ -182,6 +186,10 @@ export function Chat() {
       quotedText,
       reasoningEffort,
       onReasoningEffortChange: setReasoningEffort,
+      verbosity,
+      onVerbosityChange: setVerbosity,
+      reasoningSummary,
+      onReasoningSummaryChange: setReasoningSummary,
     }),
     [
       input,
@@ -205,6 +213,10 @@ export function Chat() {
       quotedText,
       reasoningEffort,
       setReasoningEffort,
+      verbosity,
+      setVerbosity,
+      reasoningSummary,
+      setReasoningSummary,
     ]
   );
 

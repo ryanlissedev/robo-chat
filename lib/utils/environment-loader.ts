@@ -25,8 +25,20 @@ export function loadEnvironmentConfig(): EnvironmentConfig {
     openaiApiKey: process.env.OPENAI_API_KEY,
     anthropicApiKey: process.env.ANTHROPIC_API_KEY,
     googleApiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-    vectorStoreIds:
-      process.env.OPENAI_VECTOR_STORE_IDS?.split(',').filter(Boolean),
+    // Support both plural and singular env vars and provide a sane default
+    // Default requested by user: vs_6849955367a88191bf89d7660230325f
+    vectorStoreIds: (() => {
+      const plural = process.env.OPENAI_VECTOR_STORE_IDS;
+      const singular = process.env.OPENAI_VECTORSTORE;
+      const fromPlural = plural?.split(',').filter(Boolean);
+      const fromSingular = singular?.split(',').filter(Boolean);
+      const resolved = (fromPlural && fromPlural.length > 0)
+        ? fromPlural
+        : (fromSingular && fromSingular.length > 0)
+          ? fromSingular
+          : ['vs_6849955367a88191bf89d7660230325f'];
+      return resolved;
+    })(),
     langsmithConfig: {
       apiKey: process.env.LANGSMITH_API_KEY,
       project: process.env.LANGSMITH_PROJECT,

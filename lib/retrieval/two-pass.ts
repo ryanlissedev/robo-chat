@@ -1,4 +1,5 @@
 import { type LanguageModel, streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import { RETRIEVAL_RETRIEVER_MODEL_ID } from '@/lib/config';
 import { getModelInfo } from '@/lib/models';
@@ -46,19 +47,46 @@ export async function retrieveWithGpt41(
     const model = modelConfig.apiSdk(apiKey, {
       enableSearch: false,
     }) as LanguageModel;
-    const retrieved = await new Promise<RetrievedDoc[]>((resolve) => {
-      const results: RetrievedDoc[] = [];
+
+    const results: RetrievedDoc[] = [];
+
+    // Prefer native OpenAI file_search tool if vector stores are configured.
+    // Fallback to our internal tool exposed as 'file_search'.
+    const { getVectorStoreConfig } = await import(
+      '@/lib/utils/environment-loader'
+    );
+    const { vectorStoreIds } = getVectorStoreConfig();
+
+    const nativeTools =
+      Array.isArray(vectorStoreIds) && vectorStoreIds.length > 0
+        ? {
+            file_search: openai.tools.fileSearch({
+              vectorStoreIds,
+              maxNumResults: options?.topK ?? 5,
+              ranking: { ranker: 'auto' },
+            }),
+          }
+        : undefined;
+
+    const fallbackTools = { file_search: file_search } as const;
+
+    await new Promise<void>((resolve) => {
       streamText({
         model,
         system:
-          'You are a retrieval assistant. Use the fileSearch tool to find relevant documents for the user query. Return the search results to help answer their question.',
+          'You are a retrieval assistant. Use the file_search tool to find relevant documents for the user query. Return the search results to help answer their question.',
         messages: [
           {
             role: 'user',
             content: `Retrieve top ${options?.topK ?? 5} documents relevant to: ${query}`,
           },
         ],
-        tools: { fileSearch: file_search },
+        // Use native when available; otherwise fallback.
+        tools: nativeTools || (fallbackTools as any),
+        // Force native tool usage when available to ensure retrieval happens.
+        ...(nativeTools
+          ? { toolChoice: { type: 'tool', toolName: 'file_search' as const } }
+          : {}),
         onFinish: async ({ response }) => {
           try {
             const msgs = (response.messages || []) as Array<
@@ -76,7 +104,7 @@ export async function retrieveWithGpt41(
                 toolName?: string;
                 result?: FileSearchToolResult;
               };
-              if (t.toolName === 'fileSearch' && t.result) {
+              if ((t.toolName === 'file_search' || t.toolName === 'fileSearch') && t.result) {
                 const r = t.result.results || [];
                 for (let i = 0; i < r.length; i++) {
                   const it = r[i] as FileSearchResultItem;
@@ -93,16 +121,16 @@ export async function retrieveWithGpt41(
           } catch (err) {
             logger.error({ at: 'retrieval.twoPass.parseError', err });
           }
-          resolve(results);
+          resolve();
         },
-        onError: () => resolve(results),
+        onError: () => resolve(),
       });
     });
 
-    if (!retrieved.length) {
+    if (!results.length) {
       return performVectorRetrieval(query, { topK: options?.topK ?? 5 });
     }
-    return retrieved;
+    return results;
   } catch (err) {
     logger.error({ at: 'retrieval.twoPass.error', err });
     return performVectorRetrieval(query, { topK: options?.topK ?? 5 });

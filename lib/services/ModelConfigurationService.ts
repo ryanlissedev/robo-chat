@@ -95,12 +95,14 @@ export class ModelConfigurationService {
   static getModelSettings(
     modelConfig: ModelConfiguration,
     reasoningEffort: string,
-    verbosity?: string
+    verbosity?: string,
+    reasoningSummary?: 'auto' | 'detailed'
   ) {
     return {
       enableSearch: false, // Vector-store only: do not enable provider-level web search
       reasoningEffort,
       verbosity,
+      reasoningSummary,
       headers: modelConfig.isReasoningCapable
         ? {
             'X-Reasoning-Effort': reasoningEffort,

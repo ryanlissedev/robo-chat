@@ -57,6 +57,7 @@ export class ChatService {
         message_group_id,
         reasoningEffort = 'medium',
         verbosity = 'medium',
+        reasoningSummary = 'auto',
         context = 'chat',
         personalityMode,
       } = requestData;
@@ -145,7 +146,8 @@ export class ChatService {
       const modelSettings = ModelConfigurationService.getModelSettings(
         modelConfig,
         effectiveSettings.reasoningEffort,
-        effectiveSettings.verbosity
+        effectiveSettings.verbosity,
+        reasoningSummary
       );
 
       // Process messages
@@ -402,20 +404,54 @@ export class ChatService {
       modelSupportsFileSearchTools
     );
 
-    if (useTools) {
-      logger.info(
-        {
-          at: 'api.chat.configureTools',
-          enableSearch,
-          fileSearchToolsCapable: modelSupportsFileSearchTools,
-          toolsEnabled: true,
-          toolNames: ['fileSearch'],
-        },
-        'Configuring file search tool'
-      );
+    if (!useTools) return {} as ToolSet;
+
+    // Prefer OpenAI native file_search tool when vector stores are configured.
+    // Falls back to our custom tool if not available.
+    try {
+      const { getVectorStoreConfig } = require('@/lib/utils/environment-loader');
+      const { createOpenAI, openai } = require('@ai-sdk/openai');
+      const { vectorStoreIds } = getVectorStoreConfig();
+
+      if (Array.isArray(vectorStoreIds) && vectorStoreIds.length > 0) {
+        logger.info(
+          {
+            at: 'api.chat.configureTools',
+            enableSearch,
+            fileSearchToolsCapable: modelSupportsFileSearchTools,
+            toolsEnabled: true,
+            toolNames: ['file_search'],
+            vectorStoreIds,
+          },
+          'Configuring native OpenAI file_search tool'
+        );
+
+        return {
+          // Must be exactly 'file_search' per OpenAI spec
+          file_search: openai.tools.fileSearch({
+            vectorStoreIds,
+            maxNumResults: 10,
+            ranking: { ranker: 'auto' },
+          }),
+        } as unknown as ToolSet;
+      }
+    } catch {
+      // ignore and fall back to custom tool
     }
 
-    return useTools ? { fileSearch: file_search } : ({} as ToolSet);
+    logger.info(
+      {
+        at: 'api.chat.configureTools',
+        enableSearch,
+        fileSearchToolsCapable: modelSupportsFileSearchTools,
+        toolsEnabled: true,
+        toolNames: ['file_search (custom fallback)'],
+      },
+      'Configuring custom file_search fallback tool'
+    );
+
+    // Expose custom tool under native name for consistency
+    return { file_search: file_search } as unknown as ToolSet;
   }
 
   private static requireApiSdk(modelConfig: unknown) {

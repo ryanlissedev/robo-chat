@@ -63,6 +63,7 @@ export interface ChatRequest {
   message_group_id?: string;
   reasoningEffort?: 'low' | 'medium' | 'high';
   verbosity?: 'low' | 'medium' | 'high';
+  reasoningSummary?: 'auto' | 'detailed';
   context?: 'chat' | 'voice';
   personalityMode?:
     | 'safety-focused'
