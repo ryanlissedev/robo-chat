@@ -291,11 +291,11 @@ const stream = ({
   // Configure provider options for reasoning models
   const providerOptions = (() => {
     // Check if this is an OpenAI model that supports reasoning
-    if (resolvedModel.toLowerCase().includes('gpt')) {
+    if (resolvedModel.toLowerCase().includes('gpt') && resolvedModel.includes('reasoning')) {
+      // Only apply reasoning options for actual reasoning models
       return {
         openai: {
-          reasoningSummary: 'auto' as const, // Use 'auto' for condensed reasoning
-          textVerbosity: 'medium' as const,
+          reasoningFormat: 'auto' as const, // Let the model decide the format
         }
       };
     }

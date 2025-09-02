@@ -1,4 +1,4 @@
-import { FREE_MODELS_IDS } from '../config';
+import { FREE_MODELS_IDS, NON_AUTH_ALLOWED_MODELS } from '../config';
 import { claudeModels } from './data/claude';
 import { deepseekModels } from './data/deepseek';
 import { geminiModels } from './data/gemini';
@@ -87,15 +87,22 @@ export async function getModelsWithAccessFlags(): Promise<ModelConfig[]> {
     availableProviders.add('openrouter');
   }
 
+  // Check if AI Gateway is configured
+  const hasAIGateway = Boolean(process.env.AI_GATEWAY_API_KEY);
+  
   // Always include ollama and free models
   const accessibleModels = models.map((model) => {
     const isAlwaysFree =
       FREE_MODELS_IDS.includes(model.id) || model.providerId === 'ollama';
     const hasProviderKey = availableProviders.has(model.providerId);
+    const isInNonAuthAllowed = NON_AUTH_ALLOWED_MODELS.includes(model.id);
+    
+    // When AI Gateway is configured, all models are accessible
+    const isAccessibleViaGateway = hasAIGateway;
 
     return {
       ...model,
-      accessible: isAlwaysFree || hasProviderKey,
+      accessible: isAlwaysFree || hasProviderKey || isInNonAuthAllowed || isAccessibleViaGateway,
     };
   });
 

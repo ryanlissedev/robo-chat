@@ -37,12 +37,15 @@ function addCredentialInfo(
   models: ModelConfig[],
   userProviders: string[] = []
 ): ModelConfig[] {
+  // Check if AI Gateway is configured - if so, all models are available
+  const hasAIGateway = Boolean(process.env.AI_GATEWAY_API_KEY);
+  
   return models.map((model) => ({
     ...model,
     credentialInfo: {
-      envAvailable: checkEnvAvailable(model.providerId),
+      envAvailable: hasAIGateway || checkEnvAvailable(model.providerId),
       guestByokAvailable: true,
-      userByokAvailable: userProviders.includes(model.providerId),
+      userByokAvailable: hasAIGateway || userProviders.includes(model.providerId),
     },
   }));
 }
