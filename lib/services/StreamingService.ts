@@ -389,7 +389,9 @@ const stream = ({
     },
   });
 
-  return result.toUIMessageStreamResponse();
+  return result.toUIMessageStreamResponse({
+    sendReasoning: true,
+  });
 };
 
 /**
