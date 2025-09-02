@@ -13,17 +13,83 @@ export const REMAINING_QUERY_ALERT_THRESHOLD = 2;
 export const DAILY_FILE_UPLOAD_LIMIT = 5;
 export const DAILY_LIMIT_PRO_MODELS = 500;
 
-export const NON_AUTH_ALLOWED_MODELS = ['gpt-5-mini'];
+// When using Vercel AI Gateway, all models are available for guest users
+// The gateway handles the authentication and billing
+export const NON_AUTH_ALLOWED_MODELS = [
+  // GPT-5 Series
+  'gpt-5-nano',
+  'gpt-5-mini',
+  'gpt-5',
+  // GPT-4 Series
+  'gpt-4o',
+  'gpt-4o-mini',
+  'gpt-4.1',
+  'gpt-4.1-mini',
+  'gpt-4.1-nano',
+  'gpt-4.5-preview',
+  // OpenAI Reasoning Models
+  'o1',
+  'o1-mini',
+  'o3',
+  'o3-mini',
+  'o4',
+  'o4-mini',
+  'o5-preview',
+  // Claude Models
+  'claude-3-5-haiku-latest',
+  'claude-3-5-sonnet-latest',
+  'claude-3-7-sonnet-20250219',
+  'claude-3-7-sonnet-rea',
+  'claude-3-haiku-20240307',
+  'claude-3-opus-latest',
+  'claude-3-sonnet-20240229',
+  'claude-4-opus',
+  'claude-4-sonnet',
+  'claude-4-haiku',
+  'claude-5-preview',
+  // Gemini Models
+  'gemini-1.5-flash-002',
+  'gemini-1.5-flash-8b',
+  'gemini-1.5-pro-002',
+  'gemini-2.0-flash-001',
+  'gemini-2.0-flash-lite-preview-02-05',
+  'gemini-2.5-flash',
+  'gemini-2.5-pro',
+  'gemini-3.0-preview',
+  // DeepSeek Models
+  'deepseek-r2',
+  'deepseek-r1',
+  'deepseek-v4',
+  'deepseek-v3',
+  // Mistral Models
+  'mistral-large-latest',
+  'pixtral-large-latest',
+  // Perplexity Models
+  'perplexity/llama-3.1-sonar-small-128k-online',
+  'perplexity/llama-3.1-sonar-large-128k-online',
+  'perplexity/llama-3.1-sonar-huge-128k-online',
+  // Grok Models
+  'grok-2-latest',
+  'grok-2-vision-latest',
+  'grok-2.5',
+  'grok-3',
+  // Additional models can be added here
+];
 
+// These models are completely free (no billing through gateway)
 export const FREE_MODELS_IDS = [
   'openrouter:deepseek/deepseek-r1:free',
   'openrouter:meta-llama/llama-3.3-8b-instruct:free',
   'pixtral-large-latest',
   'mistral-large-latest',
   'gpt-4o-mini',
+  'gpt-5-mini', // Default free model
+  'claude-3-5-haiku-latest', // Fast and affordable
+  'gemini-1.5-flash-8b', // Lightweight
+  'deepseek-v3', // Open source
 ];
 
-export const MODEL_DEFAULT = 'gpt-5-mini';
+export const MODEL_DEFAULT = 'o5-preview'; // Latest reasoning model as default
 
 export const APP_NAME = 'RoboRail Assistant';
 export const APP_DOMAIN = 'https://your-app-domain.com';
