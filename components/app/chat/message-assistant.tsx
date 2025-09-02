@@ -191,26 +191,37 @@ const extractReasoningText = (
 ): string | undefined => {
   if (!parts || parts.length === 0) return undefined;
 
-  for (const part of parts as unknown as TypedToolPart[]) {
-    const partRecord = part as unknown as Record<string, unknown>;
-    if (partRecord.type === 'reasoning') {
-      const t =
-        (partRecord.text as string) ?? (partRecord.reasoningText as string);
-      if (typeof t === 'string' && t) return t;
+  // Look for AI SDK v5 reasoning parts
+  for (const part of parts as unknown as any[]) {
+    // Direct reasoning part (AI SDK v5 format)
+    if (part?.type === 'reasoning' && typeof part?.text === 'string' && part.text.trim()) {
+      return part.text;
+    }
+    
+    // Legacy format support
+    if (part?.type === 'reasoning') {
+      const reasoningText = part?.reasoningText || part?.text;
+      if (typeof reasoningText === 'string' && reasoningText.trim()) {
+        return reasoningText;
+      }
     }
 
-    // sommige modellen nestelen reasoning in tool output
-    if (typeof part.type === 'string' && part.type.startsWith('tool-')) {
+    // Tool-based reasoning (for some models)
+    if (typeof part?.type === 'string' && part.type.startsWith('tool-')) {
       if (part.toolName === 'reasoning') {
         const direct = part.text ?? part.reasoningText;
-        if (typeof direct === 'string' && direct) return direct;
+        if (typeof direct === 'string' && direct.trim()) return direct;
       }
       if (part.output && typeof part.output === 'object') {
         const out = part.output as Record<string, unknown>;
-        if (out.reasoning != null) return String(out.reasoning as unknown);
+        if (out.reasoning != null) {
+          const reasoning = String(out.reasoning);
+          if (reasoning.trim()) return reasoning;
+        }
       }
     }
   }
+  
   return undefined;
 };
 
