@@ -188,6 +188,8 @@ export function useChatCore({
 
   // Submit action using BDD-style operations
   const submit = useCallback(async () => {
+    // Prevent premature redirect while submitting the first message
+    hasSentFirstMessageRef.current = true;
     setIsSubmitting(true);
 
     const currentInput = inputValue;
@@ -285,6 +287,8 @@ export function useChatCore({
   // Handle suggestion using BDD-style operations
   const handleSuggestion = useCallback(
     async (suggestion: string) => {
+      // Prevent premature redirect while submitting the first suggestion
+      hasSentFirstMessageRef.current = true;
       setIsSubmitting(true);
 
       try {
