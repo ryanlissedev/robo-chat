@@ -9,8 +9,13 @@ export type OpenAIModel =
   | 'gpt-4.1-mini'
   | 'gpt-4.1-nano'
   | 'gpt-4.5-preview'
+  | 'gpt-4-turbo'
+  | 'gpt-4'
+  | 'gpt-3.5-turbo'
   | 'o1'
   | 'o1-mini'
+  | 'o3'
+  | 'o3-pro'
   | 'o3-mini'
   | 'o4-mini';
 
@@ -33,6 +38,9 @@ export type PerplexityModel =
   | 'sonar-reasoning';
 
 export type GeminiModel =
+  | 'gemini-2.5-flash'
+  | 'gemini-2.5-pro'
+  | 'gemini-3.0-preview'
   | 'gemini-2.0-flash-001'
   | 'gemini-1.5-flash'
   | 'gemini-1.5-flash-latest'
@@ -55,6 +63,9 @@ export type GeminiModel =
   | 'learnlm-1.5-pro-experimental';
 
 export type AnthropicModel =
+  | 'claude-opus-4-1'
+  | 'claude-opus-4'
+  | 'claude-sonnet-4'
   | 'claude-3-7-sonnet-20250219'
   | 'claude-3-5-sonnet-latest'
   | 'claude-3-5-sonnet-20241022'

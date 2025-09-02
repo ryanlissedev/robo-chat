@@ -188,4 +188,5 @@ const claudeModels: ModelConfig[] = [
   },
 ];
 
+export { claudeModels };
 export default claudeModels;

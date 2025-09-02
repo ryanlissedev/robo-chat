@@ -407,4 +407,5 @@ const openaiModels: ModelConfig[] = [
   },
 ];
 
+export { openaiModels };
 export default openaiModels;
