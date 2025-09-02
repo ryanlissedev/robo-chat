@@ -25,8 +25,8 @@ type ModelConfig = {
   webSearch?: boolean;
   openSource?: boolean;
 
-  speed?: 'Fast' | 'Medium' | 'Slow';
-  intelligence?: 'Low' | 'Medium' | 'High';
+  speed?: 'Fast' | 'Medium' | 'Slow' | 'Very Fast';
+  intelligence?: 'Low' | 'Medium' | 'High' | 'Very High' | 'Highest';
 
   website?: string; // official website (e.g. https://openai.com)
   apiDocs?: string; // official API docs (e.g. https://platform.openai.com/docs/api-reference)
