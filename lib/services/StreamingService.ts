@@ -288,6 +288,20 @@ const stream = ({
     enableSearch && tools && Object.prototype.hasOwnProperty.call(tools, 'file_search')
   );
 
+  // Configure provider options for reasoning models
+  const providerOptions = (() => {
+    // Check if this is an OpenAI model that supports reasoning
+    if (resolvedModel.toLowerCase().includes('gpt')) {
+      return {
+        openai: {
+          reasoningSummary: 'auto' as const, // Use 'auto' for condensed reasoning
+          textVerbosity: 'medium' as const,
+        }
+      };
+    }
+    return undefined;
+  })();
+
   const result = streamText({
     model,
     system: systemPrompt,
@@ -298,6 +312,7 @@ const stream = ({
       : {}),
     temperature: getModelTemperature(resolvedModel),
     maxOutputTokens,
+    ...(providerOptions ? { providerOptions } : {}),
     onError: () => {
       logger.warn(
         { at: 'api.chat.streamText', phase, event: 'error' },
