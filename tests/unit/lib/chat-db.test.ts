@@ -85,6 +85,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         parts: [{ type: 'text', text: 'Hello, how can I help you?' }],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
 
@@ -132,6 +133,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         parts: [],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
 
@@ -179,6 +181,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         parts: [],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
   });
@@ -236,6 +239,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         ],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
 
@@ -291,6 +295,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         ],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
   });
@@ -364,6 +369,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         ],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
 
@@ -421,6 +427,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         parts: [], // Tool invocation without toolCallId should be ignored
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
 
@@ -564,6 +571,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         ],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
   });
@@ -626,6 +634,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         ],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
 
@@ -683,6 +692,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         ],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
   });
@@ -744,6 +754,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         ],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
   });
@@ -811,6 +822,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         ],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
 
@@ -874,6 +886,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         ],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
   });
@@ -1327,6 +1340,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         parts: [],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
 
@@ -1381,6 +1395,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         ],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
   });
@@ -1481,6 +1496,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         parts: [{ type: 'text', text: veryLongText }],
         message_group_id: mockMessageGroupId,
         model: mockModel,
+        langsmith_run_id: null,
       });
     });
 

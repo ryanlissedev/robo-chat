@@ -29,7 +29,7 @@ const FeedbackWidget = dynamic(
 );
 
 const DialogAuth = dynamic(
-  () => import('./dialog-auth').then((mod) => mod.DialogAuth),
+  () => import('@/components/app/chat/dialog-auth').then((mod) => mod.DialogAuth),
   { 
     ssr: false,
     loading: () => null

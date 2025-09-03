@@ -21,7 +21,7 @@ export function createLazyComponent<T extends ComponentType<any>>(
     
     // Add artificial delay for better UX if specified
     if (options.delay) {
-      return new Promise(resolve => {
+      return new Promise<{ default: T }>(resolve => {
         setTimeout(() => promise.then(resolve), options.delay);
       });
     }
@@ -84,12 +84,12 @@ export const preloadComponents = {
 export const LazyComponents = {
   // Chat components
   MessageAssistant: createLazyComponent(
-    () => import('@/components/app/chat/message-assistant').then(mod => ({ default: mod.default || mod.MessageAssistant })),
+    () => import('@/components/app/chat/message-assistant').then(mod => ({ default: mod.MessageAssistant })),
     { delay: 0 }
   ),
 
   MessageUser: createLazyComponent(
-    () => import('@/components/app/chat/message-user').then(mod => ({ default: mod.default || mod.MessageUser })),
+    () => import('@/components/app/chat/message-user').then(mod => ({ default: mod.MessageUser })),
     { delay: 0 }
   ),
 
@@ -105,29 +105,29 @@ export const LazyComponents = {
 
   // Multi-chat components
   MultiChat: createLazyComponent(
-    () => import('@/components/app/multi-chat/multi-chat').then(mod => ({ default: mod.default || mod.MultiChat })),
+    () => import('@/components/app/multi-chat/multi-chat').then(mod => ({ default: mod.MultiChat })),
     { delay: 0 }
   ),
 
   MultiChatInput: createLazyComponent(
-    () => import('@/components/app/multi-chat/multi-chat-input').then(mod => ({ default: mod.default || mod.MultiChatInput })),
+    () => import('@/components/app/multi-chat/multi-chat-input').then(mod => ({ default: mod.MultiChatInput })),
     { delay: 0 }
   ),
 
   // Heavy components
   CodeBlock: createLazyComponent(
-    () => import('@/components/ai-elements/code-block').then(mod => ({ default: mod.default || mod.CodeBlock })),
+    () => import('@/components/ai-elements/code-block').then(mod => ({ default: mod.CodeBlock })),
     { delay: 50 }
   ),
 
   WebPreview: createLazyComponent(
-    () => import('@/components/ai-elements/web-preview').then(mod => ({ default: mod.default || mod.WebPreview })),
+    () => import('@/components/ai-elements/web-preview').then(mod => ({ default: mod.WebPreview })),
     { delay: 100 }
   ),
 
   // Settings components
   SettingsContent: createLazyComponent(
-    () => import('@/components/app/layout/settings/settings-content').then(mod => ({ default: mod.default || mod.SettingsContent })),
+    () => import('@/components/app/layout/settings/settings-content').then(mod => ({ default: mod.SettingsContent })),
     { delay: 200 }
   ),
 };

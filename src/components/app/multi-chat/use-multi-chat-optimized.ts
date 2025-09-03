@@ -37,21 +37,27 @@ type StatusCap = { status?: 'submitted' | 'streaming' | 'ready' | 'error' };
 export function useMultiChatOptimized(models: ModelConfig[]): ModelChat[] {
   // Cache model IDs to prevent unnecessary re-initializations
   const modelIdsRef = useRef<string>('');
+  const prevChatHooks = useRef<Array<{ instance: UseChatHelpers<Message> | null; initialized: boolean }> | null>(null);
   const currentModelIds = models.map(m => m.id).sort().join(',');
   
   // Create chat hooks with lazy initialization pattern
-  const chatHooks = useMemo(() => {
+  const chatHooks: Array<{ instance: UseChatHelpers<Message> | null; initialized: boolean }> = useMemo(() => {
     // Only create new instances if model configuration changed
     if (modelIdsRef.current === currentModelIds) {
-      return chatHooks;
+      return prevChatHooks.current || Array.from({ length: MAX_MODELS }, () => ({
+        instance: null as UseChatHelpers<Message> | null,
+        initialized: false,
+      }));
     }
     
     modelIdsRef.current = currentModelIds;
     
-    return Array.from({ length: MAX_MODELS }, () => ({
+    const newHooks = Array.from({ length: MAX_MODELS }, () => ({
       instance: null as UseChatHelpers<Message> | null,
       initialized: false,
     }));
+    prevChatHooks.current = newHooks;
+    return newHooks;
   }, [currentModelIds]);
 
   // Lazy initialization of useChat hooks
@@ -59,7 +65,7 @@ export function useMultiChatOptimized(models: ModelConfig[]): ModelChat[] {
     if (!chatHooks[index].instance && !chatHooks[index].initialized) {
       chatHooks[index].instance = useChat({
         // Optimized configuration
-        keepLastMessageOnError: true,
+        // keepLastMessageOnError: true, // Removed - not available in AI SDK v5
         experimental_throttle: 100, // Reduced throttling for better performance
       });
       chatHooks[index].initialized = true;

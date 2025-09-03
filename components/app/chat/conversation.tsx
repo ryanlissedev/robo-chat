@@ -117,7 +117,7 @@ export const Conversation = memo(ConversationComponent, (prevProps, nextProps) =
     prevProps.messages.length === nextProps.messages.length &&
     prevProps.messages.every((msg, idx) => {
       const nextMsg = nextProps.messages[idx];
-      return msg && nextMsg && msg.id === nextMsg.id && msg.content === nextMsg.content;
+      return msg && nextMsg && msg.id === nextMsg.id && getMessageContent(msg as ExtendedUIMessage) === getMessageContent(nextMsg as ExtendedUIMessage);
     })
   );
 });
