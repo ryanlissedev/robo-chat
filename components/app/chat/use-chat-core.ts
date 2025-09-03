@@ -234,6 +234,9 @@ export function useChatCore({
       if (!result.data) return;
       const { chatId: currentChatId, requestOptions } = result.data;
 
+      // Set guard ref before sending
+      hasSentFirstMessageRef.current = true;
+
       // In v5, use sendMessage which handles everything including optimistic updates
       // v5 expects an object with text property. Optionally attach guest BYOK headers (session scope).
       try {
@@ -322,6 +325,9 @@ export function useChatCore({
         // Operation succeeded - proceed with sendMessage
         if (!result.data) return;
         const { requestOptions } = result.data;
+
+        // Set guard ref before sending
+        hasSentFirstMessageRef.current = true;
 
         // v5 sendMessage expects an object with text property for proper formatting
         await sendMessage({ text: suggestion }, requestOptions);
