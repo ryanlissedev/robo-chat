@@ -10,6 +10,8 @@ export async function POST(req: Request) {
   const stream = createUIMessageStream({
     async execute({ writer }) {
       const messageId = 'verify-msg-' + Date.now();
+      const reasoningId = generateId();
+      const textId = generateId();
       
       // 1. Send message start
       writer.write({
@@ -20,10 +22,11 @@ export async function POST(req: Request) {
       console.log('✓ Sent message start');
 
       // 2. Send reasoning tokens (these should show in reasoning section)
+      // Use the SAME id for all reasoning deltas in the same block
       writer.write({
         type: 'reasoning-delta',
         delta: 'I need to think about this user\'s request carefully. ',
-        id: generateId(),
+        id: reasoningId,
       });
 
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -31,7 +34,7 @@ export async function POST(req: Request) {
       writer.write({
         type: 'reasoning-delta', 
         delta: 'Let me consider the best way to demonstrate that both reasoning and final responses work correctly. ',
-        id: generateId(),
+        id: reasoningId,
       });
 
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -39,7 +42,7 @@ export async function POST(req: Request) {
       writer.write({
         type: 'reasoning-delta',
         delta: 'I should provide a clear response that shows the chat interface is functioning properly.',
-        id: generateId(),
+        id: reasoningId,
       });
 
       console.log('✓ Sent reasoning tokens');
@@ -53,12 +56,13 @@ export async function POST(req: Request) {
         'integration', 'is', 'functioning', 'as', 'expected.'
       ];
       
+      // Use the SAME id for all text deltas in the same response
       for (const word of responseWords) {
         await new Promise(resolve => setTimeout(resolve, 25));
         writer.write({
           type: 'text-delta',
           delta: word + ' ',
-          id: generateId(),
+          id: textId,
         });
       }
 

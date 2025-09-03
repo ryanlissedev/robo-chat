@@ -29,6 +29,17 @@ export default function VerifyChat() {
         {messages.map((message, idx) => {
           const content = getMessageContent(message as any);
           
+          // Debug logging
+          if (typeof window !== 'undefined') {
+            console.log(`Message ${idx}:`, {
+              role: message.role,
+              id: message.id,
+              partsLength: message.parts?.length || 0,
+              content,
+              rawMessage: message
+            });
+          }
+          
           if (message.role === 'user') {
             return (
               <div key={message.id} className="bg-blue-50 p-3 rounded border-l-4 border-blue-400">
@@ -43,6 +54,15 @@ export default function VerifyChat() {
               <div key={message.id} className="bg-white border rounded-lg shadow-sm">
                 <div className="p-4">
                   <div className="font-semibold text-gray-800 mb-3">ASSISTANT:</div>
+                  
+                  {/* Debug info */}
+                  <div className="mb-2 p-2 bg-gray-100 text-xs">
+                    <strong>Debug Info:</strong><br/>
+                    Parts: {message.parts?.length || 0}<br/>
+                    Content length: {content.length}<br/>
+                    Status: {idx === messages.length - 1 ? status : 'ready'}<br/>
+                    Content preview: "{content.substring(0, 50)}..."
+                  </div>
                   
                   {/* Use the actual MessageAssistant component */}
                   <MessageAssistant
