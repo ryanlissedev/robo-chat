@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
       // Send reasoning token (for models that support it)
       writer.write({
-        type: 'reasoning',
+        type: 'reasoning-delta',
         delta: 'The user is asking for a test response. I should provide a helpful response that demonstrates the chat interface is working correctly. Let me think about what would be most useful to show...',
         id: generateId(),
       });
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
       // More reasoning
       writer.write({
-        type: 'reasoning', 
+        type: 'reasoning-delta', 
         delta: ' I should include both a greeting and confirmation that the system is functioning properly.',
         id: generateId(),
       });

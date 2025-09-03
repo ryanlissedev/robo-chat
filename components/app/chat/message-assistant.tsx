@@ -196,7 +196,7 @@ const extractReasoningText = (
 
   for (const part of parts as unknown as any[]) {
     // AI SDK v5 reasoning parts - handle both text and delta
-    if (part?.type === 'reasoning') {
+    if (part?.type === 'reasoning' || part?.type === 'reasoning-delta') {
       const reasoningText = part?.text || part?.delta || part?.reasoningText;
       if (typeof reasoningText === 'string' && reasoningText.trim()) {
         reasoningTexts.push(reasoningText);

@@ -21,7 +21,7 @@ export async function POST(req: Request) {
 
       // 2. Send reasoning tokens (these should show in reasoning section)
       writer.write({
-        type: 'reasoning',
+        type: 'reasoning-delta',
         delta: 'I need to think about this user\'s request carefully. ',
         id: generateId(),
       });
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
       await new Promise(resolve => setTimeout(resolve, 50));
 
       writer.write({
-        type: 'reasoning', 
+        type: 'reasoning-delta', 
         delta: 'Let me consider the best way to demonstrate that both reasoning and final responses work correctly. ',
         id: generateId(),
       });
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       await new Promise(resolve => setTimeout(resolve, 50));
 
       writer.write({
-        type: 'reasoning',
+        type: 'reasoning-delta',
         delta: 'I should provide a clear response that shows the chat interface is functioning properly.',
         id: generateId(),
       });
@@ -71,9 +71,9 @@ export async function POST(req: Request) {
 
       console.log('✓ Sent finish');
     },
-    onError: (error) => {
+    onError: (error: unknown) => {
       console.error('Stream error:', error);
-      return error.message;
+      return error instanceof Error ? error.message : String(error);
     },
   });
 
