@@ -139,8 +139,8 @@ export function getMessageContent(message: ExtendedUIMessage): string {
   // AI SDK v5 primary format - parts array
   if (message.parts && Array.isArray(message.parts)) {
     const textParts = message.parts
-      .filter((part: any) => part.type === 'text')
-      .map((part: any) => part.text || '')
+      .filter((part: any) => part.type === 'text' || part.type === 'text-delta')
+      .map((part: any) => part.text || part.delta || '')
       .join('');
     
     if (textParts) {
@@ -154,7 +154,8 @@ export function getMessageContent(message: ExtendedUIMessage): string {
       id: message.id,
       role: message.role,
       parts: message.parts,
-      partsLength: message.parts?.length || 0
+      partsLength: message.parts?.length || 0,
+      textParts: message.parts?.filter((part: any) => part.type === 'text' || part.type === 'text-delta')
     });
   }
 
