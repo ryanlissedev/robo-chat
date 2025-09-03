@@ -133,41 +133,30 @@ export function hasAttachments(
 }
 
 /**
- * Safely extracts text content from a message, handling both v4 and v5 formats
+ * Extracts text content from AI SDK v5 messages
  */
 export function getMessageContent(message: ExtendedUIMessage): string {
-  // First check if message has direct content property as string (v4 compatibility)
-  if (hasContent(message)) {
-    return message.content;
-  }
-
-  // AI SDK v5 format - content can be an array of content parts
-  if ('content' in message && Array.isArray(message.content)) {
-    const textContent = message.content
+  // AI SDK v5 primary format - parts array
+  if (message.parts && Array.isArray(message.parts)) {
+    const textParts = message.parts
       .filter((part: any) => part.type === 'text')
       .map((part: any) => part.text || '')
       .join('');
-    if (textContent) {
-      return textContent;
+    
+    if (textParts) {
+      return textParts;
     }
   }
 
-  // Check if message has parts array (v5 format alternative)
-  if (hasParts(message)) {
-    const textParts = message.parts.filter(
-      (part) => part.type === 'text' && 'text' in part
-    );
-    const textContent = textParts.map((part) => ('text' in part ? part.text : '')).join('');
-    if (textContent) {
-      return textContent;
-    }
+  // Debug logging for troubleshooting
+  if (typeof window !== 'undefined' && message.role === 'assistant') {
+    console.log('Message structure:', {
+      id: message.id,
+      role: message.role,
+      parts: message.parts,
+      partsLength: message.parts?.length || 0
+    });
   }
-
-  // AI SDK v5 might store content directly in message.text
-  if ('text' in message && typeof (message as any).text === 'string') {
-    return (message as any).text;
-  }
-
 
   return '';
 }

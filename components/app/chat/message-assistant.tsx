@@ -191,35 +191,41 @@ const extractReasoningText = (
 ): string | undefined => {
   if (!parts || parts.length === 0) return undefined;
 
-  // Look for AI SDK v5 reasoning parts
+  // Collect all reasoning parts and combine them
+  const reasoningTexts: string[] = [];
+
   for (const part of parts as unknown as any[]) {
-    // Direct reasoning part (AI SDK v5 format)
-    if (part?.type === 'reasoning' && typeof part?.text === 'string' && part.text.trim()) {
-      return part.text;
-    }
-    
-    // Legacy format support
-    if (part?.type === 'reasoning') {
-      const reasoningText = part?.reasoningText || part?.text;
+    // AI SDK v5 reasoning parts - handle both text and delta
+    if (part?.type === 'reasoning' || part?.type === 'reasoning-delta') {
+      const reasoningText = part?.text || part?.delta || part?.reasoningText;
       if (typeof reasoningText === 'string' && reasoningText.trim()) {
-        return reasoningText;
+        reasoningTexts.push(reasoningText);
       }
     }
 
     // Tool-based reasoning (for some models)
     if (typeof part?.type === 'string' && part.type.startsWith('tool-')) {
       if (part.toolName === 'reasoning') {
-        const direct = part.text ?? part.reasoningText;
-        if (typeof direct === 'string' && direct.trim()) return direct;
+        const direct = part.text ?? part.reasoningText ?? part.delta;
+        if (typeof direct === 'string' && direct.trim()) {
+          reasoningTexts.push(direct);
+        }
       }
       if (part.output && typeof part.output === 'object') {
         const out = part.output as Record<string, unknown>;
         if (out.reasoning != null) {
           const reasoning = String(out.reasoning);
-          if (reasoning.trim()) return reasoning;
+          if (reasoning.trim()) {
+            reasoningTexts.push(reasoning);
+          }
         }
       }
     }
+  }
+  
+  // Return combined reasoning text if we found any
+  if (reasoningTexts.length > 0) {
+    return reasoningTexts.join('');
   }
   
   return undefined;
