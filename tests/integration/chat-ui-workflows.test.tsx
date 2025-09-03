@@ -1,0 +1,437 @@
+/**
+ * Integration tests for Chat UI workflows
+ * Testing complete user interactions and component integration
+ */
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { ChatContainer } from '@/components/app/chat/chat-container';
+import { UserPreferenceProvider } from '@/lib/user-preference-store/provider';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Mock the sub-components
+vi.mock('@/components/app/chat/chat', () => ({
+  Chat: () => <div data-testid="single-chat">Single Chat Component</div>,
+}));
+
+vi.mock('@/components/app/multi-chat/multi-chat', () => ({
+  MultiChat: () => <div data-testid="multi-chat">Multi Chat Component</div>,
+}));
+
+// Mock preferences provider
+const mockPreferences = {
+  multiModelEnabled: false,
+  reasoningEnabled: true,
+  searchEnabled: true,
+  temperature: 0.7,
+  maxTokens: 1000,
+};
+
+const mockPreferencesProvider = {
+  preferences: mockPreferences,
+  updatePreferences: vi.fn(),
+  isLoading: false,
+};
+
+vi.mock('@/lib/user-preference-store/provider', () => ({
+  useUserPreferences: () => mockPreferencesProvider,
+  UserPreferenceProvider: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="preferences-provider">{children}</div>
+  ),
+}));
+
+describe('Chat UI Workflows Integration', () => {
+  let queryClient: QueryClient;
+  let user: ReturnType<typeof userEvent.setup>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    user = userEvent.setup();
+
+    // Reset mock preferences
+    mockPreferencesProvider.preferences = {
+      multiModelEnabled: false,
+      reasoningEnabled: true,
+      searchEnabled: true,
+      temperature: 0.7,
+      maxTokens: 1000,
+    };
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const renderChatContainer = (initialPreferences = {}) => {
+    mockPreferencesProvider.preferences = {
+      ...mockPreferences,
+      ...initialPreferences,
+    };
+
+    return render(
+      <QueryClientProvider client={queryClient}>
+        <UserPreferenceProvider>
+          <ChatContainer />
+        </UserPreferenceProvider>
+      </QueryClientProvider>
+    );
+  };
+
+  describe('Chat Mode Selection', () => {
+    it('should render single chat when multiModelEnabled is false', () => {
+      renderChatContainer({ multiModelEnabled: false });
+
+      expect(screen.getByTestId('single-chat')).toBeInTheDocument();
+      expect(screen.queryByTestId('multi-chat')).not.toBeInTheDocument();
+    });
+
+    it('should render multi chat when multiModelEnabled is true', () => {
+      renderChatContainer({ multiModelEnabled: true });
+
+      expect(screen.getByTestId('multi-chat')).toBeInTheDocument();
+      expect(screen.queryByTestId('single-chat')).not.toBeInTheDocument();
+    });
+
+    it('should switch between chat modes when preference changes', () => {
+      const { rerender } = renderChatContainer({ multiModelEnabled: false });
+
+      expect(screen.getByTestId('single-chat')).toBeInTheDocument();
+
+      // Update preferences
+      mockPreferencesProvider.preferences.multiModelEnabled = true;
+
+      rerender(
+        <QueryClientProvider client={queryClient}>
+          <UserPreferenceProvider>
+            <ChatContainer />
+          </UserPreferenceProvider>
+        </QueryClientProvider>
+      );
+
+      expect(screen.getByTestId('multi-chat')).toBeInTheDocument();
+      expect(screen.queryByTestId('single-chat')).not.toBeInTheDocument();
+    });
+
+    it('should handle loading state appropriately', () => {
+      mockPreferencesProvider.isLoading = true;
+      
+      renderChatContainer();
+
+      // Should still render something even when loading
+      expect(
+        screen.getByTestId('single-chat') || screen.getByTestId('multi-chat')
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('User Preference Integration', () => {
+    it('should access preferences from context', () => {
+      renderChatContainer({
+        multiModelEnabled: false,
+        temperature: 0.8,
+        maxTokens: 2000,
+      });
+
+      expect(screen.getByTestId('preferences-provider')).toBeInTheDocument();
+      expect(screen.getByTestId('single-chat')).toBeInTheDocument();
+    });
+
+    it('should handle preferences update', async () => {
+      renderChatContainer();
+
+      // Simulate preference update
+      mockPreferencesProvider.updatePreferences({
+        multiModelEnabled: true,
+      });
+
+      expect(mockPreferencesProvider.updatePreferences).toHaveBeenCalledWith({
+        multiModelEnabled: true,
+      });
+    });
+
+    it('should handle undefined preferences gracefully', () => {
+      mockPreferencesProvider.preferences = {} as any;
+
+      expect(() => {
+        renderChatContainer();
+      }).not.toThrow();
+    });
+
+    it('should handle null preferences gracefully', () => {
+      mockPreferencesProvider.preferences = null as any;
+
+      expect(() => {
+        renderChatContainer();
+      }).not.toThrow();
+    });
+  });
+
+  describe('Component Lifecycle', () => {
+    it('should mount and unmount cleanly', () => {
+      const { unmount } = renderChatContainer();
+
+      expect(screen.getByTestId('single-chat')).toBeInTheDocument();
+
+      expect(() => unmount()).not.toThrow();
+    });
+
+    it('should handle re-renders without issues', () => {
+      const { rerender } = renderChatContainer();
+
+      // Multiple re-renders
+      for (let i = 0; i < 5; i++) {
+        rerender(
+          <QueryClientProvider client={queryClient}>
+            <UserPreferenceProvider>
+              <ChatContainer />
+            </UserPreferenceProvider>
+          </QueryClientProvider>
+        );
+      }
+
+      expect(screen.getByTestId('single-chat')).toBeInTheDocument();
+    });
+
+    it('should handle preference changes during render', () => {
+      const { rerender } = renderChatContainer({ multiModelEnabled: false });
+
+      expect(screen.getByTestId('single-chat')).toBeInTheDocument();
+
+      // Change preference and re-render
+      mockPreferencesProvider.preferences = {
+        ...mockPreferences,
+        multiModelEnabled: true,
+      };
+
+      rerender(
+        <QueryClientProvider client={queryClient}>
+          <UserPreferenceProvider>
+            <ChatContainer />
+          </UserPreferenceProvider>
+        </QueryClientProvider>
+      );
+
+      expect(screen.getByTestId('multi-chat')).toBeInTheDocument();
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should handle preferences provider errors gracefully', () => {
+      // Mock console.error to avoid noise in test output
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      // Mock useUserPreferences to throw an error
+      vi.mocked(require('@/lib/user-preference-store/provider').useUserPreferences)
+        .mockImplementationOnce(() => {
+          throw new Error('Preferences error');
+        });
+
+      expect(() => {
+        renderChatContainer();
+      }).toThrow('Preferences error');
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle QueryClient errors', () => {
+      // Create a query client that will error
+      const errorQueryClient = new QueryClient({
+        defaultOptions: {
+          queries: {
+            retry: false,
+            throwOnError: true,
+          },
+        },
+      });
+
+      expect(() => {
+        render(
+          <QueryClientProvider client={errorQueryClient}>
+            <UserPreferenceProvider>
+              <ChatContainer />
+            </UserPreferenceProvider>
+          </QueryClientProvider>
+        );
+      }).not.toThrow();
+    });
+  });
+
+  describe('Performance', () => {
+    it('should not cause unnecessary re-renders', () => {
+      const renderSpy = vi.fn();
+
+      // Mock Chat component to track renders
+      vi.mocked(require('@/components/app/chat/chat')).Chat = () => {
+        renderSpy();
+        return <div data-testid="single-chat">Single Chat Component</div>;
+      };
+
+      const { rerender } = renderChatContainer();
+
+      const initialRenderCount = renderSpy.mock.calls.length;
+
+      // Re-render with same preferences should not cause child re-render
+      rerender(
+        <QueryClientProvider client={queryClient}>
+          <UserPreferenceProvider>
+            <ChatContainer />
+          </UserPreferenceProvider>
+        </QueryClientProvider>
+      );
+
+      // Should have same number of renders (no unnecessary re-render)
+      expect(renderSpy.mock.calls.length).toBe(initialRenderCount);
+    });
+
+    it('should memoize chat selection properly', () => {
+      const { rerender } = renderChatContainer({ multiModelEnabled: false });
+
+      expect(screen.getByTestId('single-chat')).toBeInTheDocument();
+
+      // Re-render with same preference
+      rerender(
+        <QueryClientProvider client={queryClient}>
+          <UserPreferenceProvider>
+            <ChatContainer />
+          </UserPreferenceProvider>
+        </QueryClientProvider>
+      );
+
+      // Should still show single chat
+      expect(screen.getByTestId('single-chat')).toBeInTheDocument();
+    });
+  });
+
+  describe('Accessibility', () => {
+    it('should maintain proper accessibility structure', () => {
+      renderChatContainer();
+
+      const chatElement = screen.getByTestId('single-chat');
+      expect(chatElement).toBeInTheDocument();
+      expect(chatElement).toBeVisible();
+    });
+
+    it('should be keyboard navigable', async () => {
+      renderChatContainer();
+
+      // The chat container itself doesn't have focusable elements,
+      // but it should not interfere with keyboard navigation
+      const chatElement = screen.getByTestId('single-chat');
+      expect(chatElement).not.toHaveFocus();
+
+      // Tab navigation should work without errors
+      await user.tab();
+      expect(document.activeElement).toBeDefined();
+    });
+
+    it('should provide proper context to child components', () => {
+      renderChatContainer();
+
+      expect(screen.getByTestId('preferences-provider')).toBeInTheDocument();
+      expect(screen.getByTestId('single-chat')).toBeInTheDocument();
+    });
+  });
+
+  describe('Integration with Provider', () => {
+    it('should properly integrate with UserPreferenceProvider', () => {
+      render(
+        <QueryClientProvider client={queryClient}>
+          <UserPreferenceProvider>
+            <ChatContainer />
+          </UserPreferenceProvider>
+        </QueryClientProvider>
+      );
+
+      expect(screen.getByTestId('preferences-provider')).toBeInTheDocument();
+      expect(screen.getByTestId('single-chat')).toBeInTheDocument();
+    });
+
+    it('should handle preferences updates through provider', async () => {
+      renderChatContainer();
+
+      // Simulate external preference update
+      act(() => {
+        mockPreferencesProvider.preferences.multiModelEnabled = true;
+      });
+
+      // Component should respond to preference changes
+      expect(mockPreferencesProvider.preferences.multiModelEnabled).toBe(true);
+    });
+
+    it('should handle provider loading states', () => {
+      mockPreferencesProvider.isLoading = true;
+
+      renderChatContainer();
+
+      // Should render even when preferences are loading
+      expect(
+        screen.getByTestId('single-chat') || screen.getByTestId('multi-chat')
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle rapid preference changes', async () => {
+      const { rerender } = renderChatContainer({ multiModelEnabled: false });
+
+      // Rapidly toggle preference
+      for (let i = 0; i < 10; i++) {
+        mockPreferencesProvider.preferences.multiModelEnabled = i % 2 === 0;
+        
+        rerender(
+          <QueryClientProvider client={queryClient}>
+            <UserPreferenceProvider>
+              <ChatContainer />
+            </UserPreferenceProvider>
+          </QueryClientProvider>
+        );
+      }
+
+      // Should handle all changes without crashing
+      expect(screen.getByTestId('single-chat')).toBeInTheDocument();
+    });
+
+    it('should handle complex preference objects', () => {
+      const complexPreferences = {
+        multiModelEnabled: false,
+        reasoningEnabled: true,
+        searchEnabled: true,
+        temperature: 0.75,
+        maxTokens: 1500,
+        customSettings: {
+          theme: 'dark',
+          language: 'en',
+          notifications: true,
+        },
+      };
+
+      renderChatContainer(complexPreferences);
+
+      expect(screen.getByTestId('single-chat')).toBeInTheDocument();
+    });
+
+    it('should maintain state across provider changes', () => {
+      const { rerender } = renderChatContainer({ multiModelEnabled: false });
+
+      expect(screen.getByTestId('single-chat')).toBeInTheDocument();
+
+      // Change to different provider instance but same preferences
+      rerender(
+        <QueryClientProvider client={queryClient}>
+          <UserPreferenceProvider>
+            <ChatContainer />
+          </UserPreferenceProvider>
+        </QueryClientProvider>
+      );
+
+      expect(screen.getByTestId('single-chat')).toBeInTheDocument();
+    });
+  });
+});

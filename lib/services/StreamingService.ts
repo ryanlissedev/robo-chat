@@ -323,7 +323,7 @@ const stream = ({
       // 1) Tools log
       logToolInvocations(
         {
-          response,
+          response: response as unknown as Response,
           messages: response.messages,
           usage: (response as any).usage,
         } as ResponseWithUsage,
@@ -333,7 +333,7 @@ const stream = ({
       // 2) Reasoning & assistant preview
       try {
         const assistantText = extractAssistantText({
-          response,
+          response: response as unknown as Response,
           messages: response.messages,
           usage: (response as any).usage,
         } as ResponseWithUsage);
@@ -345,7 +345,7 @@ const stream = ({
           userId,
           reasoningEffort,
           {
-            response,
+            response: response as unknown as Response,
             messages: response.messages,
             usage: (response as any).usage,
           } as ResponseWithUsage
@@ -393,7 +393,7 @@ const stream = ({
 
       await handleLangSmithUpdates(
         {
-          response,
+          response: response as unknown as Response,
           messages: response.messages,
           usage: (response as any).usage,
         } as ResponseWithUsage,

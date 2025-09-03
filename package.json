@@ -42,6 +42,8 @@
     "test:responses-api-gateway": "npx tsx tests/isolated/test-responses-api-gateway.ts",
     "test:vercel-integration": "npx tsx tests/isolated/vercel-integration-test.ts",
     "setup:test-env": "npx tsx tests/isolated/setup-test-env.ts",
+    "test:validate-quality": "npx tsx tests/validation/test-quality-validator.ts",
+    "test:production-readiness": "npx tsx tests/scripts/validate-production-readiness.ts",
     "playwright:install": "playwright install",
     "test:file-search": "tsx tests/scripts/test-native-file-search.ts",
     "setup:vector-store": "tsx tests/scripts/setup-vector-stores.ts",

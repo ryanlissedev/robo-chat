@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 
 /**
  * Hook for smooth text streaming that decouples network streaming from visual streaming
  * Based on Upstash's smooth streaming pattern
+ * Optimized for performance with memory management and reduced calculations
  */
 export function useSmoothStream() {
   // Internal buffer of chunks as they arrive from the server
@@ -34,13 +35,15 @@ export function useSmoothStream() {
     isAnimatingRef.current = false;
   }, []);
 
+  // Memoize full text to avoid recalculation on every render
+  const fullText = useMemo(() => parts.join(''), [parts]);
+
   // Animation logic - runs whenever parts change
   useEffect(() => {
     if (isAnimatingRef.current) return;
 
-    // Milliseconds per character - 5ms works well for readable speed
-    const typewriterSpeed = 5;
-    const fullText = parts.join('');
+    // Milliseconds per character - optimized for smooth performance
+    const typewriterSpeed = 3; // Slightly faster for better responsiveness
 
     if (streamIndexRef.current >= fullText.length) {
       setStream(fullText);
@@ -52,7 +55,9 @@ export function useSmoothStream() {
     const animate = (time: number) => {
       if (streamIndexRef.current < fullText.length) {
         if (time - lastTimeRef.current > typewriterSpeed) {
-          streamIndexRef.current++;
+          // Batch character updates for better performance
+          const charsToAdd = Math.min(2, fullText.length - streamIndexRef.current);
+          streamIndexRef.current += charsToAdd;
           setStream(fullText.slice(0, streamIndexRef.current));
           lastTimeRef.current = time;
         }
@@ -70,7 +75,13 @@ export function useSmoothStream() {
       }
       isAnimatingRef.current = false;
     };
-  }, [parts]);
+  }, [fullText]);
 
-  return { stream, addPart, reset, isAnimating: isAnimatingRef.current };
+  // Memoize the return value to prevent unnecessary re-renders
+  return useMemo(() => ({
+    stream,
+    addPart,
+    reset,
+    isAnimating: isAnimatingRef.current,
+  }), [stream, addPart, reset]);
 }

@@ -1,0 +1,72 @@
+{
+  "topology": "mesh",
+  "maxAgents": 8,
+  "parallelExecution": true,
+  "coordinationMode": "independent",
+  "agents": [
+    {
+      "id": "code-investigator",
+      "type": "analysis",
+      "specialization": "chat-ui-loading-mechanisms",
+      "scope": "component-analysis",
+      "independence": true,
+      "priority": "high"
+    },
+    {
+      "id": "test-coordinator", 
+      "type": "testing",
+      "specialization": "test-suite-management",
+      "scope": "comprehensive-testing",
+      "independence": true,
+      "priority": "high"
+    },
+    {
+      "id": "build-engineer",
+      "type": "build",
+      "specialization": "compilation-processes",
+      "scope": "build-optimization",
+      "independence": true,
+      "priority": "medium"
+    },
+    {
+      "id": "code-quality-analyst",
+      "type": "quality",
+      "specialization": "code-smell-detection",
+      "scope": "quality-analysis",
+      "independence": true,
+      "priority": "medium"
+    },
+    {
+      "id": "performance-optimizer",
+      "type": "performance",
+      "specialization": "chat-ui-performance",
+      "scope": "performance-optimization",
+      "independence": true,
+      "priority": "high"
+    },
+    {
+      "id": "test-coverage-specialist",
+      "type": "coverage",
+      "specialization": "coverage-analysis",
+      "scope": "100-percent-coverage",
+      "independence": true,
+      "priority": "medium"
+    },
+    {
+      "id": "integration-validator",
+      "type": "integration",
+      "specialization": "end-to-end-testing",
+      "scope": "integration-validation",
+      "independence": true,
+      "priority": "high"
+    },
+    {
+      "id": "deployment-manager",
+      "type": "deployment",
+      "specialization": "deployment-validation",
+      "scope": "final-validation",
+      "independence": true,
+      "priority": "medium"
+    }
+  ]
+}

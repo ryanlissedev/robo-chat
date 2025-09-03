@@ -16,14 +16,13 @@ export function formatNumber(n: number) {
  * Creates a debounced function that delays invoking the provided function until after
  * the specified wait time has elapsed since the last time it was invoked.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
+export function debounce<TArgs extends unknown[]>(
+  func: (...args: TArgs) => void,
   wait: number
-): (...args: Parameters<T>) => void {
+): (...args: TArgs) => void {
   let timeout: NodeJS.Timeout | null = null;
 
-  return (...args: Parameters<T>): void => {
+  return (...args: TArgs): void => {
     if (timeout) {
       clearTimeout(timeout);
     }
