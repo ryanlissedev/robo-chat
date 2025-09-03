@@ -129,7 +129,7 @@ export function useChatCore({
 
   const { messages, status, error, stop, setMessages, sendMessage } = useChat({
     transport: new DefaultChatTransport({
-      api: '/api/chat',
+      api: '/api/chat', // Back to real API
     }),
     // biome-ignore lint/style/useNamingConvention: external AI SDK API name
     experimental_throttle: 60,

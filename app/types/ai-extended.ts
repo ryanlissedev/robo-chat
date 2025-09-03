@@ -133,56 +133,28 @@ export function hasAttachments(
 }
 
 /**
- * Safely extracts text content from a message, handling both v4 and v5 formats
+ * Extracts text content from AI SDK v5 messages
  */
 export function getMessageContent(message: ExtendedUIMessage): string {
-  // First check if message has direct content property as string (v4 compatibility)
-  if (hasContent(message)) {
-    return message.content;
-  }
-
-  // AI SDK v5 format - content can be an array of content parts
-  if ('content' in message && Array.isArray(message.content)) {
-    const textContent = message.content
+  // AI SDK v5 primary format - parts array
+  if (message.parts && Array.isArray(message.parts)) {
+    const textParts = message.parts
       .filter((part: any) => part.type === 'text')
       .map((part: any) => part.text || '')
       .join('');
-    if (textContent) {
-      return textContent;
+    
+    if (textParts) {
+      return textParts;
     }
   }
 
-  // Check if message has parts array (v5 format - primary way AI SDK v5 stores message content)
-  if (hasParts(message)) {
-    const textParts = message.parts.filter(
-      (part) => part.type === 'text' && 'text' in part
-    );
-    const textContent = textParts
-      .map((part) => {
-        // Ensure we're correctly accessing the text property
-        if ('text' in part && typeof part.text === 'string') {
-          return part.text;
-        }
-        return '';
-      })
-      .join('');
-    if (textContent) {
-      return textContent;
-    }
-  }
-
-  // AI SDK v5 might store content directly in message.text
-  if ('text' in message && typeof (message as any).text === 'string') {
-    return (message as any).text;
-  }
-
-  // Debug: Log if we couldn't extract content from assistant messages
-  if (typeof window !== 'undefined' && message.role === 'assistant' && message.parts?.length) {
-    console.warn('Could not extract content from message:', {
+  // Debug logging for troubleshooting
+  if (typeof window !== 'undefined' && message.role === 'assistant') {
+    console.log('Message structure:', {
       id: message.id,
       role: message.role,
-      partsCount: message.parts?.length,
-      firstPart: message.parts?.[0]
+      parts: message.parts,
+      partsLength: message.parts?.length || 0
     });
   }
 

@@ -6,22 +6,41 @@ export async function POST(req: Request) {
   const body = await req.json();
   console.log('Test API received:', body);
 
-  // Create a simple UI message stream
+  // Create a realistic AI SDK v5 UI message stream with reasoning
   const stream = createUIMessageStream({
     async execute({ writer }) {
       const messageId = 'test-msg-' + Date.now();
       
-      // Send a message start
+      // Send message start
       writer.write({
         type: 'start',
         messageId,
       });
 
-      // Simulate streaming text
-      const words = 'Hello! This is a test response from the mock API. The chat interface should display this message properly.'.split(' ');
+      // Send reasoning token (for models that support it)
+      writer.write({
+        type: 'reasoning',
+        delta: 'The user is asking for a test response. I should provide a helpful response that demonstrates the chat interface is working correctly. Let me think about what would be most useful to show...',
+        id: generateId(),
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // More reasoning
+      writer.write({
+        type: 'reasoning', 
+        delta: ' I should include both a greeting and confirmation that the system is functioning properly.',
+        id: generateId(),
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Now send the actual response text
+      const responseText = 'Hello! This is a test response from the mock API. The reasoning tokens above should be visible, and this final response should display properly in the chat interface. The AI SDK v5 integration is working correctly!';
+      const words = responseText.split(' ');
       
       for (const word of words) {
-        await new Promise(resolve => setTimeout(resolve, 50)); // Small delay for streaming effect
+        await new Promise(resolve => setTimeout(resolve, 30));
         writer.write({
           type: 'text-delta',
           delta: word + ' ',
