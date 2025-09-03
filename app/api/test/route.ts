@@ -1,4 +1,5 @@
 import { createUIMessageStream, createUIMessageStreamResponse } from 'ai';
+import { generateId } from 'ai';
 
 export async function POST(req: Request) {
   // Parse request for debugging
@@ -8,10 +9,12 @@ export async function POST(req: Request) {
   // Create a simple UI message stream
   const stream = createUIMessageStream({
     async execute({ writer }) {
+      const messageId = 'test-msg-' + Date.now();
+      
       // Send a message start
       writer.write({
         type: 'start',
-        messageId: 'test-msg-' + Date.now(),
+        messageId,
       });
 
       // Simulate streaming text
@@ -21,14 +24,14 @@ export async function POST(req: Request) {
         await new Promise(resolve => setTimeout(resolve, 50)); // Small delay for streaming effect
         writer.write({
           type: 'text-delta',
-          textDelta: word + ' ',
+          delta: word + ' ',
+          id: generateId(),
         });
       }
 
       // Send finish
       writer.write({
         type: 'finish',
-        finishReason: 'stop',
       });
     },
   });

@@ -32,9 +32,9 @@ export default function TestChat() {
               <pre className="text-xs">{JSON.stringify(message, null, 2)}</pre>
             </details>
             
-            {/* Show content if it exists */}
-            {typeof message.content === 'string' && (
-              <div>Content (string): {message.content}</div>
+            {/* Show content if it exists (v4 compatibility) */}
+            {'content' in message && typeof (message as any).content === 'string' && (
+              <div>Content (string): {(message as any).content}</div>
             )}
             
             {/* Show parts if they exist */}
