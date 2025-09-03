@@ -1,8 +1,7 @@
-import type { ChatRequest, ExtendedUIMessage } from '@/app/types/ai-extended';
-import type { SupabaseClientType } from '@/app/types/api.types';
+import type { ChatRequest } from '@/app/types/ai-extended';
 import { ChatService } from '@/lib/services/ChatService';
-import { CredentialService } from '@/lib/services/CredentialService';
 import { MessageService } from '@/lib/services/MessageService';
+import logger from '@/lib/utils/logger';
 
 export const maxDuration = 60;
 
@@ -34,29 +33,26 @@ export async function POST(req: Request): Promise<Response> {
       statusCode?: number;
     };
 
-    // Extract model and user info for error tracking
-    let modelToUse = 'unknown-model';
-    let userIdToUse = 'unknown-user';
+    // Log error using proper logger instead of console
+    logger.error({ error: err, at: 'api.chat.POST' }, 'Chat API error');
 
-    if (requestData) {
-      modelToUse = requestData.model || 'unknown-model';
-      userIdToUse = requestData.userId || 'unknown-user';
-
-      // Use the model from request data directly for error tracking
-    }
-
-    // Track credential error
-    CredentialService.trackCredentialError(err, modelToUse, userIdToUse);
-
-    // Log error
-    console.error({ error: err, at: 'api.chat.POST' }, 'Chat API error');
-
+    // Return error response
     return new Response(
       JSON.stringify({
-        error: error.message || 'Internal server error',
-        code: error.code || 'INTERNAL_ERROR',
+        error: error.message || 'Internal Server Error',
+        code: error.code,
       }),
-      { status: error.statusCode || 500 }
+      {
+        status: error.statusCode || 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
     );
   }
+}
+
+export function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: { Allow: 'GET, POST, OPTIONS' },
+  });
 }

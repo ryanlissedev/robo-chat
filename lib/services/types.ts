@@ -1,51 +1,86 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import type { CredentialSource } from '@/lib/utils/metrics';
 
 // Re-export commonly used types
 export type { ChatRequest, ExtendedUIMessage } from '@/app/types/ai-extended';
 
-// Supabase client type
-export type SupabaseClientType = any; // TODO: Import proper Supabase type
+// Supabase client type - properly typed instead of any
+export type SupabaseClientType = SupabaseClient;
+
+// Message content type for better type safety
+export interface MessageContent {
+  type: string;
+  text?: string;
+  [key: string]: unknown;
+}
 
 // Message transformation types
-export type TransformedMessage = {
+export interface TransformedMessage {
   role: 'user' | 'assistant' | 'system';
-  content?: string | Array<{ type: string; text?: string; [key: string]: any }>;
-  parts?: any[];
+  content?: string | MessageContent[];
+  parts?: MessageContent[];
   id?: string;
-  [key: string]: any;
-};
+  [key: string]: unknown;
+}
 
-// Response types
-export type ResponseWithUsage = {
-  response: any;
-  messages: any[];
-  usage?: {
-    promptTokens?: number;
-    completionTokens?: number;
-    totalTokens?: number;
-    inputTokens?: number;
-    outputTokens?: number;
-  };
-};
+// Usage metrics interface
+export interface UsageMetrics {
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+}
+
+// Response types with proper typing
+export interface ResponseWithUsage {
+  response: Response;
+  messages: ExtendedUIMessage[];
+  usage?: UsageMetrics;
+}
+
+// Service error type
+export interface ServiceError {
+  message: string;
+  code?: string;
+  statusCode?: number;
+  details?: Record<string, unknown>;
+}
+
+// Credential validation result
+export interface CredentialValidationResult {
+  isValid: boolean;
+  error?: string;
+  source?: CredentialSource;
+}
+
+// Chat processing context
+export interface ChatProcessingContext {
+  userId: string;
+  sessionId?: string;
+  model: string;
+  provider: string;
+  timestamp: Date;
+}
 
 // Service layer types for API Key management
 export type StorageScope = 'request' | 'tab' | 'session' | 'persistent';
 
 // Types for credential resolution
-export type GuestCredentials = {
+export interface GuestCredentials {
   provider?: string;
   apiKey?: string;
   source?: string;
-};
+}
 
-export type CredentialResult = {
+export interface CredentialResult {
   apiKey?: string;
   source: CredentialSource;
   error?: string;
-};
+}
 
-export type ApiKey = {
+export interface ApiKey {
   id: string;
   provider: string;
   masked_key: string;
@@ -53,32 +88,32 @@ export type ApiKey = {
   last_used?: string | null;
   created_at: string;
   is_active: boolean;
-};
+}
 
-export type GuestCredential = {
+export interface GuestCredential {
   masked: string;
   plaintext: string;
   scope: StorageScope;
   passphrase?: string;
-};
+}
 
-export type SaveApiKeyRequest = {
+export interface SaveApiKeyRequest {
   provider: string;
   key: string;
   storageScope?: StorageScope;
   passphrase?: string;
-};
+}
 
-export type ApiKeyTestResult = {
+export interface ApiKeyTestResult {
   success: boolean;
   error?: string;
-};
+}
 
-export type ValidationResult = {
+export interface ValidationResult {
   isValid: boolean;
   error?: string;
   message?: string;
-};
+}
 
 // Service interfaces for mocking
 export interface IApiKeyService {

@@ -1,5 +1,5 @@
 import type { UIMessage as MessageType } from '@ai-sdk/react';
-import { useRef } from 'react';
+import { memo, useRef, useMemo } from 'react';
 import {
   type ExtendedUIMessage,
   getMessageContent,
@@ -22,7 +22,7 @@ type ConversationProps = {
   onQuote?: (text: string, messageId: string) => void;
 };
 
-export function Conversation({
+function ConversationComponent({
   messages,
   status = 'ready',
   onDelete,
@@ -32,7 +32,10 @@ export function Conversation({
 }: ConversationProps) {
   const initialMessageCount = useRef(messages.length);
 
-  if (!messages || messages.length === 0) {
+  // Memoize empty state check
+  const isEmpty = useMemo(() => !messages || messages.length === 0, [messages]);
+  
+  if (isEmpty) {
     return <div className="h-full w-full" />;
   }
 
@@ -106,3 +109,15 @@ export function Conversation({
     </div>
   );
 }
+
+// Memoize the Conversation component to prevent re-renders when messages haven't changed
+export const Conversation = memo(ConversationComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.status === nextProps.status &&
+    prevProps.messages.length === nextProps.messages.length &&
+    prevProps.messages.every((msg, idx) => {
+      const nextMsg = nextProps.messages[idx];
+      return msg && nextMsg && msg.id === nextMsg.id && msg.content === nextMsg.content;
+    })
+  );
+});

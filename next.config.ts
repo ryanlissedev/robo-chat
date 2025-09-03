@@ -28,7 +28,7 @@ const nextConfig: NextConfig = withBundleAnalyzer({
   },
 
   typescript: {
-    // TypeScript build errors are now fixed and validation is enabled
+    // Re-enable TypeScript validation to see build errors
     ignoreBuildErrors: false,
   },
 });
