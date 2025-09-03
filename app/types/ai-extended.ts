@@ -152,12 +152,20 @@ export function getMessageContent(message: ExtendedUIMessage): string {
     }
   }
 
-  // Check if message has parts array (v5 format alternative)
+  // Check if message has parts array (v5 format - primary way AI SDK v5 stores message content)
   if (hasParts(message)) {
     const textParts = message.parts.filter(
       (part) => part.type === 'text' && 'text' in part
     );
-    const textContent = textParts.map((part) => ('text' in part ? part.text : '')).join('');
+    const textContent = textParts
+      .map((part) => {
+        // Ensure we're correctly accessing the text property
+        if ('text' in part && typeof part.text === 'string') {
+          return part.text;
+        }
+        return '';
+      })
+      .join('');
     if (textContent) {
       return textContent;
     }
@@ -168,6 +176,15 @@ export function getMessageContent(message: ExtendedUIMessage): string {
     return (message as any).text;
   }
 
+  // Debug: Log if we couldn't extract content from assistant messages
+  if (typeof window !== 'undefined' && message.role === 'assistant' && message.parts?.length) {
+    console.warn('Could not extract content from message:', {
+      id: message.id,
+      role: message.role,
+      partsCount: message.parts?.length,
+      firstPart: message.parts?.[0]
+    });
+  }
 
   return '';
 }
