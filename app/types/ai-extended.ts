@@ -27,8 +27,15 @@ export interface SourceUrlUIPart {
  * Extended UIMessage interface that safely handles both v4 and v5 message formats
  */
 export interface ExtendedUIMessage extends UIMessage {
-  // v4 compatibility - content string
-  content?: string;
+  // v4 compatibility - content string or array
+  content?:
+    | string
+    | Array<{
+        type: string;
+        text?: string;
+        delta?: string;
+        [key: string]: unknown;
+      }>;
 
   // Experimental attachments for file handling
   experimental_attachments?: Attachment[];
@@ -139,24 +146,49 @@ export function getMessageContent(message: ExtendedUIMessage): string {
   // AI SDK v5 primary format - parts array
   if (message.parts && Array.isArray(message.parts)) {
     const textParts = message.parts
-      .filter((part: any) => part.type === 'text' || part.type === 'text-delta')
-      .map((part: any) => part.text || part.delta || '')
+      .filter(
+        (
+          part
+        ): part is {
+          type: 'text' | 'text-delta';
+          text?: string;
+          delta?: string;
+        } => part.type === 'text' || part.type === 'text-delta'
+      )
+      .map((part) => part.text ?? part.delta ?? '')
       .join('');
-    
+
     if (textParts) {
       return textParts;
     }
   }
 
-  // Debug logging for troubleshooting
-  if (typeof window !== 'undefined' && message.role === 'assistant') {
-    console.log('Message structure:', {
-      id: message.id,
-      role: message.role,
-      parts: message.parts,
-      partsLength: message.parts?.length || 0,
-      textParts: message.parts?.filter((part: any) => part.type === 'text' || part.type === 'text-delta')
-    });
+  // Legacy format - content field
+  if (typeof message.content === 'string') {
+    return message.content;
+  }
+
+  if (Array.isArray(message.content)) {
+    const textContent = (
+      message.content as Array<{
+        type: 'text' | 'text-delta';
+        text?: string;
+        delta?: string;
+      }>
+    )
+      .filter((part) => part.type === 'text' || part.type === 'text-delta')
+      .map((part) => part.text ?? part.delta ?? '')
+      .join('');
+
+    if (textContent) {
+      return textContent;
+    }
+  }
+
+  // Direct text property (fallback)
+  const directText = (message as { text?: unknown }).text;
+  if (typeof directText === 'string') {
+    return directText;
   }
 
   return '';
