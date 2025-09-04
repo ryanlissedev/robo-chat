@@ -36,6 +36,72 @@ const openaiModels: ModelConfig[] = [
     },
   },
   {
+    id: 'gpt-5-mini',
+    name: 'GPT-5 Mini',
+    provider: 'OpenAI',
+    providerId: 'openai',
+    modelFamily: 'GPT-5',
+    baseProviderId: 'openai',
+    description: 'Balanced cost/latency GPT-5 variant with reasoning text.',
+    tags: ['default', 'balanced', 'multimodal', 'reasoning'],
+    reasoningText: true,
+    contextWindow: 128_000,
+    inputCost: 0.6,
+    outputCost: 2.4,
+    priceUnit: 'per 1M tokens',
+    vision: true,
+    tools: true,
+    fileSearchTools: true,
+    audio: true,
+    openSource: false,
+    speed: 'Fast',
+    website: 'https://openai.com',
+    apiDocs: 'https://platform.openai.com/docs/models/gpt-5-mini',
+    modelPage: 'https://platform.openai.com/docs/models/gpt-5-mini',
+    icon: 'openai',
+    apiSdk: (apiKey?: string, opts?: unknown) => {
+      const settings = opts as ModelSettings;
+      return openproviders(
+        'gpt-5-mini',
+        settings as OpenProvidersOptions,
+        apiKey
+      );
+    },
+  },
+  {
+    id: 'gpt-5-nano',
+    name: 'GPT-5 Nano',
+    provider: 'OpenAI',
+    providerId: 'openai',
+    modelFamily: 'GPT-5',
+    baseProviderId: 'openai',
+    description: 'Lowest latency and cost GPT-5 for simple tasks.',
+    tags: ['fast', 'cheap', 'multimodal'],
+    reasoningText: true,
+    contextWindow: 128_000,
+    inputCost: 0.2,
+    outputCost: 0.8,
+    priceUnit: 'per 1M tokens',
+    vision: true,
+    tools: true,
+    fileSearchTools: true,
+    audio: false,
+    openSource: false,
+    speed: 'Very Fast',
+    website: 'https://openai.com',
+    apiDocs: 'https://platform.openai.com/docs/models/gpt-5-nano',
+    modelPage: 'https://platform.openai.com/docs/models/gpt-5-nano',
+    icon: 'openai',
+    apiSdk: (apiKey?: string, opts?: unknown) => {
+      const settings = opts as ModelSettings;
+      return openproviders(
+        'gpt-5-nano',
+        settings as OpenProvidersOptions,
+        apiKey
+      );
+    },
+  },
+  {
     id: 'gpt-5-pro',
     name: 'GPT-5 Pro',
     provider: 'OpenAI',

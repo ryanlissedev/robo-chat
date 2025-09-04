@@ -148,6 +148,11 @@ export function getMessageContent(message: ExtendedUIMessage): string {
     }
   }
 
+  // Fallback: v4-style string content
+  if (typeof (message as any).content === 'string') {
+    return String((message as any).content);
+  }
+
   // Debug logging for troubleshooting
   if (typeof window !== 'undefined' && message.role === 'assistant') {
     console.log('Message structure:', {

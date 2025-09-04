@@ -1,0 +1,62 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications alt+T"
+    - main [ref=e4]:
+      - generic:
+        - generic:
+          - generic:
+            - link "HGG Logo RoboRail Assistant" [ref=e5] [cursor=pointer]:
+              - /url: /
+              - img "HGG Logo" [ref=e6] [cursor=pointer]
+              - text: RoboRail Assistant
+            - generic [ref=e7]:
+              - button "Search" [ref=e8]:
+                - img [ref=e9]
+              - button "G" [ref=e12]:
+                - generic [ref=e14]: G
+      - generic [ref=e15]:
+        - heading "How can we help you today?" [level=1] [ref=e17]
+        - generic [ref=e19]:
+          - generic [ref=e21]:
+            - button "Operation" [ref=e22]:
+              - img
+              - text: Operation
+            - button "Troubleshooting" [ref=e23]:
+              - img
+              - text: Troubleshooting
+            - button "Maintenance" [ref=e24]:
+              - img
+              - text: Maintenance
+            - button "Safety" [ref=e25]:
+              - img
+              - text: Safety
+            - button "Specifications" [ref=e26]:
+              - img
+              - text: Specifications
+            - button "Setup" [ref=e27]:
+              - img
+              - text: Setup
+          - generic [ref=e29]:
+            - textbox "Ask anything…" [active] [ref=e30]
+            - generic [ref=e31]:
+              - generic [ref=e32]:
+                - button "Add files" [ref=e33]:
+                  - img
+                - button "Select model" [ref=e34]:
+                  - generic [ref=e36]: Select model
+                  - img
+                - combobox [ref=e37]:
+                  - generic:
+                    - generic:
+                      - img
+                      - generic: Medium
+                  - img
+              - button "Open realtime audio modal" [ref=e39]:
+                - img
+  - button "Open Next.js Dev Tools" [ref=e45] [cursor=pointer]:
+    - img [ref=e46] [cursor=pointer]
+  - alert [ref=e49]
+```

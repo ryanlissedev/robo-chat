@@ -19,6 +19,8 @@ export const NON_AUTH_ALLOWED_MODELS = [
   // GPT-5 Series (September 2025)
   'gpt-5',
   'gpt-5-pro',
+  'gpt-5-mini',
+  'gpt-5-nano',
   // GPT-4 Series
   'gpt-4o',
   'gpt-4o-mini',
@@ -82,7 +84,8 @@ export const FREE_MODELS_IDS = [
   'deepseek-v3-1', // Open source
 ];
 
-export const MODEL_DEFAULT = 'gpt-5'; // Latest flagship model as default
+// Default chat model: GPT-5 Mini (balanced cost/latency)
+export const MODEL_DEFAULT = 'gpt-5-mini';
 
 export const APP_NAME = 'RoboRail Assistant';
 export const APP_DOMAIN = 'https://your-app-domain.com';

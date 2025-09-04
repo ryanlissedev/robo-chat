@@ -1,0 +1,68 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications alt+T"
+    - main [ref=e4]:
+      - generic:
+        - generic:
+          - generic:
+            - link "HGG Logo RoboRail Assistant" [ref=e5] [cursor=pointer]:
+              - /url: /
+              - img "HGG Logo" [ref=e6] [cursor=pointer]
+              - text: RoboRail Assistant
+            - generic [ref=e7]:
+              - button "Search" [ref=e8]:
+                - img [ref=e9]
+              - generic [ref=e12]:
+                - heading "Chat History" [level=2] [ref=e13]
+                - paragraph [ref=e14]: Search through your past conversations
+              - button "G" [ref=e15]:
+                - generic [ref=e17]: G
+      - generic [ref=e18]:
+        - heading "How can we help you today?" [level=1] [ref=e20]
+        - generic [ref=e22]:
+          - generic [ref=e24]:
+            - button "Operation" [ref=e25]:
+              - img
+              - text: Operation
+            - button "Troubleshooting" [ref=e26]:
+              - img
+              - text: Troubleshooting
+            - button "Maintenance" [ref=e27]:
+              - img
+              - text: Maintenance
+            - button "Safety" [ref=e28]:
+              - img
+              - text: Safety
+            - button "Specifications" [ref=e29]:
+              - img
+              - text: Specifications
+            - button "Setup" [ref=e30]:
+              - img
+              - text: Setup
+          - generic [ref=e32]:
+            - textbox "Ask anything…" [active] [ref=e33]
+            - generic [ref=e34]:
+              - generic [ref=e35]:
+                - button "Add files" [ref=e36]:
+                  - img
+                - button "Select model" [ref=e38]:
+                  - generic [ref=e40]: Select model
+                  - img
+                - combobox [ref=e41]:
+                  - generic:
+                    - generic:
+                      - img
+                      - generic: Medium
+                  - img
+              - button "Open realtime audio modal" [ref=e43]:
+                - img
+        - button "Help" [ref=e47]:
+          - generic [ref=e48]: Help
+          - img [ref=e50]
+  - button "Open Next.js Dev Tools" [ref=e58] [cursor=pointer]:
+    - img [ref=e59] [cursor=pointer]
+  - alert [ref=e62]
+```

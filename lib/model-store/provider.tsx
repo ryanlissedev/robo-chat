@@ -103,8 +103,7 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
   });
 
   // Use a valid model id present in the catalog as the default favorite
-  // Note: 'gpt-5-mini' is an alias resolved at request time; the selector lists 'gpt-4o-mini'.
-  const { data: favoriteModels = ['gpt-4o-mini'], isLoading: isLoadingFavorites } = useQuery<
+  const { data: favoriteModels = ['gpt-5-mini'], isLoading: isLoadingFavorites } = useQuery<
     string[]
   >({
     queryKey: ['favorite-models'],
@@ -114,12 +113,12 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
           '/api/user-preferences/favorite-models'
         );
         if (!response.ok) {
-          return ['gpt-4o-mini'];
+          return ['gpt-5-mini'];
         }
         const data = await response.json();
-        return data.favorite_models || ['gpt-4o-mini'];
+        return data.favorite_models || ['gpt-5-mini'];
       } catch {
-        return ['gpt-4o-mini'];
+        return ['gpt-5-mini'];
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
