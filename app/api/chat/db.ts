@@ -34,7 +34,9 @@ function processToolInvocation(
   const { toolCallId, state } = toolInvocation;
   const existing = processed.toolMap.get(toolCallId);
 
-  if (state === 'result' || !existing) {
+  // Always set if no existing entry, or replace with result state
+  const shouldReplace = !existing || state === 'result';
+  if (shouldReplace) {
     processed.toolMap.set(toolCallId, {
       ...part,
       toolInvocation: {
@@ -204,7 +206,7 @@ export async function storeAssistantMessage(
     return;
   }
 
-  const { error } = await supabase.from('messages').insert({
+  const result = await supabase.from('messages').insert({
     chat_id: chatId,
     role: 'assistant',
     content: finalPlainText || '',
@@ -213,6 +215,8 @@ export async function storeAssistantMessage(
     model,
     langsmith_run_id: langsmithRunId || null,
   } as never);
+
+  const error = result?.error;
 
   if (error) {
     throw new Error(`Failed to save assistant message: ${error.message}`);

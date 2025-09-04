@@ -18,6 +18,8 @@ export const DAILY_LIMIT_PRO_MODELS = 500;
 export const NON_AUTH_ALLOWED_MODELS = [
   // GPT-5 Series (September 2025)
   'gpt-5',
+  'gpt-5-mini',
+  'gpt-5-nano',
   'gpt-5-pro',
   // GPT-4 Series
   'gpt-4o',
@@ -82,7 +84,7 @@ export const FREE_MODELS_IDS = [
   'deepseek-v3-1', // Open source
 ];
 
-export const MODEL_DEFAULT = 'gpt-5'; // Latest flagship model as default
+export const MODEL_DEFAULT = 'gpt-5-mini'; // Fast, cost-effective GPT-5 variant as default
 
 export const APP_NAME = 'RoboRail Assistant';
 export const APP_DOMAIN = 'https://your-app-domain.com';

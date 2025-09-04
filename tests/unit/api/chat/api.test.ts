@@ -3,12 +3,12 @@
  * Ensuring 100% test coverage for production validation
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { 
-  validateAndTrackUsage, 
-  incrementMessageCount, 
-  logUserMessage, 
-  storeAssistantMessage 
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  incrementMessageCount,
+  logUserMessage,
+  storeAssistantMessage,
+  validateAndTrackUsage,
 } from '@/app/api/chat/api';
 import type { ChatApiParams, SupabaseClientType } from '@/app/types/api.types';
 
@@ -47,21 +47,21 @@ vi.mock('@/lib/config', () => ({
   NON_AUTH_ALLOWED_MODELS: ['gpt-3.5-turbo'],
 }));
 
+import { storeAssistantMessage as storeAssistantMessageToDb } from '@/app/api/chat/db';
+import { getProviderForModel } from '@/lib/openproviders/provider-map';
+import { sanitizeUserInput } from '@/lib/sanitize';
 // Import mocked functions for assertions
 import { validateUserIdentity } from '@/lib/server/api';
-import { getProviderForModel } from '@/lib/openproviders/provider-map';
-import { getUserKey } from '@/lib/user-keys';
 import { checkUsageByModel, incrementUsage } from '@/lib/usage';
-import { sanitizeUserInput } from '@/lib/sanitize';
+import { getUserKey } from '@/lib/user-keys';
 import { logWarning } from '@/lib/utils/logger';
-import { storeAssistantMessage as storeAssistantMessageToDb } from '@/app/api/chat/db';
 
 describe('Chat API Functions', () => {
   let mockSupabase: SupabaseClientType;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock Supabase client
     mockSupabase = {
       from: vi.fn().mockReturnValue({
@@ -111,7 +111,12 @@ describe('Chat API Functions', () => {
       expect(result).toBe(mockSupabase);
       expect(getProviderForModel).toHaveBeenCalledWith('gpt-4');
       expect(getUserKey).toHaveBeenCalledWith('user-123', 'openai');
-      expect(checkUsageByModel).toHaveBeenCalledWith(mockSupabase, 'user-123', 'gpt-4', true);
+      expect(checkUsageByModel).toHaveBeenCalledWith(
+        mockSupabase,
+        'user-123',
+        'gpt-4',
+        true
+      );
     });
 
     it('should allow authenticated user with free model even without API key', async () => {
@@ -180,10 +185,12 @@ describe('Chat API Functions', () => {
     it('should throw error for unauthenticated user with paid model and no credentials', async () => {
       vi.mocked(validateUserIdentity).mockResolvedValue(mockSupabase);
 
-      await expect(validateAndTrackUsage({
-        ...baseParams,
-        isAuthenticated: false,
-      })).rejects.toThrow(
+      await expect(
+        validateAndTrackUsage({
+          ...baseParams,
+          isAuthenticated: false,
+        })
+      ).rejects.toThrow(
         'This model requires authentication or an API key. Please sign in or provide your API key to access this model.'
       );
     });
@@ -197,7 +204,12 @@ describe('Chat API Functions', () => {
         model: 'gpt-4o-mini',
       });
 
-      expect(checkUsageByModel).toHaveBeenCalledWith(mockSupabase, 'user-123', 'gpt-4o-mini', true);
+      expect(checkUsageByModel).toHaveBeenCalledWith(
+        mockSupabase,
+        'user-123',
+        'gpt-4o-mini',
+        true
+      );
     });
   });
 
@@ -217,10 +229,12 @@ describe('Chat API Functions', () => {
       vi.mocked(incrementUsage).mockRejectedValue(new Error('Database error'));
 
       // Should not throw
-      await expect(incrementMessageCount({
-        supabase: mockSupabase,
-        userId: 'user-123',
-      })).resolves.not.toThrow();
+      await expect(
+        incrementMessageCount({
+          supabase: mockSupabase,
+          userId: 'user-123',
+        })
+      ).resolves.not.toThrow();
     });
 
     it('should return early if supabase is null', async () => {
@@ -269,7 +283,7 @@ describe('Chat API Functions', () => {
 
     it('should skip database operations for guest user in development', async () => {
       process.env.NODE_ENV = 'development';
-      
+
       await logUserMessage({
         ...baseLogParams,
         userId: 'guest-123',
@@ -280,7 +294,7 @@ describe('Chat API Functions', () => {
 
     it('should skip database operations for guest user when rate limit disabled', async () => {
       process.env.DISABLE_RATE_LIMIT = 'true';
-      
+
       await logUserMessage({
         ...baseLogParams,
         userId: 'temp-guest-456',
@@ -299,9 +313,9 @@ describe('Chat API Functions', () => {
           }),
         }),
       });
-      
+
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
-      
+
       mockFrom.mockImplementation((table: string) => {
         if (table === 'chats') {
           return {
@@ -360,10 +374,10 @@ describe('Chat API Functions', () => {
     });
 
     it('should handle message insert error gracefully', async () => {
-      const mockInsert = vi.fn().mockResolvedValue({ 
-        error: new Error('Database constraint violation') 
+      const mockInsert = vi.fn().mockResolvedValue({
+        error: new Error('Database constraint violation'),
       });
-      
+
       mockSupabase.from = vi.fn().mockImplementation((table: string) => {
         if (table === 'chats') {
           return {
@@ -399,8 +413,8 @@ describe('Chat API Functions', () => {
                 }),
               }),
             }),
-            insert: vi.fn().mockResolvedValue({ 
-              error: new Error('Failed to create chat') 
+            insert: vi.fn().mockResolvedValue({
+              error: new Error('Failed to create chat'),
             }),
           };
         }
@@ -437,7 +451,7 @@ describe('Chat API Functions', () => {
 
     it('should skip storage for guest user in development', async () => {
       process.env.NODE_ENV = 'development';
-      
+
       await storeAssistantMessage({
         ...baseStoreParams,
         chatId: 'guest-chat-456',
@@ -448,7 +462,7 @@ describe('Chat API Functions', () => {
 
     it('should skip storage for guest user when rate limit disabled', async () => {
       process.env.DISABLE_RATE_LIMIT = 'true';
-      
+
       await storeAssistantMessage({
         ...baseStoreParams,
         chatId: 'temp-guest-chat-456',
@@ -479,14 +493,16 @@ describe('Chat API Functions', () => {
       );
 
       // Should not throw
-      await expect(storeAssistantMessage(baseStoreParams)).resolves.not.toThrow();
+      await expect(
+        storeAssistantMessage(baseStoreParams)
+      ).resolves.not.toThrow();
     });
   });
 
   describe('Environment-specific behavior', () => {
     it('should handle production environment correctly', async () => {
       process.env.NODE_ENV = 'production';
-      
+
       await logUserMessage({
         supabase: mockSupabase,
         userId: 'guest-123',
@@ -502,9 +518,9 @@ describe('Chat API Functions', () => {
 
     it('should handle different guest user ID formats', async () => {
       const guestIds = ['guest-123', 'temp-guest-456'];
-      
+
       process.env.DISABLE_RATE_LIMIT = 'true';
-      
+
       for (const userId of guestIds) {
         await logUserMessage({
           supabase: mockSupabase,
@@ -523,24 +539,32 @@ describe('Chat API Functions', () => {
 
   describe('Error handling edge cases', () => {
     it('should handle validateUserIdentity throwing error', async () => {
-      vi.mocked(validateUserIdentity).mockRejectedValue(new Error('Auth error'));
+      vi.mocked(validateUserIdentity).mockRejectedValue(
+        new Error('Auth error')
+      );
 
-      await expect(validateAndTrackUsage({
-        userId: 'user-123',
-        model: 'gpt-4',
-        isAuthenticated: true,
-      })).rejects.toThrow('Auth error');
+      await expect(
+        validateAndTrackUsage({
+          userId: 'user-123',
+          model: 'gpt-4',
+          isAuthenticated: true,
+        })
+      ).rejects.toThrow('Auth error');
     });
 
     it('should handle checkUsageByModel throwing error', async () => {
       vi.mocked(validateUserIdentity).mockResolvedValue(mockSupabase);
-      vi.mocked(checkUsageByModel).mockRejectedValue(new Error('Usage limit exceeded'));
+      vi.mocked(checkUsageByModel).mockRejectedValue(
+        new Error('Usage limit exceeded')
+      );
 
-      await expect(validateAndTrackUsage({
-        userId: 'user-123',
-        model: 'gpt-4o-mini',
-        isAuthenticated: true,
-      })).rejects.toThrow('Usage limit exceeded');
+      await expect(
+        validateAndTrackUsage({
+          userId: 'user-123',
+          model: 'gpt-4o-mini',
+          isAuthenticated: true,
+        })
+      ).rejects.toThrow('Usage limit exceeded');
     });
 
     it('should handle getUserKey throwing error', async () => {
@@ -548,11 +572,13 @@ describe('Chat API Functions', () => {
       vi.mocked(getProviderForModel).mockReturnValue('openai');
       vi.mocked(getUserKey).mockRejectedValue(new Error('Key fetch error'));
 
-      await expect(validateAndTrackUsage({
-        userId: 'user-123',
-        model: 'gpt-4',
-        isAuthenticated: true,
-      })).rejects.toThrow('Key fetch error');
+      await expect(
+        validateAndTrackUsage({
+          userId: 'user-123',
+          model: 'gpt-4',
+          isAuthenticated: true,
+        })
+      ).rejects.toThrow('Key fetch error');
     });
   });
 });

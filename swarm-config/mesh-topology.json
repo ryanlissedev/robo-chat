@@ -13,7 +13,7 @@
       "priority": "high"
     },
     {
-      "id": "test-coordinator", 
+      "id": "test-coordinator",
       "type": "testing",
       "specialization": "test-suite-management",
       "scope": "comprehensive-testing",

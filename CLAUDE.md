@@ -65,6 +65,45 @@ This project uses SPARC (Specification, Pseudocode, Architecture, Refinement, Co
 - **Clean Architecture**: Separate concerns
 - **Documentation**: Keep updated
 
+## 🤖 GPT-5 Integration (September 2025)
+
+**GPT-5 is now available via OpenAI API**. This project supports the complete GPT-5 model family:
+
+### Available Models
+- `gpt-5` - Maximum quality and capabilities
+- `gpt-5-mini` - Balanced performance and cost
+- `gpt-5-nano` - Fast and cost-effective
+
+### Usage with AI SDK v5
+```typescript
+import { generateText } from "ai";
+import { openai } from "@ai-sdk/openai";
+
+// Use GPT-5 via Responses API
+const result = await generateText({
+  model: openai.responses("gpt-5"), // or gpt-5-mini, gpt-5-nano
+  prompt: "Your prompt here",
+  providerOptions: {
+    openai: {
+      textVerbosity: "medium",     // "low" | "medium" | "high"
+      reasoningSummary: "auto",    // get brief reasoning summaries
+      serviceTier: "auto",         // "auto" | "flex" | "priority"
+    },
+  },
+});
+```
+
+### Advanced Features
+- **Responses API**: Automatic tool selection and structured outputs
+- **Web Search**: Built-in web search capabilities
+- **File Search**: Vector store integration
+- **Code Interpreter**: Python sandbox execution
+- **Vision**: Images and PDF processing
+- **Structured Output**: Type-safe with Zod schemas
+
+### Reference Documentation
+See `/root/repo/docs/gpt5_ai_sdk_v5_cookbook.md` for complete implementation examples and patterns.
+
 ## 🚀 Available Agents (54 Total)
 
 ### Core Development

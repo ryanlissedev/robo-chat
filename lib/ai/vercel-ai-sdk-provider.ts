@@ -124,18 +124,13 @@ export async function createVercelAIProviderWithFallback(
     const testResult = await testVercelAIProvider(gatewayConfig);
 
     if (testResult.success) {
-      console.log(`✅ Vercel AI SDK: Using gateway for ${config.provider}`);
       return createVercelAIProvider(gatewayConfig);
     } else {
-      console.warn(
-        `⚠️ Gateway failed for ${config.provider}, falling back to direct API`
-      );
     }
   }
 
   // Fallback to direct API
   const directConfig = { ...config, baseURL: undefined, useGateway: false };
-  console.log(`✅ Vercel AI SDK: Using direct API for ${config.provider}`);
   return createVercelAIProvider(directConfig);
 }
 
@@ -160,9 +155,7 @@ export async function getAllVercelAIProviders(gatewayURL?: string): Promise<{
         baseURL: gatewayURL,
         useGateway: !!gatewayURL,
       });
-    } catch (error) {
-      console.error('Failed to create OpenAI provider:', error);
-    }
+    } catch (_error) {}
   }
 
   // Try Anthropic
@@ -174,9 +167,7 @@ export async function getAllVercelAIProviders(gatewayURL?: string): Promise<{
         baseURL: gatewayURL,
         useGateway: !!gatewayURL,
       });
-    } catch (error) {
-      console.error('Failed to create Anthropic provider:', error);
-    }
+    } catch (_error) {}
   }
 
   return providers;

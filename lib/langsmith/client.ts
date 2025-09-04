@@ -79,9 +79,9 @@ export function createTracedOpenAI(apiKey: string) {
   }
 
   // types for wrapOpenAI are broad; cast to unknown to satisfy differences between versions
-  const client = wrapOpenAI(new OpenAI({ apiKey }) as unknown as Parameters<
-    typeof wrapOpenAI
-  >[0]);
+  const client = wrapOpenAI(
+    new OpenAI({ apiKey }) as unknown as Parameters<typeof wrapOpenAI>[0]
+  );
   return client as unknown as OpenAI;
 }
 

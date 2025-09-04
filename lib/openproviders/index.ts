@@ -120,7 +120,10 @@ export function openproviders<T extends SupportedModel>(
             previousResponseId: merged.previousResponseId,
             // Pass through reasoningEffort when available
             ...(reasoningEffort ? { reasoningEffort } : {}),
-            ...(openaiSettings.openai || {}),
+            ...(typeof openaiSettings.openai === 'object' &&
+            openaiSettings.openai !== null
+              ? openaiSettings.openai
+              : {}),
           },
         }
       : // Non-GPT5 OpenAI models still accept providerOptions.openai
@@ -129,7 +132,15 @@ export function openproviders<T extends SupportedModel>(
         ({
           ...openaiSettings,
           ...(reasoningEffort
-            ? { openai: { reasoningEffort, ...(openaiSettings.openai || {}) } }
+            ? {
+                openai: {
+                  reasoningEffort,
+                  ...(typeof openaiSettings.openai === 'object' &&
+                  openaiSettings.openai !== null
+                    ? openaiSettings.openai
+                    : {}),
+                },
+              }
             : {}),
         } as Record<string, unknown>);
 
@@ -145,7 +156,7 @@ export function openproviders<T extends SupportedModel>(
                     ranking: {
                       // Map new default to currently supported constant until AI SDK updates
                       ranker: ((fileSearchOptions.ranker ===
-                        'default-2024-11-15'
+                      'default-2024-11-15'
                         ? 'default-2024-08-21'
                         : fileSearchOptions.ranker) || 'auto') as
                         | 'auto'
@@ -201,8 +212,6 @@ export function openproviders<T extends SupportedModel>(
         return gatewayProvider(effectiveModelId as OpenAIModel);
       } else {
         // Direct API: use standard provider with responses API for GPT-5
-        if (isGPT5Model && gateway.enabled) {
-        }
         const openaiProvider = createOpenAI({
           apiKey,
           headers: customHeaders,
@@ -240,8 +249,6 @@ export function openproviders<T extends SupportedModel>(
         return gatewayProvider(effectiveModelId as OpenAIModel);
       } else {
         // Direct API: use standard provider with responses API for GPT-5
-        if (isGPT5Model && gateway.enabled) {
-        }
         const openaiProvider = createOpenAI({
           apiKey: envApiKey,
           headers: customHeaders,

@@ -3,13 +3,13 @@
  * Ensuring 100% test coverage for production validation
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   Reasoning,
-  ReasoningTrigger,
   ReasoningContent,
+  ReasoningTrigger,
 } from '@/components/ai-elements/reasoning';
 
 // Mock Response component
@@ -153,13 +153,17 @@ describe('Reasoning Components', () => {
 
       const reasoningElement = container.querySelector('.custom-reasoning');
       expect(reasoningElement).toBeInTheDocument();
-      expect(reasoningElement).toHaveClass('not-prose', 'mb-4', 'custom-reasoning');
+      expect(reasoningElement).toHaveClass(
+        'not-prose',
+        'mb-4',
+        'custom-reasoning'
+      );
     });
 
     it('should handle auto-close functionality when enabled', async () => {
       // Mock AUTO_CLOSE_DELAY to be non-zero for this test
-      const originalDelay = 0; // Current value in component
-      
+      const _originalDelay = 0; // Current value in component
+
       const { rerender } = render(
         <Reasoning isStreaming={true}>
           <ReasoningTrigger />
@@ -206,7 +210,9 @@ describe('Reasoning Components', () => {
         </Reasoning>
       );
 
-      expect(container.querySelector('[data-testid="reasoning-collapsible"]')).toBeInTheDocument();
+      expect(
+        container.querySelector('[data-testid="reasoning-collapsible"]')
+      ).toBeInTheDocument();
     });
   });
 

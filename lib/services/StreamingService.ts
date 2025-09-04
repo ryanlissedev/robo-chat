@@ -1,7 +1,6 @@
 import type { LanguageModel, ModelMessage } from 'ai';
 import { streamText } from 'ai';
 import {
-  extractRunId,
   isLangSmithEnabled,
   logMetrics,
   updateRun,
@@ -10,8 +9,8 @@ import {
   extractReasoningFromResponse,
   type ReasoningContext,
 } from '@/lib/middleware/extract-reasoning-middleware';
-import logger from '@/lib/utils/logger';
 import { getModelTemperature } from '@/lib/models/temperature-utils';
+import logger from '@/lib/utils/logger';
 import { type Provider, trackCredentialUsage } from '@/lib/utils/metrics';
 import { storeAssistantMessage } from '../../app/api/chat/api';
 import type { ResponseWithUsage, SupabaseClientType } from './types';
@@ -285,18 +284,21 @@ const stream = ({
   // Decide if we should force the native file_search tool.
   // Only force when tools include the native 'file_search' entry.
   const shouldForceFileSearch = Boolean(
-    enableSearch && tools && Object.prototype.hasOwnProperty.call(tools, 'file_search')
+    enableSearch && tools && Object.hasOwn(tools, 'file_search')
   );
 
   // Configure provider options for reasoning models
   const providerOptions = (() => {
     // Check if this is an OpenAI model that supports reasoning
-    if (resolvedModel.toLowerCase().includes('gpt') && resolvedModel.includes('reasoning')) {
+    if (
+      resolvedModel.toLowerCase().includes('gpt') &&
+      resolvedModel.includes('reasoning')
+    ) {
       // Only apply reasoning options for actual reasoning models
       return {
         openai: {
           reasoningFormat: 'auto' as const, // Let the model decide the format
-        }
+        },
       };
     }
     return undefined;

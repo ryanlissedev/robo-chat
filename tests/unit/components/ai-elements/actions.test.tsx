@@ -3,11 +3,11 @@
  * Ensuring 100% test coverage for production validation
  */
 
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Copy, Heart, Share } from 'lucide-react';
-import { Actions, Action } from '@/components/ai-elements/actions';
+import { describe, expect, it, vi } from 'vitest';
+import { Action, Actions } from '@/components/ai-elements/actions';
 
 describe('Actions Components', () => {
   describe('Actions Container', () => {
@@ -108,7 +108,7 @@ describe('Actions Components', () => {
       );
 
       const button = screen.getByRole('button');
-      
+
       // Hover to show tooltip
       await user.hover(button);
 
@@ -124,7 +124,9 @@ describe('Actions Components', () => {
         </Action>
       );
 
-      expect(screen.getByText('Copy action', { selector: '.sr-only' })).toBeInTheDocument();
+      expect(
+        screen.getByText('Copy action', { selector: '.sr-only' })
+      ).toBeInTheDocument();
     });
 
     it('should prioritize tooltip over label for screen reader', () => {
@@ -134,8 +136,12 @@ describe('Actions Components', () => {
         </Action>
       );
 
-      expect(screen.getByText('Copy tooltip', { selector: '.sr-only' })).toBeInTheDocument();
-      expect(screen.queryByText('Copy label', { selector: '.sr-only' })).not.toBeInTheDocument();
+      expect(
+        screen.getByText('Copy tooltip', { selector: '.sr-only' })
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText('Copy label', { selector: '.sr-only' })
+      ).not.toBeInTheDocument();
     });
 
     it('should handle click events', async () => {
@@ -166,11 +172,7 @@ describe('Actions Components', () => {
     });
 
     it('should apply custom className', () => {
-      render(
-        <Action className="custom-action-class">
-          Custom Action
-        </Action>
-      );
+      render(<Action className="custom-action-class">Custom Action</Action>);
 
       const button = screen.getByRole('button');
       expect(button).toHaveClass('custom-action-class');
@@ -184,9 +186,16 @@ describe('Actions Components', () => {
     });
 
     it('should handle different button variants', () => {
-      const variants = ['default', 'destructive', 'outline', 'secondary', 'ghost', 'link'] as const;
+      const variants = [
+        'default',
+        'destructive',
+        'outline',
+        'secondary',
+        'ghost',
+        'link',
+      ] as const;
 
-      variants.forEach(variant => {
+      variants.forEach((variant) => {
         const { unmount } = render(
           <Action variant={variant} data-testid={`button-${variant}`}>
             {variant}
@@ -202,7 +211,7 @@ describe('Actions Components', () => {
     it('should handle different button sizes', () => {
       const sizes = ['default', 'sm', 'lg', 'icon'] as const;
 
-      sizes.forEach(size => {
+      sizes.forEach((size) => {
         const { unmount } = render(
           <Action size={size} data-testid={`button-${size}`}>
             {size}
@@ -242,7 +251,7 @@ describe('Actions Components', () => {
 
       const button = screen.getByRole('button');
       button.focus();
-      
+
       await user.keyboard('{Enter}');
       expect(handleClick).toHaveBeenCalledTimes(1);
 
@@ -252,7 +261,7 @@ describe('Actions Components', () => {
 
     it('should handle tooltip with complex content', async () => {
       const user = userEvent.setup();
-      
+
       render(
         <Action tooltip="This is a very long tooltip with detailed explanation">
           <Copy className="size-4" />
@@ -263,7 +272,11 @@ describe('Actions Components', () => {
       await user.hover(button);
 
       await waitFor(() => {
-        expect(screen.getByText('This is a very long tooltip with detailed explanation')).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            'This is a very long tooltip with detailed explanation'
+          )
+        ).toBeInTheDocument();
       });
     });
 
@@ -299,7 +312,12 @@ describe('Actions Components', () => {
 
     it('should handle form-related props', () => {
       render(
-        <Action form="my-form" formMethod="post" name="action-button" value="submit">
+        <Action
+          form="my-form"
+          formMethod="post"
+          name="action-button"
+          value="submit"
+        >
           Submit
         </Action>
       );
@@ -337,12 +355,8 @@ describe('Actions Components', () => {
 
     it('should handle ref forwarding', () => {
       const ref = vi.fn();
-      
-      render(
-        <Action ref={ref}>
-          Test Action
-        </Action>
-      );
+
+      render(<Action ref={ref}>Test Action</Action>);
 
       expect(ref).toHaveBeenCalled();
     });
@@ -369,7 +383,8 @@ describe('Actions Components', () => {
         </Actions>
       );
 
-      const [copyButton, likeButton, shareButton] = screen.getAllByRole('button');
+      const [copyButton, likeButton, shareButton] =
+        screen.getAllByRole('button');
 
       await user.click(copyButton);
       expect(handleCopy).toHaveBeenCalledTimes(1);

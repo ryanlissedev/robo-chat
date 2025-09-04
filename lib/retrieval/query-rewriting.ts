@@ -491,7 +491,13 @@ export async function enhancedRetrieval(
         rewrite_query: false,
         // Basic filter mapping: support single file type via eq comparison
         ...(metadataFilters?.fileTypes && metadataFilters.fileTypes.length === 1
-          ? { filters: { type: 'eq', key: 'file_type', value: metadataFilters.fileTypes[0] } }
+          ? {
+              filters: {
+                type: 'eq',
+                key: 'file_type',
+                value: metadataFilters.fileTypes[0],
+              },
+            }
           : {}),
         ranking_options: {
           // Keep defaults; allow server-side ranker to decide

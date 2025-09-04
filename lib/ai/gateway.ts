@@ -122,7 +122,7 @@ export class AIGateway {
    * Test gateway connection
    */
   private async testGatewayConnection(
-    provider: 'openai' | 'anthropic'
+    _provider: 'openai' | 'anthropic'
   ): Promise<{ success: boolean; error?: string }> {
     if (!this.config.gatewayUrl || !this.config.gatewayApiKey) {
       return { success: false, error: 'Gateway not configured' };

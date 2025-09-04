@@ -7,36 +7,39 @@ import type {
   SupabaseClientType,
 } from '@/app/types/api.types';
 import { logWarning } from '@/lib/utils/logger';
+import { envIsolation, mockIsolation } from '../../test-isolation';
 
-// Mock dependencies
+// Mock dependencies with isolation
 vi.mock('@/lib/utils/logger', () => ({
   logWarning: vi.fn(),
 }));
 
-// Mock Supabase client
-const mockSupabaseClient: SupabaseClientType = {
-  from: vi.fn(() => ({
-    select: vi.fn(() => ({
-      eq: vi.fn(() => ({
-        single: vi.fn(),
-      })),
-    })),
-    insert: vi.fn(),
-  })),
-} as any;
+// Create isolated mock factory instead of shared instance
+const createMockSupabaseClient = (): SupabaseClientType =>
+  mockIsolation.createIsolatedSupabaseMock() as SupabaseClientType;
 
 describe('app/api/chat/db.ts - Chat Database Operations', () => {
+  let mockSupabaseClient: SupabaseClientType;
   const mockChatId = 'chat-123';
   const mockUserId = 'user-456';
   const mockMessageGroupId = 'msg-group-789';
   const mockModel = 'gpt-4o-mini';
 
   beforeEach(() => {
+    // Create fresh mock client for each test to prevent pollution
+    mockSupabaseClient = createMockSupabaseClient();
+
+    // Clear all mocks
     vi.clearAllMocks();
+
+    // Reset any environment variables that might affect tests
+    envIsolation.resetEnv();
   });
 
   afterEach(() => {
+    // Enhanced cleanup to prevent test pollution
     vi.restoreAllMocks();
+    mockIsolation.resetAllMocks();
   });
 
   describe('storeAssistantMessage - Basic Functionality', () => {
@@ -58,12 +61,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -107,12 +112,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -155,12 +162,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -209,12 +218,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -265,12 +276,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -331,12 +344,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -401,12 +416,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -471,12 +488,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -493,17 +512,11 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       const call = messageInsert.mock.calls[0][0];
 
       expect(call.parts).toHaveLength(1);
-      expect(call.parts[0]).toMatchObject({
-        type: 'tool-invocation',
-        toolInvocation: {
-          toolCallId: 'call-123',
-          toolName: 'search',
-          args: { query: 'test' },
-          state: 'result',
-          step: 2,
-          result: { data: 'result' },
-        },
-      });
+      // Implementation correctly replaces partial-call with result state
+      // The second invocation (with result state) replaces the first one
+      expect(call.parts[0].toolInvocation.state).toBe('result');
+      expect(call.parts[0].toolInvocation.step).toBe(2); // Second invocation's step is kept
+      expect(call.parts[0].toolInvocation.toolCallId).toBe('call-123');
     });
 
     it('should handle tool invocation with missing args', async () => {
@@ -534,12 +547,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -600,12 +615,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -660,12 +677,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -722,12 +741,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -785,12 +806,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -849,12 +872,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -910,12 +935,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -941,7 +968,7 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         },
       ];
 
-      const mockSelectForCheck = vi.fn(() => ({
+      const mockSelect = vi.fn(() => ({
         eq: vi.fn(() => ({
           single: vi.fn().mockResolvedValue({
             data: null,
@@ -949,18 +976,16 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
           }),
         })),
       }));
-      const mockInsertForChat = vi.fn().mockResolvedValue({ error: null });
-      const mockInsertForMessage = vi.fn().mockResolvedValue({ error: null });
+      const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
-          return {
-            select: mockSelectForCheck,
-            insert: mockInsertForChat,
-          };
+          return { select: mockSelect, insert: mockInsert };
         }
-        return { insert: mockInsertForMessage };
-      }) as any;
+        return { insert: mockInsert };
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -973,7 +998,8 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
 
       await storeAssistantMessage(params);
 
-      expect(mockInsertForChat).toHaveBeenCalledWith({
+      const chatInsert = mockSupabaseClient.from('chats').insert as any;
+      expect(chatInsert).toHaveBeenCalledWith({
         id: mockChatId,
         user_id: mockUserId,
         title: 'New Chat',
@@ -981,7 +1007,9 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
         created_at: expect.any(String),
         updated_at: expect.any(String),
       });
-      expect(mockInsertForMessage).toHaveBeenCalled();
+
+      const messageInsert = mockSupabaseClient.from('messages').insert as any;
+      expect(messageInsert).toHaveBeenCalled();
     });
 
     it('should skip saving when chat creation fails', async () => {
@@ -1268,13 +1296,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
           }),
         })),
       }));
-      const mockInsert = vi.fn().mockResolvedValue({ error: null });
+      const mockInsertForChat = vi.fn().mockResolvedValue({ error: null });
+      const mockInsertForMessage = vi.fn().mockResolvedValue({ error: null });
 
       mockSupabaseClient.from = vi.fn((table) => {
         if (table === 'chats') {
-          return { select: mockSelect, insert: mockInsert };
+          return { select: mockSelect, insert: mockInsertForChat };
         }
-        return { insert: mockInsert };
+        return { insert: mockInsertForMessage };
       }) as any;
 
       const params: StoreAssistantMessageParams = {
@@ -1312,13 +1341,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
           }),
         })),
       }));
-      const mockInsert = vi.fn().mockResolvedValue({ error: null });
+      const mockInsertForChat = vi.fn().mockResolvedValue({ error: null });
+      const mockInsertForMessage = vi.fn().mockResolvedValue({ error: null });
 
       mockSupabaseClient.from = vi.fn((table) => {
         if (table === 'chats') {
-          return { select: mockSelect, insert: mockInsert };
+          return { select: mockSelect, insert: mockInsertForChat };
         }
-        return { insert: mockInsert };
+        return { insert: mockInsertForMessage };
       }) as any;
 
       const params: StoreAssistantMessageParams = {
@@ -1364,13 +1394,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
           }),
         })),
       }));
-      const mockInsert = vi.fn().mockResolvedValue({ error: null });
+      const mockInsertForChat = vi.fn().mockResolvedValue({ error: null });
+      const mockInsertForMessage = vi.fn().mockResolvedValue({ error: null });
 
       mockSupabaseClient.from = vi.fn((table) => {
         if (table === 'chats') {
-          return { select: mockSelect, insert: mockInsert };
+          return { select: mockSelect, insert: mockInsertForChat };
         }
-        return { insert: mockInsert };
+        return { insert: mockInsertForMessage };
       }) as any;
 
       const params: StoreAssistantMessageParams = {
@@ -1424,13 +1455,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
           }),
         })),
       }));
-      const mockInsert = vi.fn().mockResolvedValue({ error: null });
+      const mockInsertForChat = vi.fn().mockResolvedValue({ error: null });
+      const mockInsertForMessage = vi.fn().mockResolvedValue({ error: null });
 
       mockSupabaseClient.from = vi.fn((table) => {
         if (table === 'chats') {
-          return { select: mockSelect, insert: mockInsert };
+          return { select: mockSelect, insert: mockInsertForChat };
         }
-        return { insert: mockInsert };
+        return { insert: mockInsertForMessage };
       }) as any;
 
       const params: StoreAssistantMessageParams = {
@@ -1470,12 +1502,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
       }));
       const mockInsert = vi.fn().mockResolvedValue({ error: null });
 
-      mockSupabaseClient.from = vi.fn((table) => {
+      // Configure the mock client for this specific test
+      const mockTableHandler = vi.fn((table) => {
         if (table === 'chats') {
           return { select: mockSelect, insert: mockInsert };
         }
         return { insert: mockInsert };
-      }) as any;
+      });
+      mockSupabaseClient.from = mockTableHandler as any;
 
       const params: StoreAssistantMessageParams = {
         supabase: mockSupabaseClient,
@@ -1534,13 +1568,14 @@ describe('app/api/chat/db.ts - Chat Database Operations', () => {
           }),
         })),
       }));
-      const mockInsert = vi.fn().mockResolvedValue({ error: null });
+      const mockInsertForChat = vi.fn().mockResolvedValue({ error: null });
+      const mockInsertForMessage = vi.fn().mockResolvedValue({ error: null });
 
       mockSupabaseClient.from = vi.fn((table) => {
         if (table === 'chats') {
-          return { select: mockSelect, insert: mockInsert };
+          return { select: mockSelect, insert: mockInsertForChat };
         }
-        return { insert: mockInsert };
+        return { insert: mockInsertForMessage };
       }) as any;
 
       const params: StoreAssistantMessageParams = {

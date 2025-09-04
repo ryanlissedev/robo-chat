@@ -210,7 +210,7 @@ export function ChatInput({
   // Determine if selected model supports reasoning
   const selectedModelInfo = getModelInfo(selectedModel);
   const showReasoningEffort = Boolean(selectedModelInfo?.reasoningText);
-  const showVerbosity = showReasoningEffort;
+  const _showVerbosity = showReasoningEffort;
 
   return (
     <div className="relative flex w-full flex-col gap-4">

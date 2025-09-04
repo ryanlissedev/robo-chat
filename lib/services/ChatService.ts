@@ -7,6 +7,7 @@ import {
   RETRIEVAL_TOP_K,
   RETRIEVAL_TWO_PASS_ENABLED,
 } from '@/lib/config';
+import { getModelTemperature } from '@/lib/models/temperature-utils';
 import { buildAugmentedSystemPrompt } from '@/lib/retrieval/augment';
 import {
   selectRetrievalMode,
@@ -17,7 +18,6 @@ import { retrieveWithGpt41 } from '@/lib/retrieval/two-pass';
 import { performVectorRetrieval } from '@/lib/retrieval/vector-retrieval';
 import { file_search } from '@/lib/tools/file-search';
 import logger from '@/lib/utils/logger';
-import { getModelTemperature } from '@/lib/models/temperature-utils';
 import { CredentialService } from './CredentialService';
 import { LangSmithService } from './LangSmithService';
 import { MessageService } from './MessageService';
@@ -410,7 +410,9 @@ export class ChatService {
     // Prefer OpenAI native file_search tool when vector stores are configured.
     // Falls back to our custom tool if not available.
     try {
-      const { getVectorStoreConfig } = require('@/lib/utils/environment-loader');
+      const {
+        getVectorStoreConfig,
+      } = require('@/lib/utils/environment-loader');
       const { createOpenAI, openai } = require('@ai-sdk/openai');
       const { vectorStoreIds } = getVectorStoreConfig();
 

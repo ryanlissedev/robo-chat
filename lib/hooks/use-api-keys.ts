@@ -62,8 +62,7 @@ export function useApiKeys(
         const keys = await (service as any).loadApiKeys();
         setApiKeys(keys);
       }
-    } catch (error) {
-      console.error('Failed to load API keys:', error);
+    } catch (_error) {
       toast.error('Failed to load API keys');
     }
   }, [resolver, isGuest]);
@@ -126,7 +125,6 @@ export function useApiKeys(
           toast.success(`${provider} API key saved successfully`);
         }
       } catch (error) {
-        console.error('Failed to save API key:', error);
         toast.error((error as Error).message || 'Failed to save API key');
       } finally {
         setProviderLoading(provider, false);
@@ -159,8 +157,7 @@ export function useApiKeys(
           });
           toast.success(`${provider} API key deleted`);
         }
-      } catch (error) {
-        console.error('Failed to delete API key:', error);
+      } catch (_error) {
         toast.error('Failed to delete API key');
       } finally {
         setProviderLoading(provider, false);
@@ -182,7 +179,7 @@ export function useApiKeys(
         } else {
           toast.error(`${provider} API key test failed: ${result.error}`);
         }
-      } catch (error) {
+      } catch (_error) {
         toast.error('Failed to test API key');
       } finally {
         setProviderLoading(`test-${provider}`, false);
@@ -208,7 +205,7 @@ export function useApiKeys(
         }));
 
         toast.success(`${provider} API key loaded from persistent storage`);
-      } catch (error) {
+      } catch (_error) {
         toast.error('Invalid passphrase or corrupted data');
       }
     },

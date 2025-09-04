@@ -3,7 +3,6 @@
  * Reduces multiple return patterns and improves error handling
  */
 
-import { NextResponse } from 'next/server';
 import logger from '@/lib/utils/logger';
 
 export interface ApiError {
@@ -112,8 +111,8 @@ export function validateRequest<T>(
  * Handle rate limiting checks
  */
 export async function checkRateLimit(
-  userId: string,
-  isAuthenticated: boolean
+  _userId: string,
+  _isAuthenticated: boolean
 ): Promise<ApiResult<void>> {
   try {
     // TODO: Implement actual rate limiting logic

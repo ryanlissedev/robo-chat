@@ -46,7 +46,7 @@ const parseCitationsInText = (
     if (citationMatch) {
       const citationNumber = citationMatch[1];
       const citation = sources.find(
-        (s, idx) => (idx + 1).toString() === citationNumber
+        (_s, idx) => (idx + 1).toString() === citationNumber
       );
 
       if (citation) {

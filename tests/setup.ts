@@ -97,8 +97,15 @@ const mockFetch = vi.fn().mockImplementation((_url: string, _options?: any) => {
 // Set up global fetch mock
 global.fetch = mockFetch;
 
-// Global test cleanup and isolation setup
+// Enhanced global test cleanup and isolation setup
 import { afterEach, beforeEach } from 'vitest';
+import { setupTestIsolation } from './test-isolation';
+
+// Store original environment to prevent pollution
+const _originalEnv = { ...process.env };
+
+// Set up automatic test isolation
+setupTestIsolation();
 
 // Optimized global beforeEach - conditional setup based on test type
 beforeEach(() => {

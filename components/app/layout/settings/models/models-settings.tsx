@@ -137,71 +137,75 @@ export function ModelsSettings() {
         </h4>
         <AnimatePresence initial={false}>
           {favoriteModels.length > 0 ? (
-            <Reorder.Group axis="y" onReorder={handleReorder} values={favoriteModels}>
+            <Reorder.Group
+              axis="y"
+              onReorder={handleReorder}
+              values={favoriteModels}
+            >
               <div className="space-y-2">
-              {favoriteModels.map((model) => {
-                const ProviderIcon = getProviderIcon(model);
+                {favoriteModels.map((model) => {
+                  const ProviderIcon = getProviderIcon(model);
 
-                return (
-                  <Reorder.Item key={model.id} value={model}>
-                    <div className="group">
-                    <div className="flex items-center gap-3 rounded-lg border border-border bg-transparent p-3">
-                      {/* Drag Handle */}
-                      <div className="cursor-grab text-muted-foreground opacity-60 transition-opacity active:cursor-grabbing group-hover:opacity-100">
-                        <GripVertical className="size-4" />
-                      </div>
-
-                      {/* Provider Icon */}
-                      {ProviderIcon && (
-                        <ProviderIcon className="size-5 shrink-0" />
-                      )}
-
-                      {/* Model Info */}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="truncate font-medium">
-                            {model.name}
-                          </span>
-                          <div className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
-                            {model.provider}
+                  return (
+                    <Reorder.Item key={model.id} value={model}>
+                      <div className="group">
+                        <div className="flex items-center gap-3 rounded-lg border border-border bg-transparent p-3">
+                          {/* Drag Handle */}
+                          <div className="cursor-grab text-muted-foreground opacity-60 transition-opacity active:cursor-grabbing group-hover:opacity-100">
+                            <GripVertical className="size-4" />
                           </div>
-                        </div>
-                        {model.description && (
-                          <p className="mt-1 truncate text-muted-foreground text-xs">
-                            {model.description}
-                          </p>
-                        )}
-                      </div>
 
-                      {/* Remove Button */}
-                      <button
-                        className="rounded-md border p-1 text-muted-foreground opacity-0 transition-all disabled:cursor-not-allowed disabled:opacity-50 group-hover:opacity-100"
-                        disabled={favoriteModels.length <= 1}
-                        onClick={() => removeFavorite(model.id)}
-                        title={
-                          favoriteModels.length <= 1
-                            ? 'At least one favorite model is required'
-                            : 'Remove from favorites'
-                        }
-                        type="button"
-                      >
-                        <Minus className="size-4" />
-                      </button>
-                    </div>
-                    </div>
-                  </Reorder.Item>
-                );
-              })}
+                          {/* Provider Icon */}
+                          {ProviderIcon && (
+                            <ProviderIcon className="size-5 shrink-0" />
+                          )}
+
+                          {/* Model Info */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate font-medium">
+                                {model.name}
+                              </span>
+                              <div className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
+                                {model.provider}
+                              </div>
+                            </div>
+                            {model.description && (
+                              <p className="mt-1 truncate text-muted-foreground text-xs">
+                                {model.description}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Remove Button */}
+                          <button
+                            className="rounded-md border p-1 text-muted-foreground opacity-0 transition-all disabled:cursor-not-allowed disabled:opacity-50 group-hover:opacity-100"
+                            disabled={favoriteModels.length <= 1}
+                            onClick={() => removeFavorite(model.id)}
+                            title={
+                              favoriteModels.length <= 1
+                                ? 'At least one favorite model is required'
+                                : 'Remove from favorites'
+                            }
+                            type="button"
+                          >
+                            <Minus className="size-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </Reorder.Item>
+                  );
+                })}
               </div>
             </Reorder.Group>
           ) : (
             <motion.div animate={{ opacity: 1 }} initial={{ opacity: 0 }}>
               <div className="flex h-32 items-center justify-center rounded-lg border-2 border-border border-dashed text-muted-foreground">
-              <div className="text-center">
-                <Star className="mx-auto mb-2 size-8 opacity-50" />
-                <p className="text-sm">No favorite models yet</p>
-                <p className="text-xs">Add models from the list below</p>
-              </div>
+                <div className="text-center">
+                  <Star className="mx-auto mb-2 size-8 opacity-50" />
+                  <p className="text-sm">No favorite models yet</p>
+                  <p className="text-xs">Add models from the list below</p>
+                </div>
               </div>
             </motion.div>
           )}
@@ -259,27 +263,27 @@ export function ModelsSettings() {
                           transition={{ duration: 0.2 }}
                         >
                           <div className="flex items-center justify-between py-1">
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm">{model.name}</span>
-                              <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
-                                via {modelProvider?.name || model.provider}
-                              </span>
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">{model.name}</span>
+                                <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
+                                  via {modelProvider?.name || model.provider}
+                                </span>
+                              </div>
+                              {model.description && (
+                                <span className="text-muted-foreground text-xs">
+                                  {model.description}
+                                </span>
+                              )}
                             </div>
-                            {model.description && (
-                              <span className="text-muted-foreground text-xs">
-                                {model.description}
-                              </span>
-                            )}
-                          </div>
-                          <button
-                            className="rounded-md border border-border p-1 text-muted-foreground transition-colors hover:text-foreground"
-                            onClick={() => toggleFavorite(model.id)}
-                            title="Add to favorites"
-                            type="button"
-                          >
-                            <Plus className="size-4" />
-                          </button>
+                            <button
+                              className="rounded-md border border-border p-1 text-muted-foreground transition-colors hover:text-foreground"
+                              onClick={() => toggleFavorite(model.id)}
+                              title="Add to favorites"
+                              type="button"
+                            >
+                              <Plus className="size-4" />
+                            </button>
                           </div>
                         </motion.div>
                       );

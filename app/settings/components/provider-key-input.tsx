@@ -1,7 +1,6 @@
 'use client';
 
 import { Eye, EyeOff, Key } from 'lucide-react';
-import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -77,8 +76,10 @@ export function ProviderKeyInput({
             <Input
               value={
                 showKey
-                  ? (existingKey?.encrypted_key as string | undefined) ?? ''
-                  : maskKey((existingKey?.encrypted_key as string | undefined) ?? '')
+                  ? ((existingKey?.encrypted_key as string | undefined) ?? '')
+                  : maskKey(
+                      (existingKey?.encrypted_key as string | undefined) ?? ''
+                    )
               }
               readOnly
               className="font-mono text-sm"

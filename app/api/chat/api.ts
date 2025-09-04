@@ -48,10 +48,10 @@ export async function validateAndTrackUsage({
     const isFreeModel =
       FREE_MODELS_IDS.includes(model) ||
       NON_AUTH_ALLOWED_MODELS.includes(model);
-    
+
     // Check if AI Gateway is configured
     const hasAIGateway = Boolean(process.env.AI_GATEWAY_API_KEY);
-    
+
     // Allow access if:
     // 1. It's a free model
     // 2. Guest has provided BYOK credentials

@@ -7,7 +7,7 @@ import {
   createTimerTestContext,
   safeAdvanceTimers,
   safeRunAllTimers,
-} from '../tests/utils/timer-test-utils';
+} from './utils/timer-test-utils';
 
 // Mock child components with minimal implementations that include interactive elements
 vi.mock('@/components/app/chat/message-assistant', () => ({

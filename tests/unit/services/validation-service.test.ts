@@ -277,7 +277,7 @@ describe('ValidationService - London School TDD', () => {
         if (!result.isValid) {
           expect(result.error).toBeDefined();
           expect(typeof result.error).toBe('string');
-          expect(result.error!.length).toBeGreaterThan(0);
+          expect(result.error?.length).toBeGreaterThan(0);
         }
       });
     });

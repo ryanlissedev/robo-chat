@@ -43,40 +43,50 @@ class PerformanceTestSuite {
    */
   async testMessageRendering(): Promise<PerformanceTestResult> {
     const testName = 'Message Rendering Performance';
-    const startTime = performance.now();
-    
+    const _startTime = performance.now();
+
     try {
       // Simulate message rendering
-      const messages = Array.from({ length: this.config.messageCount }, (_, i) => ({
-        id: `msg-${i}`,
-        content: `Test message ${i}`,
-        role: i % 2 === 0 ? 'user' : 'assistant',
-      }));
+      const messages = Array.from(
+        { length: this.config.messageCount },
+        (_, i) => ({
+          id: `msg-${i}`,
+          content: `Test message ${i}`,
+          role: i % 2 === 0 ? 'user' : 'assistant',
+        })
+      );
 
       // Measure render time for each message
       const renderTimes: number[] = [];
-      
+
       for (let i = 0; i < messages.length; i++) {
         const renderStart = performance.now();
-        
+
         // Simulate React render cycle
-        await new Promise(resolve => requestAnimationFrame(resolve));
-        
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+
         const renderEnd = performance.now();
         renderTimes.push(renderEnd - renderStart);
       }
 
-      const avgRenderTime = renderTimes.reduce((sum, time) => sum + time, 0) / renderTimes.length;
+      const avgRenderTime =
+        renderTimes.reduce((sum, time) => sum + time, 0) / renderTimes.length;
       const maxRenderTime = Math.max(...renderTimes);
-      
+
       const passed = avgRenderTime <= this.config.acceptableRenderTime;
-      
+
       const recommendations: string[] = [];
       if (!passed) {
-        recommendations.push('Consider implementing React.memo for message components');
-        recommendations.push('Check for unnecessary re-renders in message list');
+        recommendations.push(
+          'Consider implementing React.memo for message components'
+        );
+        recommendations.push(
+          'Check for unnecessary re-renders in message list'
+        );
         if (maxRenderTime > this.config.acceptableRenderTime * 2) {
-          recommendations.push('Some messages taking too long to render - investigate complex content');
+          recommendations.push(
+            'Some messages taking too long to render - investigate complex content'
+          );
         }
       }
 
@@ -88,7 +98,7 @@ class PerformanceTestSuite {
         },
         recommendations,
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         testName,
         passed: false,
@@ -105,16 +115,16 @@ class PerformanceTestSuite {
     const testName = 'Streaming Performance';
     let frameDrops = 0;
     let lastFrameTime = performance.now();
-    
+
     const frameCallback = () => {
       const currentTime = performance.now();
       const frameDuration = currentTime - lastFrameTime;
-      
+
       // Detect frame drops (>16.67ms between frames)
       if (frameDuration > this.config.acceptableRenderTime * 1.5) {
         frameDrops++;
       }
-      
+
       lastFrameTime = currentTime;
     };
 
@@ -122,13 +132,13 @@ class PerformanceTestSuite {
       // Simulate streaming for configured duration
       const testDuration = this.config.streamingDuration;
       const startTime = performance.now();
-      
+
       const intervalId = setInterval(frameCallback, 1);
-      
+
       // Simulate streaming text updates
       const streamingText = 'A'.repeat(1000);
       let charIndex = 0;
-      
+
       const streamingInterval = setInterval(() => {
         // Simulate character-by-character streaming
         charIndex += 2; // Batched updates as per optimization
@@ -138,23 +148,29 @@ class PerformanceTestSuite {
       }, 10);
 
       // Wait for test duration
-      await new Promise(resolve => setTimeout(resolve, testDuration));
-      
+      await new Promise((resolve) => setTimeout(resolve, testDuration));
+
       clearInterval(intervalId);
       clearInterval(streamingInterval);
-      
+
       const endTime = performance.now();
-      const totalFrames = Math.floor((endTime - startTime) / this.config.acceptableRenderTime);
+      const totalFrames = Math.floor(
+        (endTime - startTime) / this.config.acceptableRenderTime
+      );
       const frameDropPercentage = (frameDrops / totalFrames) * 100;
-      
+
       const passed = frameDropPercentage < 5; // Less than 5% frame drops acceptable
-      
+
       const recommendations: string[] = [];
       if (!passed) {
-        recommendations.push('Optimize streaming animation to reduce frame drops');
+        recommendations.push(
+          'Optimize streaming animation to reduce frame drops'
+        );
         recommendations.push('Consider batching more character updates');
         if (frameDropPercentage > 10) {
-          recommendations.push('High frame drop rate - check for blocking operations');
+          recommendations.push(
+            'High frame drop rate - check for blocking operations'
+          );
         }
       }
 
@@ -166,12 +182,14 @@ class PerformanceTestSuite {
         },
         recommendations,
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         testName,
         passed: false,
         metrics: {},
-        recommendations: ['Streaming test failed - check animation implementation'],
+        recommendations: [
+          'Streaming test failed - check animation implementation',
+        ],
       };
     }
   }
@@ -181,32 +199,37 @@ class PerformanceTestSuite {
    */
   async testMemoryUsage(): Promise<PerformanceTestResult> {
     const testName = 'Memory Usage';
-    
+
     try {
       const initialMemory = this.getCurrentMemoryUsage();
-      
+
       // Simulate heavy chat usage
-      const messages = Array.from({ length: this.config.messageCount * 2 }, (_, i) => ({
-        id: `msg-${i}`,
-        content: 'A'.repeat(1000), // 1KB per message
-        role: i % 2 === 0 ? 'user' : 'assistant',
-        timestamp: Date.now(),
-      }));
+      const _messages = Array.from(
+        { length: this.config.messageCount * 2 },
+        (_, i) => ({
+          id: `msg-${i}`,
+          content: 'A'.repeat(1000), // 1KB per message
+          role: i % 2 === 0 ? 'user' : 'assistant',
+          timestamp: Date.now(),
+        })
+      );
 
       // Simulate message cleanup
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const currentMemory = this.getCurrentMemoryUsage();
       const memoryIncrease = currentMemory - initialMemory;
-      
+
       const passed = memoryIncrease <= this.config.acceptableMemoryUsage;
-      
+
       const recommendations: string[] = [];
       if (!passed) {
         recommendations.push('Memory usage too high - check for memory leaks');
         recommendations.push('Consider implementing message virtualization');
         if (memoryIncrease > this.config.acceptableMemoryUsage * 2) {
-          recommendations.push('Critical memory leak detected - immediate action required');
+          recommendations.push(
+            'Critical memory leak detected - immediate action required'
+          );
         }
       }
 
@@ -218,12 +241,14 @@ class PerformanceTestSuite {
         },
         recommendations,
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         testName,
         passed: false,
         metrics: {},
-        recommendations: ['Memory test failed - unable to measure memory usage'],
+        recommendations: [
+          'Memory test failed - unable to measure memory usage',
+        ],
       };
     }
   }
@@ -233,37 +258,42 @@ class PerformanceTestSuite {
    */
   async testMultiChatPerformance(): Promise<PerformanceTestResult> {
     const testName = 'Multi-Chat Performance';
-    
+
     try {
       const startTime = performance.now();
-      
+
       // Simulate multiple concurrent chat instances
-      const chatPromises = Array.from({ length: this.config.concurrentChats }, async (_, i) => {
-        // Simulate chat initialization and message handling
-        const messages = Array.from({ length: 10 }, (_, j) => ({
-          id: `chat-${i}-msg-${j}`,
-          content: `Message ${j} in chat ${i}`,
-          role: j % 2 === 0 ? 'user' : 'assistant',
-        }));
-        
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 50));
-        
-        return messages;
-      });
+      const chatPromises = Array.from(
+        { length: this.config.concurrentChats },
+        async (_, i) => {
+          // Simulate chat initialization and message handling
+          const messages = Array.from({ length: 10 }, (_, j) => ({
+            id: `chat-${i}-msg-${j}`,
+            content: `Message ${j} in chat ${i}`,
+            role: j % 2 === 0 ? 'user' : 'assistant',
+          }));
+
+          // Simulate processing time
+          await new Promise((resolve) => setTimeout(resolve, 50));
+
+          return messages;
+        }
+      );
 
       await Promise.all(chatPromises);
-      
+
       const endTime = performance.now();
       const totalTime = endTime - startTime;
-      
+
       // Should handle concurrent chats efficiently
       const expectedMaxTime = this.config.concurrentChats * 100; // 100ms per chat max
       const passed = totalTime <= expectedMaxTime;
-      
+
       const recommendations: string[] = [];
       if (!passed) {
-        recommendations.push('Multi-chat performance is slow - optimize concurrent handling');
+        recommendations.push(
+          'Multi-chat performance is slow - optimize concurrent handling'
+        );
         recommendations.push('Consider limiting number of simultaneous chats');
         if (totalTime > expectedMaxTime * 2) {
           recommendations.push('Critical multi-chat performance issue');
@@ -278,7 +308,7 @@ class PerformanceTestSuite {
         },
         recommendations,
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         testName,
         passed: false,
@@ -293,7 +323,7 @@ class PerformanceTestSuite {
    */
   async testBundleOptimization(): Promise<PerformanceTestResult> {
     const testName = 'Bundle Size Optimization';
-    
+
     try {
       // Simulate dynamic imports
       const importTimes: number[] = [];
@@ -304,22 +334,27 @@ class PerformanceTestSuite {
         'feedback-component',
       ];
 
-      for (const component of components) {
+      for (const _component of components) {
         const importStart = performance.now();
-        
+
         // Simulate dynamic import delay
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
-        
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.random() * 100)
+        );
+
         const importEnd = performance.now();
         importTimes.push(importEnd - importStart);
       }
 
-      const avgImportTime = importTimes.reduce((sum, time) => sum + time, 0) / importTimes.length;
+      const avgImportTime =
+        importTimes.reduce((sum, time) => sum + time, 0) / importTimes.length;
       const passed = avgImportTime <= 200; // 200ms max for dynamic imports
-      
+
       const recommendations: string[] = [];
       if (!passed) {
-        recommendations.push('Dynamic imports taking too long - optimize bundle splitting');
+        recommendations.push(
+          'Dynamic imports taking too long - optimize bundle splitting'
+        );
         recommendations.push('Consider preloading critical components');
       }
 
@@ -331,7 +366,7 @@ class PerformanceTestSuite {
         },
         recommendations,
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         testName,
         passed: false,
@@ -350,10 +385,8 @@ class PerformanceTestSuite {
     results: PerformanceTestResult[];
     overallScore: number;
   }> {
-    console.log('🚀 Running performance test suite...');
-    
     this.results = [];
-    
+
     const tests = [
       this.testMessageRendering(),
       this.testStreamingPerformance(),
@@ -365,20 +398,15 @@ class PerformanceTestSuite {
     const results = await Promise.all(tests);
     this.results = results;
 
-    const passed = results.filter(r => r.passed).length;
-    const failed = results.filter(r => !r.passed).length;
+    const passed = results.filter((r) => r.passed).length;
+    const failed = results.filter((r) => !r.passed).length;
     const overallScore = Math.round((passed / results.length) * 100);
 
-    console.log(`✅ Performance tests completed: ${passed}/${results.length} passed`);
-    console.log(`📊 Overall performance score: ${overallScore}%`);
-
     // Log failed tests and recommendations
-    results.forEach(result => {
+    results.forEach((result) => {
       if (!result.passed) {
-        console.warn(`❌ ${result.testName} failed`);
-        result.recommendations?.forEach(rec => console.warn(`  💡 ${rec}`));
+        result.recommendations?.forEach((_rec) => {});
       } else {
-        console.log(`✅ ${result.testName} passed`);
       }
     });
 
@@ -402,7 +430,9 @@ class PerformanceTestSuite {
 export const performanceTestSuite = new PerformanceTestSuite();
 
 // Export test runner for CI/CD
-export async function runPerformanceTests(config?: Partial<PerformanceTestConfig>) {
+export async function runPerformanceTests(
+  config?: Partial<PerformanceTestConfig>
+) {
   const suite = new PerformanceTestSuite(config);
   return await suite.runAllTests();
 }
@@ -410,5 +440,6 @@ export async function runPerformanceTests(config?: Partial<PerformanceTestConfig
 // Development helper
 if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
   // Make available in development console
-  (window as any).runPerformanceTests = () => performanceTestSuite.runAllTests();
+  (window as any).runPerformanceTests = () =>
+    performanceTestSuite.runAllTests();
 }

@@ -3,11 +3,11 @@
  * Ensuring 100% test coverage for production validation
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   cleanMessagesForTools,
-  extractErrorMessage,
   createErrorResponse,
+  extractErrorMessage,
 } from '@/app/api/chat/utils';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 
@@ -20,8 +20,8 @@ vi.mock('@/app/types/ai-extended', () => ({
     }
     if (message.parts && message.parts.length > 0) {
       return message.parts
-        .filter(part => part.type === 'text')
-        .map(part => part.text)
+        .filter((part) => part.type === 'text')
+        .map((part) => part.text)
         .join(' ');
     }
     return 'Default content';
@@ -61,19 +61,27 @@ describe('Chat Utils Functions', () => {
     } as unknown as ExtendedUIMessage;
 
     it('should return messages unchanged when tools are available', () => {
-      const messages = [sampleUserMessage, sampleAssistantMessage, sampleToolMessage];
-      
+      const messages = [
+        sampleUserMessage,
+        sampleAssistantMessage,
+        sampleToolMessage,
+      ];
+
       const result = cleanMessagesForTools(messages, true);
-      
+
       expect(result).toEqual(messages);
       expect(result).toHaveLength(3);
     });
 
     it('should filter out tool messages when tools are not available', () => {
-      const messages = [sampleUserMessage, sampleAssistantMessage, sampleToolMessage];
-      
+      const messages = [
+        sampleUserMessage,
+        sampleAssistantMessage,
+        sampleToolMessage,
+      ];
+
       const result = cleanMessagesForTools(messages, false);
-      
+
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual(sampleUserMessage);
       expect(result[1].role).toBe('assistant');
@@ -87,17 +95,24 @@ describe('Chat Utils Functions', () => {
         content: 'Let me search for that information.',
         parts: [
           { type: 'text', text: 'Let me search for that information.' },
-          { type: 'tool-call', toolCallId: 'call-123', toolName: 'search', args: {} },
+          {
+            type: 'tool-call',
+            toolCallId: 'call-123',
+            toolName: 'search',
+            args: {},
+          },
         ],
         createdAt: new Date('2024-01-01T10:03:00Z'),
       };
 
-      vi.mocked(getMessageContent).mockReturnValue('Let me search for that information.');
+      vi.mocked(getMessageContent).mockReturnValue(
+        'Let me search for that information.'
+      );
 
       const messages = [sampleUserMessage, assistantWithToolInvocation];
-      
+
       const result = cleanMessagesForTools(messages, false);
-      
+
       expect(result).toHaveLength(2);
       expect(result[1]).toEqual({
         id: 'assistant-2',
@@ -110,9 +125,9 @@ describe('Chat Utils Functions', () => {
 
     it('should add fallback message when all messages are filtered out', () => {
       const messages = [sampleToolMessage];
-      
+
       const result = cleanMessagesForTools(messages, false);
-      
+
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual({
         id: 'fallback-1',
@@ -125,9 +140,9 @@ describe('Chat Utils Functions', () => {
 
     it('should ensure last message is from user', () => {
       const messages = [sampleUserMessage, sampleAssistantMessage];
-      
+
       const result = cleanMessagesForTools(messages, false);
-      
+
       // Should add a user fallback message at the end
       expect(result).toHaveLength(3);
       expect(result[result.length - 1].role).toBe('user');
@@ -137,16 +152,16 @@ describe('Chat Utils Functions', () => {
 
     it('should not add fallback user message if last message is already from user', () => {
       const messages = [sampleAssistantMessage, sampleUserMessage];
-      
+
       const result = cleanMessagesForTools(messages, false);
-      
+
       expect(result).toHaveLength(2);
       expect(result[result.length - 1]).toEqual(sampleUserMessage);
     });
 
     it('should handle empty messages array', () => {
       const result = cleanMessagesForTools([], false);
-      
+
       expect(result).toHaveLength(1);
       expect(result[0].role).toBe('user');
       expect(result[0].content).toBe('Hello');
@@ -161,7 +176,7 @@ describe('Chat Utils Functions', () => {
       } as ExtendedUIMessage;
 
       const result = cleanMessagesForTools([messageWithoutDate], false);
-      
+
       expect(result[0].createdAt).toBeInstanceOf(Date);
     });
 
@@ -180,98 +195,100 @@ describe('Chat Utils Functions', () => {
       vi.mocked(getMessageContent).mockReturnValue('Here is the answer: 42');
 
       const result = cleanMessagesForTools([complexAssistantMessage], false);
-      
+
       expect(result[0].content).toBe('Here is the answer: 42');
-      expect(result[0].parts).toEqual([{ type: 'text', text: 'Here is the answer: 42' }]);
+      expect(result[0].parts).toEqual([
+        { type: 'text', text: 'Here is the answer: 42' },
+      ]);
     });
   });
 
   describe('extractErrorMessage', () => {
     it('should extract message from Error instance', () => {
       const error = new Error('Something went wrong');
-      
+
       const result = extractErrorMessage(error);
-      
+
       expect(result).toBe('Something went wrong');
     });
 
     it('should handle specific error patterns - API key error', () => {
       const error = new Error('Incorrect API key provided for OpenAI');
-      
+
       const result = extractErrorMessage(error);
-      
+
       expect(result).toBe('Invalid API key. Please check your settings.');
     });
 
     it('should handle specific error patterns - rate limit error', () => {
       const error = new Error('Rate limit exceeded. Please try again later');
-      
+
       const result = extractErrorMessage(error);
-      
+
       expect(result).toBe('Rate limit exceeded. Please try again later.');
     });
 
     it('should handle specific error patterns - context length error', () => {
       const error = new Error('Maximum context length exceeded');
-      
+
       const result = extractErrorMessage(error);
-      
+
       expect(result).toBe('Message too long. Please shorten your input.');
     });
 
     it('should extract message from object with nested error', () => {
       const error = {
         error: {
-          message: 'Network timeout occurred'
-        }
+          message: 'Network timeout occurred',
+        },
       };
-      
+
       const result = extractErrorMessage(error);
-      
+
       expect(result).toBe('Network timeout occurred');
     });
 
     it('should extract message from object with direct message property', () => {
       const error = {
-        message: 'Direct error message'
+        message: 'Direct error message',
       };
-      
+
       const result = extractErrorMessage(error);
-      
+
       expect(result).toBe('Direct error message');
     });
 
     it('should extract message from object with statusText property', () => {
       const error = {
-        statusText: 'Internal Server Error'
+        statusText: 'Internal Server Error',
       };
-      
+
       const result = extractErrorMessage(error);
-      
+
       expect(result).toBe('Internal Server Error');
     });
 
     it('should handle string errors', () => {
       const error = 'Simple string error';
-      
+
       const result = extractErrorMessage(error);
-      
+
       expect(result).toBe('Simple string error');
     });
 
     it('should return default message for unknown error types', () => {
       const error = 42; // Number as error
-      
+
       const result = extractErrorMessage(error);
-      
+
       expect(result).toBe('An unexpected error occurred');
     });
 
     it('should return default message for null error', () => {
       const error = null;
-      
+
       const result = extractErrorMessage(error);
-      
+
       expect(result).toBe('An unexpected error occurred');
     });
 
@@ -281,31 +298,31 @@ describe('Chat Utils Functions', () => {
         message: undefined,
         statusText: undefined,
       };
-      
+
       const result = extractErrorMessage(error);
-      
+
       expect(result).toBe('An unexpected error occurred');
     });
 
     it('should handle Error instance with undefined message', () => {
       const error = new Error();
       error.message = undefined as any;
-      
+
       const result = extractErrorMessage(error);
-      
+
       expect(result).toBeUndefined();
     });
 
     it('should prioritize nested error message over direct message', () => {
       const error = {
         error: {
-          message: 'Nested error message'
+          message: 'Nested error message',
         },
-        message: 'Direct message'
+        message: 'Direct message',
       };
-      
+
       const result = extractErrorMessage(error);
-      
+
       expect(result).toBe('Nested error message');
     });
   });
@@ -317,13 +334,13 @@ describe('Chat Utils Functions', () => {
         message: 'The input provided is invalid',
         statusCode: 400,
       };
-      
+
       const response = createErrorResponse(error);
-      
+
       expect(response.status).toBe(400);
       expect(response.headers.get('Content-Type')).toBe('application/json');
-      
-      return response.text().then(body => {
+
+      return response.text().then((body) => {
         const parsed = JSON.parse(body);
         expect(parsed).toEqual({
           error: 'The input provided is invalid',
@@ -334,14 +351,14 @@ describe('Chat Utils Functions', () => {
 
     it('should use default status code when not provided', () => {
       const error = {
-        message: 'Something went wrong'
+        message: 'Something went wrong',
       };
-      
+
       const response = createErrorResponse(error);
-      
+
       expect(response.status).toBe(500);
-      
-      return response.text().then(body => {
+
+      return response.text().then((body) => {
         const parsed = JSON.parse(body);
         expect(parsed).toEqual({
           error: 'Something went wrong',
@@ -352,14 +369,14 @@ describe('Chat Utils Functions', () => {
 
     it('should use default message when not provided', () => {
       const error = {
-        statusCode: 404
+        statusCode: 404,
       };
-      
+
       const response = createErrorResponse(error);
-      
+
       expect(response.status).toBe(404);
-      
-      return response.text().then(body => {
+
+      return response.text().then((body) => {
         const parsed = JSON.parse(body);
         expect(parsed).toEqual({
           error: 'Internal server error',
@@ -370,12 +387,12 @@ describe('Chat Utils Functions', () => {
 
     it('should handle empty error object', () => {
       const error = {};
-      
+
       const response = createErrorResponse(error);
-      
+
       expect(response.status).toBe(500);
-      
-      return response.text().then(body => {
+
+      return response.text().then((body) => {
         const parsed = JSON.parse(body);
         expect(parsed).toEqual({
           error: 'Internal server error',
@@ -386,20 +403,20 @@ describe('Chat Utils Functions', () => {
 
     it('should set correct content type header', () => {
       const error = { message: 'Test error' };
-      
+
       const response = createErrorResponse(error);
-      
+
       expect(response.headers.get('Content-Type')).toBe('application/json');
     });
 
     it('should handle zero status code', () => {
       const error = {
         statusCode: 0,
-        message: 'Network error'
+        message: 'Network error',
       };
-      
+
       const response = createErrorResponse(error);
-      
+
       expect(response.status).toBe(0);
     });
 
@@ -409,10 +426,10 @@ describe('Chat Utils Functions', () => {
         message: 'Authentication failed',
         statusCode: 401,
       };
-      
+
       const response = createErrorResponse(error);
-      
-      return response.text().then(body => {
+
+      return response.text().then((body) => {
         const parsed = JSON.parse(body);
         expect(parsed.code).toBe('AUTH_FAILED');
       });
@@ -423,10 +440,10 @@ describe('Chat Utils Functions', () => {
         message: 'Test error',
         code: undefined,
       };
-      
+
       const response = createErrorResponse(error);
-      
-      return response.text().then(body => {
+
+      return response.text().then((body) => {
         const parsed = JSON.parse(body);
         expect(parsed.code).toBeUndefined();
       });
@@ -440,7 +457,9 @@ describe('Chat Utils Functions', () => {
           id: 'user-1',
           role: 'user',
           content: 'Please search for information about AI',
-          parts: [{ type: 'text', text: 'Please search for information about AI' }],
+          parts: [
+            { type: 'text', text: 'Please search for information about AI' },
+          ],
           createdAt: new Date('2024-01-01T10:00:00Z'),
         },
         {
@@ -453,12 +472,19 @@ describe('Chat Utils Functions', () => {
           id: 'assistant-1',
           role: 'assistant',
           content: 'Based on the search results, AI stands for...',
-          parts: [{ type: 'text', text: 'Based on the search results, AI stands for...' }],
+          parts: [
+            {
+              type: 'text',
+              text: 'Based on the search results, AI stands for...',
+            },
+          ],
           createdAt: new Date('2024-01-01T10:02:00Z'),
         },
       ];
 
-      vi.mocked(getMessageContent).mockReturnValue('Based on the search results, AI stands for...');
+      vi.mocked(getMessageContent).mockReturnValue(
+        'Based on the search results, AI stands for...'
+      );
 
       const result = cleanMessagesForTools(messages, false);
 
@@ -475,12 +501,12 @@ describe('Chat Utils Functions', () => {
         response: {
           data: {
             error: {
-              message: 'Deeply nested error message'
-            }
-          }
+              message: 'Deeply nested error message',
+            },
+          },
         },
         message: 'Top level message',
-        statusText: 'Bad Request'
+        statusText: 'Bad Request',
       };
 
       // Should prioritize the direct message property

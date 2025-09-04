@@ -5,6 +5,7 @@
 
 import type { UIMessage } from '@ai-sdk/react';
 import type { Attachment } from '@/lib/file-handling';
+import { extractTextContent, type MessagePart } from './message-parts';
 
 /**
  * Reasoning UI part for AI SDK v5 compatibility
@@ -138,11 +139,7 @@ export function hasAttachments(
 export function getMessageContent(message: ExtendedUIMessage): string {
   // AI SDK v5 primary format - parts array
   if (message.parts && Array.isArray(message.parts)) {
-    const textParts = message.parts
-      .filter((part: any) => part.type === 'text' || part.type === 'text-delta')
-      .map((part: any) => part.text || part.delta || '')
-      .join('');
-    
+    const textParts = extractTextContent(message.parts as MessagePart[]);
     if (textParts) {
       return textParts;
     }
@@ -150,13 +147,6 @@ export function getMessageContent(message: ExtendedUIMessage): string {
 
   // Debug logging for troubleshooting
   if (typeof window !== 'undefined' && message.role === 'assistant') {
-    console.log('Message structure:', {
-      id: message.id,
-      role: message.role,
-      parts: message.parts,
-      partsLength: message.parts?.length || 0,
-      textParts: message.parts?.filter((part: any) => part.type === 'text' || part.type === 'text-delta')
-    });
   }
 
   return '';

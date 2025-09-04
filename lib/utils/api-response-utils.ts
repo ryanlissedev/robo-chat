@@ -115,7 +115,7 @@ export async function connectToDatabase(): Promise<ApiOperationResult<any>> {
       success: true,
       data: supabase,
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       success: false,
       error: 'Database connection failed',
@@ -151,7 +151,7 @@ export async function validateAuthentication(
         isAuthenticated: !!user,
       },
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       success: false,
       error: 'Authentication check failed',
@@ -181,7 +181,7 @@ export async function parseRequestBody<T>(
       isValid: true,
       data: body as T,
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       isValid: false,
       error: 'Invalid JSON in request body',

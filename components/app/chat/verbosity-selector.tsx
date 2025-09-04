@@ -26,17 +26,48 @@ const options: Array<{
   description: string;
   Icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { value: 'low', label: 'Concise', description: 'Short, to the point', Icon: ListFilter },
-  { value: 'medium', label: 'Balanced', description: 'Default detail level', Icon: Gauge },
-  { value: 'high', label: 'Detailed', description: 'More elaborate answers', Icon: Volume2 },
+  {
+    value: 'low',
+    label: 'Concise',
+    description: 'Short, to the point',
+    Icon: ListFilter,
+  },
+  {
+    value: 'medium',
+    label: 'Balanced',
+    description: 'Default detail level',
+    Icon: Gauge,
+  },
+  {
+    value: 'high',
+    label: 'Detailed',
+    description: 'More elaborate answers',
+    Icon: Volume2,
+  },
 ];
 
-export function VerbositySelector({ value, onChange, className, disabled }: VerbositySelectorProps) {
+export function VerbositySelector({
+  value,
+  onChange,
+  className,
+  disabled,
+}: VerbositySelectorProps) {
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.value === value) || options[1];
   return (
-    <Select disabled={disabled} onOpenChange={setOpen} onValueChange={(v) => onChange(v as Verbosity)} open={open} value={value}>
-      <SelectTrigger className={cn('flex h-10 w-auto items-center gap-2 border-border bg-background px-3', className)}>
+    <Select
+      disabled={disabled}
+      onOpenChange={setOpen}
+      onValueChange={(v) => onChange(v as Verbosity)}
+      open={open}
+      value={value}
+    >
+      <SelectTrigger
+        className={cn(
+          'flex h-10 w-auto items-center gap-2 border-border bg-background px-3',
+          className
+        )}
+      >
         <SelectValue>
           <div className="flex items-center gap-2">
             <selected.Icon className="h-5 w-5 text-muted-foreground" />
@@ -46,13 +77,19 @@ export function VerbositySelector({ value, onChange, className, disabled }: Verb
       </SelectTrigger>
       <SelectContent className="w-[260px]">
         {options.map((opt) => (
-          <SelectItem className="cursor-pointer" key={opt.value} value={opt.value}>
+          <SelectItem
+            className="cursor-pointer"
+            key={opt.value}
+            value={opt.value}
+          >
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <opt.Icon className="h-5 w-5 text-muted-foreground" />
                 <span className="font-medium text-base">{opt.label}</span>
               </div>
-              <span className="pl-7 text-muted-foreground text-sm">{opt.description}</span>
+              <span className="pl-7 text-muted-foreground text-sm">
+                {opt.description}
+              </span>
             </div>
           </SelectItem>
         ))}
@@ -60,4 +97,3 @@ export function VerbositySelector({ value, onChange, className, disabled }: Verb
     </Select>
   );
 }
-

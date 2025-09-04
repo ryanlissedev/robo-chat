@@ -73,6 +73,7 @@ const testConfigs = {
       'playwright-tests/**',
       '**/test-*.{js,ts,html}', // Exclude debug test files
       '**/*.stories.*',
+      '**/*.spec.ts', // Exclude playwright spec files
     ],
     coverage: getCoverageConfig(
       process.env.NODE_ENV === 'production'
@@ -89,7 +90,17 @@ const testConfigs = {
         minThreads: process.env.CI === '1' ? 1 : 2,
         maxThreads: process.env.CI === '1' ? 2 : Math.min(6, 4), // Reduced for stability
         isolate: true,
+        // Enhanced thread isolation
+        execArgv: ['--enable-source-maps'],
       },
+    },
+    // Additional isolation settings
+    deps: {
+      inline: [
+        // Inline problematic modules to prevent ESM/CJS conflicts
+        '@supabase/supabase-js',
+        '@supabase/ssr',
+      ],
     },
     mockReset: true,
     clearMocks: true,
@@ -146,12 +157,12 @@ const testConfigs = {
         useAtomics: true,
         minThreads: 1,
         maxThreads: 4, // Reduced for fast mode
-        isolate: false, // Faster without isolation
+        isolate: true, // FIXED: Enable isolation even in fast mode for consistency
       },
     },
-    mockReset: false, // Skip for speed
+    mockReset: true, // FIXED: Enable mock reset to prevent pollution
     clearMocks: true,
-    restoreMocks: false,
+    restoreMocks: true, // FIXED: Enable mock restoration
     retry: 0,
     reporters: [
       [
@@ -164,6 +175,10 @@ const testConfigs = {
     sequence: {
       concurrent: true,
     },
+    // Add missing isolation settings
+    unstubEnvs: true,
+    unstubGlobals: true,
+    isolate: true,
   },
 
   // Integration test configuration
@@ -231,7 +246,6 @@ const getTestConfig = () => {
       return testConfigs.fast;
     case 'integration':
       return testConfigs.integration;
-    case 'standard':
     default:
       return testConfigs.standard;
   }

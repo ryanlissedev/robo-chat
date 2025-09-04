@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
  * Hook for smooth text streaming that decouples network streaming from visual streaming
@@ -56,7 +56,10 @@ export function useSmoothStream() {
       if (streamIndexRef.current < fullText.length) {
         if (time - lastTimeRef.current > typewriterSpeed) {
           // Batch character updates for better performance
-          const charsToAdd = Math.min(2, fullText.length - streamIndexRef.current);
+          const charsToAdd = Math.min(
+            2,
+            fullText.length - streamIndexRef.current
+          );
           streamIndexRef.current += charsToAdd;
           setStream(fullText.slice(0, streamIndexRef.current));
           lastTimeRef.current = time;
@@ -78,10 +81,13 @@ export function useSmoothStream() {
   }, [fullText]);
 
   // Memoize the return value to prevent unnecessary re-renders
-  return useMemo(() => ({
-    stream,
-    addPart,
-    reset,
-    isAnimating: isAnimatingRef.current,
-  }), [stream, addPart, reset]);
+  return useMemo(
+    () => ({
+      stream,
+      addPart,
+      reset,
+      isAnimating: isAnimatingRef.current,
+    }),
+    [stream, addPart, reset]
+  );
 }

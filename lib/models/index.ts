@@ -89,20 +89,24 @@ export async function getModelsWithAccessFlags(): Promise<ModelConfig[]> {
 
   // Check if AI Gateway is configured
   const hasAIGateway = Boolean(process.env.AI_GATEWAY_API_KEY);
-  
+
   // Always include ollama and free models
   const accessibleModels = models.map((model) => {
     const isAlwaysFree =
       FREE_MODELS_IDS.includes(model.id) || model.providerId === 'ollama';
     const hasProviderKey = availableProviders.has(model.providerId);
     const isInNonAuthAllowed = NON_AUTH_ALLOWED_MODELS.includes(model.id);
-    
+
     // When AI Gateway is configured, all models are accessible
     const isAccessibleViaGateway = hasAIGateway;
 
     return {
       ...model,
-      accessible: isAlwaysFree || hasProviderKey || isInNonAuthAllowed || isAccessibleViaGateway,
+      accessible:
+        isAlwaysFree ||
+        hasProviderKey ||
+        isInNonAuthAllowed ||
+        isAccessibleViaGateway,
     };
   });
 

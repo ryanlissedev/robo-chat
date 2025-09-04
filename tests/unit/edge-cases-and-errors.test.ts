@@ -3,12 +3,11 @@
  * Testing boundary conditions, error states, and exceptional cases
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-
 // Import error boundary for testing
 import React from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 class TestErrorBoundary extends React.Component<
   { children: React.ReactNode; onError?: (error: Error) => void },
@@ -23,13 +22,13 @@ class TestErrorBoundary extends React.Component<
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: Error, _errorInfo: React.ErrorInfo) {
     this.props.onError?.(error);
   }
 
   render() {
     if (this.state.hasError) {
-      return <div data-testid="error-boundary">Something went wrong: {this.state.error?.message}</div>;
+      return <div data-testid="error-boundary">Something went this.state.error?.message</div>;
     }
 
     return this.props.children;
@@ -53,9 +52,9 @@ describe('Edge Cases and Error Scenarios', () => {
       // Mock fetch to reject with network error
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const TestComponent = () => {
+      const _TestComponent = () => {
         const [data, setData] = React.useState(null);
-        const [error, setError] = React.useState<string | null>(null);
+        const [_error, setError] = React.useState<string | null>(null);
 
         const fetchData = async () => {
           try {
@@ -71,11 +70,9 @@ describe('Edge Cases and Error Scenarios', () => {
           <div>
             <button onClick={fetchData} data-testid="fetch-button">
               Fetch Data
-            </button>
-            {error && <div data-testid="error-message">{error}</div>}
+            </button>error && <div data-testid="error-message">{error}</div>}
           </div>
-        );
-      };
+        );;
 
       render(<TestComponent />);
       const button = screen.getByTestId('fetch-button');
@@ -106,8 +103,8 @@ describe('Edge Cases and Error Scenarios', () => {
           json: async () => ({ error: scenario.statusText }),
         });
 
-        const TestComponent = () => {
-          const [error, setError] = React.useState<string | null>(null);
+        const _TestComponent = () => {
+          const [_error, setError] = React.useState<string | null>(null);
 
           const fetchData = async () => {
             try {
@@ -124,11 +121,9 @@ describe('Edge Cases and Error Scenarios', () => {
             <div>
               <button onClick={fetchData} data-testid="fetch-button">
                 Fetch Data
-              </button>
-              {error && <div data-testid="error-message">{error}</div>}
+              </button>error && <div data-testid="error-message">{error}</div>}
             </div>
-          );
-        };
+          );;
 
         const { unmount } = render(<TestComponent />);
         const button = screen.getByTestId('fetch-button');
@@ -152,8 +147,8 @@ describe('Edge Cases and Error Scenarios', () => {
         },
       });
 
-      const TestComponent = () => {
-        const [error, setError] = React.useState<string | null>(null);
+      const _TestComponent = () => {
+        const [_error, setError] = React.useState<string | null>(null);
 
         const fetchData = async () => {
           try {
@@ -168,11 +163,9 @@ describe('Edge Cases and Error Scenarios', () => {
           <div>
             <button onClick={fetchData} data-testid="fetch-button">
               Fetch Data
-            </button>
-            {error && <div data-testid="error-message">{error}</div>}
+            </button>error && <div data-testid="error-message">{error}</div>}
           </div>
-        );
-      };
+        );;
 
       render(<TestComponent />);
       const button = screen.getByTestId('fetch-button');
@@ -199,8 +192,8 @@ describe('Edge Cases and Error Scenarios', () => {
         })
       );
 
-      const TestComponent = () => {
-        const [error, setError] = React.useState<string | null>(null);
+      const _TestComponent = () => {
+        const [_error, setError] = React.useState<string | null>(null);
 
         const fetchData = async () => {
           try {
@@ -217,11 +210,9 @@ describe('Edge Cases and Error Scenarios', () => {
           <div>
             <button onClick={fetchData} data-testid="fetch-button">
               Fetch Data
-            </button>
-            {error && <div data-testid="error-message">{error}</div>}
+            </button>error && <div data-testid="error-message">{error}</div>}
           </div>
-        );
-      };
+        );;
 
       render(<TestComponent />);
       const button = screen.getByTestId('fetch-button');
@@ -238,7 +229,7 @@ describe('Edge Cases and Error Scenarios', () => {
     it('should handle component render errors', () => {
       const onError = vi.fn();
 
-      const ThrowingComponent = () => {
+      const _ThrowingComponent = () => {
         throw new Error('Component render error');
       };
 
@@ -255,8 +246,8 @@ describe('Edge Cases and Error Scenarios', () => {
     it('should handle async component errors', async () => {
       const onError = vi.fn();
 
-      const AsyncThrowingComponent = () => {
-        const [shouldThrow, setShouldThrow] = React.useState(false);
+      const _AsyncThrowingComponent = () => {
+        const [shouldThrow, _setShouldThrow] = React.useState(false);
 
         React.useEffect(() => {
           if (shouldThrow) {
@@ -285,7 +276,7 @@ describe('Edge Cases and Error Scenarios', () => {
     });
 
     it('should handle undefined props gracefully', () => {
-      const ComponentWithProps = ({ requiredProp }: { requiredProp: string }) => (
+      const _ComponentWithProps = ({ requiredProp }: { requiredProp: string }) => (
         <div data-testid="component-output">{requiredProp?.toUpperCase() || 'No prop provided'}</div>
       );
 
@@ -295,7 +286,7 @@ describe('Edge Cases and Error Scenarios', () => {
     });
 
     it('should handle null children', () => {
-      const WrapperComponent = ({ children }: { children: React.ReactNode }) => (
+      const _WrapperComponent = ({ children }: { children: React.ReactNode }) => (
         <div data-testid="wrapper">
           {children || 'No children provided'}
         </div>
@@ -310,7 +301,7 @@ describe('Edge Cases and Error Scenarios', () => {
       const circularObj: any = { name: 'test' };
       circularObj.self = circularObj;
 
-      const ComponentWithCircular = ({ data }: { data: any }) => {
+      const _ComponentWithCircular = ({ data }: { data: any }) => {
         const [error, setError] = React.useState<string | null>(null);
 
         React.useEffect(() => {
@@ -338,7 +329,7 @@ describe('Edge Cases and Error Scenarios', () => {
     it('should handle extremely long input strings', () => {
       const veryLongString = 'a'.repeat(100000);
 
-      const InputComponent = () => {
+      const _InputComponent = () => {
         const [value, setValue] = React.useState('');
         const [error, setError] = React.useState<string | null>(null);
 
@@ -375,14 +366,14 @@ describe('Edge Cases and Error Scenarios', () => {
     it('should handle special characters and unicode', () => {
       const specialChars = '🚀 Special chars: ñáéíóú àèìòù äëïöü ß 中文 日本語 العربية';
 
-      const UnicodeComponent = () => {
-        const [value, setValue] = React.useState('');
+      const _UnicodeComponent = () => {
+        const [value, _setValue] = React.useState('');
 
         return (
           <div>
             <input
               value={value}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={(_e) => setValue(e.target.value)}
               data-testid="unicode-input"
             />
             <div data-testid="unicode-output">{value}</div>
@@ -399,10 +390,10 @@ describe('Edge Cases and Error Scenarios', () => {
     });
 
     it('should handle empty and whitespace-only inputs', () => {
-      const whitespaceInputs = ['', '   ', '\t\t', '\n\n', '\r\n', '   \t  \n  '];
+      const _whitespaceInputs = ['', '   ', '\t\t', '\n\n', '\r\n', '   \t  \n  '];
 
-      const ValidationComponent = ({ testInput }: { testInput: string }) => {
-        const isValid = testInput.trim().length > 0;
+      const _ValidationComponent = ({ testInput }: { testInput: string }) => {
+        const _isValid = testInput.trim().length > 0;
 
         return (
           <div data-testid={`validation-${testInput === '' ? 'empty' : 'whitespace'}`}>
@@ -552,7 +543,7 @@ describe('Edge Cases and Error Scenarios', () => {
         }
         
         return (
-          <div data-testid={`level-${depth}`}>
+          <div data-testid={`level-$depth`}>
             Level {depth}
             <DeepComponent depth={depth - 1} />
           </div>
@@ -668,7 +659,7 @@ describe('Edge Cases and Error Scenarios', () => {
 
         const makeConcurrentCalls = async () => {
           const promises = Array.from({ length: 3 }, (_, i) =>
-            fetch(`/api/endpoint${i}`).then(r => r.json())
+            fetch(`/api/endpoint$i`).then(r => r.json())
           );
 
           try {
@@ -686,7 +677,7 @@ describe('Edge Cases and Error Scenarios', () => {
             </button>
             <div data-testid="results">
               {results.map((result, index) => (
-                <div key={index} data-testid={`result-${index}`}>
+                <div key={index} data-testid={`result-$index`}>
                   {result}
                 </div>
               ))}
@@ -718,7 +709,7 @@ describe('Edge Cases and Error Scenarios', () => {
           setTimeout(() => {
             resolve({
               ok: true,
-              json: async () => ({ id: currentId, data: `Response ${currentId}` }),
+              json: async () => ({ id: currentId, data: `Response $currentId` }),
             });
           }, delay);
         });
@@ -770,7 +761,7 @@ describe('Edge Cases and Error Scenarios', () => {
       });
 
       // Should have a response (exact content depends on timing)
-      expect(screen.getByTestId('race-result')).toHaveTextContent(/Response \d+/);
+      expect(screen.getByTestId('race-result')).toHaveTextContent(/Response d+/);
     });
   });
 });

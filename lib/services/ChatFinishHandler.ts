@@ -94,7 +94,10 @@ export class ChatFinishHandler {
       // This would depend on the response format and tool system implementation
       return [];
     } catch (error) {
-      logger.warn('Failed to extract tool invocations: ' + (error instanceof Error ? error.message : String(error)));
+      logger.warn(
+        'Failed to extract tool invocations: ' +
+          (error instanceof Error ? error.message : String(error))
+      );
       return [];
     }
   }
@@ -110,9 +113,12 @@ export class ChatFinishHandler {
   }): Promise<void> {
     try {
       // TODO: Implement LangSmith logging
-      logger.debug('Logging to LangSmith: ' + JSON.stringify(params));
+      logger.debug(`Logging to LangSmith: ${JSON.stringify(params)}`);
     } catch (error) {
-      logger.warn('Failed to log to LangSmith: ' + (error instanceof Error ? error.message : String(error)));
+      logger.warn(
+        'Failed to log to LangSmith: ' +
+          (error instanceof Error ? error.message : String(error))
+      );
     }
   }
 }

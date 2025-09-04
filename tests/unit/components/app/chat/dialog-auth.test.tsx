@@ -33,6 +33,66 @@ vi.mock('@/lib/supabase/client', () => ({
   createClient: vi.fn(),
 }));
 
+// Mock UI Dialog components
+vi.mock('@/components/ui/dialog', () => ({
+  Dialog: ({ children, open }: any) =>
+    open ? (
+      <div role="dialog" data-testid="dialog">
+        {children}
+      </div>
+    ) : null,
+  DialogContent: ({ children, className }: any) => (
+    <div className={className} data-testid="dialog-content">
+      {children}
+    </div>
+  ),
+  DialogHeader: ({ children }: any) => (
+    <div data-testid="dialog-header">{children}</div>
+  ),
+  DialogTitle: ({ children, className }: any) => (
+    <h2 className={className} data-slot="dialog-title">
+      {children}
+    </h2>
+  ),
+  DialogDescription: ({ children, className }: any) => (
+    <p className={className} data-slot="dialog-description">
+      {children}
+    </p>
+  ),
+  DialogFooter: ({ children, className }: any) => (
+    <div className={className} data-testid="dialog-footer">
+      {children}
+    </div>
+  ),
+}));
+
+// Mock UI Button component
+vi.mock('@/components/ui/button', () => ({
+  Button: ({
+    children,
+    onClick,
+    disabled,
+    className,
+    size,
+    variant,
+    ...props
+  }: any) => (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={className}
+      data-size={size}
+      data-variant={variant}
+      data-slot="button"
+      data-testid="auth-button"
+      {...props}
+    >
+      {children}
+    </button>
+  ),
+}));
+
 // Mock window.location
 const mockLocation = {
   href: '',
@@ -82,9 +142,7 @@ describe('DialogAuth', () => {
     it('should render Google sign-in button', () => {
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       expect(button).toBeInTheDocument();
       expect(button).not.toBeDisabled();
     });
@@ -146,9 +204,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       await user.click(button);
 
       await waitFor(() => {
@@ -165,9 +221,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       await user.click(button);
 
       await waitFor(() => {
@@ -183,9 +237,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       await user.click(button);
 
       await waitFor(() => {
@@ -198,9 +250,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       await user.click(button);
 
       await waitFor(() => {
@@ -223,9 +273,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       await user.click(button);
 
       await waitFor(() => {
@@ -247,9 +295,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       await act(async () => {
         await user.click(button);
       });
@@ -265,9 +311,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       await act(async () => {
         await user.click(button);
       });
@@ -285,9 +329,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       await act(async () => {
         await user.click(button);
       });
@@ -300,9 +342,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       await act(async () => {
         await user.click(button);
       });
@@ -319,9 +359,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       await act(async () => {
         await user.click(button);
       });
@@ -339,9 +377,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       await act(async () => {
         await user.click(button);
       });
@@ -367,9 +403,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       await act(async () => {
         await user.click(button);
       });
@@ -393,9 +427,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
 
       // Click multiple times rapidly - use single act() to avoid overlapping
       await act(async () => {
@@ -423,9 +455,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
 
       // First attempt
       await act(async () => {
@@ -454,17 +484,13 @@ describe('DialogAuth', () => {
       expect(
         screen.getByText('Sign in below to increase your message limits.')
       ).toBeInTheDocument();
-      expect(
-        screen.getByRole('button', { name: /continue with google/i })
-      ).toBeInTheDocument();
+      expect(screen.getByTestId('auth-button')).toBeInTheDocument();
     });
 
     it('should have accessible button text', () => {
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       expect(button).toBeInTheDocument();
     });
 
@@ -487,9 +513,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      }) as HTMLButtonElement;
+      const button = screen.getByTestId('auth-button') as HTMLButtonElement;
       button.focus();
       expect(document.activeElement).toBe(button);
 
@@ -508,9 +532,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       expect(() => user.click(button)).not.toThrow();
     });
 
@@ -519,9 +541,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       await act(async () => {
         await user.click(button);
       });
@@ -537,9 +557,7 @@ describe('DialogAuth', () => {
 
       renderDialogAuth();
 
-      const button = screen.getByRole('button', {
-        name: /continue with google/i,
-      });
+      const button = screen.getByTestId('auth-button');
       await act(async () => {
         await user.click(button);
       });

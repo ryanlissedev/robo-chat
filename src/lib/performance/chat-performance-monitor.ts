@@ -3,7 +3,7 @@
  * Tracks key performance metrics for the chat interface
  */
 
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 
 interface PerformanceMetric {
   name: string;
@@ -44,18 +44,16 @@ class ChatPerformanceMonitor {
 
     // Log excessive re-renders
     if (renderCount > 10 && timeSinceLastRender < 100) {
-      console.warn(`🔥 Excessive re-renders detected for ${componentName}:`, {
-        renderCount,
-        timeSinceLastRender,
-        messageCount,
-      });
     }
   }
 
   /**
    * Track streaming performance
    */
-  trackStreaming(eventType: 'start' | 'chunk' | 'complete', metadata?: Record<string, any>): void {
+  trackStreaming(
+    eventType: 'start' | 'chunk' | 'complete',
+    metadata?: Record<string, any>
+  ): void {
     this.addMetric(`streaming_${eventType}`, performance.now(), metadata);
   }
 
@@ -78,9 +76,8 @@ class ChatPerformanceMonitor {
    */
   trackAnimation(animationName: string, duration: number): void {
     this.addMetric('animation_duration', duration, { animationName });
-    
-    if (duration > 16.67) { // More than one frame at 60fps
-      console.warn(`🐌 Slow animation detected: ${animationName} took ${duration.toFixed(2)}ms`);
+
+    if (duration > 16.67) {
     }
   }
 
@@ -91,7 +88,11 @@ class ChatPerformanceMonitor {
     this.addMetric('bundle_load', loadTime, { bundleName });
   }
 
-  private addMetric(name: string, value: number, metadata?: Record<string, any>): void {
+  private addMetric(
+    name: string,
+    value: number,
+    metadata?: Record<string, any>
+  ): void {
     this.metrics.push({
       name,
       value,
@@ -115,15 +116,19 @@ class ChatPerformanceMonitor {
     memoryTrend: string;
     recommendations: string[];
   } {
-    const renderMetrics = this.metrics.filter(m => m.name === 'component_render');
-    const memoryMetrics = this.metrics.filter(m => m.name === 'memory_usage');
+    const renderMetrics = this.metrics.filter(
+      (m) => m.name === 'component_render'
+    );
+    const memoryMetrics = this.metrics.filter((m) => m.name === 'memory_usage');
 
-    const avgRenderTime = renderMetrics.length > 0
-      ? renderMetrics.reduce((sum, m) => sum + m.value, 0) / renderMetrics.length
-      : 0;
+    const avgRenderTime =
+      renderMetrics.length > 0
+        ? renderMetrics.reduce((sum, m) => sum + m.value, 0) /
+          renderMetrics.length
+        : 0;
 
     const componentRenderCounts = new Map<string, number>();
-    renderMetrics.forEach(metric => {
+    renderMetrics.forEach((metric) => {
       const componentName = metric.metadata?.componentName || 'unknown';
       componentRenderCounts.set(
         componentName,
@@ -131,29 +136,38 @@ class ChatPerformanceMonitor {
       );
     });
 
-    const slowestComponent = Array.from(componentRenderCounts.entries())
-      .sort(([, a], [, b]) => b - a)[0]?.[0] || 'none';
+    const slowestComponent =
+      Array.from(componentRenderCounts.entries()).sort(
+        ([, a], [, b]) => b - a
+      )[0]?.[0] || 'none';
 
     const recommendations: string[] = [];
 
     if (avgRenderTime > 16) {
-      recommendations.push('Consider memoizing components to reduce render time');
+      recommendations.push(
+        'Consider memoizing components to reduce render time'
+      );
     }
 
     if (componentRenderCounts.size > 0) {
       const maxRenders = Math.max(...componentRenderCounts.values());
       if (maxRenders > 20) {
-        recommendations.push('Some components are re-rendering excessively. Check dependency arrays.');
+        recommendations.push(
+          'Some components are re-rendering excessively. Check dependency arrays.'
+        );
       }
     }
 
     if (memoryMetrics.length > 0) {
       const latestMemory = memoryMetrics[memoryMetrics.length - 1]?.value || 0;
       const earliestMemory = memoryMetrics[0]?.value || 0;
-      const memoryTrend = latestMemory > earliestMemory * 1.5 ? 'increasing' : 'stable';
-      
+      const memoryTrend =
+        latestMemory > earliestMemory * 1.5 ? 'increasing' : 'stable';
+
       if (memoryTrend === 'increasing') {
-        recommendations.push('Memory usage is increasing. Check for memory leaks.');
+        recommendations.push(
+          'Memory usage is increasing. Check for memory leaks.'
+        );
       }
 
       return {
@@ -197,13 +211,22 @@ export const chatPerformanceMonitor = new ChatPerformanceMonitor();
 /**
  * React hook for tracking component renders
  */
-export function usePerformanceTracking(componentName: string, dependencies?: any[]) {
+export function usePerformanceTracking(
+  componentName: string,
+  dependencies?: any[]
+) {
   const startTime = performance.now();
-  
+
   useEffect(() => {
     const endTime = performance.now();
-    chatPerformanceMonitor.trackRender(componentName, dependencies?.length || 0);
-    chatPerformanceMonitor.trackAnimation(`${componentName}_mount`, endTime - startTime);
+    chatPerformanceMonitor.trackRender(
+      componentName,
+      dependencies?.length || 0
+    );
+    chatPerformanceMonitor.trackAnimation(
+      `${componentName}_mount`,
+      endTime - startTime
+    );
   });
 
   useEffect(() => {

@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/app/types/database.types';
+import { mockIsolation } from './test-isolation';
 
-// Test database configuration
+// Test database configuration with isolation
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
 const supabaseAnonKey =
@@ -9,33 +10,78 @@ const supabaseAnonKey =
 const supabaseServiceRoleKey =
   process.env.SUPABASE_SERVICE_ROLE || 'test-service-role-key';
 
-// Create test client with service role for full access
-export const supabase = createClient<Database>(
-  supabaseUrl,
-  supabaseServiceRoleKey,
-  {
+// Create isolated test client factory
+export const createTestSupabaseClient = () =>
+  createClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
-  }
-);
+    realtime: {
+      params: {
+        eventsPerSecond: -1, // Disable realtime for tests
+      },
+    },
+    global: {
+      headers: {
+        'X-Test-Mode': 'true',
+      },
+    },
+  });
 
-// Test utilities
+// Main test client - recreated for each test to prevent state pollution
+export let supabase = createTestSupabaseClient();
+
+// Enhanced test utilities with isolation
 export const testUtils = {
-  // Clean up test data
-  async cleanup() {
-    // Clean up test users
-    await supabase.auth.admin.deleteUser('test-user-id');
+  // Recreate client for each test to prevent state pollution
+  resetClient() {
+    supabase = createTestSupabaseClient();
+  },
 
-    // Clean up test data
-    await supabase.from('chats').delete().eq('user_id', 'test-user-id');
-    await supabase.from('messages').delete().eq('user_id', 'test-user-id');
-    await supabase.from('user_keys').delete().eq('user_id', 'test-user-id');
-    await supabase
-      .from('user_preferences')
-      .delete()
-      .eq('user_id', 'test-user-id');
+  // Create isolated mock client
+  createMockClient() {
+    return mockIsolation.createIsolatedSupabaseMock();
+  },
+
+  // Clean up test data with better error handling
+  async cleanup() {
+    try {
+      // Clean up test users
+      await supabase.auth.admin.deleteUser('test-user-id').catch(() => {
+        // Ignore if user doesn't exist
+      });
+
+      // Clean up test data with cascading deletes
+      const testUserId = 'test-user-id';
+      await Promise.all([
+        supabase
+          .from('messages')
+          .delete()
+          .eq('user_id', testUserId)
+          .catch(() => {}),
+        supabase
+          .from('chats')
+          .delete()
+          .eq('user_id', testUserId)
+          .catch(() => {}),
+        supabase
+          .from('user_keys')
+          .delete()
+          .eq('user_id', testUserId)
+          .catch(() => {}),
+        supabase
+          .from('user_preferences')
+          .delete()
+          .eq('user_id', testUserId)
+          .catch(() => {}),
+      ]);
+
+      // Recreate client after cleanup
+      this.resetClient();
+    } catch (error) {
+      console.warn('Test cleanup error (ignored):', error);
+    }
   },
 
   // Create test user
@@ -96,20 +142,35 @@ export const testUtils = {
   },
 };
 
-// Global test setup
+// Enhanced test environment setup with isolation
 export async function setupTestEnvironment() {
-  // Reset database state
-  await testUtils.cleanup();
+  try {
+    // Reset client first
+    testUtils.resetClient();
 
-  // Set test environment variables (NODE_ENV is read-only, so we skip it);
-  process.env.NEXT_PUBLIC_SUPABASE_URL = supabaseUrl;
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = supabaseAnonKey;
-  process.env.SUPABASE_SERVICE_ROLE = supabaseServiceRoleKey;
+    // Reset database state
+    await testUtils.cleanup();
+
+    // Set test environment variables with isolation
+    process.env.NEXT_PUBLIC_SUPABASE_URL = supabaseUrl;
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = supabaseAnonKey;
+    process.env.SUPABASE_SERVICE_ROLE = supabaseServiceRoleKey;
+
+    // Ensure test-specific env vars
+    process.env.NODE_ENV = 'test';
+    process.env.VITEST = 'true';
+  } catch (error) {
+    console.warn('Test environment setup error (ignored):', error);
+  }
 }
 
-// Global test teardown
+// Enhanced test teardown with isolation
 export async function teardownTestEnvironment() {
-  await testUtils.cleanup();
+  try {
+    await testUtils.cleanup();
+  } catch (error) {
+    console.warn('Test environment teardown error (ignored):', error);
+  }
 }
 
 // Vitest setup for database tests

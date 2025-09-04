@@ -4,6 +4,13 @@ import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useState } from 'react';
 import { getMessageContent } from '@/app/types/ai-extended';
+import {
+  generatePartKey,
+  isReasoningPart,
+  isTextPart,
+  type MessagePart,
+  type TypedMessage,
+} from '@/app/types/message-parts';
 
 export default function TestMock() {
   const [input, setInput] = useState('');
@@ -16,66 +23,79 @@ export default function TestMock() {
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <h1 className="text-2xl mb-4">Test Mock Chat - Debugging AI SDK v5</h1>
-      
+
       <div className="mb-4 bg-gray-100 p-2 rounded">
-        <p>Status: <span className="font-bold">{status}</span></p>
-        <p>Messages count: <span className="font-bold">{messages.length}</span></p>
+        <p>
+          Status: <span className="font-bold">{status}</span>
+        </p>
+        <p>
+          Messages count: <span className="font-bold">{messages.length}</span>
+        </p>
       </div>
 
       <div className="border p-4 mb-4 h-96 overflow-y-auto bg-white rounded">
-        {messages.map((message, idx) => {
+        {messages.map((message, _idx) => {
           const content = getMessageContent(message as any);
-          
-          // Extract reasoning parts
-          const reasoningParts = message.parts?.filter((part: any) => part.type === 'reasoning') || [];
-          
-          // Extract text parts
-          const textParts = message.parts?.filter((part: any) => part.type === 'text') || [];
-          
+
+          // Extract reasoning and text parts using type-safe utilities
+          const messageParts = (message.parts as MessagePart[]) || [];
+          const reasoningParts = messageParts.filter(isReasoningPart);
+          const textParts = messageParts.filter(isTextPart);
+
           return (
             <div key={message.id} className="mb-4 p-3 border rounded">
               <div className="font-bold text-sm text-gray-600 mb-2">
                 {message.role.toUpperCase()}
               </div>
-              
+
               {/* Display reasoning if available */}
               {reasoningParts.length > 0 && (
                 <div className="mb-3 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-                  <div className="text-xs font-semibold text-yellow-800 mb-1">REASONING:</div>
+                  <div className="text-xs font-semibold text-yellow-800 mb-1">
+                    REASONING:
+                  </div>
                   <div className="text-sm text-yellow-700">
-                    {reasoningParts.map((part: any, i: number) => (
-                      <span key={i}>{part.text || part.delta || ''}</span>
+                    {reasoningParts.map((part, i) => (
+                      <span key={generatePartKey(part, i)}>{part.text}</span>
                     ))}
                   </div>
                 </div>
               )}
-              
+
               {/* Display main content */}
               <div className="mb-2">
                 {content ? (
-                  <div className="text-black whitespace-pre-wrap">{content}</div>
+                  <div className="text-black whitespace-pre-wrap">
+                    {content}
+                  </div>
                 ) : textParts.length > 0 ? (
                   <div className="text-black whitespace-pre-wrap">
-                    {textParts.map((part: any, i: number) => (
-                      <span key={i}>{part.text || part.delta || ''}</span>
+                    {textParts.map((part, i) => (
+                      <span key={generatePartKey(part, i)}>{part.text}</span>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-red-500 italic">No content available</div>
+                  <div className="text-red-500 italic">
+                    No content available
+                  </div>
                 )}
               </div>
-              
+
               {/* Parts breakdown */}
               {message.parts && message.parts.length > 0 && (
                 <div className="text-xs text-gray-600 mb-2">
-                  Parts: {message.parts.map((part: any, i: number) => (
-                    <span key={i} className="mr-2 px-1 bg-gray-100 rounded">
+                  Parts:{' '}
+                  {messageParts.map((part, i) => (
+                    <span
+                      key={generatePartKey(part, i)}
+                      className="mr-2 px-1 bg-gray-100 rounded"
+                    >
                       {part.type}
                     </span>
                   ))}
                 </div>
               )}
-              
+
               {/* Debug info */}
               <details className="text-xs text-gray-500">
                 <summary className="cursor-pointer">Debug Info</summary>
@@ -95,7 +115,7 @@ export default function TestMock() {
             </div>
           );
         })}
-        
+
         {status === 'streaming' && (
           <div className="text-gray-500 italic">Streaming...</div>
         )}
@@ -118,8 +138,8 @@ export default function TestMock() {
           placeholder="Type a message..."
           disabled={status !== 'ready'}
         />
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
           disabled={status !== 'ready' || !input.trim()}
         >
