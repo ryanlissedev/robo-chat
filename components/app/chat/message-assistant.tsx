@@ -457,7 +457,7 @@ export function MessageAssistant({
         {...(isQuoteEnabled && { 'data-message-id': messageId })}
       >
         {/* Reasoning */}
-        {((status === 'streaming' && isLast) || reasoningText) && (
+        {((status === 'streaming' && isLast) || reasoningText !== undefined) && (
           <Reasoning defaultOpen={false} isStreaming={status === 'streaming'}>
             <ReasoningTrigger />
             {reasoningText ? (

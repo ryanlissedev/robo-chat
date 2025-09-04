@@ -222,9 +222,9 @@ export function openproviders<T extends SupportedModel>(
     // For default OpenAI provider, use environment variable
     const envApiKey = process.env.OPENAI_API_KEY;
     if (envApiKey) {
-      // GPT-5 models have compatibility issues with the gateway in AI SDK v5
-      // Force direct API for GPT-5 models to avoid 'developer' role errors
-      const shouldUseGateway = gateway.enabled && !isGPT5Model;
+      // Allow opt-in to route GPT-5 via Gateway if the project supports /v1/responses
+      const allowGpt5Gateway = process.env.ALLOW_GPT5_GATEWAY === 'true';
+      const shouldUseGateway = gateway.enabled && (!isGPT5Model || allowGpt5Gateway);
 
       if (shouldUseGateway) {
         // When using gateway, use custom provider that forces chat completions API
@@ -240,8 +240,6 @@ export function openproviders<T extends SupportedModel>(
         return gatewayProvider(effectiveModelId as OpenAIModel);
       } else {
         // Direct API: use standard provider with responses API for GPT-5
-        if (isGPT5Model && gateway.enabled) {
-        }
         const openaiProvider = createOpenAI({
           apiKey: envApiKey,
           headers: customHeaders,

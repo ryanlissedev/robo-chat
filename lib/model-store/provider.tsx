@@ -102,6 +102,7 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
     refetchOnWindowFocus: false,
   });
 
+  // Use a valid model id present in the catalog as the default favorite
   const { data: favoriteModels = ['gpt-5-mini'], isLoading: isLoadingFavorites } = useQuery<
     string[]
   >({
