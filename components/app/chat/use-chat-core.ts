@@ -68,11 +68,11 @@ export function useChatCore({
     'low' | 'medium' | 'high'
   >('medium');
   const [verbosity, setVerbosity] = useState<'low' | 'medium' | 'high'>(
-    'low'  // Default to short verbosity
+    'low' // Default to short verbosity
   );
-  const [reasoningSummary, setReasoningSummary] = useState<
-    'auto' | 'detailed'
-  >('auto');  // Default to auto summaries
+  const [reasoningSummary, setReasoningSummary] = useState<'auto' | 'detailed'>(
+    'auto'
+  ); // Default to auto summaries
 
   // Warn once per session if search is enabled but no vector stores are configured
   const warnedNoVectorStoresRef = useRef(false);
@@ -85,7 +85,8 @@ export function useChatCore({
           cache: 'no-store',
         });
         if (!res.ok) return;
-        const data: { hasVectorStores: boolean; count: number } = await res.json();
+        const data: { hasVectorStores: boolean; count: number } =
+          await res.json();
         if (!data.hasVectorStores) {
           warnedNoVectorStoresRef.current = true;
           toast({

@@ -222,12 +222,12 @@ const extractReasoningText = (
       }
     }
   }
-  
+
   // Return combined reasoning text if we found any
   if (reasoningTexts.length > 0) {
     return reasoningTexts.join('');
   }
-  
+
   return undefined;
 };
 

@@ -3,10 +3,7 @@
  * Tests message flow, content extraction, and display
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { Chat } from '@/components/app/chat/chat';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getMessageContent } from '@/app/types/ai-extended';
 
 // Mock providers
@@ -68,7 +65,7 @@ describe('Chat Flow Integration', () => {
           { type: 'text', text: 'how can I help you?' },
         ],
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('Hello, how can I help you?');
     });
@@ -79,7 +76,7 @@ describe('Chat Flow Integration', () => {
         role: 'assistant' as const,
         content: 'Hello, how can I help you?',
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('Hello, how can I help you?');
     });
@@ -93,7 +90,7 @@ describe('Chat Flow Integration', () => {
           { type: 'text', text: 'the assistant' },
         ],
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('Response from the assistant');
     });
@@ -103,7 +100,7 @@ describe('Chat Flow Integration', () => {
         id: '1',
         role: 'assistant' as const,
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('');
     });
@@ -118,7 +115,7 @@ describe('Chat Flow Integration', () => {
           { type: 'text', text: ' world' },
         ],
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('Hello world');
     });
@@ -145,9 +142,9 @@ describe('Chat Flow Integration', () => {
     it('should use low verbosity by default', () => {
       // This is set in use-chat-core.ts
       const { useChatCore } = require('@/components/app/chat/use-chat-core');
-      
+
       // Mock the hook to verify default values
-      const mockProps = {
+      const _mockProps = {
         initialMessages: [],
         draftValue: '',
         cacheAndAddMessage: vi.fn(),
@@ -164,7 +161,7 @@ describe('Chat Flow Integration', () => {
         clearDraft: vi.fn(),
         bumpChat: vi.fn(),
       };
-      
+
       // The verbosity should default to 'low' as per our changes
       // This is validated by the default state in use-chat-core.ts
       expect(true).toBe(true); // Placeholder - actual hook would need to be tested
@@ -189,7 +186,7 @@ describe('Chat Flow Integration', () => {
           ],
         },
       ];
-      
+
       const assistantContent = getMessageContent(messages[1] as any);
       expect(assistantContent).toBe('Hi there! How can I assist you today?');
     });

@@ -15,7 +15,7 @@ export default function TestChat() {
   return (
     <div className="p-4">
       <h1 className="text-2xl mb-4">Test Chat - Debug AI SDK v5</h1>
-      
+
       <div className="mb-4">
         <p>Status: {status}</p>
         <p>Messages count: {messages.length}</p>
@@ -25,18 +25,19 @@ export default function TestChat() {
         {messages.map((message) => (
           <div key={message.id} className="mb-2 p-2 border">
             <div className="font-bold">{message.role}:</div>
-            
+
             {/* Debug: Show raw message structure */}
             <details>
               <summary>Raw message data</summary>
               <pre className="text-xs">{JSON.stringify(message, null, 2)}</pre>
             </details>
-            
+
             {/* Show content if it exists (v4 compatibility) */}
-            {'content' in message && typeof (message as any).content === 'string' && (
-              <div>Content (string): {(message as any).content}</div>
-            )}
-            
+            {'content' in message &&
+              typeof (message as any).content === 'string' && (
+                <div>Content (string): {(message as any).content}</div>
+              )}
+
             {/* Show parts if they exist */}
             {message.parts && message.parts.length > 0 && (
               <div>
@@ -44,7 +45,9 @@ export default function TestChat() {
                 {message.parts.map((part, i) => (
                   <div key={i} className="ml-4">
                     {part.type === 'text' && <span>Text: {part.text}</span>}
-                    {part.type === 'reasoning' && <span>Reasoning: {part.text}</span>}
+                    {part.type === 'reasoning' && (
+                      <span>Reasoning: {part.text}</span>
+                    )}
                     {part.type !== 'text' && part.type !== 'reasoning' && (
                       <span>Type: {part.type}</span>
                     )}

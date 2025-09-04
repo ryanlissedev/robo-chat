@@ -17,19 +17,19 @@ const testCases = [
       role: 'assistant',
       content: [
         { type: 'text', text: 'Hello from ' },
-        { type: 'text', text: 'AI SDK v5!' }
-      ]
+        { type: 'text', text: 'AI SDK v5!' },
+      ],
     },
-    expected: 'Hello from AI SDK v5!'
+    expected: 'Hello from AI SDK v5!',
   },
   {
     name: 'AI SDK v4 - String Content',
     message: {
       id: '2',
       role: 'assistant',
-      content: 'Simple string message'
+      content: 'Simple string message',
     },
-    expected: 'Simple string message'
+    expected: 'Simple string message',
   },
   {
     name: 'Parts Format',
@@ -38,11 +38,11 @@ const testCases = [
       role: 'assistant',
       parts: [
         { type: 'text', text: 'Message ' },
-        { type: 'text', text: 'with parts' }
-      ]
+        { type: 'text', text: 'with parts' },
+      ],
     },
-    expected: 'Message with parts'
-  }
+    expected: 'Message with parts',
+  },
 ];
 
 let passed = 0;
@@ -80,7 +80,9 @@ console.log('   - Debug logging for troubleshooting');
 console.log('   - MCP tools integration ready');
 
 if (failed === 0) {
-  console.log('\n🎉 All tests passed! Chat functionality is working correctly.');
+  console.log(
+    '\n🎉 All tests passed! Chat functionality is working correctly.'
+  );
   process.exit(0);
 } else {
   console.log('\n⚠️ Some tests failed. Please review the implementation.');

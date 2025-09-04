@@ -6,6 +6,9 @@ import { redirect } from 'next/navigation';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useChatDraft } from '@/app/hooks/use-chat-draft';
 import { Conversation } from '@/components/app/chat/conversation';
+import { useChatCore } from '@/components/app/chat/use-chat-core';
+import { useChatOperations } from '@/components/app/chat/use-chat-operations';
+import { useFileUpload } from '@/components/app/chat/use-file-upload';
 import { useModel } from '@/components/app/chat/use-model';
 import { ChatInput } from '@/components/app/chat-input/chat-input';
 import { useChats } from '@/lib/chat-store/chats/provider';
@@ -15,24 +18,25 @@ import { SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
 import { useUserPreferences } from '@/lib/user-preference-store/provider';
 import { useUser } from '@/lib/user-store/provider';
 import { cn } from '@/lib/utils';
-import { useChatCore } from '@/components/app/chat/use-chat-core';
-import { useChatOperations } from '@/components/app/chat/use-chat-operations';
-import { useFileUpload } from '@/components/app/chat/use-file-upload';
 
 // Lazy load heavy components to improve initial render performance
 const FeedbackWidget = dynamic(
-  () => import('@/components/app/chat/feedback-widget').then((mod) => mod.FeedbackWidget),
-  { 
+  () =>
+    import('@/components/app/chat/feedback-widget').then(
+      (mod) => mod.FeedbackWidget
+    ),
+  {
     ssr: false,
-    loading: () => null // Don't show loading state
+    loading: () => null, // Don't show loading state
   }
 );
 
 const DialogAuth = dynamic(
-  () => import('@/components/app/chat/dialog-auth').then((mod) => mod.DialogAuth),
-  { 
+  () =>
+    import('@/components/app/chat/dialog-auth').then((mod) => mod.DialogAuth),
+  {
     ssr: false,
-    loading: () => null
+    loading: () => null,
   }
 );
 
@@ -58,10 +62,13 @@ function ChatComponent() {
   const { draftValue, clearDraft } = useChatDraft(chatId);
 
   // Memoize derived user state to prevent unnecessary re-renders
-  const userState = useMemo(() => ({
-    isAuthenticated: !!user?.id && !user?.anonymous,
-    systemPrompt: user?.system_prompt || SYSTEM_PROMPT_DEFAULT,
-  }), [user?.id, user?.anonymous, user?.system_prompt]);
+  const userState = useMemo(
+    () => ({
+      isAuthenticated: !!user?.id && !user?.anonymous,
+      systemPrompt: user?.system_prompt || SYSTEM_PROMPT_DEFAULT,
+    }),
+    [user?.id, user?.anonymous, user?.system_prompt]
+  );
 
   // File upload functionality with memoized handlers
   const fileUploadState = useFileUpload();
@@ -86,13 +93,13 @@ function ChatComponent() {
 
   // Auth dialog state
   const [hasDialogAuth, setHasDialogAuth] = useState(false);
-  
+
   // Quoted text state with memoized handler
   const [quotedText, setQuotedText] = useState<{
     text: string;
     messageId: string;
   }>();
-  
+
   const handleQuotedSelected = useCallback(
     (text: string, messageId: string) => {
       setQuotedText({ text, messageId });
@@ -101,63 +108,68 @@ function ChatComponent() {
   );
 
   // Chat operations with memoized dependencies
-  const chatOperationsConfig = useMemo(() => ({
-    isAuthenticated: userState.isAuthenticated,
-    chatId,
-    messages: initialMessages,
-    selectedModel,
-    systemPrompt: userState.systemPrompt,
-    createNewChat,
-    setHasDialogAuth,
-    setMessages: () => {},
-    setInput: () => {},
-  }), [
-    userState.isAuthenticated,
-    chatId,
-    initialMessages,
-    selectedModel,
-    userState.systemPrompt,
-    createNewChat,
-    setHasDialogAuth,
-  ]);
+  const chatOperationsConfig = useMemo(
+    () => ({
+      isAuthenticated: userState.isAuthenticated,
+      chatId,
+      messages: initialMessages,
+      selectedModel,
+      systemPrompt: userState.systemPrompt,
+      createNewChat,
+      setHasDialogAuth,
+      setMessages: () => {},
+      setInput: () => {},
+    }),
+    [
+      userState.isAuthenticated,
+      chatId,
+      initialMessages,
+      selectedModel,
+      userState.systemPrompt,
+      createNewChat,
+    ]
+  );
 
   const { checkLimitsAndNotify, ensureChatExists, handleDelete, handleEdit } =
     useChatOperations(chatOperationsConfig);
 
   // Core chat functionality with memoized configuration
-  const chatCoreConfig = useMemo(() => ({
-    initialMessages,
-    draftValue,
-    cacheAndAddMessage,
-    chatId,
-    user,
-    files,
-    createOptimisticAttachments,
-    setFiles,
-    checkLimitsAndNotify,
-    cleanupOptimisticAttachments,
-    ensureChatExists,
-    handleFileUploads,
-    selectedModel,
-    clearDraft,
-    bumpChat,
-  }), [
-    initialMessages,
-    draftValue,
-    cacheAndAddMessage,
-    chatId,
-    user,
-    files,
-    createOptimisticAttachments,
-    setFiles,
-    checkLimitsAndNotify,
-    cleanupOptimisticAttachments,
-    ensureChatExists,
-    handleFileUploads,
-    selectedModel,
-    clearDraft,
-    bumpChat,
-  ]);
+  const chatCoreConfig = useMemo(
+    () => ({
+      initialMessages,
+      draftValue,
+      cacheAndAddMessage,
+      chatId,
+      user,
+      files,
+      createOptimisticAttachments,
+      setFiles,
+      checkLimitsAndNotify,
+      cleanupOptimisticAttachments,
+      ensureChatExists,
+      handleFileUploads,
+      selectedModel,
+      clearDraft,
+      bumpChat,
+    }),
+    [
+      initialMessages,
+      draftValue,
+      cacheAndAddMessage,
+      chatId,
+      user,
+      files,
+      createOptimisticAttachments,
+      setFiles,
+      checkLimitsAndNotify,
+      cleanupOptimisticAttachments,
+      ensureChatExists,
+      handleFileUploads,
+      selectedModel,
+      clearDraft,
+      bumpChat,
+    ]
+  );
 
   const chatCore = useChatCore(chatCoreConfig);
   const {
@@ -259,23 +271,25 @@ function ChatComponent() {
   );
 
   // Early return for invalid chat redirect
-  const shouldRedirect = useMemo(() => (
-    chatId &&
-    !isChatsLoading &&
-    !currentChat &&
-    !isSubmitting &&
-    status === 'ready' &&
-    messages.length === 0 &&
-    !hasSentFirstMessageRef.current
-  ), [
-    chatId,
-    isChatsLoading,
-    currentChat,
-    isSubmitting,
-    status,
-    messages.length,
-    hasSentFirstMessageRef,
-  ]);
+  const shouldRedirect = useMemo(
+    () =>
+      chatId &&
+      !isChatsLoading &&
+      !currentChat &&
+      !isSubmitting &&
+      status === 'ready' &&
+      messages.length === 0 &&
+      !hasSentFirstMessageRef.current,
+    [
+      chatId,
+      isChatsLoading,
+      currentChat,
+      isSubmitting,
+      status,
+      messages.length,
+      hasSentFirstMessageRef,
+    ]
+  );
 
   if (shouldRedirect) {
     return redirect('/');
@@ -338,7 +352,7 @@ function ChatComponent() {
 
 // Memoize the entire Chat component to prevent unnecessary re-renders
 // Use custom comparison function for better performance
-export const Chat = memo(ChatComponent, (prevProps, nextProps) => {
+export const Chat = memo(ChatComponent, (_prevProps, _nextProps) => {
   // Since ChatComponent has no props, we can always return true
   // This prevents re-renders unless the component's internal state changes
   return true;

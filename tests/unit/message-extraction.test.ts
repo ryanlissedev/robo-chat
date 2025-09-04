@@ -3,7 +3,7 @@
  * Tests the core getMessageContent function with various AI SDK formats
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // Import the function directly (not mocked)
 import { getMessageContent } from '@/app/types/ai-extended';
@@ -19,7 +19,7 @@ describe('Message Content Extraction', () => {
           { type: 'text', text: 'how can I help you today?' },
         ],
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('Hello, how can I help you today?');
     });
@@ -34,7 +34,7 @@ describe('Message Content Extraction', () => {
           { type: 'text', text: '... Done!' },
         ],
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('Processing your request... Done!');
     });
@@ -45,7 +45,7 @@ describe('Message Content Extraction', () => {
         role: 'assistant' as const,
         content: [],
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('');
     });
@@ -58,7 +58,7 @@ describe('Message Content Extraction', () => {
         role: 'assistant' as const,
         content: 'This is a simple string response',
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('This is a simple string response');
     });
@@ -69,7 +69,7 @@ describe('Message Content Extraction', () => {
         role: 'assistant' as const,
         content: '',
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('');
     });
@@ -85,7 +85,7 @@ describe('Message Content Extraction', () => {
           { type: 'text', text: 'second part' },
         ],
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('First part second part');
     });
@@ -100,7 +100,7 @@ describe('Message Content Extraction', () => {
           { type: 'text', text: ' continued' },
         ],
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('Valid text continued');
     });
@@ -112,7 +112,7 @@ describe('Message Content Extraction', () => {
         id: 'msg-1',
         role: 'assistant' as const,
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('');
     });
@@ -123,7 +123,7 @@ describe('Message Content Extraction', () => {
         role: 'assistant' as const,
         content: null,
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('');
     });
@@ -134,7 +134,7 @@ describe('Message Content Extraction', () => {
         role: 'assistant' as const,
         text: 'Direct text property',
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('Direct text property');
     });
@@ -147,7 +147,7 @@ describe('Message Content Extraction', () => {
         parts: [{ type: 'text', text: 'Parts content' }],
         text: 'Direct text',
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('String content');
     });
@@ -162,13 +162,19 @@ describe('Message Content Extraction', () => {
           { type: 'reasoning', text: 'Let me think about this...' },
           { type: 'text', text: 'Based on my analysis, ' },
           { type: 'text', text: 'here is the solution:' },
-          { type: 'code', language: 'javascript', code: 'console.log("hello")' },
+          {
+            type: 'code',
+            language: 'javascript',
+            code: 'console.log("hello")',
+          },
           { type: 'text', text: ' This should work!' },
         ],
       };
-      
+
       const content = getMessageContent(message as any);
-      expect(content).toBe('Based on my analysis, here is the solution: This should work!');
+      expect(content).toBe(
+        'Based on my analysis, here is the solution: This should work!'
+      );
     });
 
     it('should handle user message format', () => {
@@ -177,7 +183,7 @@ describe('Message Content Extraction', () => {
         role: 'user' as const,
         content: 'What is the weather like?',
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('What is the weather like?');
     });
@@ -191,7 +197,7 @@ describe('Message Content Extraction', () => {
           { type: 'text', text: '...' },
         ],
       };
-      
+
       const content = getMessageContent(message as any);
       expect(content).toBe('I am still thinking...');
     });

@@ -142,7 +142,7 @@ export function getMessageContent(message: ExtendedUIMessage): string {
       .filter((part: any) => part.type === 'text' || part.type === 'text-delta')
       .map((part: any) => part.text || part.delta || '')
       .join('');
-    
+
     if (textParts) {
       return textParts;
     }
@@ -150,13 +150,6 @@ export function getMessageContent(message: ExtendedUIMessage): string {
 
   // Debug logging for troubleshooting
   if (typeof window !== 'undefined' && message.role === 'assistant') {
-    console.log('Message structure:', {
-      id: message.id,
-      role: message.role,
-      parts: message.parts,
-      partsLength: message.parts?.length || 0,
-      textParts: message.parts?.filter((part: any) => part.type === 'text' || part.type === 'text-delta')
-    });
   }
 
   return '';

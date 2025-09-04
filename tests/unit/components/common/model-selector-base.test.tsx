@@ -707,17 +707,11 @@ describe('ModelSelector', () => {
 
     // Should show filtered results - GPT Model should be visible, Claude Model should not
     await waitFor(() => {
-      // Check if GPT Model is visible in the rendered buttons
-      const gptModelButtons = screen.getAllByRole('button', {
-        name: /GPT Model/i,
-      });
-      expect(gptModelButtons.length).toBeGreaterThan(0);
+      // GPT Model should be visible
+      expect(screen.getByLabelText('Select model GPT Model')).toBeInTheDocument();
 
-      // Claude Model should be filtered out
-      const claudeModelButtons = screen.queryAllByRole('button', {
-        name: /Claude Model/i,
-      });
-      expect(claudeModelButtons.length).toBe(0);
+      // Claude Model should be filtered out - use queryByLabelText which returns null if not found
+      expect(screen.queryByLabelText('Select model Claude Model')).not.toBeInTheDocument();
     });
 
     // Restore original implementation to prevent test pollution
@@ -788,9 +782,9 @@ describe('ModelSelector', () => {
       );
     });
 
-    // Find and click the test model button
+    // Find and click the test model button - it's rendered with aria-label
     const modelButton = await waitFor(() => {
-      return screen.getByRole('button', { name: /Select model Test Model/i });
+      return screen.getByLabelText('Select model Test Model');
     });
 
     // Verify the button exists and is clickable
@@ -841,9 +835,7 @@ describe('ModelSelector', () => {
     expect(screen.getByTestId('model-selector-content')).toBeInTheDocument();
 
     // Model items should show synchronously after dropdown opens - no need for waitFor
-    const modelButton = screen.getByRole('button', {
-      name: /select model test model/i,
-    });
+    const modelButton = screen.getByLabelText('Select model Test Model');
     expect(modelButton).toBeInTheDocument();
     // Model should have provider badge and credential badge text
     expect(modelButton.textContent).toMatch(/Test Model/);
@@ -921,9 +913,7 @@ describe('ModelSelector', () => {
 
     // Look for the Pro Model button which should have a lock badge
     await waitFor(() => {
-      const proModelButton = screen.getByRole('button', {
-        name: /Select model Pro Model/i,
-      });
+      const proModelButton = screen.getByLabelText('Select model Pro Model');
       expect(proModelButton).toBeInTheDocument();
 
       // Check for Locked text within the button's container
@@ -968,9 +958,7 @@ describe('ModelSelector', () => {
     // Wait for Guest Model to appear
     await waitFor(
       () => {
-        const guestModelButton = screen.getByRole('button', {
-          name: /Select model Guest Model/i,
-        });
+        const guestModelButton = screen.getByLabelText('Select model Guest Model');
         expect(guestModelButton).toBeInTheDocument();
       },
       { timeout: 3000 }
@@ -979,9 +967,7 @@ describe('ModelSelector', () => {
     // Then wait for Guest BYOK badge to appear
     await waitFor(
       () => {
-        const guestModelButton = screen.getByRole('button', {
-          name: /Select model Guest Model/i,
-        });
+        const guestModelButton = screen.getByLabelText('Select model Guest Model');
         const buttonContainer = guestModelButton.closest('button');
         expect(buttonContainer).toHaveTextContent('Guest BYOK');
       },

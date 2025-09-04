@@ -3,7 +3,8 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 // Provide a non-secure placeholder during build so Next.js can prerender.
 // In production, set ENCRYPTION_KEY to a base64-encoded 32-byte key.
 const ENCRYPTION_KEY =
-  process.env.ENCRYPTION_KEY || Buffer.from('fallback-build-key-32-bytes!!!!!').toString('base64');
+  process.env.ENCRYPTION_KEY ||
+  Buffer.from('fallback-build-key-32-bytes!!!!!').toString('base64');
 const ALGORITHM = 'aes-256-gcm';
 
 const key = Buffer.from(ENCRYPTION_KEY, 'base64');

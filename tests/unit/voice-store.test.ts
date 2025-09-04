@@ -49,7 +49,7 @@ describe('Voice Store', () => {
     });
 
     // Wait a bit to ensure state is fully reset
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
     // Ensure global fetch is properly mocked
     global.fetch = mockFetch;
@@ -308,7 +308,9 @@ describe('Voice Store', () => {
       });
 
       // Verify current transcript is set
-      expect(useVoiceStore.getState().currentTranscript).toBe('Final transcript');
+      expect(useVoiceStore.getState().currentTranscript).toBe(
+        'Final transcript'
+      );
 
       // Finalize the transcript
       await act(async () => {
@@ -439,7 +441,9 @@ describe('Voice Store', () => {
 
     it('should handle transcript indexing failure', async () => {
       // Override mock for this test to simulate failure
-      mockFetch.mockResolvedValueOnce(buildErrorResponse(400, 'Invalid request data'));
+      mockFetch.mockResolvedValueOnce(
+        buildErrorResponse(400, 'Invalid request data')
+      );
 
       const store = useVoiceStore.getState();
 

@@ -102,9 +102,10 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
     refetchOnWindowFocus: false,
   });
 
-  const { data: favoriteModels = ['gpt-5-mini'], isLoading: isLoadingFavorites } = useQuery<
-    string[]
-  >({
+  const {
+    data: favoriteModels = ['gpt-5-mini'],
+    isLoading: isLoadingFavorites,
+  } = useQuery<string[]>({
     queryKey: ['favorite-models'],
     queryFn: async () => {
       try {

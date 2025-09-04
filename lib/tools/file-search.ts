@@ -419,7 +419,7 @@ export async function createVectorStore(
   fileIds: string[],
   metadata?: Record<string, unknown>
 ): Promise<string> {
-      const openai = new OpenAI({ apiKey, ...OPENAI_CLIENT_DEFAULTS });
+  const openai = new OpenAI({ apiKey, ...OPENAI_CLIENT_DEFAULTS });
 
   try {
     const vectorStore = await withRetry(() =>

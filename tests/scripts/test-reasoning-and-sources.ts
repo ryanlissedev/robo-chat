@@ -22,7 +22,8 @@ async function testReasoningWithSources() {
       {
         id: 'msg-1',
         role: 'user',
-        content: 'Search for information about the chat service implementation and explain how it handles streaming responses. Think through this step by step.',
+        content:
+          'Search for information about the chat service implementation and explain how it handles streaming responses. Think through this step by step.',
         parts: [
           {
             type: 'text',
@@ -64,7 +65,7 @@ async function testReasoningWithSources() {
     let hasReasoning = false;
     let hasContent = false;
     let hasSources = false;
-    let toolInvocations: any[] = [];
+    const toolInvocations: any[] = [];
 
     console.log('📡 Reading stream...\n');
 
@@ -73,7 +74,7 @@ async function testReasoningWithSources() {
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-      
+
       // Process complete messages
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
@@ -82,44 +83,50 @@ async function testReasoningWithSources() {
         if (line.startsWith('data: ')) {
           const data = line.slice(6);
           if (data === '[DONE]') continue;
-          
+
           try {
             const parsed = JSON.parse(data);
             messageCount++;
-            
+
             // Check for different types of data
             if (parsed.type === 'reasoning') {
               hasReasoning = true;
-              console.log('🤔 Reasoning detected:', parsed.text?.substring(0, 100) + '...');
+              console.log(
+                '🤔 Reasoning detected:',
+                `${parsed.text?.substring(0, 100)}...`
+              );
             }
-            
+
             if (parsed.type === 'text-delta') {
               hasContent = true;
               process.stdout.write(parsed.textDelta || '');
             }
-            
+
             if (parsed.type === 'tool-call') {
               toolInvocations.push(parsed);
               console.log('\n🔧 Tool call:', parsed.toolName);
             }
-            
+
             if (parsed.type === 'tool-result') {
               if (parsed.toolName === 'file_search') {
                 hasSources = true;
                 console.log('\n📚 Sources found in tool result');
               }
             }
-            
+
             // Check message parts for sources
             if (parsed.type === 'message' && parsed.message?.parts) {
               for (const part of parsed.message.parts) {
-                if (part.type === 'tool-invocation' && part.toolName === 'file_search') {
+                if (
+                  part.type === 'tool-invocation' &&
+                  part.toolName === 'file_search'
+                ) {
                   hasSources = true;
                   console.log('\n📚 File search invocation detected');
                 }
               }
             }
-          } catch (e) {
+          } catch (_e) {
             // Not JSON, skip
           }
         }
@@ -129,14 +136,16 @@ async function testReasoningWithSources() {
     console.log('\n\n📊 Results Summary:');
     console.log('─'.repeat(40));
     console.log(`✅ Messages received: ${messageCount}`);
-    console.log(`${hasReasoning ? '✅' : '❌'} Reasoning detected: ${hasReasoning}`);
+    console.log(
+      `${hasReasoning ? '✅' : '❌'} Reasoning detected: ${hasReasoning}`
+    );
     console.log(`${hasContent ? '✅' : '❌'} Content detected: ${hasContent}`);
     console.log(`${hasSources ? '✅' : '❌'} Sources detected: ${hasSources}`);
     console.log(`🔧 Tool invocations: ${toolInvocations.length}`);
-    
+
     if (toolInvocations.length > 0) {
       console.log('\nTool details:');
-      toolInvocations.forEach(t => {
+      toolInvocations.forEach((t) => {
         console.log(`  - ${t.toolName}: ${t.toolCallId}`);
       });
     }
@@ -145,7 +154,6 @@ async function testReasoningWithSources() {
       console.log('\n⚠️  WARNING: Reasoning was sent but no final content!');
       console.log('This might indicate an issue with the streaming response.');
     }
-
   } catch (error) {
     console.error('❌ Error:', error);
     process.exit(1);

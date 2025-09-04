@@ -104,8 +104,7 @@ const claudeModels: ModelConfig[] = [
     providerId: 'anthropic',
     modelFamily: 'Claude 3.5',
     baseProviderId: 'claude',
-    description:
-      'Previous generation balanced model for general-purpose tasks',
+    description: 'Previous generation balanced model for general-purpose tasks',
     tags: ['balanced', 'reasoning', 'legacy'],
     contextWindow: 200_000,
     inputCost: 3.0,
@@ -136,8 +135,7 @@ const claudeModels: ModelConfig[] = [
     providerId: 'anthropic',
     modelFamily: 'Claude 3.5',
     baseProviderId: 'claude',
-    description:
-      'Lightweight Claude model optimized for fast, low-cost output',
+    description: 'Lightweight Claude model optimized for fast, low-cost output',
     tags: ['fast', 'cheap', 'lightweight'],
     contextWindow: 200_000,
     inputCost: 0.25,

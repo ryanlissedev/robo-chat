@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const { model, messages } = await request.json();
-    
+
     // Validate GPT-5 model
     const gpt5Models = ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5-pro'];
     if (!gpt5Models.includes(model)) {
@@ -17,12 +17,14 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    
+
     // Get the last user message
-    const userMessage = messages?.find((m: any) => m.role === 'user')?.content || '';
-    
+    const userMessage =
+      messages?.find((m: unknown) => (m as { role: string }).role === 'user')
+        ?.content || '';
+
     // Create mock response based on model
-    const mockResponses: Record<string, any> = {
+    const mockResponses: Record<string, unknown> = {
       'gpt-5-mini': {
         model: 'gpt-5-mini',
         message: 'Response from GPT-5 Mini (Fast & Efficient)',
@@ -39,7 +41,7 @@ export async function POST(request: Request) {
           speed: 'Fast',
           contextWindow: 128000,
           responseTime: '~500ms',
-        }
+        },
       },
       'gpt-5-nano': {
         model: 'gpt-5-nano',
@@ -52,12 +54,12 @@ export async function POST(request: Request) {
           fileSearch: true,
           audio: false,
         },
-        pricing: { input: 0.05, output: 0.40, unit: 'per 1M tokens' },
+        pricing: { input: 0.05, output: 0.4, unit: 'per 1M tokens' },
         stats: {
           speed: 'Very Fast',
           contextWindow: 128000,
           responseTime: '~200ms',
-        }
+        },
       },
       'gpt-5': {
         model: 'gpt-5',
@@ -75,7 +77,7 @@ export async function POST(request: Request) {
           speed: 'Fast',
           contextWindow: 128000,
           responseTime: '~800ms',
-        }
+        },
       },
       'gpt-5-pro': {
         model: 'gpt-5-pro',
@@ -93,57 +95,65 @@ export async function POST(request: Request) {
           speed: 'Medium',
           contextWindow: 128000,
           responseTime: '~1500ms',
-        }
-      }
+        },
+      },
     };
-    
+
     const response = mockResponses[model];
-    
+
     // Simulate streaming response
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
         // Send initial event
         controller.enqueue(encoder.encode('data: {"type":"start"}\n\n'));
-        
+
         // Simulate reasoning tokens for GPT-5
         if (model.startsWith('gpt-5')) {
-          controller.enqueue(encoder.encode(`data: {"type":"reasoning-delta","reasoningDelta":"Analyzing request..."}\n\n`));
-          await new Promise(resolve => setTimeout(resolve, 100));
+          controller.enqueue(
+            encoder.encode(
+              `data: {"type":"reasoning-delta","reasoningDelta":"Analyzing request..."}\n\n`
+            )
+          );
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
-        
+
         // Send content in chunks
         const words = response.content.split(' ');
         for (let i = 0; i < words.length; i++) {
           const chunk = words[i] + (i < words.length - 1 ? ' ' : '');
           controller.enqueue(
-            encoder.encode(`data: {"type":"text-delta","textDelta":"${chunk}"}\n\n`)
+            encoder.encode(
+              `data: {"type":"text-delta","textDelta":"${chunk}"}\n\n`
+            )
           );
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise((resolve) => setTimeout(resolve, 50));
         }
-        
+
         // Send model info
         controller.enqueue(
-          encoder.encode(`data: {"type":"model-info","data":${JSON.stringify(response)}}\n\n`)
+          encoder.encode(
+            `data: {"type":"model-info","data":${JSON.stringify(response)}}\n\n`
+          )
         );
-        
+
         // Send finish event
         controller.enqueue(encoder.encode('data: {"type":"finish"}\n\n'));
         controller.enqueue(encoder.encode('data: [DONE]\n\n'));
         controller.close();
       },
     });
-    
+
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: (error as Error).message || 'Internal server error' },
       { status: 500 }
     );
   }

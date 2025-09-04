@@ -9,8 +9,7 @@ const deepseekModels: ModelConfig[] = [
     providerId: 'deepseek',
     modelFamily: 'DeepSeek V3',
     baseProviderId: 'deepseek',
-    description:
-      'Latest V3.1 with 671B parameters, excellent coding and math',
+    description: 'Latest V3.1 with 671B parameters, excellent coding and math',
     tags: ['flagship', 'coding', 'math', 'efficient'],
     contextWindow: 128_000,
     inputCost: 0.14,
@@ -41,8 +40,7 @@ const deepseekModels: ModelConfig[] = [
     providerId: 'deepseek',
     modelFamily: 'DeepSeek R1',
     baseProviderId: 'deepseek',
-    description:
-      'Reasoning model, 98% HumanEval, 20x cheaper than OpenAI o1',
+    description: 'Reasoning model, 98% HumanEval, 20x cheaper than OpenAI o1',
     tags: ['reasoning', 'efficient', 'coding'],
     contextWindow: 64_000,
     inputCost: 0.55,

@@ -147,8 +147,7 @@ const geminiModels: ModelConfig[] = [
     providerId: 'google',
     modelFamily: 'Gemini 2.5',
     baseProviderId: 'google',
-    description:
-      'Fast and efficient Gemini 2.5 model with multimodal support.',
+    description: 'Fast and efficient Gemini 2.5 model with multimodal support.',
     tags: ['fast', 'efficient', 'multimodal'],
     contextWindow: 1_000_000,
     inputCost: 0.05,
@@ -177,8 +176,7 @@ const geminiModels: ModelConfig[] = [
     providerId: 'google',
     modelFamily: 'Gemini 2.5',
     baseProviderId: 'google',
-    description:
-      'Advanced Gemini model with enhanced reasoning capabilities.',
+    description: 'Advanced Gemini model with enhanced reasoning capabilities.',
     tags: ['flagship', 'reasoning', 'multimodal', 'advanced'],
     contextWindow: 2_000_000,
     inputCost: 1.0,

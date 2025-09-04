@@ -73,6 +73,7 @@ const testConfigs = {
       'playwright-tests/**',
       '**/test-*.{js,ts,html}', // Exclude debug test files
       '**/*.stories.*',
+      '**/*.spec.ts', // Exclude playwright spec files
     ],
     coverage: getCoverageConfig(
       process.env.NODE_ENV === 'production'
@@ -231,7 +232,6 @@ const getTestConfig = () => {
       return testConfigs.fast;
     case 'integration':
       return testConfigs.integration;
-    case 'standard':
     default:
       return testConfigs.standard;
   }

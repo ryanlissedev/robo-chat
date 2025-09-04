@@ -32,11 +32,12 @@ export function loadEnvironmentConfig(): EnvironmentConfig {
       const singular = process.env.OPENAI_VECTORSTORE;
       const fromPlural = plural?.split(',').filter(Boolean);
       const fromSingular = singular?.split(',').filter(Boolean);
-      const resolved = (fromPlural && fromPlural.length > 0)
-        ? fromPlural
-        : (fromSingular && fromSingular.length > 0)
-          ? fromSingular
-          : ['vs_6849955367a88191bf89d7660230325f'];
+      const resolved =
+        fromPlural && fromPlural.length > 0
+          ? fromPlural
+          : fromSingular && fromSingular.length > 0
+            ? fromSingular
+            : ['vs_6849955367a88191bf89d7660230325f'];
       return resolved;
     })(),
     langsmithConfig: {

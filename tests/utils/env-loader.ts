@@ -3,8 +3,8 @@
  * Eliminates duplicate environment loading code across test files
  */
 
-import { existsSync, readFileSync } from 'fs';
-import { resolve } from 'path';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 /**
  * Load environment variables from .env files

@@ -3,12 +3,12 @@
  * Testing complete user interactions and component integration
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatContainer } from '@/components/app/chat/chat-container';
 import { UserPreferenceProvider } from '@/lib/user-preference-store/provider';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock the sub-components
 vi.mock('@/components/app/chat/chat', () => ({
@@ -121,7 +121,7 @@ describe('Chat UI Workflows Integration', () => {
 
     it('should handle loading state appropriately', () => {
       mockPreferencesProvider.isLoading = true;
-      
+
       renderChatContainer();
 
       // Should still render something even when loading
@@ -225,13 +225,16 @@ describe('Chat UI Workflows Integration', () => {
   describe('Error Handling', () => {
     it('should handle preferences provider errors gracefully', () => {
       // Mock console.error to avoid noise in test output
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       // Mock useUserPreferences to throw an error
-      vi.mocked(require('@/lib/user-preference-store/provider').useUserPreferences)
-        .mockImplementationOnce(() => {
-          throw new Error('Preferences error');
-        });
+      vi.mocked(
+        require('@/lib/user-preference-store/provider').useUserPreferences
+      ).mockImplementationOnce(() => {
+        throw new Error('Preferences error');
+      });
 
       expect(() => {
         renderChatContainer();
@@ -384,7 +387,7 @@ describe('Chat UI Workflows Integration', () => {
       // Rapidly toggle preference
       for (let i = 0; i < 10; i++) {
         mockPreferencesProvider.preferences.multiModelEnabled = i % 2 === 0;
-        
+
         rerender(
           <QueryClientProvider client={queryClient}>
             <UserPreferenceProvider>

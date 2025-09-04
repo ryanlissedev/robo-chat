@@ -1,5 +1,5 @@
-import { type LanguageModel, streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { type LanguageModel, streamText } from 'ai';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import { RETRIEVAL_RETRIEVER_MODEL_ID } from '@/lib/config';
 import { getModelInfo } from '@/lib/models';
@@ -104,7 +104,10 @@ export async function retrieveWithGpt41(
                 toolName?: string;
                 result?: FileSearchToolResult;
               };
-              if ((t.toolName === 'file_search' || t.toolName === 'fileSearch') && t.result) {
+              if (
+                (t.toolName === 'file_search' || t.toolName === 'fileSearch') &&
+                t.result
+              ) {
                 const r = t.result.results || [];
                 for (let i = 0; i < r.length; i++) {
                   const it = r[i] as FileSearchResultItem;

@@ -47,7 +47,7 @@ describe('Voice Store - Fixed', () => {
     });
 
     // Wait a bit to ensure state is fully reset
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
     // Ensure global fetch is properly mocked
     global.fetch = mockFetch;
@@ -70,8 +70,8 @@ describe('Voice Store - Fixed', () => {
       });
 
       // Get updated state after the action
-      let store = useVoiceStore.getState();
-      
+      const store = useVoiceStore.getState();
+
       // Verify final state
       expect(store.sessionId).toBe('test-session-123');
       expect(store.status).toBe('connected');
@@ -100,8 +100,8 @@ describe('Voice Store - Fixed', () => {
       });
 
       // Get updated state after the failed action
-      let store = useVoiceStore.getState();
-      
+      const store = useVoiceStore.getState();
+
       expect(store.status).toBe('error');
       expect(updatedStore.error).toEqual({
         code: 'SESSION_START_FAILED',

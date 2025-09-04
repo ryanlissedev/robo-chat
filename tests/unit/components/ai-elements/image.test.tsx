@@ -3,8 +3,8 @@
  * Ensuring 100% test coverage for production validation
  */
 
-import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import { Image } from '@/components/ai-elements/image';
 
 // Mock Next.js Image component
@@ -23,27 +23,27 @@ vi.mock('next/image', () => ({
 
 describe('Image Component', () => {
   const sampleImageData = {
-    base64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    base64:
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
     mediaType: 'image/png',
   };
 
   it('should render with required props', () => {
-    const { container } = render(
-      <Image {...sampleImageData} />
-    );
+    const { container } = render(<Image {...sampleImageData} />);
 
     const img = container.querySelector('img');
     expect(img).toBeInTheDocument();
-    expect(img).toHaveAttribute('src', `data:${sampleImageData.mediaType};base64,${sampleImageData.base64}`);
+    expect(img).toHaveAttribute(
+      'src',
+      `data:${sampleImageData.mediaType};base64,${sampleImageData.base64}`
+    );
     expect(img).toHaveAttribute('alt', 'Generated image');
     expect(img).toHaveAttribute('width', '512');
     expect(img).toHaveAttribute('height', '512');
   });
 
   it('should apply default styling classes', () => {
-    const { container } = render(
-      <Image {...sampleImageData} />
-    );
+    const { container } = render(<Image {...sampleImageData} />);
 
     const img = container.querySelector('img');
     expect(img).toHaveClass(
@@ -81,7 +81,10 @@ describe('Image Component', () => {
 
   it('should combine custom className with default classes', () => {
     const { container } = render(
-      <Image {...sampleImageData} className="border-2 border-red-500 shadow-lg" />
+      <Image
+        {...sampleImageData}
+        className="border-2 border-red-500 shadow-lg"
+      />
     );
 
     const img = container.querySelector('img');
@@ -102,12 +105,13 @@ describe('Image Component', () => {
       mediaType: 'image/jpeg',
     };
 
-    const { container } = render(
-      <Image {...jpegImageData} />
-    );
+    const { container } = render(<Image {...jpegImageData} />);
 
     const img = container.querySelector('img');
-    expect(img).toHaveAttribute('src', 'data:image/jpeg;base64,' + jpegImageData.base64);
+    expect(img).toHaveAttribute(
+      'src',
+      `data:image/jpeg;base64,${jpegImageData.base64}`
+    );
   });
 
   it('should handle different base64 data', () => {
@@ -116,12 +120,13 @@ describe('Image Component', () => {
       mediaType: 'image/gif',
     };
 
-    const { container } = render(
-      <Image {...differentImageData} />
-    );
+    const { container } = render(<Image {...differentImageData} />);
 
     const img = container.querySelector('img');
-    expect(img).toHaveAttribute('src', `data:${differentImageData.mediaType};base64,${differentImageData.base64}`);
+    expect(img).toHaveAttribute(
+      'src',
+      `data:${differentImageData.mediaType};base64,${differentImageData.base64}`
+    );
   });
 
   it('should pass through additional Next.js Image props', () => {
@@ -229,16 +234,18 @@ describe('Image Component', () => {
 
   it('should handle complex base64 data', () => {
     const complexImageData = {
-      base64: '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=',
+      base64:
+        '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=',
       mediaType: 'image/jpeg',
     };
 
-    const { container } = render(
-      <Image {...complexImageData} />
-    );
+    const { container } = render(<Image {...complexImageData} />);
 
     const img = container.querySelector('img');
-    expect(img).toHaveAttribute('src', `data:${complexImageData.mediaType};base64,${complexImageData.base64}`);
+    expect(img).toHaveAttribute(
+      'src',
+      `data:${complexImageData.mediaType};base64,${complexImageData.base64}`
+    );
   });
 
   describe('Edge Cases', () => {
@@ -248,9 +255,7 @@ describe('Image Component', () => {
         mediaType: 'image/png',
       };
 
-      const { container } = render(
-        <Image {...emptyImageData} />
-      );
+      const { container } = render(<Image {...emptyImageData} />);
 
       const img = container.querySelector('img');
       expect(img).toHaveAttribute('src', 'data:image/png;base64,');
@@ -262,12 +267,13 @@ describe('Image Component', () => {
         mediaType: '',
       };
 
-      const { container } = render(
-        <Image {...noMediaTypeData} />
-      );
+      const { container } = render(<Image {...noMediaTypeData} />);
 
       const img = container.querySelector('img');
-      expect(img).toHaveAttribute('src', `data:;base64,${sampleImageData.base64}`);
+      expect(img).toHaveAttribute(
+        'src',
+        `data:;base64,${sampleImageData.base64}`
+      );
     });
 
     it('should handle special characters in base64', () => {
@@ -276,12 +282,13 @@ describe('Image Component', () => {
         mediaType: 'image/png',
       };
 
-      const { container } = render(
-        <Image {...specialBase64Data} />
-      );
+      const { container } = render(<Image {...specialBase64Data} />);
 
       const img = container.querySelector('img');
-      expect(img).toHaveAttribute('src', 'data:image/png;base64,ABC123+/=def456+/=');
+      expect(img).toHaveAttribute(
+        'src',
+        'data:image/png;base64,ABC123+/=def456+/='
+      );
     });
 
     it('should override className properly', () => {
@@ -291,7 +298,14 @@ describe('Image Component', () => {
 
       const img = container.querySelector('img');
       // Should have both default classes and custom classes
-      expect(img).toHaveClass('w-full', 'h-full', 'h-auto', 'max-w-full', 'overflow-hidden', 'rounded-md');
+      expect(img).toHaveClass(
+        'w-full',
+        'h-full',
+        'h-auto',
+        'max-w-full',
+        'overflow-hidden',
+        'rounded-md'
+      );
     });
 
     it('should handle webp media type', () => {
@@ -300,12 +314,13 @@ describe('Image Component', () => {
         mediaType: 'image/webp',
       };
 
-      const { container } = render(
-        <Image {...webpImageData} />
-      );
+      const { container } = render(<Image {...webpImageData} />);
 
       const img = container.querySelector('img');
-      expect(img).toHaveAttribute('src', 'data:image/webp;base64,' + sampleImageData.base64);
+      expect(img).toHaveAttribute(
+        'src',
+        `data:image/webp;base64,${sampleImageData.base64}`
+      );
     });
 
     it('should handle avif media type', () => {
@@ -314,12 +329,13 @@ describe('Image Component', () => {
         mediaType: 'image/avif',
       };
 
-      const { container } = render(
-        <Image {...avifImageData} />
-      );
+      const { container } = render(<Image {...avifImageData} />);
 
       const img = container.querySelector('img');
-      expect(img).toHaveAttribute('src', 'data:image/avif;base64,' + sampleImageData.base64);
+      expect(img).toHaveAttribute(
+        'src',
+        `data:image/avif;base64,${sampleImageData.base64}`
+      );
     });
 
     it('should handle svg media type', () => {
@@ -328,12 +344,13 @@ describe('Image Component', () => {
         mediaType: 'image/svg+xml',
       };
 
-      const { container } = render(
-        <Image {...svgImageData} />
-      );
+      const { container } = render(<Image {...svgImageData} />);
 
       const img = container.querySelector('img');
-      expect(img).toHaveAttribute('src', `data:image/svg+xml;base64,${svgImageData.base64}`);
+      expect(img).toHaveAttribute(
+        'src',
+        `data:image/svg+xml;base64,${svgImageData.base64}`
+      );
     });
   });
 
@@ -348,27 +365,21 @@ describe('Image Component', () => {
     });
 
     it('should use default alt text when not provided', () => {
-      const { container } = render(
-        <Image {...sampleImageData} />
-      );
+      const { container } = render(<Image {...sampleImageData} />);
 
       const img = container.querySelector('img');
       expect(img).toHaveAttribute('alt', 'Generated image');
     });
 
     it('should handle empty alt text for decorative images', () => {
-      const { container } = render(
-        <Image {...sampleImageData} alt="" />
-      );
+      const { container } = render(<Image {...sampleImageData} alt="" />);
 
       const img = container.querySelector('img');
       expect(img).toHaveAttribute('alt', '');
     });
 
     it('should handle role attribute', () => {
-      const { container } = render(
-        <Image {...sampleImageData} role="img" />
-      );
+      const { container } = render(<Image {...sampleImageData} role="img" />);
 
       const img = container.querySelector('img');
       expect(img).toHaveAttribute('role', 'img');

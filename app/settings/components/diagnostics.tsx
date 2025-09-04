@@ -72,7 +72,7 @@ export function DiagnosticsPanel() {
         }
         const json = (await res.json()) as ApiResponse;
         if (active) setData(json);
-      } catch (e) {
+      } catch (_e) {
         if (active) setError('Network error loading diagnostics');
       } finally {
         if (active) setLoading(false);

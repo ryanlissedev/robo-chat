@@ -148,11 +148,8 @@ export async function createGatewayProvider(
 
     const testResult = await gatewayProvider.test();
     if (testResult.success) {
-      console.log(`✅ Using Vercel AI Gateway for ${config.provider}`);
       return gatewayProvider;
     }
-
-    console.warn(`⚠️ Gateway failed, falling back to direct API`);
   }
 
   // Fallback to direct API
@@ -160,8 +157,6 @@ export async function createGatewayProvider(
     ...config,
     useGateway: false,
   });
-
-  console.log(`✅ Using direct API for ${config.provider}`);
   return directProvider;
 }
 

@@ -80,8 +80,8 @@ export function getProviderForModel(modelId: string): string {
  * This is a placeholder - implement based on your user storage system
  */
 async function getUserApiKey(
-  userId: string,
-  provider: string
+  _userId: string,
+  _provider: string
 ): Promise<string | null> {
   // TODO: Implement user-specific API key retrieval
   // This would typically query your database or user settings

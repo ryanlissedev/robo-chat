@@ -1,5 +1,5 @@
 import type { UIMessage as MessageType } from '@ai-sdk/react';
-import { memo, useRef, useMemo } from 'react';
+import { memo, useMemo, useRef } from 'react';
 import {
   type ExtendedUIMessage,
   getMessageContent,
@@ -34,7 +34,7 @@ function ConversationComponent({
 
   // Memoize empty state check
   const isEmpty = useMemo(() => !messages || messages.length === 0, [messages]);
-  
+
   if (isEmpty) {
     return <div className="h-full w-full" />;
   }
@@ -111,13 +111,22 @@ function ConversationComponent({
 }
 
 // Memoize the Conversation component to prevent re-renders when messages haven't changed
-export const Conversation = memo(ConversationComponent, (prevProps, nextProps) => {
-  return (
-    prevProps.status === nextProps.status &&
-    prevProps.messages.length === nextProps.messages.length &&
-    prevProps.messages.every((msg, idx) => {
-      const nextMsg = nextProps.messages[idx];
-      return msg && nextMsg && msg.id === nextMsg.id && getMessageContent(msg as ExtendedUIMessage) === getMessageContent(nextMsg as ExtendedUIMessage);
-    })
-  );
-});
+export const Conversation = memo(
+  ConversationComponent,
+  (prevProps, nextProps) => {
+    return (
+      prevProps.status === nextProps.status &&
+      prevProps.messages.length === nextProps.messages.length &&
+      prevProps.messages.every((msg, idx) => {
+        const nextMsg = nextProps.messages[idx];
+        return (
+          msg &&
+          nextMsg &&
+          msg.id === nextMsg.id &&
+          getMessageContent(msg as ExtendedUIMessage) ===
+            getMessageContent(nextMsg as ExtendedUIMessage)
+        );
+      })
+    );
+  }
+);

@@ -5,8 +5,8 @@
  * This script will help identify and replace the remaining references
  */
 
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const filePath = path.join(process.cwd(), 'app/api/chat/route.ts');
 
@@ -44,18 +44,12 @@ function refactorModelConfigReferences() {
     if (matches) {
       content = content.replace(from, to);
       changesMade += matches.length;
-      console.log(
-        `Replaced ${matches.length} occurrences of ${from} with ${to}`
-      );
     }
   });
 
   if (changesMade > 0) {
     fs.writeFileSync(filePath, content);
-    console.log(`\nTotal changes made: ${changesMade}`);
-    console.log('File updated successfully!');
   } else {
-    console.log('No changes needed.');
   }
 }
 

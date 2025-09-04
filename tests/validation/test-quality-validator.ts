@@ -3,10 +3,10 @@
  * Comprehensive validation of test suite quality and coverage
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { exec } from 'node:child_process';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
 
@@ -45,7 +45,7 @@ interface QualityChecks {
 export class TestQualityValidator {
   private projectRoot: string;
   private testsRoot: string;
-  
+
   constructor(projectRoot: string = process.cwd()) {
     this.projectRoot = projectRoot;
     this.testsRoot = path.join(projectRoot, 'tests');
@@ -63,7 +63,11 @@ export class TestQualityValidator {
       this.performQualityChecks(),
     ]);
 
-    const recommendations = this.generateRecommendations(coverage, testCounts, qualityChecks);
+    const recommendations = this.generateRecommendations(
+      coverage,
+      testCounts,
+      qualityChecks
+    );
 
     const metrics: TestQualityMetrics = {
       coverage,
@@ -84,16 +88,22 @@ export class TestQualityValidator {
 
     try {
       // Run coverage analysis
-      const { stdout } = await execAsync('npm run test:coverage', { 
+      const { stdout: _stdout } = await execAsync('npm run test:coverage', {
         cwd: this.projectRoot,
-        env: { ...process.env, CI: 'true' }
+        env: { ...process.env, CI: 'true' },
       });
 
       // Parse coverage from JSON report if available
-      const coverageReportPath = path.join(this.projectRoot, 'coverage', 'coverage-summary.json');
-      
+      const coverageReportPath = path.join(
+        this.projectRoot,
+        'coverage',
+        'coverage-summary.json'
+      );
+
       if (fs.existsSync(coverageReportPath)) {
-        const coverageData = JSON.parse(fs.readFileSync(coverageReportPath, 'utf8'));
+        const coverageData = JSON.parse(
+          fs.readFileSync(coverageReportPath, 'utf8')
+        );
         const total = coverageData.total;
 
         return {
@@ -149,7 +159,7 @@ export class TestQualityValidator {
     console.log('✅ Performing quality checks...');
 
     const allTestFiles = this.getAllTestFiles();
-    
+
     return {
       hasErrorHandling: this.checkErrorHandlingTests(allTestFiles),
       hasEdgeCases: this.checkEdgeCaseTests(allTestFiles),
@@ -166,7 +176,7 @@ export class TestQualityValidator {
    */
   private findUncoveredFiles(coverageData: any): string[] {
     const uncovered: string[] = [];
-    
+
     for (const [filePath, fileData] of Object.entries<any>(coverageData)) {
       if (filePath !== 'total') {
         const coverage = fileData.statements?.pct || 0;
@@ -185,9 +195,12 @@ export class TestQualityValidator {
   private estimateCoverage(): CoverageMetrics {
     const sourceFiles = this.findSourceFiles();
     const testFiles = this.getAllTestFiles();
-    
+
     // Simple heuristic: estimate coverage based on test file count
-    const estimatedCoverage = Math.min((testFiles.length / sourceFiles.length) * 100, 100);
+    const estimatedCoverage = Math.min(
+      (testFiles.length / sourceFiles.length) * 100,
+      100
+    );
 
     return {
       statements: estimatedCoverage,
@@ -249,13 +262,13 @@ export class TestQualityValidator {
 
     for (const item of items) {
       const fullPath = path.join(dir, item.name);
-      
+
       if (item.isDirectory()) {
         if (!item.name.startsWith('.') && item.name !== 'node_modules') {
           files.push(...this.findFilesRecursive(fullPath, extensions));
         }
       } else if (item.isFile()) {
-        if (extensions.some(ext => item.name.endsWith(ext))) {
+        if (extensions.some((ext) => item.name.endsWith(ext))) {
           files.push(fullPath);
         }
       }
@@ -268,7 +281,14 @@ export class TestQualityValidator {
    * Check if tests include error handling scenarios
    */
   private checkErrorHandlingTests(testFiles: string[]): boolean {
-    const errorKeywords = ['error', 'throw', 'catch', 'fail', 'reject', 'exception'];
+    const errorKeywords = [
+      'error',
+      'throw',
+      'catch',
+      'fail',
+      'reject',
+      'exception',
+    ];
     return this.checkTestContent(testFiles, errorKeywords);
   }
 
@@ -276,7 +296,16 @@ export class TestQualityValidator {
    * Check if tests include edge cases
    */
   private checkEdgeCaseTests(testFiles: string[]): boolean {
-    const edgeCaseKeywords = ['edge', 'boundary', 'limit', 'empty', 'null', 'undefined', 'zero', 'max'];
+    const edgeCaseKeywords = [
+      'edge',
+      'boundary',
+      'limit',
+      'empty',
+      'null',
+      'undefined',
+      'zero',
+      'max',
+    ];
     return this.checkTestContent(testFiles, edgeCaseKeywords);
   }
 
@@ -284,7 +313,15 @@ export class TestQualityValidator {
    * Check if tests include accessibility testing
    */
   private checkAccessibilityTests(testFiles: string[]): boolean {
-    const a11yKeywords = ['accessibility', 'a11y', 'aria', 'role', 'keyboard', 'screen reader', 'focus'];
+    const a11yKeywords = [
+      'accessibility',
+      'a11y',
+      'aria',
+      'role',
+      'keyboard',
+      'screen reader',
+      'focus',
+    ];
     return this.checkTestContent(testFiles, a11yKeywords);
   }
 
@@ -292,7 +329,15 @@ export class TestQualityValidator {
    * Check if tests include performance testing
    */
   private checkPerformanceTests(testFiles: string[]): boolean {
-    const perfKeywords = ['performance', 'perf', 'timing', 'speed', 'memory', 'load', 'concurrent'];
+    const perfKeywords = [
+      'performance',
+      'perf',
+      'timing',
+      'speed',
+      'memory',
+      'load',
+      'concurrent',
+    ];
     return this.checkTestContent(testFiles, perfKeywords);
   }
 
@@ -300,7 +345,14 @@ export class TestQualityValidator {
    * Check if tests use proper mocking strategies
    */
   private checkMockingStrategy(testFiles: string[]): boolean {
-    const mockKeywords = ['mock', 'stub', 'spy', 'vi.fn', 'jest.fn', 'mockImplementation'];
+    const mockKeywords = [
+      'mock',
+      'stub',
+      'spy',
+      'vi.fn',
+      'jest.fn',
+      'mockImplementation',
+    ];
     return this.checkTestContent(testFiles, mockKeywords);
   }
 
@@ -308,7 +360,14 @@ export class TestQualityValidator {
    * Check if tests have proper setup and teardown
    */
   private checkSetupTeardown(testFiles: string[]): boolean {
-    const setupKeywords = ['beforeEach', 'afterEach', 'beforeAll', 'afterAll', 'setup', 'teardown'];
+    const setupKeywords = [
+      'beforeEach',
+      'afterEach',
+      'beforeAll',
+      'afterAll',
+      'setup',
+      'teardown',
+    ];
     return this.checkTestContent(testFiles, setupKeywords);
   }
 
@@ -317,7 +376,7 @@ export class TestQualityValidator {
    */
   private checkNamingConventions(testFiles: string[]): boolean {
     const conventionPattern = /\.(test|spec)\.(ts|tsx|js|jsx)$/;
-    return testFiles.every(file => conventionPattern.test(file));
+    return testFiles.every((file) => conventionPattern.test(file));
   }
 
   /**
@@ -330,13 +389,10 @@ export class TestQualityValidator {
     for (const file of testFiles) {
       try {
         const content = fs.readFileSync(file, 'utf8').toLowerCase();
-        if (keywords.some(keyword => content.includes(keyword))) {
+        if (keywords.some((keyword) => content.includes(keyword))) {
           foundCount++;
         }
-      } catch (error) {
-        // Skip files that can't be read
-        continue;
-      }
+      } catch (_error) {}
     }
 
     return foundCount >= minRequired;
@@ -354,57 +410,79 @@ export class TestQualityValidator {
 
     // Coverage recommendations
     if (coverage.statements < 90) {
-      recommendations.push(`📈 Increase statement coverage from ${coverage.statements}% to 90%+`);
+      recommendations.push(
+        `📈 Increase statement coverage from ${coverage.statements}% to 90%+`
+      );
     }
     if (coverage.branches < 85) {
-      recommendations.push(`🌳 Increase branch coverage from ${coverage.branches}% to 85%+`);
+      recommendations.push(
+        `🌳 Increase branch coverage from ${coverage.branches}% to 85%+`
+      );
     }
     if (coverage.functions < 95) {
-      recommendations.push(`⚡ Increase function coverage from ${coverage.functions}% to 95%+`);
+      recommendations.push(
+        `⚡ Increase function coverage from ${coverage.functions}% to 95%+`
+      );
     }
 
     // Test count recommendations
     const sourceFiles = this.findSourceFiles().length;
     const testRatio = testCounts.total / Math.max(sourceFiles, 1);
-    
+
     if (testRatio < 0.5) {
-      recommendations.push(`📝 Add more tests. Current ratio: ${testRatio.toFixed(2)} tests per source file`);
+      recommendations.push(
+        `📝 Add more tests. Current ratio: ${testRatio.toFixed(2)} tests per source file`
+      );
     }
 
     if (testCounts.integration < 10) {
-      recommendations.push('🔗 Add more integration tests to test component interactions');
+      recommendations.push(
+        '🔗 Add more integration tests to test component interactions'
+      );
     }
 
     if (testCounts.e2e < 5) {
-      recommendations.push('🎭 Add more end-to-end tests for critical user journeys');
+      recommendations.push(
+        '🎭 Add more end-to-end tests for critical user journeys'
+      );
     }
 
     // Quality check recommendations
     if (!qualityChecks.hasErrorHandling) {
-      recommendations.push('❌ Add error handling and exception testing scenarios');
+      recommendations.push(
+        '❌ Add error handling and exception testing scenarios'
+      );
     }
     if (!qualityChecks.hasEdgeCases) {
       recommendations.push('🎯 Add edge case and boundary condition tests');
     }
     if (!qualityChecks.hasAccessibilityTests) {
-      recommendations.push('♿ Add accessibility testing with screen readers and keyboard navigation');
+      recommendations.push(
+        '♿ Add accessibility testing with screen readers and keyboard navigation'
+      );
     }
     if (!qualityChecks.hasPerformanceTests) {
       recommendations.push('⚡ Add performance tests for critical code paths');
     }
     if (!qualityChecks.hasMockingStrategy) {
-      recommendations.push('🎭 Implement consistent mocking strategy for external dependencies');
+      recommendations.push(
+        '🎭 Implement consistent mocking strategy for external dependencies'
+      );
     }
     if (!qualityChecks.hasSetupTeardown) {
       recommendations.push('🔧 Add proper test setup and teardown procedures');
     }
     if (!qualityChecks.followsNamingConventions) {
-      recommendations.push('📝 Follow consistent test file naming conventions (.test.ts/.spec.ts)');
+      recommendations.push(
+        '📝 Follow consistent test file naming conventions (.test.ts/.spec.ts)'
+      );
     }
 
     // Uncovered files recommendations
     if (coverage.uncoveredFiles.length > 0) {
-      recommendations.push(`📄 Add tests for uncovered files: ${coverage.uncoveredFiles.slice(0, 3).join(', ')}${coverage.uncoveredFiles.length > 3 ? '...' : ''}`);
+      recommendations.push(
+        `📄 Add tests for uncovered files: ${coverage.uncoveredFiles.slice(0, 3).join(', ')}${coverage.uncoveredFiles.length > 3 ? '...' : ''}`
+      );
     }
 
     return recommendations;
@@ -414,7 +492,7 @@ export class TestQualityValidator {
    * Print comprehensive validation report
    */
   private printReport(metrics: TestQualityMetrics): void {
-    console.log('\n' + '='.repeat(80));
+    console.log(`\n${'='.repeat(80)}`);
     console.log('📋 TEST QUALITY VALIDATION REPORT');
     console.log('='.repeat(80));
 
@@ -436,7 +514,10 @@ export class TestQualityValidator {
     console.log('\n✅ QUALITY CHECKS:');
     Object.entries(metrics.qualityChecks).forEach(([check, passed]) => {
       const status = passed ? '✅' : '❌';
-      const label = check.replace(/([A-Z])/g, ' $1').toLowerCase().replace(/^./, str => str.toUpperCase());
+      const label = check
+        .replace(/([A-Z])/g, ' $1')
+        .toLowerCase()
+        .replace(/^./, (str) => str.toUpperCase());
       console.log(`  ${status} ${label}`);
     });
 
@@ -447,14 +528,16 @@ export class TestQualityValidator {
         console.log(`  ${index + 1}. ${rec}`);
       });
     } else {
-      console.log('\n🎉 EXCELLENT! No recommendations - your test suite is in great shape!');
+      console.log(
+        '\n🎉 EXCELLENT! No recommendations - your test suite is in great shape!'
+      );
     }
 
     // Overall Assessment
     const overallScore = this.calculateOverallScore(metrics);
-    console.log('\n' + '='.repeat(80));
+    console.log(`\n${'='.repeat(80)}`);
     console.log(`📈 OVERALL TEST QUALITY SCORE: ${overallScore}%`);
-    
+
     if (overallScore >= 90) {
       console.log('🏆 EXCELLENT - Production ready test suite!');
     } else if (overallScore >= 80) {
@@ -464,27 +547,31 @@ export class TestQualityValidator {
     } else {
       console.log('🔧 NEEDS WORK - Significant improvements required');
     }
-    
-    console.log('='.repeat(80) + '\n');
+
+    console.log(`${'='.repeat(80)}\n`);
   }
 
   /**
    * Calculate overall quality score
    */
   private calculateOverallScore(metrics: TestQualityMetrics): number {
-    const coverageScore = (
-      metrics.coverage.statements +
-      metrics.coverage.branches +
-      metrics.coverage.functions +
-      metrics.coverage.lines
-    ) / 4;
+    const coverageScore =
+      (metrics.coverage.statements +
+        metrics.coverage.branches +
+        metrics.coverage.functions +
+        metrics.coverage.lines) /
+      4;
 
-    const qualityScore = Object.values(metrics.qualityChecks).filter(Boolean).length / 
-                        Object.values(metrics.qualityChecks).length * 100;
+    const qualityScore =
+      (Object.values(metrics.qualityChecks).filter(Boolean).length /
+        Object.values(metrics.qualityChecks).length) *
+      100;
 
-    const testCountScore = Math.min(metrics.testCounts.total / 50 * 100, 100); // Max at 50 tests
+    const testCountScore = Math.min((metrics.testCounts.total / 50) * 100, 100); // Max at 50 tests
 
-    return Math.round((coverageScore * 0.5 + qualityScore * 0.3 + testCountScore * 0.2));
+    return Math.round(
+      coverageScore * 0.5 + qualityScore * 0.3 + testCountScore * 0.2
+    );
   }
 }
 

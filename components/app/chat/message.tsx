@@ -97,7 +97,8 @@ export const Message = memo(MessageComponent, (prevProps, nextProps) => {
     prevProps.isLast === nextProps.isLast &&
     prevProps.status === nextProps.status &&
     prevProps.hasScrollAnchor === nextProps.hasScrollAnchor &&
-    JSON.stringify(prevProps.attachments) === JSON.stringify(nextProps.attachments) &&
+    JSON.stringify(prevProps.attachments) ===
+      JSON.stringify(nextProps.attachments) &&
     JSON.stringify(prevProps.parts) === JSON.stringify(nextProps.parts)
   );
 });

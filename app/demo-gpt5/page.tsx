@@ -18,7 +18,8 @@ const gpt5Models: ModelInfo[] = [
   {
     id: 'gpt-5-mini',
     name: 'GPT-5 Mini',
-    description: 'Fast, cost-effective GPT-5 variant. Default model for most use cases.',
+    description:
+      'Fast, cost-effective GPT-5 variant. Default model for most use cases.',
     pricing: { input: '$0.25/1M', output: '$2/1M' },
     speed: 'Fast',
     features: ['Reasoning', 'Vision', 'Tools', 'File Search', 'Audio'],
@@ -26,7 +27,8 @@ const gpt5Models: ModelInfo[] = [
   {
     id: 'gpt-5-nano',
     name: 'GPT-5 Nano',
-    description: 'Ultra-fast, lightweight GPT-5 for simple tasks and high-volume applications.',
+    description:
+      'Ultra-fast, lightweight GPT-5 for simple tasks and high-volume applications.',
     pricing: { input: '$0.05/1M', output: '$0.40/1M' },
     speed: 'Very Fast',
     features: ['Reasoning', 'Vision', 'Tools', 'File Search'],
@@ -34,7 +36,8 @@ const gpt5Models: ModelInfo[] = [
   {
     id: 'gpt-5',
     name: 'GPT-5',
-    description: 'Latest flagship model with 94.6% on AIME 2025, 74.9% on SWE-bench.',
+    description:
+      'Latest flagship model with 94.6% on AIME 2025, 74.9% on SWE-bench.',
     pricing: { input: '$1.25/1M', output: '$10/1M' },
     speed: 'Fast',
     features: ['Reasoning', 'Vision', 'Tools', 'File Search', 'Audio'],
@@ -42,7 +45,8 @@ const gpt5Models: ModelInfo[] = [
   {
     id: 'gpt-5-pro',
     name: 'GPT-5 Pro',
-    description: 'Most capable GPT-5 for challenging tasks with advanced reasoning.',
+    description:
+      'Most capable GPT-5 for challenging tasks with advanced reasoning.',
     pricing: { input: '$15/1M', output: '$60/1M' },
     speed: 'Medium',
     features: ['Reasoning', 'Vision', 'Tools', 'File Search', 'Audio'],
@@ -58,7 +62,7 @@ export default function DemoGPT5() {
 
   const testModel = async () => {
     if (!input.trim()) return;
-    
+
     setLoading(true);
     setResponse('');
     setModelStats(null);
@@ -75,21 +79,21 @@ export default function DemoGPT5() {
 
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
-      
+
       if (reader) {
         let fullText = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          
+
           const chunk = decoder.decode(value);
           const lines = chunk.split('\n');
-          
+
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const data = line.slice(6);
               if (data === '[DONE]') continue;
-              
+
               try {
                 const parsed = JSON.parse(data);
                 if (parsed.type === 'text-delta') {
@@ -98,28 +102,29 @@ export default function DemoGPT5() {
                 } else if (parsed.type === 'model-info') {
                   setModelStats(parsed.data);
                 }
-              } catch (e) {
+              } catch (_e) {
                 // Skip invalid JSON
               }
             }
           }
         }
       }
-    } catch (error) {
-      console.error('Error:', error);
+    } catch (_error) {
       setResponse('Error testing model');
     } finally {
       setLoading(false);
     }
   };
 
-  const selectedModelInfo = gpt5Models.find(m => m.id === selectedModel);
+  const selectedModelInfo = gpt5Models.find((m) => m.id === selectedModel);
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold mb-2">GPT-5 Model Family Demo</h1>
-        <p className="text-gray-600 mb-8">September 2025 - Testing the new GPT-5 models</p>
+        <p className="text-gray-600 mb-8">
+          September 2025 - Testing the new GPT-5 models
+        </p>
 
         {/* Model Selection */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -137,13 +142,18 @@ export default function DemoGPT5() {
               >
                 <h3 className="font-semibold">{model.name}</h3>
                 {model.id === 'gpt-5-mini' && (
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">DEFAULT</span>
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                    DEFAULT
+                  </span>
                 )}
                 <p className="text-xs text-gray-500 mt-2">
-                  Input: {model.pricing.input}<br/>
+                  Input: {model.pricing.input}
+                  <br />
                   Output: {model.pricing.output}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">Speed: {model.speed}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Speed: {model.speed}
+                </p>
               </div>
             ))}
           </div>
@@ -152,11 +162,18 @@ export default function DemoGPT5() {
         {/* Model Details */}
         {selectedModelInfo && (
           <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-2">{selectedModelInfo.name}</h2>
-            <p className="text-gray-600 mb-4">{selectedModelInfo.description}</p>
+            <h2 className="text-xl font-semibold mb-2">
+              {selectedModelInfo.name}
+            </h2>
+            <p className="text-gray-600 mb-4">
+              {selectedModelInfo.description}
+            </p>
             <div className="flex flex-wrap gap-2">
               {selectedModelInfo.features.map((feature) => (
-                <span key={feature} className="px-3 py-1 bg-gray-100 rounded-full text-sm">
+                <span
+                  key={feature}
+                  className="px-3 py-1 bg-gray-100 rounded-full text-sm"
+                >
                   {feature}
                 </span>
               ))}
@@ -166,8 +183,10 @@ export default function DemoGPT5() {
 
         {/* Test Interface */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Test {selectedModelInfo?.name}</h2>
-          
+          <h2 className="text-xl font-semibold mb-4">
+            Test {selectedModelInfo?.name}
+          </h2>
+
           <div className="mb-4">
             <input
               type="text"
@@ -203,7 +222,10 @@ export default function DemoGPT5() {
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>Model: {modelStats.model}</div>
                 <div>Speed: {modelStats.stats?.speed}</div>
-                <div>Context: {modelStats.stats?.contextWindow?.toLocaleString()} tokens</div>
+                <div>
+                  Context: {modelStats.stats?.contextWindow?.toLocaleString()}{' '}
+                  tokens
+                </div>
                 <div>Response Time: {modelStats.stats?.responseTime}</div>
               </div>
             </div>
@@ -212,7 +234,9 @@ export default function DemoGPT5() {
 
         {/* Configuration Status */}
         <div className="mt-8 bg-green-50 border border-green-200 rounded-lg p-4">
-          <h3 className="font-semibold text-green-800 mb-2">✅ GPT-5 Models Configured</h3>
+          <h3 className="font-semibold text-green-800 mb-2">
+            ✅ GPT-5 Models Configured
+          </h3>
           <ul className="text-sm text-green-700 space-y-1">
             <li>• Models added to /lib/models/data/openai.ts</li>
             <li>• Default model set to gpt-5-mini in /lib/config.ts</li>

@@ -57,7 +57,7 @@ describe('Voice Store - Final Tests', () => {
     });
 
     // Wait a bit to ensure state is fully reset
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
     // Ensure global fetch is properly mocked
     global.fetch = mockFetch;
@@ -84,7 +84,7 @@ describe('Voice Store - Final Tests', () => {
 
       // Get updated state after the action
       store = useVoiceStore.getState();
-      
+
       // Verify final state
       expect(store.sessionId).toBe('test-session-123');
       expect(store.status).toBe('connected');
@@ -118,7 +118,7 @@ describe('Voice Store - Final Tests', () => {
 
       // Get updated state after the failed action
       store = useVoiceStore.getState();
-      
+
       expect(store.status).toBe('error');
       expect(store.error).toEqual({
         code: 'SESSION_START_FAILED',
@@ -150,7 +150,7 @@ describe('Voice Store - Final Tests', () => {
 
       // Refresh store reference after potential changes
       store = useVoiceStore.getState();
-      
+
       // Should not make any API calls
       expect(mockFetch).not.toHaveBeenCalled();
       expect(store.sessionId).toBe('existing-session');

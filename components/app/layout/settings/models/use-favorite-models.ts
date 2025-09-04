@@ -17,9 +17,10 @@ export function useFavoriteModels() {
   const { refreshUser } = useUser();
 
   // Ensure we always have an array with default gpt-5-mini
-  const safeInitialData = Array.isArray(initialFavoriteModels) && initialFavoriteModels.length > 0
-    ? initialFavoriteModels
-    : ['gpt-5-mini'];
+  const safeInitialData =
+    Array.isArray(initialFavoriteModels) && initialFavoriteModels.length > 0
+      ? initialFavoriteModels
+      : ['gpt-5-mini'];
 
   // Query to fetch favorite models
   const {

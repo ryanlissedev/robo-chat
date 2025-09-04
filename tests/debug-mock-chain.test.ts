@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { POST } from '@/app/api/feedback/route';
 
-// Mock modules
+// Mock modules BEFORE importing the route
 vi.mock('@/lib/langsmith/client', () => ({
   createFeedback: vi.fn(),
 }));
@@ -9,6 +8,8 @@ vi.mock('@/lib/langsmith/client', () => ({
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
 }));
+
+import { POST } from '@/app/api/feedback/route';
 
 import * as langsmithModule from '@/lib/langsmith/client';
 import * as supabaseServerModule from '@/lib/supabase/server';

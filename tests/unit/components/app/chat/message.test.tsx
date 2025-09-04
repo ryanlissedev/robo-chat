@@ -8,9 +8,8 @@ import {
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
-import { Message } from '@/components/app/chat/message';
 
-// Mock child components
+// Mock child components BEFORE importing the main component
 vi.mock('@/components/app/chat/message-assistant', () => ({
   MessageAssistant: ({
     children,
@@ -44,6 +43,24 @@ vi.mock('@/components/app/chat/message-assistant', () => ({
       }
     });
 
+    const handleQuote = () => {
+      if (onQuote) {
+        onQuote('quoted text', messageId);
+      }
+    };
+
+    const handleReload = () => {
+      if (onReload) {
+        onReload();
+      }
+    };
+
+    const handleCopy = () => {
+      if (copyToClipboard) {
+        copyToClipboard();
+      }
+    };
+
     return (
       <div
         data-testid="message-assistant"
@@ -54,18 +71,16 @@ vi.mock('@/components/app/chat/message-assistant', () => ({
         <div>{children}</div>
         <button
           type="button"
-          onClick={
-            onQuote ? () => onQuote('quoted text', messageId) : undefined
-          }
+          onClick={handleQuote}
         >
           Quote
         </button>
-        <button type="button" onClick={onReload}>
+        <button type="button" onClick={handleReload}>
           Reload
         </button>
         <button
           type="button"
-          onClick={copyToClipboard ? () => copyToClipboard() : undefined}
+          onClick={handleCopy}
         >
           Copy
         </button>
@@ -100,24 +115,42 @@ vi.mock('@/components/app/chat/message-user', () => ({
       }
     });
 
+    const handleDelete = () => {
+      if (onDelete) {
+        onDelete(id);
+      }
+    };
+
+    const handleEdit = () => {
+      if (onEdit) {
+        onEdit(id, 'edited text');
+      }
+    };
+
+    const handleCopy = () => {
+      if (copyToClipboard) {
+        copyToClipboard();
+      }
+    };
+
     return (
       <div data-testid="message-user" data-message-id={id} {...domProps}>
         <div>{children}</div>
         <button
           type="button"
-          onClick={onDelete ? () => onDelete(id) : undefined}
+          onClick={handleDelete}
         >
           Delete
         </button>
         <button
           type="button"
-          onClick={onEdit ? () => onEdit(id, 'edited text') : undefined}
+          onClick={handleEdit}
         >
           Edit
         </button>
         <button
           type="button"
-          onClick={copyToClipboard ? () => copyToClipboard() : undefined}
+          onClick={handleCopy}
         >
           Copy
         </button>
@@ -125,6 +158,9 @@ vi.mock('@/components/app/chat/message-user', () => ({
     );
   },
 }));
+
+// Import main component AFTER mocks
+import { Message } from '@/components/app/chat/message';
 
 // Create a clean clipboard mock at module level
 const mockWriteText = vi.fn().mockResolvedValue(undefined);

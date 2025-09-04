@@ -3,7 +3,7 @@
  * Provides code splitting and lazy loading strategies
  */
 
-import React, { lazy, ComponentType } from 'react';
+import React, { type ComponentType, lazy } from 'react';
 
 /**
  * Enhanced dynamic import with loading states and error boundaries
@@ -18,14 +18,14 @@ export function createLazyComponent<T extends ComponentType<any>>(
 ): ComponentType<React.ComponentProps<T>> {
   const LazyComponent = lazy(() => {
     const promise = importFn();
-    
+
     // Add artificial delay for better UX if specified
     if (options.delay) {
-      return new Promise<{ default: T }>(resolve => {
+      return new Promise<{ default: T }>((resolve) => {
         setTimeout(() => promise.then(resolve), options.delay);
       });
     }
-    
+
     return promise;
   });
 
@@ -84,50 +84,77 @@ export const preloadComponents = {
 export const LazyComponents = {
   // Chat components
   MessageAssistant: createLazyComponent(
-    () => import('@/components/app/chat/message-assistant').then(mod => ({ default: mod.MessageAssistant })),
+    () =>
+      import('@/components/app/chat/message-assistant').then((mod) => ({
+        default: mod.MessageAssistant,
+      })),
     { delay: 0 }
   ),
 
   MessageUser: createLazyComponent(
-    () => import('@/components/app/chat/message-user').then(mod => ({ default: mod.MessageUser })),
+    () =>
+      import('@/components/app/chat/message-user').then((mod) => ({
+        default: mod.MessageUser,
+      })),
     { delay: 0 }
   ),
 
   FeedbackWidget: createLazyComponent(
-    () => import('@/components/app/chat/feedback-widget').then(mod => ({ default: mod.FeedbackWidget })),
+    () =>
+      import('@/components/app/chat/feedback-widget').then((mod) => ({
+        default: mod.FeedbackWidget,
+      })),
     { delay: 100 }
   ),
 
   DialogAuth: createLazyComponent(
-    () => import('@/components/app/chat/dialog-auth').then(mod => ({ default: mod.DialogAuth })),
+    () =>
+      import('@/components/app/chat/dialog-auth').then((mod) => ({
+        default: mod.DialogAuth,
+      })),
     { delay: 0 }
   ),
 
   // Multi-chat components
   MultiChat: createLazyComponent(
-    () => import('@/components/app/multi-chat/multi-chat').then(mod => ({ default: mod.MultiChat })),
+    () =>
+      import('@/components/app/multi-chat/multi-chat').then((mod) => ({
+        default: mod.MultiChat,
+      })),
     { delay: 0 }
   ),
 
   MultiChatInput: createLazyComponent(
-    () => import('@/components/app/multi-chat/multi-chat-input').then(mod => ({ default: mod.MultiChatInput })),
+    () =>
+      import('@/components/app/multi-chat/multi-chat-input').then((mod) => ({
+        default: mod.MultiChatInput,
+      })),
     { delay: 0 }
   ),
 
   // Heavy components
   CodeBlock: createLazyComponent(
-    () => import('@/components/ai-elements/code-block').then(mod => ({ default: mod.CodeBlock })),
+    () =>
+      import('@/components/ai-elements/code-block').then((mod) => ({
+        default: mod.CodeBlock,
+      })),
     { delay: 50 }
   ),
 
   WebPreview: createLazyComponent(
-    () => import('@/components/ai-elements/web-preview').then(mod => ({ default: mod.WebPreview })),
+    () =>
+      import('@/components/ai-elements/web-preview').then((mod) => ({
+        default: mod.WebPreview,
+      })),
     { delay: 100 }
   ),
 
   // Settings components
   SettingsContent: createLazyComponent(
-    () => import('@/components/app/layout/settings/settings-content').then(mod => ({ default: mod.SettingsContent })),
+    () =>
+      import('@/components/app/layout/settings/settings-content').then(
+        (mod) => ({ default: mod.SettingsContent })
+      ),
     { delay: 200 }
   ),
 };
@@ -141,13 +168,13 @@ export const bundleAnalyzer = {
    */
   getEstimatedBundleSize: (componentName: string): number => {
     const sizes: Record<string, number> = {
-      'chat': 150, // KB
+      chat: 150, // KB
       'multi-chat': 200,
-      'conversation': 80,
-      'message': 50,
+      conversation: 80,
+      message: 50,
       'chat-input': 60,
-      'settings': 120,
-      'feedback': 30,
+      settings: 120,
+      feedback: 30,
     };
 
     return sizes[componentName] || 50;
@@ -158,13 +185,21 @@ export const bundleAnalyzer = {
    */
   shouldLazyLoad: (componentName: string, routePath?: string): boolean => {
     // Always lazy load heavy components
-    const heavyComponents = ['settings', 'feedback', 'web-preview', 'code-block'];
+    const heavyComponents = [
+      'settings',
+      'feedback',
+      'web-preview',
+      'code-block',
+    ];
     if (heavyComponents.includes(componentName)) {
       return true;
     }
 
     // Lazy load non-critical components on home page
-    if (routePath === '/' && !['chat', 'conversation', 'message'].includes(componentName)) {
+    if (
+      routePath === '/' &&
+      !['chat', 'conversation', 'message'].includes(componentName)
+    ) {
       return true;
     }
 
@@ -236,7 +271,7 @@ export const resourceHints = {
    */
   addPrefetchHints: (resources: string[]) => {
     if (typeof window !== 'undefined') {
-      resources.forEach(resource => {
+      resources.forEach((resource) => {
         const link = document.createElement('link');
         link.rel = 'prefetch';
         link.href = resource;
@@ -257,7 +292,7 @@ export const resourceHints = {
         '//cdn.jsdelivr.net',
       ];
 
-      domains.forEach(domain => {
+      domains.forEach((domain) => {
         const link = document.createElement('link');
         link.rel = 'dns-prefetch';
         link.href = domain;
