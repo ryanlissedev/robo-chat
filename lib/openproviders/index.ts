@@ -10,6 +10,8 @@ import type { LanguageModel } from 'ai';
 import { createGatewayOpenAIProvider } from './custom-openai-chat';
 import { getGatewayConfig } from './env';
 import { getProviderForModel } from './provider-map';
+import { getGPT5Fallback } from './gpt5-handler';
+import logger from '@/lib/utils/logger';
 import type {
   AnthropicModel,
   GeminiModel,
@@ -101,8 +103,9 @@ export function openproviders<T extends SupportedModel>(
     } = merged;
     const openaiSettings = rest as Record<string, unknown>;
 
-    // For GPT-5 models, use the Responses API format
+    // For GPT-5 models, use the Responses API format (with fallback handling)
     // According to the cookbook, we should use openai.responses() for GPT-5
+    // However, since GPT-5 isn't available yet, we handle fallback to GPT-4o
     const isGPT5Model = modelId.startsWith('gpt-5');
     const isReasoningModel = /^(o1|o3|o4)/.test(modelId);
 
@@ -218,11 +221,15 @@ export function openproviders<T extends SupportedModel>(
           ...providerOptions,
         });
         // For direct API, use the original modelId without provider prefix
-        const directModelId = modelId;
-
-        // For GPT-5 models, use responses API
+        let directModelId = modelId;
+        
+        // Handle GPT-5 models with fallback since they're not available yet
         if (isGPT5Model) {
-          return openaiProvider.responses(directModelId as OpenAIModel);
+          // GPT-5 isn't available yet, fallback to GPT-4o
+          directModelId = getGPT5Fallback(modelId);
+          logger.info(`GPT-5 model ${modelId} requested, using ${directModelId} as fallback`);
+          return openaiProvider(directModelId as OpenAIModel);
+          // When GPT-5 is available, use: return openaiProvider.responses(modelId as OpenAIModel);
         }
         return openaiProvider(directModelId as OpenAIModel);
       }
@@ -255,10 +262,15 @@ export function openproviders<T extends SupportedModel>(
           ...providerOptions,
         });
         // For direct API, use the original modelId without provider prefix
-        const directModelId = modelId;
-        return isGPT5Model
-          ? openaiProvider.responses(directModelId as OpenAIModel)
-          : openaiProvider(directModelId as OpenAIModel);
+        let directModelId = modelId;
+        
+        // Handle GPT-5 models with fallback
+        if (isGPT5Model) {
+          directModelId = getGPT5Fallback(modelId);
+          logger.info(`GPT-5 model ${modelId} requested, using ${directModelId} as fallback`);
+        }
+        
+        return openaiProvider(directModelId as OpenAIModel);
       }
     }
     if (gateway.enabled) {
@@ -282,12 +294,16 @@ export function openproviders<T extends SupportedModel>(
             })
           : createOpenAI({});
 
-      // For direct API, use openai.responses() for GPT-5 models as recommended in the cookbook
+      // For direct API, handle GPT-5 models with fallback
       // Use the original modelId without provider prefix for direct API
-      const directModelId = modelId;
-      return isGPT5Model
-        ? enhancedOpenAI.responses(directModelId as OpenAIModel)
-        : enhancedOpenAI(directModelId as OpenAIModel);
+      let directModelId = modelId;
+      
+      if (isGPT5Model) {
+        directModelId = getGPT5Fallback(modelId);
+        logger.info(`GPT-5 model ${modelId} requested, using ${directModelId} as fallback`);
+      }
+      
+      return enhancedOpenAI(directModelId as OpenAIModel);
     }
   }
 
