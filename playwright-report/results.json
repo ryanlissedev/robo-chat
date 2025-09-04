@@ -93,290 +93,281 @@
   },
   "suites": [
     {
-      "title": "chat-workflow.test.ts",
-      "file": "chat-workflow.test.ts",
+      "title": "test-mock-streaming.spec.ts",
+      "file": "test-mock-streaming.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Chat Workflow Integration",
-          "file": "chat-workflow.test.ts",
-          "line": 4,
+          "title": "Mock streaming page",
+          "file": "test-mock-streaming.spec.ts",
+          "line": 3,
           "column": 6,
-          "specs": [],
-          "suites": [
+          "specs": [
             {
-              "title": "Real-time Features",
-              "file": "chat-workflow.test.ts",
-              "line": 540,
-              "column": 8,
-              "specs": [
+              "title": "renders reasoning and assistant text via AI SDK v5 stream",
+              "ok": false,
+              "tags": [],
+              "tests": [
                 {
-                  "title": "should handle streaming responses correctly",
-                  "ok": false,
-                  "tags": [],
-                  "tests": [
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
                     {
-                      "timeout": 120000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [
-                        {
-                          "workerIndex": 0,
-                          "parallelIndex": 0,
-                          "status": "failed",
-                          "duration": 65176,
-                          "error": {
-                            "message": "TimeoutError: page.fill: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]')\u001b[22m\n",
-                            "stack": "TimeoutError: page.fill: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]')\u001b[22m\n\n    at /root/repo/tests/e2e/chat-workflow.test.ts:585:18",
-                            "location": {
-                              "file": "/root/repo/tests/e2e/chat-workflow.test.ts",
-                              "column": 18,
-                              "line": 585
-                            },
-                            "snippet": "  583 |       });\n  584 |\n> 585 |       await page.fill('[data-testid=\"chat-input\"]', 'Test streaming');\n      |                  ^\n  586 |       await page.click('[data-testid=\"send-button\"]');\n  587 |\n  588 |       // Wait for streaming to complete"
-                          },
-                          "errors": [
-                            {
-                              "location": {
-                                "file": "/root/repo/tests/e2e/chat-workflow.test.ts",
-                                "column": 18,
-                                "line": 585
-                              },
-                              "message": "TimeoutError: page.fill: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]')\u001b[22m\n\n\n  583 |       });\n  584 |\n> 585 |       await page.fill('[data-testid=\"chat-input\"]', 'Test streaming');\n      |                  ^\n  586 |       await page.click('[data-testid=\"send-button\"]');\n  587 |\n  588 |       // Wait for streaming to complete\n    at /root/repo/tests/e2e/chat-workflow.test.ts:585:18"
-                            }
-                          ],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 0,
-                          "startTime": "2025-09-04T11:09:21.638Z",
-                          "annotations": [],
-                          "attachments": [
-                            {
-                              "name": "screenshot",
-                              "contentType": "image/png",
-                              "path": "/root/repo/playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium/test-failed-1.png"
-                            },
-                            {
-                              "name": "video",
-                              "contentType": "video/webm",
-                              "path": "/root/repo/playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium/video.webm"
-                            },
-                            {
-                              "name": "error-context",
-                              "contentType": "text/markdown",
-                              "path": "/root/repo/playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium/error-context.md"
-                            }
-                          ],
-                          "errorLocation": {
-                            "file": "/root/repo/tests/e2e/chat-workflow.test.ts",
-                            "column": 18,
-                            "line": 585
-                          }
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 21829,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  getByText('Streaming...')\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Streaming...')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  getByText('Streaming...')\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Streaming...')\u001b[22m\n\n    at /root/repo/tests/e2e/test-mock-streaming.spec.ts:17:50",
+                        "location": {
+                          "file": "/root/repo/tests/e2e/test-mock-streaming.spec.ts",
+                          "column": 50,
+                          "line": 17
                         },
+                        "snippet": "  15 |\n  16 |     // While streaming, we should see a streaming indicator\n> 17 |     await expect(page.getByText('Streaming...')).toBeVisible();\n     |                                                  ^\n  18 |\n  19 |     // Reasoning deltas appear in a highlighted box\n  20 |     await expect(page.getByText('REASONING:')).toBeVisible();"
+                      },
+                      "errors": [
                         {
-                          "workerIndex": 2,
-                          "parallelIndex": 0,
-                          "status": "failed",
-                          "duration": 67248,
-                          "error": {
-                            "message": "TimeoutError: page.fill: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]')\u001b[22m\n",
-                            "stack": "TimeoutError: page.fill: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]')\u001b[22m\n\n    at /root/repo/tests/e2e/chat-workflow.test.ts:585:18",
-                            "location": {
-                              "file": "/root/repo/tests/e2e/chat-workflow.test.ts",
-                              "column": 18,
-                              "line": 585
-                            },
-                            "snippet": "  583 |       });\n  584 |\n> 585 |       await page.fill('[data-testid=\"chat-input\"]', 'Test streaming');\n      |                  ^\n  586 |       await page.click('[data-testid=\"send-button\"]');\n  587 |\n  588 |       // Wait for streaming to complete"
+                          "location": {
+                            "file": "/root/repo/tests/e2e/test-mock-streaming.spec.ts",
+                            "column": 50,
+                            "line": 17
                           },
-                          "errors": [
-                            {
-                              "location": {
-                                "file": "/root/repo/tests/e2e/chat-workflow.test.ts",
-                                "column": 18,
-                                "line": 585
-                              },
-                              "message": "TimeoutError: page.fill: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]')\u001b[22m\n\n\n  583 |       });\n  584 |\n> 585 |       await page.fill('[data-testid=\"chat-input\"]', 'Test streaming');\n      |                  ^\n  586 |       await page.click('[data-testid=\"send-button\"]');\n  587 |\n  588 |       // Wait for streaming to complete\n    at /root/repo/tests/e2e/chat-workflow.test.ts:585:18"
-                            }
-                          ],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 1,
-                          "startTime": "2025-09-04T11:10:28.915Z",
-                          "annotations": [],
-                          "attachments": [
-                            {
-                              "name": "screenshot",
-                              "contentType": "image/png",
-                              "path": "/root/repo/playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium-retry1/test-failed-1.png"
-                            },
-                            {
-                              "name": "video",
-                              "contentType": "video/webm",
-                              "path": "/root/repo/playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium-retry1/video.webm"
-                            },
-                            {
-                              "name": "error-context",
-                              "contentType": "text/markdown",
-                              "path": "/root/repo/playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium-retry1/error-context.md"
-                            },
-                            {
-                              "name": "trace",
-                              "contentType": "application/zip",
-                              "path": "/root/repo/playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium-retry1/trace.zip"
-                            }
-                          ],
-                          "errorLocation": {
-                            "file": "/root/repo/tests/e2e/chat-workflow.test.ts",
-                            "column": 18,
-                            "line": 585
-                          }
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  getByText('Streaming...')\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Streaming...')\u001b[22m\n\n\n  15 |\n  16 |     // While streaming, we should see a streaming indicator\n> 17 |     await expect(page.getByText('Streaming...')).toBeVisible();\n     |                                                  ^\n  18 |\n  19 |     // Reasoning deltas appear in a highlighted box\n  20 |     await expect(page.getByText('REASONING:')).toBeVisible();\n    at /root/repo/tests/e2e/test-mock-streaming.spec.ts:17:50"
                         }
                       ],
-                      "status": "unexpected"
-                    }
-                  ],
-                  "id": "3215f0c5cd891bc49ade-226dc3c8af201ce8e183",
-                  "file": "chat-workflow.test.ts",
-                  "line": 541,
-                  "column": 9
-                },
-                {
-                  "title": "should handle streaming responses correctly",
-                  "ok": false,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 120000,
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-09-04T12:21:47.611Z",
                       "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "Mobile Chrome",
-                      "projectName": "Mobile Chrome",
-                      "results": [
+                      "attachments": [
                         {
-                          "workerIndex": 1,
-                          "parallelIndex": 1,
-                          "status": "failed",
-                          "duration": 65569,
-                          "error": {
-                            "message": "TimeoutError: page.fill: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]')\u001b[22m\n",
-                            "stack": "TimeoutError: page.fill: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]')\u001b[22m\n\n    at /root/repo/tests/e2e/chat-workflow.test.ts:585:18",
-                            "location": {
-                              "file": "/root/repo/tests/e2e/chat-workflow.test.ts",
-                              "column": 18,
-                              "line": 585
-                            },
-                            "snippet": "  583 |       });\n  584 |\n> 585 |       await page.fill('[data-testid=\"chat-input\"]', 'Test streaming');\n      |                  ^\n  586 |       await page.click('[data-testid=\"send-button\"]');\n  587 |\n  588 |       // Wait for streaming to complete"
-                          },
-                          "errors": [
-                            {
-                              "location": {
-                                "file": "/root/repo/tests/e2e/chat-workflow.test.ts",
-                                "column": 18,
-                                "line": 585
-                              },
-                              "message": "TimeoutError: page.fill: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]')\u001b[22m\n\n\n  583 |       });\n  584 |\n> 585 |       await page.fill('[data-testid=\"chat-input\"]', 'Test streaming');\n      |                  ^\n  586 |       await page.click('[data-testid=\"send-button\"]');\n  587 |\n  588 |       // Wait for streaming to complete\n    at /root/repo/tests/e2e/chat-workflow.test.ts:585:18"
-                            }
-                          ],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 0,
-                          "startTime": "2025-09-04T11:09:21.641Z",
-                          "annotations": [],
-                          "attachments": [
-                            {
-                              "name": "screenshot",
-                              "contentType": "image/png",
-                              "path": "/root/repo/playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome/test-failed-1.png"
-                            },
-                            {
-                              "name": "video",
-                              "contentType": "video/webm",
-                              "path": "/root/repo/playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome/video.webm"
-                            },
-                            {
-                              "name": "error-context",
-                              "contentType": "text/markdown",
-                              "path": "/root/repo/playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome/error-context.md"
-                            }
-                          ],
-                          "errorLocation": {
-                            "file": "/root/repo/tests/e2e/chat-workflow.test.ts",
-                            "column": 18,
-                            "line": 585
-                          }
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/root/repo/playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium/test-failed-1.png"
                         },
                         {
-                          "workerIndex": 3,
-                          "parallelIndex": 1,
-                          "status": "failed",
-                          "duration": 67553,
-                          "error": {
-                            "message": "TimeoutError: page.fill: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]')\u001b[22m\n",
-                            "stack": "TimeoutError: page.fill: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]')\u001b[22m\n\n    at /root/repo/tests/e2e/chat-workflow.test.ts:585:18",
-                            "location": {
-                              "file": "/root/repo/tests/e2e/chat-workflow.test.ts",
-                              "column": 18,
-                              "line": 585
-                            },
-                            "snippet": "  583 |       });\n  584 |\n> 585 |       await page.fill('[data-testid=\"chat-input\"]', 'Test streaming');\n      |                  ^\n  586 |       await page.click('[data-testid=\"send-button\"]');\n  587 |\n  588 |       // Wait for streaming to complete"
-                          },
-                          "errors": [
-                            {
-                              "location": {
-                                "file": "/root/repo/tests/e2e/chat-workflow.test.ts",
-                                "column": 18,
-                                "line": 585
-                              },
-                              "message": "TimeoutError: page.fill: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"chat-input\"]')\u001b[22m\n\n\n  583 |       });\n  584 |\n> 585 |       await page.fill('[data-testid=\"chat-input\"]', 'Test streaming');\n      |                  ^\n  586 |       await page.click('[data-testid=\"send-button\"]');\n  587 |\n  588 |       // Wait for streaming to complete\n    at /root/repo/tests/e2e/chat-workflow.test.ts:585:18"
-                            }
-                          ],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 1,
-                          "startTime": "2025-09-04T11:10:28.957Z",
-                          "annotations": [],
-                          "attachments": [
-                            {
-                              "name": "screenshot",
-                              "contentType": "image/png",
-                              "path": "/root/repo/playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome-retry1/test-failed-1.png"
-                            },
-                            {
-                              "name": "video",
-                              "contentType": "video/webm",
-                              "path": "/root/repo/playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome-retry1/video.webm"
-                            },
-                            {
-                              "name": "error-context",
-                              "contentType": "text/markdown",
-                              "path": "/root/repo/playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome-retry1/error-context.md"
-                            },
-                            {
-                              "name": "trace",
-                              "contentType": "application/zip",
-                              "path": "/root/repo/playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome-retry1/trace.zip"
-                            }
-                          ],
-                          "errorLocation": {
-                            "file": "/root/repo/tests/e2e/chat-workflow.test.ts",
-                            "column": 18,
-                            "line": 585
-                          }
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/root/repo/playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/root/repo/playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium/error-context.md"
                         }
                       ],
-                      "status": "unexpected"
+                      "errorLocation": {
+                        "file": "/root/repo/tests/e2e/test-mock-streaming.spec.ts",
+                        "column": 50,
+                        "line": 17
+                      }
+                    },
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 19247,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  getByText('Streaming...')\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Streaming...')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  getByText('Streaming...')\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Streaming...')\u001b[22m\n\n    at /root/repo/tests/e2e/test-mock-streaming.spec.ts:17:50",
+                        "location": {
+                          "file": "/root/repo/tests/e2e/test-mock-streaming.spec.ts",
+                          "column": 50,
+                          "line": 17
+                        },
+                        "snippet": "  15 |\n  16 |     // While streaming, we should see a streaming indicator\n> 17 |     await expect(page.getByText('Streaming...')).toBeVisible();\n     |                                                  ^\n  18 |\n  19 |     // Reasoning deltas appear in a highlighted box\n  20 |     await expect(page.getByText('REASONING:')).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/root/repo/tests/e2e/test-mock-streaming.spec.ts",
+                            "column": 50,
+                            "line": 17
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  getByText('Streaming...')\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Streaming...')\u001b[22m\n\n\n  15 |\n  16 |     // While streaming, we should see a streaming indicator\n> 17 |     await expect(page.getByText('Streaming...')).toBeVisible();\n     |                                                  ^\n  18 |\n  19 |     // Reasoning deltas appear in a highlighted box\n  20 |     await expect(page.getByText('REASONING:')).toBeVisible();\n    at /root/repo/tests/e2e/test-mock-streaming.spec.ts:17:50"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-09-04T12:22:11.692Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/root/repo/playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium-retry1/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/root/repo/playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium-retry1/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/root/repo/playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium-retry1/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/root/repo/playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium-retry1/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/root/repo/tests/e2e/test-mock-streaming.spec.ts",
+                        "column": 50,
+                        "line": 17
+                      }
                     }
                   ],
-                  "id": "3215f0c5cd891bc49ade-5dc028b9c1c4e9d8fa09",
-                  "file": "chat-workflow.test.ts",
-                  "line": 541,
-                  "column": 9
+                  "status": "unexpected"
                 }
-              ]
+              ],
+              "id": "939144af5764878b776c-d4861e93cb404871500d",
+              "file": "test-mock-streaming.spec.ts",
+              "line": 4,
+              "column": 7
+            },
+            {
+              "title": "renders reasoning and assistant text via AI SDK v5 stream",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 23012,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  getByText('Streaming...')\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Streaming...')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  getByText('Streaming...')\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Streaming...')\u001b[22m\n\n    at /root/repo/tests/e2e/test-mock-streaming.spec.ts:17:50",
+                        "location": {
+                          "file": "/root/repo/tests/e2e/test-mock-streaming.spec.ts",
+                          "column": 50,
+                          "line": 17
+                        },
+                        "snippet": "  15 |\n  16 |     // While streaming, we should see a streaming indicator\n> 17 |     await expect(page.getByText('Streaming...')).toBeVisible();\n     |                                                  ^\n  18 |\n  19 |     // Reasoning deltas appear in a highlighted box\n  20 |     await expect(page.getByText('REASONING:')).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/root/repo/tests/e2e/test-mock-streaming.spec.ts",
+                            "column": 50,
+                            "line": 17
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  getByText('Streaming...')\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Streaming...')\u001b[22m\n\n\n  15 |\n  16 |     // While streaming, we should see a streaming indicator\n> 17 |     await expect(page.getByText('Streaming...')).toBeVisible();\n     |                                                  ^\n  18 |\n  19 |     // Reasoning deltas appear in a highlighted box\n  20 |     await expect(page.getByText('REASONING:')).toBeVisible();\n    at /root/repo/tests/e2e/test-mock-streaming.spec.ts:17:50"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-09-04T12:21:47.540Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/root/repo/playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/root/repo/playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/root/repo/playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/root/repo/tests/e2e/test-mock-streaming.spec.ts",
+                        "column": 50,
+                        "line": 17
+                      }
+                    },
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 22689,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  getByText('Streaming...')\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Streaming...')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  getByText('Streaming...')\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Streaming...')\u001b[22m\n\n    at /root/repo/tests/e2e/test-mock-streaming.spec.ts:17:50",
+                        "location": {
+                          "file": "/root/repo/tests/e2e/test-mock-streaming.spec.ts",
+                          "column": 50,
+                          "line": 17
+                        },
+                        "snippet": "  15 |\n  16 |     // While streaming, we should see a streaming indicator\n> 17 |     await expect(page.getByText('Streaming...')).toBeVisible();\n     |                                                  ^\n  18 |\n  19 |     // Reasoning deltas appear in a highlighted box\n  20 |     await expect(page.getByText('REASONING:')).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/root/repo/tests/e2e/test-mock-streaming.spec.ts",
+                            "column": 50,
+                            "line": 17
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  getByText('Streaming...')\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Streaming...')\u001b[22m\n\n\n  15 |\n  16 |     // While streaming, we should see a streaming indicator\n> 17 |     await expect(page.getByText('Streaming...')).toBeVisible();\n     |                                                  ^\n  18 |\n  19 |     // Reasoning deltas appear in a highlighted box\n  20 |     await expect(page.getByText('REASONING:')).toBeVisible();\n    at /root/repo/tests/e2e/test-mock-streaming.spec.ts:17:50"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-09-04T12:22:12.346Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/root/repo/playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome-retry1/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/root/repo/playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome-retry1/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/root/repo/playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome-retry1/error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/root/repo/playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome-retry1/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/root/repo/tests/e2e/test-mock-streaming.spec.ts",
+                        "column": 50,
+                        "line": 17
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "939144af5764878b776c-a5bc26f3bb21ab8b9a25",
+              "file": "test-mock-streaming.spec.ts",
+              "line": 4,
+              "column": 7
             }
           ]
         }
@@ -385,8 +376,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-09-04T11:07:31.725Z",
-    "duration": 246379.357,
+    "startTime": "2025-09-04T12:19:54.938Z",
+    "duration": 160967.257,
     "expected": 0,
     "skipped": 0,
     "unexpected": 2,

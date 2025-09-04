@@ -1,166 +1,194 @@
-<testsuites id="" name="" tests="2" failures="2" skipped="0" errors="0" time="246.379357">
-<testsuite name="chat-workflow.test.ts" timestamp="2025-09-04T11:09:20.246Z" hostname="chromium" tests="1" failures="1" skipped="0" time="132.424" errors="0">
-<testcase name="Chat Workflow Integration › Real-time Features › should handle streaming responses correctly" classname="chat-workflow.test.ts" time="132.424">
-<failure message="chat-workflow.test.ts:541:9 should handle streaming responses correctly" type="FAILURE">
-<![CDATA[  [chromium] › chat-workflow.test.ts:541:9 › Chat Workflow Integration › Real-time Features › should handle streaming responses correctly 
+<testsuites id="" name="" tests="2" failures="2" skipped="0" errors="0" time="160.96725700000002">
+<testsuite name="test-mock-streaming.spec.ts" timestamp="2025-09-04T12:21:46.125Z" hostname="chromium" tests="1" failures="1" skipped="0" time="41.076" errors="0">
+<testcase name="Mock streaming page › renders reasoning and assistant text via AI SDK v5 stream" classname="test-mock-streaming.spec.ts" time="41.076">
+<failure message="test-mock-streaming.spec.ts:4:7 renders reasoning and assistant text via AI SDK v5 stream" type="FAILURE">
+<![CDATA[  [chromium] › test-mock-streaming.spec.ts:4:7 › Mock streaming page › renders reasoning and assistant text via AI SDK v5 stream 
 
-    TimeoutError: page.fill: Timeout 45000ms exceeded.
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  getByText('Streaming...')
+    Expected: visible
+    Received: <element(s) not found>
+    Timeout:  15000ms
+
     Call log:
-      - waiting for locator('[data-testid="chat-input"]')
+      - Expect "toBeVisible" with timeout 15000ms
+      - waiting for getByText('Streaming...')
 
 
-      583 |       });
-      584 |
-    > 585 |       await page.fill('[data-testid="chat-input"]', 'Test streaming');
-          |                  ^
-      586 |       await page.click('[data-testid="send-button"]');
-      587 |
-      588 |       // Wait for streaming to complete
-        at /root/repo/tests/e2e/chat-workflow.test.ts:585:18
+      15 |
+      16 |     // While streaming, we should see a streaming indicator
+    > 17 |     await expect(page.getByText('Streaming...')).toBeVisible();
+         |                                                  ^
+      18 |
+      19 |     // Reasoning deltas appear in a highlighted box
+      20 |     await expect(page.getByText('REASONING:')).toBeVisible();
+        at /root/repo/tests/e2e/test-mock-streaming.spec.ts:17:50
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium/test-failed-1.png
+    ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium/test-failed-1.png
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium/video.webm
+    ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium/video.webm
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    Error Context: ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium/error-context.md
+    Error Context: ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium/error-context.md
 
     Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
 
-    TimeoutError: page.fill: Timeout 45000ms exceeded.
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  getByText('Streaming...')
+    Expected: visible
+    Received: <element(s) not found>
+    Timeout:  15000ms
+
     Call log:
-      - waiting for locator('[data-testid="chat-input"]')
+      - Expect "toBeVisible" with timeout 15000ms
+      - waiting for getByText('Streaming...')
 
 
-      583 |       });
-      584 |
-    > 585 |       await page.fill('[data-testid="chat-input"]', 'Test streaming');
-          |                  ^
-      586 |       await page.click('[data-testid="send-button"]');
-      587 |
-      588 |       // Wait for streaming to complete
-        at /root/repo/tests/e2e/chat-workflow.test.ts:585:18
+      15 |
+      16 |     // While streaming, we should see a streaming indicator
+    > 17 |     await expect(page.getByText('Streaming...')).toBeVisible();
+         |                                                  ^
+      18 |
+      19 |     // Reasoning deltas appear in a highlighted box
+      20 |     await expect(page.getByText('REASONING:')).toBeVisible();
+        at /root/repo/tests/e2e/test-mock-streaming.spec.ts:17:50
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium-retry1/test-failed-1.png
+    ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium-retry1/test-failed-1.png
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium-retry1/video.webm
+    ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium-retry1/video.webm
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    Error Context: ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium-retry1/error-context.md
+    Error Context: ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium-retry1/error-context.md
 
     attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
-    ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium-retry1/trace.zip
+    ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium-retry1/trace.zip
     Usage:
 
-        pnpm exec playwright show-trace ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium-retry1/trace.zip
+        pnpm exec playwright show-trace ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium-retry1/trace.zip
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 ]]>
 </failure>
 <system-out>
 <![CDATA[
-[[ATTACHMENT|../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium/test-failed-1.png]]
+[[ATTACHMENT|../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium/test-failed-1.png]]
 
-[[ATTACHMENT|../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium/video.webm]]
+[[ATTACHMENT|../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium/video.webm]]
 
-[[ATTACHMENT|../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium/error-context.md]]
+[[ATTACHMENT|../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium/error-context.md]]
 
-[[ATTACHMENT|../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium-retry1/test-failed-1.png]]
+[[ATTACHMENT|../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium-retry1/test-failed-1.png]]
 
-[[ATTACHMENT|../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium-retry1/video.webm]]
+[[ATTACHMENT|../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium-retry1/video.webm]]
 
-[[ATTACHMENT|../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium-retry1/error-context.md]]
+[[ATTACHMENT|../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium-retry1/error-context.md]]
 
-[[ATTACHMENT|../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-chromium-retry1/trace.zip]]
+[[ATTACHMENT|../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-chromium-retry1/trace.zip]]
 ]]>
 </system-out>
 </testcase>
 </testsuite>
-<testsuite name="chat-workflow.test.ts" timestamp="2025-09-04T11:09:20.246Z" hostname="Mobile Chrome" tests="1" failures="1" skipped="0" time="133.122" errors="0">
-<testcase name="Chat Workflow Integration › Real-time Features › should handle streaming responses correctly" classname="chat-workflow.test.ts" time="133.122">
-<failure message="chat-workflow.test.ts:541:9 should handle streaming responses correctly" type="FAILURE">
-<![CDATA[  [Mobile Chrome] › chat-workflow.test.ts:541:9 › Chat Workflow Integration › Real-time Features › should handle streaming responses correctly 
+<testsuite name="test-mock-streaming.spec.ts" timestamp="2025-09-04T12:21:46.125Z" hostname="Mobile Chrome" tests="1" failures="1" skipped="0" time="45.701" errors="0">
+<testcase name="Mock streaming page › renders reasoning and assistant text via AI SDK v5 stream" classname="test-mock-streaming.spec.ts" time="45.701">
+<failure message="test-mock-streaming.spec.ts:4:7 renders reasoning and assistant text via AI SDK v5 stream" type="FAILURE">
+<![CDATA[  [Mobile Chrome] › test-mock-streaming.spec.ts:4:7 › Mock streaming page › renders reasoning and assistant text via AI SDK v5 stream 
 
-    TimeoutError: page.fill: Timeout 45000ms exceeded.
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  getByText('Streaming...')
+    Expected: visible
+    Received: <element(s) not found>
+    Timeout:  15000ms
+
     Call log:
-      - waiting for locator('[data-testid="chat-input"]')
+      - Expect "toBeVisible" with timeout 15000ms
+      - waiting for getByText('Streaming...')
 
 
-      583 |       });
-      584 |
-    > 585 |       await page.fill('[data-testid="chat-input"]', 'Test streaming');
-          |                  ^
-      586 |       await page.click('[data-testid="send-button"]');
-      587 |
-      588 |       // Wait for streaming to complete
-        at /root/repo/tests/e2e/chat-workflow.test.ts:585:18
+      15 |
+      16 |     // While streaming, we should see a streaming indicator
+    > 17 |     await expect(page.getByText('Streaming...')).toBeVisible();
+         |                                                  ^
+      18 |
+      19 |     // Reasoning deltas appear in a highlighted box
+      20 |     await expect(page.getByText('REASONING:')).toBeVisible();
+        at /root/repo/tests/e2e/test-mock-streaming.spec.ts:17:50
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome/test-failed-1.png
+    ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome/test-failed-1.png
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome/video.webm
+    ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome/video.webm
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    Error Context: ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome/error-context.md
+    Error Context: ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome/error-context.md
 
     Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
 
-    TimeoutError: page.fill: Timeout 45000ms exceeded.
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  getByText('Streaming...')
+    Expected: visible
+    Received: <element(s) not found>
+    Timeout:  15000ms
+
     Call log:
-      - waiting for locator('[data-testid="chat-input"]')
+      - Expect "toBeVisible" with timeout 15000ms
+      - waiting for getByText('Streaming...')
 
 
-      583 |       });
-      584 |
-    > 585 |       await page.fill('[data-testid="chat-input"]', 'Test streaming');
-          |                  ^
-      586 |       await page.click('[data-testid="send-button"]');
-      587 |
-      588 |       // Wait for streaming to complete
-        at /root/repo/tests/e2e/chat-workflow.test.ts:585:18
+      15 |
+      16 |     // While streaming, we should see a streaming indicator
+    > 17 |     await expect(page.getByText('Streaming...')).toBeVisible();
+         |                                                  ^
+      18 |
+      19 |     // Reasoning deltas appear in a highlighted box
+      20 |     await expect(page.getByText('REASONING:')).toBeVisible();
+        at /root/repo/tests/e2e/test-mock-streaming.spec.ts:17:50
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome-retry1/test-failed-1.png
+    ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome-retry1/test-failed-1.png
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome-retry1/video.webm
+    ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome-retry1/video.webm
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    Error Context: ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome-retry1/error-context.md
+    Error Context: ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome-retry1/error-context.md
 
     attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
-    ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome-retry1/trace.zip
+    ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome-retry1/trace.zip
     Usage:
 
-        pnpm exec playwright show-trace ../../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome-retry1/trace.zip
+        pnpm exec playwright show-trace ../../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome-retry1/trace.zip
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 ]]>
 </failure>
 <system-out>
 <![CDATA[
-[[ATTACHMENT|../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome/test-failed-1.png]]
+[[ATTACHMENT|../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome/test-failed-1.png]]
 
-[[ATTACHMENT|../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome/video.webm]]
+[[ATTACHMENT|../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome/video.webm]]
 
-[[ATTACHMENT|../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome/error-context.md]]
+[[ATTACHMENT|../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome/error-context.md]]
 
-[[ATTACHMENT|../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome-retry1/test-failed-1.png]]
+[[ATTACHMENT|../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome-retry1/test-failed-1.png]]
 
-[[ATTACHMENT|../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome-retry1/video.webm]]
+[[ATTACHMENT|../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome-retry1/video.webm]]
 
-[[ATTACHMENT|../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome-retry1/error-context.md]]
+[[ATTACHMENT|../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome-retry1/error-context.md]]
 
-[[ATTACHMENT|../playwright-test-results/chat-workflow-Chat-Workflo-13188-reaming-responses-correctly-Mobile-Chrome-retry1/trace.zip]]
+[[ATTACHMENT|../playwright-test-results/test-mock-streaming-Mock-s-0a3d6-t-text-via-AI-SDK-v5-stream-Mobile-Chrome-retry1/trace.zip]]
 ]]>
 </system-out>
 </testcase>
