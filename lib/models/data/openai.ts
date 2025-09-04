@@ -17,7 +17,7 @@ const openaiModels: ModelConfig[] = [
     tags: ['flagship', 'multimodal', 'reasoning', 'default'],
     reasoningText: true,
     contextWindow: 128_000,
-    inputCost: 2.5,
+    inputCost: 1.25,
     outputCost: 10,
     priceUnit: 'per 1M tokens',
     vision: true,
@@ -33,6 +33,72 @@ const openaiModels: ModelConfig[] = [
     apiSdk: (apiKey?: string, opts?: unknown) => {
       const settings = opts as ModelSettings;
       return openproviders('gpt-5', settings as OpenProvidersOptions, apiKey);
+    },
+  },
+  {
+    id: 'gpt-5-mini',
+    name: 'GPT-5 Mini',
+    provider: 'OpenAI',
+    providerId: 'openai',
+    modelFamily: 'GPT-5',
+    baseProviderId: 'openai',
+    description: 'Fast, cost-effective GPT-5 variant for efficient tasks. Default model for most use cases',
+    tags: ['efficient', 'balanced', 'default', 'cost-effective'],
+    reasoningText: true,
+    contextWindow: 128_000,
+    inputCost: 0.25,
+    outputCost: 2,
+    priceUnit: 'per 1M tokens',
+    vision: true,
+    tools: true,
+    fileSearchTools: true,
+    audio: true,
+    openSource: false,
+    speed: 'Fast',
+    website: 'https://openai.com',
+    apiDocs: 'https://platform.openai.com/docs/models/gpt-5-mini',
+    modelPage: 'https://platform.openai.com/docs/models/gpt-5-mini',
+    icon: 'openai',
+    apiSdk: (apiKey?: string, opts?: unknown) => {
+      const settings = opts as ModelSettings;
+      return openproviders(
+        'gpt-5-mini',
+        settings as OpenProvidersOptions,
+        apiKey
+      );
+    },
+  },
+  {
+    id: 'gpt-5-nano',
+    name: 'GPT-5 Nano',
+    provider: 'OpenAI',
+    providerId: 'openai',
+    modelFamily: 'GPT-5',
+    baseProviderId: 'openai',
+    description: 'Ultra-fast, lightweight GPT-5 for simple tasks and high-volume applications',
+    tags: ['fast', 'lightweight', 'cheap', 'high-volume'],
+    reasoningText: true,
+    contextWindow: 128_000,
+    inputCost: 0.05,
+    outputCost: 0.40,
+    priceUnit: 'per 1M tokens',
+    vision: true,
+    tools: true,
+    fileSearchTools: true,
+    audio: false,
+    openSource: false,
+    speed: 'Very Fast',
+    website: 'https://openai.com',
+    apiDocs: 'https://platform.openai.com/docs/models/gpt-5-nano',
+    modelPage: 'https://platform.openai.com/docs/models/gpt-5-nano',
+    icon: 'openai',
+    apiSdk: (apiKey?: string, opts?: unknown) => {
+      const settings = opts as ModelSettings;
+      return openproviders(
+        'gpt-5-nano',
+        settings as OpenProvidersOptions,
+        apiKey
+      );
     },
   },
   {
