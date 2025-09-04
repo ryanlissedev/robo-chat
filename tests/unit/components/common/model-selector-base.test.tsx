@@ -708,10 +708,14 @@ describe('ModelSelector', () => {
     // Should show filtered results - GPT Model should be visible, Claude Model should not
     await waitFor(() => {
       // GPT Model should be visible
-      expect(screen.getByLabelText('Select model GPT Model')).toBeInTheDocument();
+      expect(
+        screen.getByLabelText('Select model GPT Model')
+      ).toBeInTheDocument();
 
       // Claude Model should be filtered out - use queryByLabelText which returns null if not found
-      expect(screen.queryByLabelText('Select model Claude Model')).not.toBeInTheDocument();
+      expect(
+        screen.queryByLabelText('Select model Claude Model')
+      ).not.toBeInTheDocument();
     });
 
     // Restore original implementation to prevent test pollution
@@ -958,7 +962,9 @@ describe('ModelSelector', () => {
     // Wait for Guest Model to appear
     await waitFor(
       () => {
-        const guestModelButton = screen.getByLabelText('Select model Guest Model');
+        const guestModelButton = screen.getByLabelText(
+          'Select model Guest Model'
+        );
         expect(guestModelButton).toBeInTheDocument();
       },
       { timeout: 3000 }
@@ -967,7 +973,9 @@ describe('ModelSelector', () => {
     // Then wait for Guest BYOK badge to appear
     await waitFor(
       () => {
-        const guestModelButton = screen.getByLabelText('Select model Guest Model');
+        const guestModelButton = screen.getByLabelText(
+          'Select model Guest Model'
+        );
         const buttonContainer = guestModelButton.closest('button');
         expect(buttonContainer).toHaveTextContent('Guest BYOK');
       },

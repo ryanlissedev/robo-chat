@@ -7,7 +7,11 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { model, messages } = await request.json();
+    const body = (await request.json()) as {
+      model: string;
+      messages: Array<{ role: string; content: string }>;
+    };
+    const { model, messages } = body;
 
     // Validate GPT-5 model
     const gpt5Models = ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5-pro'];
@@ -20,11 +24,29 @@ export async function POST(request: Request) {
 
     // Get the last user message
     const userMessage =
-      messages?.find((m: unknown) => (m as { role: string }).role === 'user')
-        ?.content || '';
+      messages?.find((m) => m.role === 'user')?.content || 'No user message';
 
     // Create mock response based on model
-    const mockResponses: Record<string, unknown> = {
+    interface MockResponse {
+      model: string;
+      message: string;
+      content: string;
+      features: {
+        reasoning: boolean;
+        vision: boolean;
+        tools: boolean;
+        fileSearch: boolean;
+        audio: boolean;
+      };
+      pricing: { input: number; output: number; unit: string };
+      stats: {
+        speed: string;
+        contextWindow: number;
+        responseTime: string;
+      };
+    }
+
+    const mockResponses: Record<string, MockResponse> = {
       'gpt-5-mini': {
         model: 'gpt-5-mini',
         message: 'Response from GPT-5 Mini (Fast & Efficient)',

@@ -4,6 +4,13 @@ import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useState } from 'react';
 import { getMessageContent } from '@/app/types/ai-extended';
+import {
+  generatePartKey,
+  isReasoningPart,
+  isTextPart,
+  type MessagePart,
+  type TypedMessage,
+} from '@/app/types/message-parts';
 
 export default function TestMock() {
   const [input, setInput] = useState('');
@@ -30,14 +37,10 @@ export default function TestMock() {
         {messages.map((message, _idx) => {
           const content = getMessageContent(message as any);
 
-          // Extract reasoning parts
-          const reasoningParts =
-            message.parts?.filter((part: any) => part.type === 'reasoning') ||
-            [];
-
-          // Extract text parts
-          const textParts =
-            message.parts?.filter((part: any) => part.type === 'text') || [];
+          // Extract reasoning and text parts using type-safe utilities
+          const messageParts = (message.parts as MessagePart[]) || [];
+          const reasoningParts = messageParts.filter(isReasoningPart);
+          const textParts = messageParts.filter(isTextPart);
 
           return (
             <div key={message.id} className="mb-4 p-3 border rounded">
@@ -52,8 +55,8 @@ export default function TestMock() {
                     REASONING:
                   </div>
                   <div className="text-sm text-yellow-700">
-                    {reasoningParts.map((part: any, i: number) => (
-                      <span key={i}>{part.text || part.delta || ''}</span>
+                    {reasoningParts.map((part, i) => (
+                      <span key={generatePartKey(part, i)}>{part.text}</span>
                     ))}
                   </div>
                 </div>
@@ -67,8 +70,8 @@ export default function TestMock() {
                   </div>
                 ) : textParts.length > 0 ? (
                   <div className="text-black whitespace-pre-wrap">
-                    {textParts.map((part: any, i: number) => (
-                      <span key={i}>{part.text || part.delta || ''}</span>
+                    {textParts.map((part, i) => (
+                      <span key={generatePartKey(part, i)}>{part.text}</span>
                     ))}
                   </div>
                 ) : (
@@ -82,8 +85,11 @@ export default function TestMock() {
               {message.parts && message.parts.length > 0 && (
                 <div className="text-xs text-gray-600 mb-2">
                   Parts:{' '}
-                  {message.parts.map((part: any, i: number) => (
-                    <span key={i} className="mr-2 px-1 bg-gray-100 rounded">
+                  {messageParts.map((part, i) => (
+                    <span
+                      key={generatePartKey(part, i)}
+                      className="mr-2 px-1 bg-gray-100 rounded"
+                    >
                       {part.type}
                     </span>
                   ))}

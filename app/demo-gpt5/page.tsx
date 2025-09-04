@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 interface ModelInfo {
   id: string;
@@ -58,7 +58,12 @@ export default function DemoGPT5() {
   const [input, setInput] = useState('');
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
-  const [modelStats, setModelStats] = useState<any>(null);
+  const [modelStats, setModelStats] = useState<Record<string, unknown> | null>(
+    null
+  );
+
+  const inputId = useId();
+  const descriptionId = useId();
 
   const testModel = async () => {
     if (!input.trim()) return;
@@ -102,15 +107,13 @@ export default function DemoGPT5() {
                 } else if (parsed.type === 'model-info') {
                   setModelStats(parsed.data);
                 }
-              } catch (_e) {
-                // Skip invalid JSON
-              }
+              } catch (_parseError) {}
             }
           }
         }
       }
     } catch (_error) {
-      setResponse('Error testing model');
+      setResponse('Error testing model. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -131,14 +134,17 @@ export default function DemoGPT5() {
           <h2 className="text-xl font-semibold mb-4">Select a Model</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {gpt5Models.map((model) => (
-              <div
+              <button
                 key={model.id}
+                type="button"
                 onClick={() => setSelectedModel(model.id)}
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                className={`p-4 rounded-lg border-2 cursor-pointer transition-all text-left w-full ${
                   selectedModel === model.id
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
+                aria-pressed={selectedModel === model.id}
+                aria-label={`Select ${model.name} model`}
               >
                 <h3 className="font-semibold">{model.name}</h3>
                 {model.id === 'gpt-5-mini' && (
@@ -154,7 +160,7 @@ export default function DemoGPT5() {
                 <p className="text-xs text-gray-500 mt-1">
                   Speed: {model.speed}
                 </p>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -188,7 +194,11 @@ export default function DemoGPT5() {
           </h2>
 
           <div className="mb-4">
+            <label htmlFor={inputId} className="sr-only">
+              Enter your test message for GPT-5
+            </label>
             <input
+              id={inputId}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -196,10 +206,15 @@ export default function DemoGPT5() {
               placeholder="Enter your message..."
               className="w-full p-3 border rounded-lg"
               disabled={loading}
+              aria-describedby={descriptionId}
             />
+            <div id={descriptionId} className="sr-only">
+              Type a message to test the selected GPT-5 model
+            </div>
           </div>
 
           <button
+            type="button"
             onClick={testModel}
             disabled={loading || !input.trim()}
             className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300"
@@ -220,13 +235,13 @@ export default function DemoGPT5() {
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
               <h3 className="font-semibold mb-2">Model Information:</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>Model: {modelStats.model}</div>
-                <div>Speed: {modelStats.stats?.speed}</div>
+                <div>Model: {String(modelStats.model)}</div>
+                <div>Speed: {(modelStats as any)?.stats?.speed || 'N/A'}</div>
                 <div>
-                  Context: {modelStats.stats?.contextWindow?.toLocaleString()}{' '}
+                  Context: {(modelStats as any)?.stats?.contextWindow?.toLocaleString() || 'N/A'}{' '}
                   tokens
                 </div>
-                <div>Response Time: {modelStats.stats?.responseTime}</div>
+                <div>Response Time: {(modelStats as any)?.stats?.responseTime || 'N/A'}</div>
               </div>
             </div>
           )}

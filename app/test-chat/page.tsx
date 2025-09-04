@@ -3,6 +3,13 @@
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useState } from 'react';
+import {
+  generatePartKey,
+  isReasoningPart,
+  isTextPart,
+  type MessagePart,
+  type TypedMessage,
+} from '@/app/types/message-parts';
 
 export default function TestChat() {
   const [input, setInput] = useState('');
@@ -34,25 +41,31 @@ export default function TestChat() {
 
             {/* Show content if it exists (v4 compatibility) */}
             {'content' in message &&
-              typeof (message as any).content === 'string' && (
-                <div>Content (string): {(message as any).content}</div>
+              typeof (message as TypedMessage).content === 'string' && (
+                <div>Content (string): {(message as TypedMessage).content}</div>
               )}
 
             {/* Show parts if they exist */}
             {message.parts && message.parts.length > 0 && (
               <div>
                 Parts:
-                {message.parts.map((part, i) => (
-                  <div key={i} className="ml-4">
-                    {part.type === 'text' && <span>Text: {part.text}</span>}
-                    {part.type === 'reasoning' && (
-                      <span>Reasoning: {part.text}</span>
-                    )}
-                    {part.type !== 'text' && part.type !== 'reasoning' && (
-                      <span>Type: {part.type}</span>
-                    )}
-                  </div>
-                ))}
+                {message.parts.map((part, i) => {
+                  const typedPart = part as MessagePart;
+                  return (
+                    <div key={generatePartKey(typedPart, i)} className="ml-4">
+                      {isTextPart(typedPart) && (
+                        <span>Text: {typedPart.text}</span>
+                      )}
+                      {isReasoningPart(typedPart) && (
+                        <span>Reasoning: {typedPart.text}</span>
+                      )}
+                      {!isTextPart(typedPart) &&
+                        !isReasoningPart(typedPart) && (
+                          <span>Type: {typedPart.type}</span>
+                        )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

@@ -1,12 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // Simple test to verify GPT-5 detection logic without complex mocking
 describe('GPT-5 API Behavior Tests', () => {
-  
   describe('GPT-5 Model Detection', () => {
     it('should correctly identify GPT-5 models for responses API routing', () => {
       const isGPT5Model = (modelId: string) => modelId.startsWith('gpt-5');
-      
+
       // Test cases based on actual implementation
       const testCases = [
         // GPT-5 models that should use responses API
@@ -14,7 +13,7 @@ describe('GPT-5 API Behavior Tests', () => {
         { model: 'gpt-5-mini', expected: true },
         { model: 'gpt-5-nano', expected: true },
         { model: 'gpt-5-pro', expected: true },
-        
+
         // Non-GPT-5 models that should use regular API
         { model: 'gpt-4', expected: false },
         { model: 'gpt-4o', expected: false },
@@ -35,14 +34,14 @@ describe('GPT-5 API Behavior Tests', () => {
 
     it('should handle edge cases in model detection', () => {
       const isGPT5Model = (modelId: string) => modelId.startsWith('gpt-5');
-      
+
       const edgeCases = [
-        { model: 'gpt-50', expected: true },   // Actually starts with gpt-5
-        { model: 'gpt-5.1', expected: true },  // Future version
-        { model: 'gpt-5-', expected: true },   // Incomplete but still GPT-5
-        { model: 'GPT-5', expected: false },   // Case sensitive
+        { model: 'gpt-50', expected: true }, // Actually starts with gpt-5
+        { model: 'gpt-5.1', expected: true }, // Future version
+        { model: 'gpt-5-', expected: true }, // Incomplete but still GPT-5
+        { model: 'GPT-5', expected: false }, // Case sensitive
         { model: 'openai/gpt-5', expected: false }, // Provider prefixed
-        { model: '', expected: false },        // Empty string
+        { model: '', expected: false }, // Empty string
         { model: 'gpt-4-5', expected: false }, // Contains 5 but not gpt-5
       ];
 
@@ -56,7 +55,7 @@ describe('GPT-5 API Behavior Tests', () => {
   describe('Reasoning Model Detection', () => {
     it('should correctly identify reasoning models for beta headers', () => {
       const isReasoningModel = (modelId: string) => /^(o1|o3|o4)/.test(modelId);
-      
+
       const testCases = [
         // Reasoning models that need beta headers
         { model: 'o1', expected: true },
@@ -65,7 +64,7 @@ describe('GPT-5 API Behavior Tests', () => {
         { model: 'o3', expected: true },
         { model: 'o3-mini', expected: true },
         { model: 'o4-mini', expected: true },
-        
+
         // Non-reasoning models
         { model: 'gpt-5', expected: false },
         { model: 'gpt-5-mini', expected: false },
@@ -85,7 +84,7 @@ describe('GPT-5 API Behavior Tests', () => {
       const getAPIRoute = (modelId: string) => {
         const isGPT5 = modelId.startsWith('gpt-5');
         const isReasoning = /^(o1|o3|o4)/.test(modelId);
-        
+
         if (isGPT5) return 'responses';
         if (isReasoning) return 'chat_with_beta_headers';
         return 'chat';
@@ -113,7 +112,7 @@ describe('GPT-5 API Behavior Tests', () => {
     it('should configure GPT-5 specific options', () => {
       const configureGPT5Options = (modelId: string, options: any = {}) => {
         const isGPT5 = modelId.startsWith('gpt-5');
-        
+
         if (!isGPT5) return options;
 
         return {
@@ -124,7 +123,9 @@ describe('GPT-5 API Behavior Tests', () => {
             serviceTier: options.serviceTier || 'auto',
             parallelToolCalls: options.parallelToolCalls ?? true,
             store: options.store ?? false,
-            ...(options.reasoningEffort ? { reasoningEffort: options.reasoningEffort } : {}),
+            ...(options.reasoningEffort
+              ? { reasoningEffort: options.reasoningEffort }
+              : {}),
             ...(typeof options.openai === 'object' ? options.openai : {}),
           },
         };
@@ -162,8 +163,8 @@ describe('GPT-5 API Behavior Tests', () => {
       const configureHeaders = (modelId: string, options: any = {}) => {
         const isGPT5 = modelId.startsWith('gpt-5');
         const isReasoning = /^(o1|o3|o4)/.test(modelId);
-        
-        let headers: Record<string, string> = { ...options.headers };
+
+        const headers: Record<string, string> = { ...options.headers };
 
         if (isGPT5) {
           if (options.reasoningEffort) {
@@ -202,22 +203,26 @@ describe('GPT-5 API Behavior Tests', () => {
 
       // Test regular model headers
       const gpt4Headers = configureHeaders('gpt-4', {
-        headers: { 'Authorization': 'Bearer test' },
+        headers: { Authorization: 'Bearer test' },
       });
       expect(gpt4Headers).toEqual({
-        'Authorization': 'Bearer test',
+        Authorization: 'Bearer test',
       });
     });
   });
 
   describe('Gateway Behavior', () => {
     it('should determine gateway usage correctly', () => {
-      const shouldUseGateway = (modelId: string, gatewayEnabled: boolean, allowGPT5Gateway: boolean = false) => {
+      const shouldUseGateway = (
+        modelId: string,
+        gatewayEnabled: boolean,
+        allowGPT5Gateway: boolean = false
+      ) => {
         const isGPT5 = modelId.startsWith('gpt-5');
-        
+
         if (!gatewayEnabled) return false;
         if (isGPT5 && !allowGPT5Gateway) return false;
-        
+
         return true;
       };
 
@@ -226,11 +231,11 @@ describe('GPT-5 API Behavior Tests', () => {
         // Gateway disabled
         { model: 'gpt-5', gateway: false, allowGPT5: false, expected: false },
         { model: 'gpt-4', gateway: false, allowGPT5: false, expected: false },
-        
+
         // Gateway enabled, GPT-5 override disabled (default)
         { model: 'gpt-5', gateway: true, allowGPT5: false, expected: false },
         { model: 'gpt-4', gateway: true, allowGPT5: false, expected: true },
-        
+
         // Gateway enabled, GPT-5 override enabled
         { model: 'gpt-5', gateway: true, allowGPT5: true, expected: true },
         { model: 'gpt-4', gateway: true, allowGPT5: true, expected: true },
@@ -249,11 +254,15 @@ describe('GPT-5 API Behavior Tests', () => {
       const validateGPT5Workflow = (modelId: string) => {
         const isGPT5 = modelId.startsWith('gpt-5');
         const isReasoning = /^(o1|o3|o4)/.test(modelId);
-        
+
         return {
           isGPT5,
           isReasoning,
-          apiRoute: isGPT5 ? 'responses' : isReasoning ? 'chat_with_beta' : 'chat',
+          apiRoute: isGPT5
+            ? 'responses'
+            : isReasoning
+              ? 'chat_with_beta'
+              : 'chat',
           requiresSpecialHandling: isGPT5 || isReasoning,
           contextWindow: isGPT5 ? 128_000 : 8_192,
           hasReasoningCapabilities: isGPT5 || isReasoning,
@@ -261,7 +270,7 @@ describe('GPT-5 API Behavior Tests', () => {
       };
 
       const workflow = validateGPT5Workflow('gpt-5-mini');
-      
+
       expect(workflow.isGPT5).toBe(true);
       expect(workflow.isReasoning).toBe(false);
       expect(workflow.apiRoute).toBe('responses');
@@ -274,10 +283,10 @@ describe('GPT-5 API Behavior Tests', () => {
       // Ensure no accidental fallback to GPT-4
       const preventFallback = (requestedModel: string) => {
         const isGPT5 = requestedModel.startsWith('gpt-5');
-        
+
         // This should never fallback to a different model
         const actualModel = requestedModel; // No fallback logic
-        
+
         return {
           requested: requestedModel,
           actual: actualModel,
@@ -287,8 +296,8 @@ describe('GPT-5 API Behavior Tests', () => {
       };
 
       const gpt5Tests = ['gpt-5', 'gpt-5-mini', 'gpt-5-nano'];
-      
-      gpt5Tests.forEach(model => {
+
+      gpt5Tests.forEach((model) => {
         const result = preventFallback(model);
         expect(result.noFallback).toBe(true);
         expect(result.isGPT5).toBe(true);

@@ -310,12 +310,9 @@ vi.mock('@/components/common/model-selector/pro-dialog', () => ({
     if (!isOpen) {
       return null;
     }
-    
+
     return (
-      <div
-        data-testid="pro-dialog"
-        role="dialog"
-      >
+      <div data-testid="pro-dialog" role="dialog">
         <div>Pro required</div>
         <div data-testid="pro-dialog-model">{currentModel}</div>
         <button onClick={() => setIsOpen?.(false)}>Close</button>
@@ -978,7 +975,10 @@ describe('MultiModelSelector', () => {
           expect(dropdownContent).toBeInTheDocument();
         } else {
           // Fallback to checking if dropdown menu is open
-          expect(screen.getByTestId('dropdown-menu')).toHaveAttribute('data-open', 'true');
+          expect(screen.getByTestId('dropdown-menu')).toHaveAttribute(
+            'data-open',
+            'true'
+          );
         }
       });
 
@@ -1007,7 +1007,10 @@ describe('MultiModelSelector', () => {
           expect(dropdownContent).toBeInTheDocument();
         } else {
           // Fallback to checking if dropdown menu is open
-          expect(screen.getByTestId('dropdown-menu')).toHaveAttribute('data-open', 'true');
+          expect(screen.getByTestId('dropdown-menu')).toHaveAttribute(
+            'data-open',
+            'true'
+          );
         }
       });
 
@@ -1040,7 +1043,10 @@ describe('MultiModelSelector', () => {
           expect(dropdownContent).toBeInTheDocument();
         } else {
           // Fallback to checking if dropdown menu is open
-          expect(screen.getByTestId('dropdown-menu')).toHaveAttribute('data-open', 'true');
+          expect(screen.getByTestId('dropdown-menu')).toHaveAttribute(
+            'data-open',
+            'true'
+          );
         }
       });
 

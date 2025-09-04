@@ -35,30 +35,51 @@ vi.mock('@/lib/supabase/client', () => ({
 
 // Mock UI Dialog components
 vi.mock('@/components/ui/dialog', () => ({
-  Dialog: ({ children, open }: any) => (
-    open ? <div role="dialog" data-testid="dialog">{children}</div> : null
-  ),
+  Dialog: ({ children, open }: any) =>
+    open ? (
+      <div role="dialog" data-testid="dialog">
+        {children}
+      </div>
+    ) : null,
   DialogContent: ({ children, className }: any) => (
-    <div className={className} data-testid="dialog-content">{children}</div>
+    <div className={className} data-testid="dialog-content">
+      {children}
+    </div>
   ),
-  DialogHeader: ({ children }: any) => <div data-testid="dialog-header">{children}</div>,
+  DialogHeader: ({ children }: any) => (
+    <div data-testid="dialog-header">{children}</div>
+  ),
   DialogTitle: ({ children, className }: any) => (
-    <h2 className={className} data-slot="dialog-title">{children}</h2>
+    <h2 className={className} data-slot="dialog-title">
+      {children}
+    </h2>
   ),
   DialogDescription: ({ children, className }: any) => (
-    <p className={className} data-slot="dialog-description">{children}</p>
+    <p className={className} data-slot="dialog-description">
+      {children}
+    </p>
   ),
   DialogFooter: ({ children, className }: any) => (
-    <div className={className} data-testid="dialog-footer">{children}</div>
+    <div className={className} data-testid="dialog-footer">
+      {children}
+    </div>
   ),
 }));
 
 // Mock UI Button component
 vi.mock('@/components/ui/button', () => ({
-  Button: ({ children, onClick, disabled, className, size, variant, ...props }: any) => (
-    <button 
+  Button: ({
+    children,
+    onClick,
+    disabled,
+    className,
+    size,
+    variant,
+    ...props
+  }: any) => (
+    <button
       type="button"
-      onClick={onClick} 
+      onClick={onClick}
       disabled={disabled}
       className={className}
       data-size={size}
@@ -463,9 +484,7 @@ describe('DialogAuth', () => {
       expect(
         screen.getByText('Sign in below to increase your message limits.')
       ).toBeInTheDocument();
-      expect(
-        screen.getByTestId('auth-button')
-      ).toBeInTheDocument();
+      expect(screen.getByTestId('auth-button')).toBeInTheDocument();
     });
 
     it('should have accessible button text', () => {

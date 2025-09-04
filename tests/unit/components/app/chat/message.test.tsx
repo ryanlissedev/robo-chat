@@ -69,19 +69,13 @@ vi.mock('@/components/app/chat/message-assistant', () => ({
         {...domProps}
       >
         <div>{children}</div>
-        <button
-          type="button"
-          onClick={handleQuote}
-        >
+        <button type="button" onClick={handleQuote}>
           Quote
         </button>
         <button type="button" onClick={handleReload}>
           Reload
         </button>
-        <button
-          type="button"
-          onClick={handleCopy}
-        >
+        <button type="button" onClick={handleCopy}>
           Copy
         </button>
       </div>
@@ -136,22 +130,13 @@ vi.mock('@/components/app/chat/message-user', () => ({
     return (
       <div data-testid="message-user" data-message-id={id} {...domProps}>
         <div>{children}</div>
-        <button
-          type="button"
-          onClick={handleDelete}
-        >
+        <button type="button" onClick={handleDelete}>
           Delete
         </button>
-        <button
-          type="button"
-          onClick={handleEdit}
-        >
+        <button type="button" onClick={handleEdit}>
           Edit
         </button>
-        <button
-          type="button"
-          onClick={handleCopy}
-        >
+        <button type="button" onClick={handleCopy}>
           Copy
         </button>
       </div>

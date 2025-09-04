@@ -25,6 +25,7 @@ interface PerformanceTestConfig {
 
 class PerformanceTestSuite {
   private config: PerformanceTestConfig;
+  private results: PerformanceTestResult[] = [];
 
   constructor(config: Partial<PerformanceTestConfig> = {}) {
     this.config = {

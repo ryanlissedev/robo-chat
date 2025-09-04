@@ -3,6 +3,17 @@
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useState } from 'react';
+import {
+  extractReasoningContent,
+  extractTextContent,
+  generatePartKey,
+  isReasoningDeltaPart,
+  isReasoningPart,
+  isTextDeltaPart,
+  isTextPart,
+  type MessagePart,
+  type TypedMessage,
+} from '@/app/types/message-parts';
 
 export default function SimpleTest() {
   const [input, setInput] = useState('');
@@ -45,44 +56,47 @@ export default function SimpleTest() {
             {message.parts && message.parts.length > 0 && (
               <div className="mt-2">
                 <strong>Parts:</strong>
-                {message.parts.map((part: any, partIdx: number) => (
-                  <div
-                    key={partIdx}
-                    className="ml-4 p-1 bg-gray-50 mt-1 rounded text-xs"
-                  >
-                    <strong>Type:</strong> {part.type} |
-                    <strong> Text/Delta:</strong> "
-                    {(part.text || part.delta || '').substring(0, 50)}..."
-                  </div>
-                ))}
+                {message.parts.map((part, partIdx) => {
+                  const typedPart = part as MessagePart;
+                  const content = isTextPart(typedPart)
+                    ? typedPart.text
+                    : isTextDeltaPart(typedPart)
+                      ? typedPart.delta
+                      : isReasoningPart(typedPart)
+                        ? typedPart.text
+                        : isReasoningDeltaPart(typedPart)
+                          ? typedPart.delta
+                          : '';
+
+                  return (
+                    <div
+                      key={generatePartKey(typedPart, partIdx)}
+                      className="ml-4 p-1 bg-gray-50 mt-1 rounded text-xs"
+                    >
+                      <strong>Type:</strong> {typedPart.type} |
+                      <strong> Text/Delta:</strong> "{content.substring(0, 50)}
+                      ..."
+                    </div>
+                  );
+                })}
               </div>
             )}
 
             {/* Try to extract text */}
             <div className="mt-2">
               <strong>Extracted Text:</strong> "
-              {message.parts
-                ?.filter(
-                  (part: any) =>
-                    part.type === 'text' || part.type === 'text-delta'
-                )
-                .map((part: any) => part.text || part.delta || '')
-                .join('')
-                .substring(0, 100)}
+              {extractTextContent(
+                (message.parts as MessagePart[]) || []
+              ).substring(0, 100)}
               ..."
             </div>
 
             {/* Try to extract reasoning */}
             <div className="mt-2">
               <strong>Extracted Reasoning:</strong> "
-              {message.parts
-                ?.filter(
-                  (part: any) =>
-                    part.type === 'reasoning' || part.type === 'reasoning-delta'
-                )
-                .map((part: any) => part.text || part.delta || '')
-                .join('')
-                .substring(0, 100)}
+              {extractReasoningContent(
+                (message.parts as MessagePart[]) || []
+              ).substring(0, 100)}
               ..."
             </div>
           </div>
@@ -106,35 +120,27 @@ export default function SimpleTest() {
 
             {/* Show reasoning if present */}
             {message.role === 'assistant' &&
-              message.parts?.some(
-                (part: any) =>
-                  part.type === 'reasoning' || part.type === 'reasoning-delta'
-              ) && (
+              message.parts?.some((part) => {
+                const typedPart = part as MessagePart;
+                return (
+                  isReasoningPart(typedPart) || isReasoningDeltaPart(typedPart)
+                );
+              }) && (
                 <div className="mb-2 p-2 bg-yellow-100 border border-yellow-300 rounded">
                   <strong>🧠 Reasoning:</strong>
                   <br />
-                  {message.parts
-                    ?.filter(
-                      (part: any) =>
-                        part.type === 'reasoning' ||
-                        part.type === 'reasoning-delta'
-                    )
-                    .map((part: any) => part.text || part.delta || '')
-                    .join('')}
+                  {extractReasoningContent(
+                    (message.parts as MessagePart[]) || []
+                  )}
                 </div>
               )}
 
             {/* Show main content */}
             <div>
               {message.role === 'user'
-                ? (message as any).content || 'No content'
-                : message.parts
-                    ?.filter(
-                      (part: any) =>
-                        part.type === 'text' || part.type === 'text-delta'
-                    )
-                    .map((part: any) => part.text || part.delta || '')
-                    .join('') || 'No text content'}
+                ? (message as TypedMessage).content || 'No content'
+                : extractTextContent((message.parts as MessagePart[]) || []) ||
+                  'No text content'}
             </div>
           </div>
         ))}

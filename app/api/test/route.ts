@@ -4,9 +4,8 @@ import {
   generateId,
 } from 'ai';
 
-export async function POST(req: Request) {
-  // Parse request for debugging
-  const _body = await req.json();
+export async function POST(_req: Request) {
+  // This is a test endpoint that doesn't use request body
 
   // Create a realistic AI SDK v5 UI message stream with reasoning
   const stream = createUIMessageStream({
