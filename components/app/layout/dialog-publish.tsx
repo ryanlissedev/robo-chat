@@ -70,10 +70,9 @@ export function DialogPublish() {
       throw new Error('Supabase is not configured');
     }
 
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('chats')
-      // Cast to any to satisfy TS inference issues with Supabase types
-      .update({ public: true } as any)
+      .update({ public: true })
       .eq('id', chatId)
       .select()
       .single();

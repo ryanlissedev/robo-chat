@@ -194,7 +194,7 @@ const extractReasoningText = (
   // Collect all reasoning parts and combine them
   const reasoningTexts: string[] = [];
 
-  for (const part of parts as unknown as any[]) {
+  for (const part of parts) {
     // AI SDK v5 reasoning parts - handle both text and delta
     if (part?.type === 'reasoning' || part?.type === 'reasoning-delta') {
       const reasoningText = part?.text || part?.delta || part?.reasoningText;

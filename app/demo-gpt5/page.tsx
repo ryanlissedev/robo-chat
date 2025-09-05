@@ -238,10 +238,16 @@ export default function DemoGPT5() {
                 <div>Model: {String(modelStats.model)}</div>
                 <div>Speed: {(modelStats as any)?.stats?.speed || 'N/A'}</div>
                 <div>
-                  Context: {(modelStats as any)?.stats?.contextWindow?.toLocaleString() || 'N/A'}{' '}
+                  Context:{' '}
+                  {(
+                    modelStats as any
+                  )?.stats?.contextWindow?.toLocaleString() || 'N/A'}{' '}
                   tokens
                 </div>
-                <div>Response Time: {(modelStats as any)?.stats?.responseTime || 'N/A'}</div>
+                <div>
+                  Response Time:{' '}
+                  {(modelStats as any)?.stats?.responseTime || 'N/A'}
+                </div>
               </div>
             </div>
           )}

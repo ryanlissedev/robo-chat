@@ -28,7 +28,7 @@ class TestErrorBoundary extends React.Component<
 
   render() {
     if (this.state.hasError) {
-      return <div data-testid="error-boundary">Something went this.state.error?.message</div>;
+      return <div data-testid="error-boundary">Something went wrong: {this.state.error?.message}</div>;
     }
 
     return this.props.children;
@@ -70,9 +70,10 @@ describe('Edge Cases and Error Scenarios', () => {
           <div>
             <button onClick={fetchData} data-testid="fetch-button">
               Fetch Data
-            </button>error && <div data-testid="error-message">{error}</div>}
+            </button>
+            {error && <div data-testid="error-message">{error}</div>}
           </div>
-        );;
+        );
 
       render(<TestComponent />);
       const button = screen.getByTestId('fetch-button');
@@ -121,9 +122,10 @@ describe('Edge Cases and Error Scenarios', () => {
             <div>
               <button onClick={fetchData} data-testid="fetch-button">
                 Fetch Data
-              </button>error && <div data-testid="error-message">{error}</div>}
+              </button>
+            {error && <div data-testid="error-message">{error}</div>}
             </div>
-          );;
+          );
 
         const { unmount } = render(<TestComponent />);
         const button = screen.getByTestId('fetch-button');
@@ -163,9 +165,10 @@ describe('Edge Cases and Error Scenarios', () => {
           <div>
             <button onClick={fetchData} data-testid="fetch-button">
               Fetch Data
-            </button>error && <div data-testid="error-message">{error}</div>}
+            </button>
+            {error && <div data-testid="error-message">{error}</div>}
           </div>
-        );;
+        );
 
       render(<TestComponent />);
       const button = screen.getByTestId('fetch-button');
@@ -210,9 +213,10 @@ describe('Edge Cases and Error Scenarios', () => {
           <div>
             <button onClick={fetchData} data-testid="fetch-button">
               Fetch Data
-            </button>error && <div data-testid="error-message">{error}</div>}
+            </button>
+            {error && <div data-testid="error-message">{error}</div>}
           </div>
-        );;
+        );
 
       render(<TestComponent />);
       const button = screen.getByTestId('fetch-button');

@@ -181,6 +181,10 @@ export class SessionBuilder extends BaseBuilder<Session> {
     return this;
   }
 
+  static withUser(user: User): SessionBuilder {
+    return new SessionBuilder().withUser(user);
+  }
+
   withAccessToken(token: string): this {
     this.data.access_token = token;
     return this;
@@ -221,10 +225,6 @@ export class SessionBuilder extends BaseBuilder<Session> {
 
   static expired(): SessionBuilder {
     return new SessionBuilder().withExpiredToken();
-  }
-
-  static withUser(user: User): SessionBuilder {
-    return new SessionBuilder().withUser(user);
   }
 }
 

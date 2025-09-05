@@ -268,7 +268,12 @@ describe('AIGateway', () => {
         ok: false,
       });
 
-      const gateway = new AIGateway({ mode: 'gateway' });
+      const gateway = new AIGateway({
+        mode: 'gateway',
+        gatewayUrl: 'https://gateway.example.com',
+        gatewayApiKey: 'gateway-key',
+        openaiApiKey: 'openai-key', // Add this to prevent "No OpenAI configuration available"
+      });
       const client = await gateway.getOpenAIClient();
 
       // 401 means gateway is responding, just auth failed
@@ -281,7 +286,12 @@ describe('AIGateway', () => {
         ok: false,
       });
 
-      const gateway = new AIGateway({ mode: 'auto' });
+      const gateway = new AIGateway({
+        mode: 'auto',
+        gatewayUrl: 'https://gateway.example.com',
+        gatewayApiKey: 'gateway-key',
+        openaiApiKey: 'openai-key', // Add this for fallback
+      });
       const client = await gateway.getOpenAIClient();
 
       // Should fallback to direct
