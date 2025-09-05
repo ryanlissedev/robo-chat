@@ -135,7 +135,9 @@ class TestCleanupManager {
 
   cleanupAll(): void {
     const testIds = Array.from(this.trackers.keys());
-    testIds.forEach((testId) => this.cleanup(testId));
+    for (const testId of testIds) {
+      this.cleanup(testId);
+    }
   }
 }
 
@@ -241,42 +243,43 @@ export async function withCleanup<T>(
 /**
  * Performance monitoring utilities
  */
-export class PerformanceMonitor {
-  private static timers = new Map<string, number>();
-  private static memory = new Map<string, number>();
+const timers = new Map<string, number>();
+const memory = new Map<string, number>();
 
-  static start(label: string): void {
-    PerformanceMonitor.timers.set(label, Date.now());
+export function startPerformanceMonitor(label: string): void {
+  timers.set(label, Date.now());
 
-    // Record memory usage if available
-    if (typeof process !== 'undefined' && process.memoryUsage) {
-      const usage = process.memoryUsage();
-      PerformanceMonitor.memory.set(label, usage.heapUsed);
-    }
+  // Record memory usage if available
+  if (typeof process !== 'undefined' && process.memoryUsage) {
+    const usage = process.memoryUsage();
+    memory.set(label, usage.heapUsed);
+  }
+}
+
+export function endPerformanceMonitor(label: string): {
+  duration: number;
+  memoryDelta?: number;
+} {
+  const startTime = timers.get(label);
+  const startMemory = memory.get(label);
+
+  if (!startTime) {
+    throw new Error(`No timer started for label: ${label}`);
   }
 
-  static end(label: string): { duration: number; memoryDelta?: number } {
-    const startTime = PerformanceMonitor.timers.get(label);
-    const startMemory = PerformanceMonitor.memory.get(label);
+  const duration = Date.now() - startTime;
+  let memoryDelta: number | undefined;
 
-    if (!startTime) {
-      throw new Error(`No timer started for label: ${label}`);
-    }
-
-    const duration = Date.now() - startTime;
-    let memoryDelta: number | undefined;
-
-    if (typeof process !== 'undefined' && process.memoryUsage && startMemory) {
-      const currentMemory = process.memoryUsage().heapUsed;
-      memoryDelta = currentMemory - startMemory;
-    }
-
-    // Cleanup
-    PerformanceMonitor.timers.delete(label);
-    PerformanceMonitor.memory.delete(label);
-
-    return { duration, memoryDelta };
+  if (typeof process !== 'undefined' && process.memoryUsage && startMemory) {
+    const currentMemory = process.memoryUsage().heapUsed;
+    memoryDelta = currentMemory - startMemory;
   }
+
+  // Cleanup
+  timers.delete(label);
+  memory.delete(label);
+
+  return { duration, memoryDelta };
 }
 
 /**

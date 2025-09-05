@@ -24,7 +24,7 @@ describe('chat credential resolution & diagnostics', () => {
     vi.clearAllMocks(); // Use clearAllMocks instead of restoreAllMocks to preserve mock configurations
     process.env = { ...OldEnv };
     delete process.env.AI_GATEWAY_API_KEY;
-    
+
     // Re-setup the mockGET function after clearing
     mockGET.mockResolvedValue({
       status: 200,

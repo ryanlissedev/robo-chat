@@ -41,13 +41,38 @@ export interface GenerateTextOptions {
   topP?: number;
 }
 
+export interface GatewayStatus {
+  openai: {
+    configured: boolean;
+    direct: boolean;
+    gateway: boolean;
+  };
+  anthropic: {
+    configured: boolean;
+    direct: boolean;
+    gateway: boolean;
+  };
+  gateway: {
+    configured: boolean;
+    url?: string;
+    working: boolean;
+  };
+}
+
 export class AIGateway {
   private config: GatewayConfig;
   private openaiClient?: OpenAI;
   private anthropicClient?: Anthropic;
+  private gatewayClientCache?: OpenAI;
 
-  constructor(config: GatewayConfig) {
-    this.config = config;
+  constructor(config?: Partial<GatewayConfig>) {
+    this.config = {
+      mode: config?.mode || (process.env.AI_GATEWAY_MODE as any) || 'auto',
+      gatewayUrl: config?.gatewayUrl || process.env.AI_GATEWAY_BASE_URL,
+      gatewayApiKey: config?.gatewayApiKey || process.env.AI_GATEWAY_API_KEY,
+      openaiApiKey: config?.openaiApiKey || process.env.OPENAI_API_KEY,
+      anthropicApiKey: config?.anthropicApiKey || process.env.ANTHROPIC_API_KEY,
+    };
   }
 
   /**
@@ -56,18 +81,31 @@ export class AIGateway {
   async getOpenAIClient(): Promise<ProviderClient> {
     // Try gateway first if mode is auto or gateway
     if (this.config.mode !== 'direct') {
+      // Return cached gateway client if available
+      if (this.gatewayClientCache) {
+        return {
+          type: 'openai',
+          client: this.gatewayClientCache,
+          isGateway: true,
+        };
+      }
+
       const gatewayResult = await this.testGatewayConnection('openai');
       if (
         gatewayResult.success &&
         this.config.gatewayUrl &&
         this.config.gatewayApiKey
       ) {
-        const gatewayClient = new OpenAI({
+        this.gatewayClientCache = new OpenAI({
           apiKey: this.config.gatewayApiKey,
           baseURL: this.config.gatewayUrl,
           dangerouslyAllowBrowser: process.env.NODE_ENV === 'test',
         });
-        return { type: 'openai', client: gatewayClient, isGateway: true };
+        return {
+          type: 'openai',
+          client: this.gatewayClientCache,
+          isGateway: true,
+        };
       }
 
       // Gateway failed, try direct (only if mode allows fallback)
@@ -119,6 +157,58 @@ export class AIGateway {
   }
 
   /**
+   * Get status of all providers and gateway
+   */
+  async getStatus(): Promise<GatewayStatus> {
+    const status: GatewayStatus = {
+      openai: {
+        configured: !!this.config.openaiApiKey,
+        direct: false,
+        gateway: false,
+      },
+      anthropic: {
+        configured: !!this.config.anthropicApiKey,
+        direct: false,
+        gateway: false,
+      },
+      gateway: {
+        configured: !!(this.config.gatewayUrl && this.config.gatewayApiKey),
+        url: this.config.gatewayUrl,
+        working: false,
+      },
+    };
+
+    // Test OpenAI direct access
+    if (status.openai.configured) {
+      try {
+        const client = await this.getOpenAIClient();
+        status.openai.direct = !client.isGateway;
+        status.openai.gateway = client.isGateway;
+      } catch {
+        // Client creation failed
+      }
+    }
+
+    // Test Anthropic direct access
+    if (status.anthropic.configured) {
+      try {
+        await this.getAnthropicClient();
+        status.anthropic.direct = true;
+      } catch {
+        // Client creation failed
+      }
+    }
+
+    // Test gateway connectivity
+    if (status.gateway.configured) {
+      const gatewayResult = await this.testGatewayConnection('openai');
+      status.gateway.working = gatewayResult.success;
+    }
+
+    return status;
+  }
+
+  /**
    * Test gateway connection
    */
   private async testGatewayConnection(
@@ -129,16 +219,35 @@ export class AIGateway {
     }
 
     try {
-      // Use OpenAI-compatible API for testing
-      const testClient = new OpenAI({
-        apiKey: this.config.gatewayApiKey,
-        baseURL: this.config.gatewayUrl,
-        dangerouslyAllowBrowser: process.env.NODE_ENV === 'test',
-      });
+      // Use fetch instead of OpenAI client for testing to avoid dependency issues
+      const response = await fetch(
+        `${this.config.gatewayUrl}/openai/chat/completions`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.config.gatewayApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-3.5-turbo',
+            messages: [{ role: 'user', content: 'test' }],
+            max_tokens: 1,
+          }),
+        }
+      );
 
-      // Quick test call
-      await testClient.models.list();
-      return { success: true };
+      // Accept 401 (auth error) as gateway working, reject 404/405 as not configured
+      if (response.status === 401) {
+        return { success: true };
+      }
+      if (response.status === 404 || response.status === 405) {
+        return { success: false, error: 'Gateway not configured' };
+      }
+      if (response.ok) {
+        return { success: true };
+      }
+
+      return { success: false, error: `HTTP ${response.status}` };
     } catch (error) {
       return {
         success: false,
@@ -205,5 +314,36 @@ export class AIGateway {
       temperature: options.temperature,
       topP: options.topP,
     });
+  }
+}
+
+// Global singleton instance
+let gatewayInstance: AIGateway | undefined;
+
+/**
+ * Get singleton AI Gateway instance
+ */
+export function getAIGateway(): AIGateway {
+  if (!gatewayInstance) {
+    gatewayInstance = new AIGateway();
+  }
+  return gatewayInstance;
+}
+
+/**
+ * Create AI provider client
+ */
+export async function createAIProvider(
+  type: 'openai' | 'anthropic'
+): Promise<ProviderClient> {
+  const gateway = getAIGateway();
+
+  switch (type) {
+    case 'openai':
+      return gateway.getOpenAIClient();
+    case 'anthropic':
+      return gateway.getAnthropicClient();
+    default:
+      throw new Error(`Unsupported provider type: ${type}`);
   }
 }

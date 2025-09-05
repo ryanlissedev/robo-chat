@@ -250,6 +250,9 @@ export function useChatCore({
         await sendMessage({ text: currentInput }, requestOptions);
       }
 
+      // Set hasSentFirstMessageRef to true after successful submission
+      hasSentFirstMessageRef.current = true;
+
       clearDraft();
 
       // Bump chat if there were previous messages
@@ -326,6 +329,9 @@ export function useChatCore({
 
         // v5 sendMessage expects an object with text property for proper formatting
         await sendMessage({ text: suggestion }, requestOptions);
+
+        // Set hasSentFirstMessageRef to true after successful submission
+        hasSentFirstMessageRef.current = true;
       } catch (error) {
         handleChatError(error as Error);
       } finally {

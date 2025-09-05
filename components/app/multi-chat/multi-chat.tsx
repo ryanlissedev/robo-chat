@@ -303,7 +303,9 @@ export function MultiChat() {
           };
 
           // Send message using v5 API shape
-          chat.sendMessage({ text: prompt }, options as any);
+          chat.sendMessage(prompt, {
+            body: options.body,
+          });
         })
       );
 

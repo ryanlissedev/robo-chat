@@ -157,7 +157,7 @@ function FileUploadTrigger({
         handleClick();
         child.props.onClick?.(e as React.MouseEvent<HTMLElement>);
       },
-    } as any);
+    } as React.ComponentProps<typeof child.type>);
   }
 
   return (
