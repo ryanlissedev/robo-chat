@@ -72,10 +72,16 @@ describe('RequestValidator', () => {
 
     // Setup default mocks
     (validateAndTrackUsage as Mock).mockResolvedValue(mockSupabaseClient);
-    (MessageService.transformMessagesToV5Format as Mock).mockReturnValue(mockMessages);
+    (MessageService.transformMessagesToV5Format as Mock).mockReturnValue(
+      mockMessages
+    );
     (MessageService.filterValidMessages as Mock).mockReturnValue(mockMessages);
-    (MessageService.convertToExtendedUIMessages as Mock).mockReturnValue(mockMessages);
-    (MessageService.createCompatibleMessages as Mock).mockReturnValue(mockMessages);
+    (MessageService.convertToExtendedUIMessages as Mock).mockReturnValue(
+      mockMessages
+    );
+    (MessageService.createCompatibleMessages as Mock).mockReturnValue(
+      mockMessages
+    );
     (ModelConfigurationService.resolveModelId as Mock).mockReturnValue('gpt-4');
     (getMessageContent as Mock).mockReturnValue('Hello there');
     (incrementMessageCount as Mock).mockResolvedValue(undefined);
@@ -91,7 +97,8 @@ describe('RequestValidator', () => {
     };
 
     it('should call validateAndTrackUsage with correct parameters', async () => {
-      const result = await RequestValidator.validateAndTrackUsage(validationParams);
+      const result =
+        await RequestValidator.validateAndTrackUsage(validationParams);
 
       expect(validateAndTrackUsage).toHaveBeenCalledWith({
         userId: 'user-123',
@@ -138,13 +145,16 @@ describe('RequestValidator', () => {
       const error = new Error('Validation failed');
       (validateAndTrackUsage as Mock).mockRejectedValue(error);
 
-      await expect(RequestValidator.validateAndTrackUsage(validationParams)).rejects.toThrow('Validation failed');
+      await expect(
+        RequestValidator.validateAndTrackUsage(validationParams)
+      ).rejects.toThrow('Validation failed');
     });
 
     it('should return null when validation returns null', async () => {
       (validateAndTrackUsage as Mock).mockResolvedValue(null);
 
-      const result = await RequestValidator.validateAndTrackUsage(validationParams);
+      const result =
+        await RequestValidator.validateAndTrackUsage(validationParams);
 
       expect(result).toBeNull();
     });
@@ -173,7 +183,7 @@ describe('RequestValidator', () => {
 
     it('should return false when no guest credential headers are present', () => {
       const request = new Request('http://test.com', {
-        headers: { 'authorization': 'Bearer token' },
+        headers: { authorization: 'Bearer token' },
       });
 
       const result = RequestValidator.hasGuestCredentials(request);
@@ -209,15 +219,25 @@ describe('RequestValidator', () => {
 
       const result = RequestValidator.prepareCompatibleMessages(rawMessages);
 
-      expect(MessageService.transformMessagesToV5Format).toHaveBeenCalledWith(rawMessages);
-      expect(MessageService.filterValidMessages).toHaveBeenCalledWith(mockMessages);
-      expect(MessageService.convertToExtendedUIMessages).toHaveBeenCalledWith(mockMessages);
-      expect(MessageService.createCompatibleMessages).toHaveBeenCalledWith(mockMessages);
+      expect(MessageService.transformMessagesToV5Format).toHaveBeenCalledWith(
+        rawMessages
+      );
+      expect(MessageService.filterValidMessages).toHaveBeenCalledWith(
+        mockMessages
+      );
+      expect(MessageService.convertToExtendedUIMessages).toHaveBeenCalledWith(
+        mockMessages
+      );
+      expect(MessageService.createCompatibleMessages).toHaveBeenCalledWith(
+        mockMessages
+      );
       expect(result).toBe(mockMessages);
     });
 
     it('should throw error when transformation fails', () => {
-      (MessageService.transformMessagesToV5Format as Mock).mockReturnValue(null);
+      (MessageService.transformMessagesToV5Format as Mock).mockReturnValue(
+        null
+      );
 
       expect(() => {
         RequestValidator.prepareCompatibleMessages([]);
@@ -225,7 +245,9 @@ describe('RequestValidator', () => {
     });
 
     it('should throw error when transformation returns non-array', () => {
-      (MessageService.transformMessagesToV5Format as Mock).mockReturnValue('not an array');
+      (MessageService.transformMessagesToV5Format as Mock).mockReturnValue(
+        'not an array'
+      );
 
       expect(() => {
         RequestValidator.prepareCompatibleMessages([]);
@@ -236,7 +258,9 @@ describe('RequestValidator', () => {
       (MessageService.filterValidMessages as Mock).mockReturnValue([]);
 
       expect(() => {
-        RequestValidator.prepareCompatibleMessages([{ role: 'user', content: 'test' }]);
+        RequestValidator.prepareCompatibleMessages([
+          { role: 'user', content: 'test' },
+        ]);
       }).toThrow('No valid messages to process');
     });
 
@@ -250,9 +274,11 @@ describe('RequestValidator', () => {
     });
 
     it('should handle MessageService errors', () => {
-      (MessageService.transformMessagesToV5Format as Mock).mockImplementation(() => {
-        throw new Error('Transformation error');
-      });
+      (MessageService.transformMessagesToV5Format as Mock).mockImplementation(
+        () => {
+          throw new Error('Transformation error');
+        }
+      );
 
       expect(() => {
         RequestValidator.prepareCompatibleMessages([]);
@@ -352,7 +378,9 @@ describe('RequestValidator', () => {
     });
 
     it('should handle incrementMessageCount errors gracefully', async () => {
-      (incrementMessageCount as Mock).mockRejectedValue(new Error('Increment failed'));
+      (incrementMessageCount as Mock).mockRejectedValue(
+        new Error('Increment failed')
+      );
 
       await RequestValidator.handleUserMessageLogging(loggingParams);
 
@@ -412,7 +440,9 @@ describe('RequestValidator', () => {
 
       const result = RequestValidator.validateRequestData(requestData);
 
-      expect(ModelConfigurationService.resolveModelId).toHaveBeenCalledWith('gpt-4');
+      expect(ModelConfigurationService.resolveModelId).toHaveBeenCalledWith(
+        'gpt-4'
+      );
       expect(result).toEqual({
         resolvedModel: 'gpt-4',
         effectiveSettings: {
@@ -441,9 +471,11 @@ describe('RequestValidator', () => {
     });
 
     it('should handle model resolution errors', () => {
-      (ModelConfigurationService.resolveModelId as Mock).mockImplementation(() => {
-        throw new Error('Model resolution failed');
-      });
+      (ModelConfigurationService.resolveModelId as Mock).mockImplementation(
+        () => {
+          throw new Error('Model resolution failed');
+        }
+      );
 
       const requestData = { model: 'invalid-model' } as any;
 

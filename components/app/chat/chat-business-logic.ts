@@ -28,6 +28,18 @@ export type MessageSubmissionContext = {
   verbosity?: 'low' | 'medium' | 'high';
   reasoningSummary?: 'auto' | 'detailed';
   chatId: string | null;
+  currentMessages?: Array<{
+    id: string;
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    createdAt?: Date;
+    // biome-ignore lint/style/useNamingConvention: external AI SDK API name
+    experimental_attachments?: Array<{
+      name: string;
+      contentType: string;
+      url: string;
+    }>;
+  }>;
 };
 
 export type OptimisticMessageData = {
@@ -45,13 +57,27 @@ export type OptimisticMessageData = {
 
 export type ChatRequestOptions = {
   body: {
+    messages: Array<{
+      id: string;
+      role: 'user' | 'assistant' | 'system';
+      content: string;
+      createdAt?: Date;
+      // biome-ignore lint/style/useNamingConvention: external AI SDK API name
+      experimental_attachments?: Array<{
+        name: string;
+        contentType: string;
+        url: string;
+      }>;
+    }>;
     chatId: string;
     userId: string;
     model: string;
     isAuthenticated: boolean;
     systemPrompt: string;
-    enableSearch?: boolean;
+    enableSearch: boolean;
     reasoningEffort: 'low' | 'medium' | 'high';
+    verbosity?: 'low' | 'medium' | 'high';
+    reasoningSummary?: 'auto' | 'detailed';
     context?: 'chat';
     personalityMode?:
       | 'safety-focused'
@@ -176,9 +202,22 @@ export async function submitMessageScenario(
         optimisticAttachments.length > 0 ? optimisticAttachments : undefined,
     };
 
-    // Then: Prepare request options
+    // Then: Prepare request options with proper messages array
+    const userMessage = {
+      id: optimisticMessage.id,
+      role: 'user' as const,
+      content: input,
+      createdAt: new Date(),
+      // biome-ignore lint/style/useNamingConvention: external AI SDK API name
+      experimental_attachments: optimisticAttachments.length > 0 ? optimisticAttachments : undefined,
+    };
+
+    // Include current messages plus the new user message
+    const allMessages = [...(context.currentMessages || []), userMessage];
+
     const requestOptions = {
       body: {
+        messages: allMessages,
         chatId: currentChatId,
         userId: uid,
         model: selectedModel,
@@ -361,14 +400,26 @@ export async function submitSuggestionScenario(
       createdAt: new Date(),
     };
 
-    // Then: Prepare request options
+    // Then: Prepare request options with proper messages array
+    const userMessage = {
+      id: optimisticMessage.id,
+      role: 'user' as const,
+      content: suggestion,
+      createdAt: new Date(),
+    };
+
+    // Include current messages plus the new user message
+    const allMessages = [...(context.currentMessages || []), userMessage];
+
     const requestOptions = {
       body: {
+        messages: allMessages,
         chatId: currentChatId,
         userId: uid,
         model: selectedModel,
         isAuthenticated,
-        systemPrompt: SYSTEM_PROMPT_DEFAULT,
+        systemPrompt: context.systemPrompt || SYSTEM_PROMPT_DEFAULT,
+        enableSearch: context.enableSearch,
         reasoningEffort,
         verbosity: context.verbosity ?? 'medium',
         reasoningSummary: context.reasoningSummary ?? 'auto',

@@ -36,7 +36,9 @@ export function SearchImages({ results }: { results: ImageResult[] }) {
                 alt={img.title}
                 className="h-full max-h-48 min-h-40 w-full object-cover opacity-0 transition-opacity duration-150 ease-out"
                 onError={() => handleError(i)}
-                onLoad={(e: React.SyntheticEvent<HTMLImageElement>) => e.currentTarget.classList.remove('opacity-0')}
+                onLoad={(e: React.SyntheticEvent<HTMLImageElement>) =>
+                  e.currentTarget.classList.remove('opacity-0')
+                }
                 src={img.imageUrl}
               />
               <div className="absolute right-0 bottom-0 left-0 flex flex-col gap-0.5 bg-primary px-2.5 py-1.5 opacity-0 transition-opacity duration-100 ease-out group-hover/image:opacity-100">

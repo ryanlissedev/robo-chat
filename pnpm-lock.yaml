@@ -106,7 +106,7 @@ importers:
         version: 2.56.0
       '@tailwindcss/typography':
         specifier: ^0.5.16
-        version: 0.5.16
+        version: 0.5.16(tailwindcss@4.1.13)
       '@tanstack/react-query':
         specifier: ^5.87.4
         version: 5.87.4(react@19.1.1)
@@ -267,6 +267,9 @@ importers:
       lint-staged:
         specifier: latest
         version: 16.1.6
+      tailwindcss:
+        specifier: 4.1.13
+        version: 4.1.13
       tsx:
         specifier: ^4.20.5
         version: 4.20.5
@@ -5517,12 +5520,13 @@ snapshots:
       postcss: 8.5.6
       tailwindcss: 4.1.13
 
-  '@tailwindcss/typography@0.5.16':
+  '@tailwindcss/typography@0.5.16(tailwindcss@4.1.13)':
     dependencies:
       lodash.castarray: 4.4.0
       lodash.isplainobject: 4.0.6
       lodash.merge: 4.6.2
       postcss-selector-parser: 6.0.10
+      tailwindcss: 4.1.13
 
   '@tanstack/query-core@5.87.4': {}
 

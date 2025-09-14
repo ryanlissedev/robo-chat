@@ -4,7 +4,7 @@ interface TestInterface {
 }
 
 const testVar: TestInterface = {
-  message: "Hello TypeScript"
+  message: 'Hello TypeScript',
 };
 
 export { testVar };

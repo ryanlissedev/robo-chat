@@ -17,7 +17,11 @@ describe('api-response-utils', () => {
 
   describe('createErrorResponse', () => {
     it('should create error response with correct structure', () => {
-      const response = createErrorResponse('validation_error', 'Invalid input data', 400);
+      const response = createErrorResponse(
+        'validation_error',
+        'Invalid input data',
+        400
+      );
 
       expect(response.status).toBe(400);
       expect(response.headers.get('Content-Type')).toBe('application/json');
@@ -33,7 +37,10 @@ describe('api-response-utils', () => {
     });
 
     it('should default to 500 status when not provided', () => {
-      const response = createErrorResponse('internal_error', 'Something went wrong');
+      const response = createErrorResponse(
+        'internal_error',
+        'Something went wrong'
+      );
 
       expect(response.status).toBe(500);
     });
@@ -63,7 +70,12 @@ describe('api-response-utils', () => {
 
     it('should include custom details when provided', () => {
       const details = { field: 'username', code: 'INVALID_FORMAT' };
-      const response = createErrorResponse('validation_error', 'Invalid format', 400, details);
+      const response = createErrorResponse(
+        'validation_error',
+        'Invalid format',
+        400,
+        details
+      );
 
       return response.json().then((body) => {
         expect(body.details).toEqual(details);
@@ -80,7 +92,11 @@ describe('api-response-utils', () => {
 
     it('should handle very long error messages', () => {
       const longMessage = 'A'.repeat(1000);
-      const response = createErrorResponse('validation_error', longMessage, 400);
+      const response = createErrorResponse(
+        'validation_error',
+        longMessage,
+        400
+      );
 
       return response.json().then((body) => {
         expect(body.message).toBe(longMessage);
@@ -181,11 +197,14 @@ describe('api-response-utils', () => {
       const response = handleApiError(error, 'test-operation');
 
       expect(response.status).toBe(400);
-      expect(console.error).toHaveBeenCalledWith('API Error in test-operation:', {
-        type: 'validation_error',
-        message: 'Invalid data',
-        status: 400,
-      });
+      expect(console.error).toHaveBeenCalledWith(
+        'API Error in test-operation:',
+        {
+          type: 'validation_error',
+          message: 'Invalid data',
+          status: 400,
+        }
+      );
 
       return response.json().then((body) => {
         expect(body.error).toBe('validation_error');
@@ -224,13 +243,12 @@ describe('api-response-utils', () => {
       expect(nullResponse.status).toBe(500);
       expect(undefinedResponse.status).toBe(500);
 
-      return Promise.all([
-        nullResponse.json(),
-        undefinedResponse.json(),
-      ]).then(([nullBody, undefinedBody]) => {
-        expect(nullBody.message).toBe('An unexpected error occurred');
-        expect(undefinedBody.message).toBe('An unexpected error occurred');
-      });
+      return Promise.all([nullResponse.json(), undefinedResponse.json()]).then(
+        ([nullBody, undefinedBody]) => {
+          expect(nullBody.message).toBe('An unexpected error occurred');
+          expect(undefinedBody.message).toBe('An unexpected error occurred');
+        }
+      );
     });
 
     it('should include operation context in logs', () => {
@@ -368,18 +386,26 @@ describe('api-response-utils', () => {
 
   describe('createStreamingErrorResponse', () => {
     it('should create streaming error response', () => {
-      const response = createStreamingErrorResponse('Stream interrupted', 'stream_error');
+      const response = createStreamingErrorResponse(
+        'Stream interrupted',
+        'stream_error'
+      );
 
       expect(response.status).toBe(500);
       expect(response.headers.get('Content-Type')).toBe('text/plain');
 
       return response.text().then((body) => {
-        expect(body).toBe('data: {"error":"stream_error","message":"Stream interrupted"}\n\n');
+        expect(body).toBe(
+          'data: {"error":"stream_error","message":"Stream interrupted"}\n\n'
+        );
       });
     });
 
     it('should handle custom error types', () => {
-      const response = createStreamingErrorResponse('Rate limited', 'rate_limit_error');
+      const response = createStreamingErrorResponse(
+        'Rate limited',
+        'rate_limit_error'
+      );
 
       return response.text().then((body) => {
         expect(body).toContain('"error":"rate_limit_error"');
@@ -396,7 +422,10 @@ describe('api-response-utils', () => {
     });
 
     it('should format as SSE (Server-Sent Events)', () => {
-      const response = createStreamingErrorResponse('Test error', 'validation_error');
+      const response = createStreamingErrorResponse(
+        'Test error',
+        'validation_error'
+      );
 
       return response.text().then((body) => {
         expect(body).toStartWith('data: ');
@@ -464,7 +493,10 @@ describe('api-response-utils', () => {
 
     it('should handle large JSON payloads', async () => {
       const largeData = {
-        items: Array.from({ length: 1000 }, (_, i) => ({ id: i, name: `Item ${i}` })),
+        items: Array.from({ length: 1000 }, (_, i) => ({
+          id: i,
+          name: `Item ${i}`,
+        })),
       };
 
       const request = new Request('http://test.com', {
@@ -499,12 +531,9 @@ describe('api-response-utils', () => {
 
   describe('ResponseError class', () => {
     it('should create ResponseError with all properties', () => {
-      const error = new ResponseError(
-        'validation_error',
-        'Test error',
-        400,
-        { field: 'test' }
-      );
+      const error = new ResponseError('validation_error', 'Test error', 400, {
+        field: 'test',
+      });
 
       expect(error.type).toBe('validation_error');
       expect(error.message).toBe('Test error');
@@ -542,8 +571,18 @@ describe('api-response-utils', () => {
 
       // This should not throw due to circular reference
       expect(() => {
-        const error = new ResponseError('validation_error', 'Test', 400, circularObj);
-        createErrorResponse(error.type, error.message, error.status, error.details);
+        const error = new ResponseError(
+          'validation_error',
+          'Test',
+          400,
+          circularObj
+        );
+        createErrorResponse(
+          error.type,
+          error.message,
+          error.status,
+          error.details
+        );
       }).not.toThrow();
     });
 
@@ -559,8 +598,13 @@ describe('api-response-utils', () => {
     });
 
     it('should handle Unicode and special characters in messages', () => {
-      const unicodeMessage = 'Error with émojis 🚀 and unicode characters: 日本語';
-      const response = createErrorResponse('validation_error', unicodeMessage, 400);
+      const unicodeMessage =
+        'Error with émojis 🚀 and unicode characters: 日本語';
+      const response = createErrorResponse(
+        'validation_error',
+        unicodeMessage,
+        400
+      );
 
       return response.json().then((body) => {
         expect(body.message).toBe(unicodeMessage);

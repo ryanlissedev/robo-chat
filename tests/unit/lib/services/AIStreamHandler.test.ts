@@ -48,9 +48,12 @@ describe('AIStreamHandler', () => {
   describe('createStreamingResponse', () => {
     it('should call StreamingService.createStreamingResponse with correct parameters', async () => {
       const mockResponse = new Response('test');
-      (StreamingService.createStreamingResponse as Mock).mockResolvedValue(mockResponse);
+      (StreamingService.createStreamingResponse as Mock).mockResolvedValue(
+        mockResponse
+      );
 
-      const result = await AIStreamHandler.createStreamingResponse(baseStreamingParams);
+      const result =
+        await AIStreamHandler.createStreamingResponse(baseStreamingParams);
 
       expect(StreamingService.createStreamingResponse).toHaveBeenCalledWith(
         mockLanguageModel,
@@ -72,7 +75,9 @@ describe('AIStreamHandler', () => {
 
     it('should handle GPT-5 model parameters', async () => {
       const mockResponse = new Response('test');
-      (StreamingService.createStreamingResponse as Mock).mockResolvedValue(mockResponse);
+      (StreamingService.createStreamingResponse as Mock).mockResolvedValue(
+        mockResponse
+      );
 
       const gpt5Params = {
         ...baseStreamingParams,
@@ -101,9 +106,13 @@ describe('AIStreamHandler', () => {
 
     it('should handle streaming response errors', async () => {
       const error = new Error('Streaming failed');
-      (StreamingService.createStreamingResponse as Mock).mockRejectedValue(error);
+      (StreamingService.createStreamingResponse as Mock).mockRejectedValue(
+        error
+      );
 
-      await expect(AIStreamHandler.createStreamingResponse(baseStreamingParams)).rejects.toThrow('Streaming failed');
+      await expect(
+        AIStreamHandler.createStreamingResponse(baseStreamingParams)
+      ).rejects.toThrow('Streaming failed');
     });
   });
 
@@ -128,11 +137,18 @@ describe('AIStreamHandler', () => {
 
     it('should call StreamingService.createStreamingResponseWithFallback with correct parameters', async () => {
       const mockResponse = new Response('test');
-      (StreamingService.createStreamingResponseWithFallback as Mock).mockResolvedValue(mockResponse);
+      (
+        StreamingService.createStreamingResponseWithFallback as Mock
+      ).mockResolvedValue(mockResponse);
 
-      const result = await AIStreamHandler.createStreamingResponseWithFallback(fallbackParams);
+      const result =
+        await AIStreamHandler.createStreamingResponseWithFallback(
+          fallbackParams
+        );
 
-      expect(StreamingService.createStreamingResponseWithFallback).toHaveBeenCalledWith(
+      expect(
+        StreamingService.createStreamingResponseWithFallback
+      ).toHaveBeenCalledWith(
         mockLanguageModel,
         'Augmented system prompt',
         [{ role: 'user', content: 'Hello' }],
@@ -154,23 +170,33 @@ describe('AIStreamHandler', () => {
 
     it('should handle fallback streaming errors', async () => {
       const error = new Error('Fallback streaming failed');
-      (StreamingService.createStreamingResponseWithFallback as Mock).mockRejectedValue(error);
+      (
+        StreamingService.createStreamingResponseWithFallback as Mock
+      ).mockRejectedValue(error);
 
-      await expect(AIStreamHandler.createStreamingResponseWithFallback(fallbackParams)).rejects.toThrow('Fallback streaming failed');
+      await expect(
+        AIStreamHandler.createStreamingResponseWithFallback(fallbackParams)
+      ).rejects.toThrow('Fallback streaming failed');
     });
 
     it('should handle undefined apiKey', async () => {
       const mockResponse = new Response('test');
-      (StreamingService.createStreamingResponseWithFallback as Mock).mockResolvedValue(mockResponse);
+      (
+        StreamingService.createStreamingResponseWithFallback as Mock
+      ).mockResolvedValue(mockResponse);
 
       const paramsWithoutApiKey = {
         ...fallbackParams,
         apiKey: undefined,
       };
 
-      await AIStreamHandler.createStreamingResponseWithFallback(paramsWithoutApiKey);
+      await AIStreamHandler.createStreamingResponseWithFallback(
+        paramsWithoutApiKey
+      );
 
-      expect(StreamingService.createStreamingResponseWithFallback).toHaveBeenCalledWith(
+      expect(
+        StreamingService.createStreamingResponseWithFallback
+      ).toHaveBeenCalledWith(
         mockLanguageModel,
         'Augmented system prompt',
         [{ role: 'user', content: 'Hello' }],
@@ -209,7 +235,10 @@ describe('AIStreamHandler', () => {
     it('should handle Error instances with detailed error response', () => {
       const error = new Error('Test error message');
 
-      const response = AIStreamHandler.handleStreamingError(error, errorContext);
+      const response = AIStreamHandler.handleStreamingError(
+        error,
+        errorContext
+      );
 
       expect(response.status).toBe(500);
       expect(response.headers.get('Content-Type')).toBe('application/json');
@@ -227,23 +256,31 @@ describe('AIStreamHandler', () => {
         });
       });
 
-      expect(console.error).toHaveBeenCalledWith('Streaming error in streaming:', {
-        error,
-        chatId: 'chat-123',
-        userId: 'user-123',
-        model: 'gpt-4',
-      });
+      expect(console.error).toHaveBeenCalledWith(
+        'Streaming error in streaming:',
+        {
+          error,
+          chatId: 'chat-123',
+          userId: 'user-123',
+          model: 'gpt-4',
+        }
+      );
     });
 
     it('should handle unknown error types with generic message', () => {
       const error = 'Unknown error';
 
-      const response = AIStreamHandler.handleStreamingError(error, errorContext);
+      const response = AIStreamHandler.handleStreamingError(
+        error,
+        errorContext
+      );
 
       expect(response.status).toBe(500);
 
       response.json().then((body) => {
-        expect(body.message).toBe('An unexpected error occurred while processing your request');
+        expect(body.message).toBe(
+          'An unexpected error occurred while processing your request'
+        );
       });
     });
 
@@ -252,7 +289,9 @@ describe('AIStreamHandler', () => {
 
       expect(response.status).toBe(500);
       response.json().then((body) => {
-        expect(body.message).toBe('An unexpected error occurred while processing your request');
+        expect(body.message).toBe(
+          'An unexpected error occurred while processing your request'
+        );
       });
     });
 
@@ -260,12 +299,19 @@ describe('AIStreamHandler', () => {
       const error = new Error('Test error');
       const beforeTime = new Date().toISOString();
 
-      const response = AIStreamHandler.handleStreamingError(error, errorContext);
+      const response = AIStreamHandler.handleStreamingError(
+        error,
+        errorContext
+      );
 
       response.json().then((body) => {
         const timestamp = body.details.timestamp;
-        expect(timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
-        expect(new Date(timestamp).getTime()).toBeGreaterThanOrEqual(new Date(beforeTime).getTime());
+        expect(timestamp).toMatch(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+        );
+        expect(new Date(timestamp).getTime()).toBeGreaterThanOrEqual(
+          new Date(beforeTime).getTime()
+        );
       });
     });
   });

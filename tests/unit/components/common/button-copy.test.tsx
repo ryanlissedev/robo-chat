@@ -5,7 +5,13 @@ import { renderWithProviders } from '@/tests/test-utils';
 
 // Mock TextMorph to render text content properly
 vi.mock('@/components/motion-primitives/text-morph', () => ({
-  TextMorph: ({ children, as = 'span' }: { children: React.ReactNode; as?: string }) => {
+  TextMorph: ({
+    children,
+    as = 'span',
+  }: {
+    children: React.ReactNode;
+    as?: string;
+  }) => {
     const Component = as as keyof JSX.IntrinsicElements;
     return <Component>{children}</Component>;
   },

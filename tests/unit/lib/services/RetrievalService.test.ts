@@ -108,7 +108,9 @@ describe('RetrievalService', () => {
     messageGroupId: 'group-123',
     langsmithRunId: 'run-123',
     messages: mockMessages,
-    precomputedModelMessages: [{ role: 'user', content: 'What is machine learning?' }] as any,
+    precomputedModelMessages: [
+      { role: 'user', content: 'What is machine learning?' },
+    ] as any,
   };
 
   beforeEach(() => {
@@ -119,10 +121,12 @@ describe('RetrievalService', () => {
     (selectRetrievalMode as Mock).mockReturnValue('two-pass');
     (retrieveWithGpt41 as Mock).mockResolvedValue(mockRetrievedChunks);
     (performVectorRetrieval as Mock).mockResolvedValue(mockRetrievedChunks);
-    (buildAugmentedSystemPrompt as Mock).mockReturnValue('Augmented system prompt with context');
-    (StreamingService.createStreamingResponseWithFallback as Mock).mockResolvedValue(
-      new Response('streaming response')
+    (buildAugmentedSystemPrompt as Mock).mockReturnValue(
+      'Augmented system prompt with context'
     );
+    (
+      StreamingService.createStreamingResponseWithFallback as Mock
+    ).mockResolvedValue(new Response('streaming response'));
   });
 
   describe('shouldUseFallbackRetrieval', () => {
@@ -157,9 +161,12 @@ describe('RetrievalService', () => {
     it('should perform two-pass retrieval when enabled', async () => {
       (selectRetrievalMode as Mock).mockReturnValue('two-pass');
 
-      const response = await RetrievalService.handleFallbackRetrieval(baseFallbackParams);
+      const response =
+        await RetrievalService.handleFallbackRetrieval(baseFallbackParams);
 
-      expect(selectRetrievalMode).toHaveBeenCalledWith(RETRIEVAL_TWO_PASS_ENABLED);
+      expect(selectRetrievalMode).toHaveBeenCalledWith(
+        RETRIEVAL_TWO_PASS_ENABLED
+      );
       expect(retrieveWithGpt41).toHaveBeenCalledWith(
         'What is machine learning?',
         mockMessages,
@@ -170,7 +177,9 @@ describe('RetrievalService', () => {
         mockRetrievedChunks,
         { budgetTokens: RETRIEVAL_MAX_TOKENS }
       );
-      expect(StreamingService.createStreamingResponseWithFallback).toHaveBeenCalledWith(
+      expect(
+        StreamingService.createStreamingResponseWithFallback
+      ).toHaveBeenCalledWith(
         mockLanguageModel,
         'Augmented system prompt with context',
         baseFallbackParams.precomputedModelMessages,
@@ -204,7 +213,9 @@ describe('RetrievalService', () => {
 
     it('should fallback to vector retrieval when two-pass fails', async () => {
       (selectRetrievalMode as Mock).mockReturnValue('two-pass');
-      (retrieveWithGpt41 as Mock).mockRejectedValue(new Error('Two-pass failed'));
+      (retrieveWithGpt41 as Mock).mockRejectedValue(
+        new Error('Two-pass failed')
+      );
 
       await RetrievalService.handleFallbackRetrieval(baseFallbackParams);
 
@@ -278,7 +289,9 @@ describe('RetrievalService', () => {
 
       await RetrievalService.handleFallbackRetrieval(emptyMessagesParams);
 
-      expect(retrieveWithGpt41).toHaveBeenCalledWith('', [], { topK: RETRIEVAL_TOP_K });
+      expect(retrieveWithGpt41).toHaveBeenCalledWith('', [], {
+        topK: RETRIEVAL_TOP_K,
+      });
     });
 
     it('should handle non-user last message', async () => {
@@ -298,7 +311,11 @@ describe('RetrievalService', () => {
 
       await RetrievalService.handleFallbackRetrieval(assistantLastParams);
 
-      expect(retrieveWithGpt41).toHaveBeenCalledWith('', assistantLastMessages, { topK: RETRIEVAL_TOP_K });
+      expect(retrieveWithGpt41).toHaveBeenCalledWith(
+        '',
+        assistantLastMessages,
+        { topK: RETRIEVAL_TOP_K }
+      );
     });
 
     it('should handle undefined apiKey', async () => {
@@ -309,7 +326,9 @@ describe('RetrievalService', () => {
 
       await RetrievalService.handleFallbackRetrieval(noApiKeyParams);
 
-      expect(StreamingService.createStreamingResponseWithFallback).toHaveBeenCalledWith(
+      expect(
+        StreamingService.createStreamingResponseWithFallback
+      ).toHaveBeenCalledWith(
         expect.any(Object),
         expect.any(String),
         expect.any(Object),
@@ -337,7 +356,9 @@ describe('RetrievalService', () => {
 
       await RetrievalService.handleFallbackRetrieval(gpt5Params);
 
-      expect(StreamingService.createStreamingResponseWithFallback).toHaveBeenCalledWith(
+      expect(
+        StreamingService.createStreamingResponseWithFallback
+      ).toHaveBeenCalledWith(
         mockLanguageModel,
         'Augmented system prompt with context',
         baseFallbackParams.precomputedModelMessages,
@@ -359,47 +380,75 @@ describe('RetrievalService', () => {
 
   describe('performVectorRetrieval', () => {
     it('should perform vector retrieval with default options', async () => {
-      const result = await RetrievalService.performVectorRetrieval('test query');
+      const result =
+        await RetrievalService.performVectorRetrieval('test query');
 
-      expect(performVectorRetrieval).toHaveBeenCalledWith('test query', { topK: RETRIEVAL_TOP_K });
+      expect(performVectorRetrieval).toHaveBeenCalledWith('test query', {
+        topK: RETRIEVAL_TOP_K,
+      });
       expect(result).toBe(mockRetrievedChunks);
     });
 
     it('should perform vector retrieval with custom topK', async () => {
       await RetrievalService.performVectorRetrieval('test query', { topK: 5 });
 
-      expect(performVectorRetrieval).toHaveBeenCalledWith('test query', { topK: 5 });
+      expect(performVectorRetrieval).toHaveBeenCalledWith('test query', {
+        topK: 5,
+      });
     });
 
     it('should handle retrieval errors', async () => {
-      (performVectorRetrieval as Mock).mockRejectedValue(new Error('Retrieval failed'));
+      (performVectorRetrieval as Mock).mockRejectedValue(
+        new Error('Retrieval failed')
+      );
 
-      await expect(RetrievalService.performVectorRetrieval('test query')).rejects.toThrow('Retrieval failed');
+      await expect(
+        RetrievalService.performVectorRetrieval('test query')
+      ).rejects.toThrow('Retrieval failed');
     });
 
     it('should handle empty query', async () => {
       await RetrievalService.performVectorRetrieval('');
 
-      expect(performVectorRetrieval).toHaveBeenCalledWith('', { topK: RETRIEVAL_TOP_K });
+      expect(performVectorRetrieval).toHaveBeenCalledWith('', {
+        topK: RETRIEVAL_TOP_K,
+      });
     });
   });
 
   describe('performTwoPassRetrieval', () => {
     it('should perform two-pass retrieval with default options', async () => {
-      const result = await RetrievalService.performTwoPassRetrieval('test query', mockMessages);
+      const result = await RetrievalService.performTwoPassRetrieval(
+        'test query',
+        mockMessages
+      );
 
-      expect(retrieveWithGpt41).toHaveBeenCalledWith('test query', mockMessages, { topK: RETRIEVAL_TOP_K });
+      expect(retrieveWithGpt41).toHaveBeenCalledWith(
+        'test query',
+        mockMessages,
+        { topK: RETRIEVAL_TOP_K }
+      );
       expect(result).toBe(mockRetrievedChunks);
     });
 
     it('should perform two-pass retrieval with custom topK', async () => {
-      await RetrievalService.performTwoPassRetrieval('test query', mockMessages, { topK: 5 });
+      await RetrievalService.performTwoPassRetrieval(
+        'test query',
+        mockMessages,
+        { topK: 5 }
+      );
 
-      expect(retrieveWithGpt41).toHaveBeenCalledWith('test query', mockMessages, { topK: 5 });
+      expect(retrieveWithGpt41).toHaveBeenCalledWith(
+        'test query',
+        mockMessages,
+        { topK: 5 }
+      );
     });
 
     it('should handle retrieval errors', async () => {
-      (retrieveWithGpt41 as Mock).mockRejectedValue(new Error('Two-pass failed'));
+      (retrieveWithGpt41 as Mock).mockRejectedValue(
+        new Error('Two-pass failed')
+      );
 
       await expect(
         RetrievalService.performTwoPassRetrieval('test query', mockMessages)
@@ -409,7 +458,9 @@ describe('RetrievalService', () => {
     it('should handle empty messages', async () => {
       await RetrievalService.performTwoPassRetrieval('test query', []);
 
-      expect(retrieveWithGpt41).toHaveBeenCalledWith('test query', [], { topK: RETRIEVAL_TOP_K });
+      expect(retrieveWithGpt41).toHaveBeenCalledWith('test query', [], {
+        topK: RETRIEVAL_TOP_K,
+      });
     });
   });
 
@@ -469,7 +520,9 @@ describe('RetrievalService', () => {
 
       const result = RetrievalService.selectRetrievalMode();
 
-      expect(selectRetrievalMode).toHaveBeenCalledWith(RETRIEVAL_TWO_PASS_ENABLED);
+      expect(selectRetrievalMode).toHaveBeenCalledWith(
+        RETRIEVAL_TWO_PASS_ENABLED
+      );
       expect(result).toBe('two-pass');
     });
 
@@ -495,7 +548,12 @@ describe('RetrievalService', () => {
     });
 
     it('should log retrieval operation successfully', () => {
-      RetrievalService.logRetrievalOperation('search', 'test query', 5, 'vector');
+      RetrievalService.logRetrievalOperation(
+        'search',
+        'test query',
+        5,
+        'vector'
+      );
 
       expect(logger.info).toHaveBeenCalledWith(
         {
@@ -510,7 +568,12 @@ describe('RetrievalService', () => {
     });
 
     it('should log two-pass retrieval operation', () => {
-      RetrievalService.logRetrievalOperation('search', 'longer test query', 8, 'two-pass');
+      RetrievalService.logRetrievalOperation(
+        'search',
+        'longer test query',
+        8,
+        'two-pass'
+      );
 
       expect(logger.info).toHaveBeenCalledWith(
         {
@@ -551,7 +614,12 @@ describe('RetrievalService', () => {
     });
 
     it('should handle zero retrieved count', () => {
-      RetrievalService.logRetrievalOperation('search', 'no results query', 0, 'vector');
+      RetrievalService.logRetrievalOperation(
+        'search',
+        'no results query',
+        0,
+        'vector'
+      );
 
       expect(logger.info).toHaveBeenCalledWith(
         {
@@ -568,11 +636,13 @@ describe('RetrievalService', () => {
 
   describe('edge cases and error handling', () => {
     it('should handle streaming service errors in fallback retrieval', async () => {
-      (StreamingService.createStreamingResponseWithFallback as Mock).mockRejectedValue(
-        new Error('Streaming failed')
-      );
+      (
+        StreamingService.createStreamingResponseWithFallback as Mock
+      ).mockRejectedValue(new Error('Streaming failed'));
 
-      await expect(RetrievalService.handleFallbackRetrieval(baseFallbackParams)).rejects.toThrow('Streaming failed');
+      await expect(
+        RetrievalService.handleFallbackRetrieval(baseFallbackParams)
+      ).rejects.toThrow('Streaming failed');
     });
 
     it('should handle system prompt augmentation errors', async () => {
@@ -580,15 +650,23 @@ describe('RetrievalService', () => {
         throw new Error('Augmentation failed');
       });
 
-      await expect(RetrievalService.handleFallbackRetrieval(baseFallbackParams)).rejects.toThrow('Augmentation failed');
+      await expect(
+        RetrievalService.handleFallbackRetrieval(baseFallbackParams)
+      ).rejects.toThrow('Augmentation failed');
     });
 
     it('should handle both retrieval methods failing', async () => {
       (selectRetrievalMode as Mock).mockReturnValue('two-pass');
-      (retrieveWithGpt41 as Mock).mockRejectedValue(new Error('Two-pass failed'));
-      (performVectorRetrieval as Mock).mockRejectedValue(new Error('Vector failed'));
+      (retrieveWithGpt41 as Mock).mockRejectedValue(
+        new Error('Two-pass failed')
+      );
+      (performVectorRetrieval as Mock).mockRejectedValue(
+        new Error('Vector failed')
+      );
 
-      await expect(RetrievalService.handleFallbackRetrieval(baseFallbackParams)).rejects.toThrow('Vector failed');
+      await expect(
+        RetrievalService.handleFallbackRetrieval(baseFallbackParams)
+      ).rejects.toThrow('Vector failed');
     });
 
     it('should handle malformed message content', async () => {
@@ -609,7 +687,9 @@ describe('RetrievalService', () => {
       await RetrievalService.handleFallbackRetrieval(malformedParams);
 
       // Should extract empty string from malformed content
-      expect(retrieveWithGpt41).toHaveBeenCalledWith('', malformedMessages, { topK: RETRIEVAL_TOP_K });
+      expect(retrieveWithGpt41).toHaveBeenCalledWith('', malformedMessages, {
+        topK: RETRIEVAL_TOP_K,
+      });
     });
   });
 });

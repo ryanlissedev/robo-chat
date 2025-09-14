@@ -17,10 +17,5 @@
     }
   },
   "include": ["lib/models/*.ts"],
-  "exclude": [
-    "node_modules",
-    "tests",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ]
+  "exclude": ["node_modules", "tests", "**/*.test.ts", "**/*.spec.ts"]
 }

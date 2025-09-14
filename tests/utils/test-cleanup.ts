@@ -256,7 +256,10 @@ export function startPerformanceMonitor(label: string): void {
   }
 }
 
-export function endPerformanceMonitor(label: string): { duration: number; memoryDelta?: number } {
+export function endPerformanceMonitor(label: string): {
+  duration: number;
+  memoryDelta?: number;
+} {
   const startTime = performanceTimers.get(label);
   const startMemory = performanceMemory.get(label);
 

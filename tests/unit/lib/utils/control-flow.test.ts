@@ -34,7 +34,8 @@ describe('control-flow utilities', () => {
     });
 
     it('should handle async operations with delays', async () => {
-      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      const delay = (ms: number) =>
+        new Promise((resolve) => setTimeout(resolve, ms));
       const addWithDelay: AsyncTransform<number, number> = async (x) => {
         await delay(10);
         return x + 1;
@@ -50,7 +51,9 @@ describe('control-flow utilities', () => {
         throw new Error('Operation failed');
       };
 
-      await expect(pipeline(10, failingOperation)).rejects.toThrow('Operation failed');
+      await expect(pipeline(10, failingOperation)).rejects.toThrow(
+        'Operation failed'
+      );
     });
   });
 
@@ -270,7 +273,9 @@ describe('control-flow utilities', () => {
         throw new Error('Fallback failed');
       };
 
-      await expect(withFallback(primary, fallback)).rejects.toThrow('Fallback failed');
+      await expect(withFallback(primary, fallback)).rejects.toThrow(
+        'Fallback failed'
+      );
     });
 
     it('should handle different return types between primary and fallback', async () => {
@@ -288,8 +293,14 @@ describe('control-flow utilities', () => {
   describe('ConditionalChain', () => {
     it('should execute first matching condition', () => {
       const result = ConditionalChain.of(10)
-        .when(x => x > 5, x => x * 2)
-        .when(x => x > 15, x => x + 100) // This won't execute because first condition matched
+        .when(
+          (x) => x > 5,
+          (x) => x * 2
+        )
+        .when(
+          (x) => x > 15,
+          (x) => x + 100
+        ) // This won't execute because first condition matched
         .get();
 
       expect(result).toBe(20);
@@ -297,8 +308,14 @@ describe('control-flow utilities', () => {
 
     it('should execute only the first matching condition', () => {
       const result = ConditionalChain.of(5)
-        .when(x => x < 10, x => x + 1)
-        .when(x => x === 6, x => x * 10) // This won't execute
+        .when(
+          (x) => x < 10,
+          (x) => x + 1
+        )
+        .when(
+          (x) => x === 6,
+          (x) => x * 10
+        ) // This won't execute
         .get();
 
       expect(result).toBe(6);
@@ -306,25 +323,40 @@ describe('control-flow utilities', () => {
 
     it('should use otherwise when no conditions match', () => {
       const result = ConditionalChain.of(5)
-        .when(x => x > 10, x => x * 2)
-        .when(x => x < 0, x => x + 100)
-        .otherwise(x => x - 1);
+        .when(
+          (x) => x > 10,
+          (x) => x * 2
+        )
+        .when(
+          (x) => x < 0,
+          (x) => x + 100
+        )
+        .otherwise((x) => x - 1);
 
       expect(result).toBe(4);
     });
 
     it('should not use otherwise when a condition matches', () => {
       const result = ConditionalChain.of(5)
-        .when(x => x === 5, x => x * 3)
-        .otherwise(x => x - 1);
+        .when(
+          (x) => x === 5,
+          (x) => x * 3
+        )
+        .otherwise((x) => x - 1);
 
       expect(result).toBe(15);
     });
 
     it('should convert to async chain with whenAsync', async () => {
       const chain = ConditionalChain.of(10)
-        .when(x => x < 5, x => x * 2)
-        .whenAsync(x => x > 5, async x => x + 10);
+        .when(
+          (x) => x < 5,
+          (x) => x * 2
+        )
+        .whenAsync(
+          (x) => x > 5,
+          async (x) => x + 10
+        );
 
       const result = await chain.get();
 
@@ -333,7 +365,10 @@ describe('control-flow utilities', () => {
 
     it('should work with string values', () => {
       const result = ConditionalChain.of('hello')
-        .when(s => s.length > 3, s => s.toUpperCase())
+        .when(
+          (s) => s.length > 3,
+          (s) => s.toUpperCase()
+        )
         .get();
 
       expect(result).toBe('HELLO');
@@ -348,7 +383,10 @@ describe('control-flow utilities', () => {
       const user: User = { name: 'John', age: 25 };
 
       const result = ConditionalChain.of(user)
-        .when(u => u.age >= 18, u => ({ ...u, status: 'adult' } as any))
+        .when(
+          (u) => u.age >= 18,
+          (u) => ({ ...u, status: 'adult' }) as any
+        )
         .get();
 
       expect(result).toEqual({ name: 'John', age: 25, status: 'adult' });
@@ -358,7 +396,10 @@ describe('control-flow utilities', () => {
   describe('AsyncConditionalChain', () => {
     it('should execute async conditions', async () => {
       const result = await AsyncConditionalChain.of(10)
-        .whenAsync(x => x > 5, async x => x * 2)
+        .whenAsync(
+          (x) => x > 5,
+          async (x) => x * 2
+        )
         .get();
 
       expect(result).toBe(20);
@@ -366,8 +407,14 @@ describe('control-flow utilities', () => {
 
     it('should execute first matching async condition', async () => {
       const result = await AsyncConditionalChain.of(10)
-        .whenAsync(x => x > 5, async x => x * 2)
-        .whenAsync(x => x > 15, async x => x + 100) // Won't execute
+        .whenAsync(
+          (x) => x > 5,
+          async (x) => x * 2
+        )
+        .whenAsync(
+          (x) => x > 15,
+          async (x) => x + 100
+        ) // Won't execute
         .get();
 
       expect(result).toBe(20);
@@ -375,8 +422,11 @@ describe('control-flow utilities', () => {
 
     it('should use async otherwise when no conditions match', async () => {
       const result = await AsyncConditionalChain.of(5)
-        .whenAsync(x => x > 10, async x => x * 2)
-        .otherwise(async x => x - 1);
+        .whenAsync(
+          (x) => x > 10,
+          async (x) => x * 2
+        )
+        .otherwise(async (x) => x - 1);
 
       expect(result).toBe(4);
     });
@@ -385,25 +435,36 @@ describe('control-flow utilities', () => {
       const promiseValue = Promise.resolve(15);
 
       const result = await AsyncConditionalChain.of(promiseValue)
-        .whenAsync(x => x > 10, async x => x / 3)
+        .whenAsync(
+          (x) => x > 10,
+          async (x) => x / 3
+        )
         .get();
 
       expect(result).toBe(5);
     });
 
     it('should handle async transform errors', async () => {
-      const chain = AsyncConditionalChain.of(10)
-        .whenAsync(x => x > 5, async () => {
+      const chain = AsyncConditionalChain.of(10).whenAsync(
+        (x) => x > 5,
+        async () => {
           throw new Error('Async transform failed');
-        });
+        }
+      );
 
       await expect(chain.get()).rejects.toThrow('Async transform failed');
     });
 
     it('should chain multiple async conditions', async () => {
       const result = await AsyncConditionalChain.of(1)
-        .whenAsync(x => x > 5, async x => x * 2)
-        .whenAsync(x => x < 5, async x => x + 10)
+        .whenAsync(
+          (x) => x > 5,
+          async (x) => x * 2
+        )
+        .whenAsync(
+          (x) => x < 5,
+          async (x) => x + 10
+        )
         .get();
 
       expect(result).toBe(11);
@@ -428,7 +489,9 @@ describe('control-flow utilities', () => {
 
     it('should provide index to transform function', () => {
       const letters = ['a', 'b', 'c'];
-      const withIndex = (letter: string, index: number) => [`${letter}${index}`];
+      const withIndex = (letter: string, index: number) => [
+        `${letter}${index}`,
+      ];
 
       const result = flatMap(letters, withIndex);
 
@@ -450,7 +513,18 @@ describe('control-flow utilities', () => {
 
       const result = flatMap(words, explode);
 
-      expect(result).toEqual(['h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd']);
+      expect(result).toEqual([
+        'h',
+        'e',
+        'l',
+        'l',
+        'o',
+        'w',
+        'o',
+        'r',
+        'l',
+        'd',
+      ]);
     });
   });
 

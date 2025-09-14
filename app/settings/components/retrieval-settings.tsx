@@ -409,7 +409,9 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
             <Slider
               max={1}
               min={0}
-              onValueChange={([value]: number[]) => updateConfig('temperature', value)}
+              onValueChange={([value]: number[]) =>
+                updateConfig('temperature', value)
+              }
               step={0.1}
               value={[config.temperature]}
             />
@@ -428,7 +430,9 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
             <Slider
               max={1}
               min={0}
-              onValueChange={([value]: number[]) => updateConfig('minScore', value)}
+              onValueChange={([value]: number[]) =>
+                updateConfig('minScore', value)
+              }
               step={0.05}
               value={[config.minScore]}
             />
@@ -460,7 +464,9 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
             <Slider
               max={4000}
               min={200}
-              onValueChange={([value]: number[]) => updateConfig('chunkSize', value)}
+              onValueChange={([value]: number[]) =>
+                updateConfig('chunkSize', value)
+              }
               step={100}
               value={[config.chunkSize]}
             />
@@ -476,7 +482,9 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
             <Slider
               max={500}
               min={0}
-              onValueChange={([value]: number[]) => updateConfig('chunkOverlap', value)}
+              onValueChange={([value]: number[]) =>
+                updateConfig('chunkOverlap', value)
+              }
               step={50}
               value={[config.chunkOverlap]}
             />

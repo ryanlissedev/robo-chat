@@ -13,8 +13,14 @@ declare module 'react' {
     [key: string]: any;
   }
 
-  interface DetailedHTMLFactory<P extends HTMLAttributes<T>, T extends Element> {
-    (props?: (ClassAttributes<T> & P) | null, ...children: ReactNode[]): DetailedReactHTMLElement<P, T>;
+  interface DetailedHTMLFactory<
+    P extends HTMLAttributes<T>,
+    T extends Element,
+  > {
+    (
+      props?: (ClassAttributes<T> & P) | null,
+      ...children: ReactNode[]
+    ): DetailedReactHTMLElement<P, T>;
   }
 
   interface HTMLAttributes<T> {
@@ -45,23 +51,15 @@ declare module '@supabase/ssr' {
     Database = any,
     SchemaName extends string & keyof Database = 'public' extends keyof Database
       ? 'public'
-      : string & keyof Database
-  >(
-    supabaseUrl: string,
-    supabaseKey: string,
-    options?: any
-  ): any;
+      : string & keyof Database,
+  >(supabaseUrl: string, supabaseKey: string, options?: any): any;
 
   export function createServerClient<
     Database = any,
     SchemaName extends string & keyof Database = 'public' extends keyof Database
       ? 'public'
-      : string & keyof Database
-  >(
-    supabaseUrl: string,
-    supabaseKey: string,
-    options?: any
-  ): any;
+      : string & keyof Database,
+  >(supabaseUrl: string, supabaseKey: string, options?: any): any;
 }
 
 // Export to ensure this is treated as a module

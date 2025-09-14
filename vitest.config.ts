@@ -43,14 +43,17 @@ const getTestConfig = () => {
     globals: true,
 
     // Include/exclude patterns based on test type
-    include: testType === 'unit'
-      ? ['tests/unit/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}']
-      : testType === 'integration'
-      ? ['tests/integration/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}']
-      : [
-          'tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
-          '**/__tests__/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
-        ],
+    include:
+      testType === 'unit'
+        ? ['tests/unit/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}']
+        : testType === 'integration'
+          ? [
+              'tests/integration/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+            ]
+          : [
+              'tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+              '**/__tests__/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+            ],
 
     exclude: [
       'node_modules',
@@ -70,7 +73,7 @@ const getTestConfig = () => {
         singleThread: isCI || testType === 'integration',
         useAtomics: true,
         minThreads: 1,
-        maxThreads: isCI ? 2 : (testType === 'integration' ? 1 : 4),
+        maxThreads: isCI ? 2 : testType === 'integration' ? 1 : 4,
         isolate: true,
       },
     },

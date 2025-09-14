@@ -47,7 +47,7 @@ describe('ChatContextBuilder', () => {
     context: 'chat',
     personalityMode: 'friendly-assistant',
     chatId: 'chat-123',
-    headers: new Headers({ 'authorization': 'Bearer test-token' }),
+    headers: new Headers({ authorization: 'Bearer test-token' }),
   };
 
   const mockModelConfig = {
@@ -65,20 +65,32 @@ describe('ChatContextBuilder', () => {
     vi.clearAllMocks();
 
     // Setup common mocks
-    (ModelConfigurationService.getModelConfiguration as Mock).mockResolvedValue(mockModelConfig);
-    (ModelConfigurationService.calculateEffectiveSettings as Mock).mockReturnValue({
+    (ModelConfigurationService.getModelConfiguration as Mock).mockResolvedValue(
+      mockModelConfig
+    );
+    (
+      ModelConfigurationService.calculateEffectiveSettings as Mock
+    ).mockReturnValue({
       reasoningEffort: 'medium',
       verbosity: 'medium',
     });
     (ModelConfigurationService.getModelSettings as Mock).mockReturnValue({
       temperature: 0.7,
     });
-    (SystemPromptService.getEffectiveSystemPrompt as Mock).mockResolvedValue('Effective system prompt');
-    (CredentialService.resolveCredentials as Mock).mockResolvedValue({ apiKey: 'test-key' });
-    (LangSmithService.createLangSmithRun as Mock).mockResolvedValue('langsmith-run-id');
+    (SystemPromptService.getEffectiveSystemPrompt as Mock).mockResolvedValue(
+      'Effective system prompt'
+    );
+    (CredentialService.resolveCredentials as Mock).mockResolvedValue({
+      apiKey: 'test-key',
+    });
+    (LangSmithService.createLangSmithRun as Mock).mockResolvedValue(
+      'langsmith-run-id'
+    );
     (shouldEnableFileSearchTools as Mock).mockReturnValue(true);
     (requireApiSdk as Mock).mockReturnValue(() => mockLanguageModel);
-    (convertToModelMessages as Mock).mockReturnValue([{ role: 'user', content: 'Hello' }]);
+    (convertToModelMessages as Mock).mockReturnValue([
+      { role: 'user', content: 'Hello' },
+    ]);
     (getModelTemperature as Mock).mockReturnValue(0.7);
     (getProviderForModel as Mock).mockReturnValue('openai');
 
@@ -95,7 +107,8 @@ describe('ChatContextBuilder', () => {
 
   describe('buildChatContext', () => {
     it('should build complete chat context successfully', async () => {
-      const context = await ChatContextBuilder.buildChatContext(baseBuildParams);
+      const context =
+        await ChatContextBuilder.buildChatContext(baseBuildParams);
 
       expect(context).toEqual({
         languageModel: mockLanguageModel,
@@ -118,7 +131,9 @@ describe('ChatContextBuilder', () => {
         ...mockModelConfig,
         isGPT5Model: true,
       };
-      (ModelConfigurationService.getModelConfiguration as Mock).mockResolvedValue(gpt5ModelConfig);
+      (
+        ModelConfigurationService.getModelConfiguration as Mock
+      ).mockResolvedValue(gpt5ModelConfig);
 
       const gpt5Params = {
         ...baseBuildParams,
@@ -128,7 +143,9 @@ describe('ChatContextBuilder', () => {
 
       await ChatContextBuilder.buildChatContext(gpt5Params);
 
-      expect(ModelConfigurationService.calculateEffectiveSettings).toHaveBeenCalledWith(
+      expect(
+        ModelConfigurationService.calculateEffectiveSettings
+      ).toHaveBeenCalledWith(
         'medium',
         'medium',
         true // isGPT5Model
@@ -168,11 +185,13 @@ describe('ChatContextBuilder', () => {
     });
 
     it('should handle model configuration errors gracefully', async () => {
-      (ModelConfigurationService.getModelConfiguration as Mock).mockRejectedValue(
-        new Error('Model config failed')
-      );
+      (
+        ModelConfigurationService.getModelConfiguration as Mock
+      ).mockRejectedValue(new Error('Model config failed'));
 
-      await expect(ChatContextBuilder.buildChatContext(baseBuildParams)).rejects.toThrow('Model config failed');
+      await expect(
+        ChatContextBuilder.buildChatContext(baseBuildParams)
+      ).rejects.toThrow('Model config failed');
     });
 
     it('should handle credential resolution errors', async () => {
@@ -180,7 +199,9 @@ describe('ChatContextBuilder', () => {
         new Error('Credential resolution failed')
       );
 
-      await expect(ChatContextBuilder.buildChatContext(baseBuildParams)).rejects.toThrow('Credential resolution failed');
+      await expect(
+        ChatContextBuilder.buildChatContext(baseBuildParams)
+      ).rejects.toThrow('Credential resolution failed');
     });
 
     it('should handle message conversion errors', async () => {
@@ -188,7 +209,9 @@ describe('ChatContextBuilder', () => {
         throw new Error('Message conversion failed');
       });
 
-      await expect(ChatContextBuilder.buildChatContext(baseBuildParams)).rejects.toThrow('Failed to convert messages to model format');
+      await expect(
+        ChatContextBuilder.buildChatContext(baseBuildParams)
+      ).rejects.toThrow('Failed to convert messages to model format');
     });
 
     it('should handle system prompt generation errors', async () => {
@@ -196,13 +219,16 @@ describe('ChatContextBuilder', () => {
         new Error('System prompt failed')
       );
 
-      await expect(ChatContextBuilder.buildChatContext(baseBuildParams)).rejects.toThrow('System prompt failed');
+      await expect(
+        ChatContextBuilder.buildChatContext(baseBuildParams)
+      ).rejects.toThrow('System prompt failed');
     });
 
     it('should handle LangSmith run creation failure gracefully', async () => {
       (LangSmithService.createLangSmithRun as Mock).mockResolvedValue(null);
 
-      const context = await ChatContextBuilder.buildChatContext(baseBuildParams);
+      const context =
+        await ChatContextBuilder.buildChatContext(baseBuildParams);
 
       expect(context.langsmithRunId).toBeNull();
     });
@@ -286,7 +312,12 @@ describe('ChatContextBuilder', () => {
         { role: 'user', content: 'What is the weather like?' },
       ] as any;
 
-      ChatContextBuilder.logUserQuery(messages, 'chat-123', 'user-123', 'gpt-4');
+      ChatContextBuilder.logUserQuery(
+        messages,
+        'chat-123',
+        'user-123',
+        'gpt-4'
+      );
 
       expect(logger.info).toHaveBeenCalledWith(
         {
@@ -302,22 +333,28 @@ describe('ChatContextBuilder', () => {
 
     it('should handle long user queries with preview truncation', () => {
       const longContent = 'A'.repeat(600);
-      const messages = [
-        { role: 'user', content: longContent },
-      ] as any;
+      const messages = [{ role: 'user', content: longContent }] as any;
 
-      ChatContextBuilder.logUserQuery(messages, 'chat-123', 'user-123', 'gpt-4');
+      ChatContextBuilder.logUserQuery(
+        messages,
+        'chat-123',
+        'user-123',
+        'gpt-4'
+      );
 
       const logCall = (logger.info as Mock).mock.calls[0][0];
       expect(logCall.preview).toBe('A'.repeat(500) + '…');
     });
 
     it('should handle messages without user content', () => {
-      const messages = [
-        { role: 'assistant', content: 'Hello!' },
-      ] as any;
+      const messages = [{ role: 'assistant', content: 'Hello!' }] as any;
 
-      ChatContextBuilder.logUserQuery(messages, 'chat-123', 'user-123', 'gpt-4');
+      ChatContextBuilder.logUserQuery(
+        messages,
+        'chat-123',
+        'user-123',
+        'gpt-4'
+      );
 
       const logCall = (logger.info as Mock).mock.calls[0][0];
       expect(logCall.preview).toBe('');
@@ -337,27 +374,38 @@ describe('ChatContextBuilder', () => {
 
       // Should not throw
       expect(() => {
-        ChatContextBuilder.logUserQuery(mockMessages, 'chat-123', 'user-123', 'gpt-4');
+        ChatContextBuilder.logUserQuery(
+          mockMessages,
+          'chat-123',
+          'user-123',
+          'gpt-4'
+        );
       }).not.toThrow();
     });
 
     it('should handle null content gracefully', () => {
-      const messages = [
-        { role: 'user', content: null },
-      ] as any;
+      const messages = [{ role: 'user', content: null }] as any;
 
-      ChatContextBuilder.logUserQuery(messages, 'chat-123', 'user-123', 'gpt-4');
+      ChatContextBuilder.logUserQuery(
+        messages,
+        'chat-123',
+        'user-123',
+        'gpt-4'
+      );
 
       const logCall = (logger.info as Mock).mock.calls[0][0];
       expect(logCall.preview).toBe('');
     });
 
     it('should handle undefined content gracefully', () => {
-      const messages = [
-        { role: 'user', content: undefined },
-      ] as any;
+      const messages = [{ role: 'user', content: undefined }] as any;
 
-      ChatContextBuilder.logUserQuery(messages, 'chat-123', 'user-123', 'gpt-4');
+      ChatContextBuilder.logUserQuery(
+        messages,
+        'chat-123',
+        'user-123',
+        'gpt-4'
+      );
 
       const logCall = (logger.info as Mock).mock.calls[0][0];
       expect(logCall.preview).toBe('');
@@ -368,7 +416,12 @@ describe('ChatContextBuilder', () => {
         { role: 'user', content: { toString: () => 'Object content' } },
       ] as any;
 
-      ChatContextBuilder.logUserQuery(messages, 'chat-123', 'user-123', 'gpt-4');
+      ChatContextBuilder.logUserQuery(
+        messages,
+        'chat-123',
+        'user-123',
+        'gpt-4'
+      );
 
       const logCall = (logger.info as Mock).mock.calls[0][0];
       expect(logCall.preview).toBe('Object content');
@@ -381,15 +434,21 @@ describe('ChatContextBuilder', () => {
         throw new Error('SDK loading failed');
       });
 
-      await expect(ChatContextBuilder.buildChatContext(baseBuildParams)).rejects.toThrow('SDK loading failed');
+      await expect(
+        ChatContextBuilder.buildChatContext(baseBuildParams)
+      ).rejects.toThrow('SDK loading failed');
     });
 
     it('should handle model settings generation failure', async () => {
-      (ModelConfigurationService.getModelSettings as Mock).mockImplementation(() => {
-        throw new Error('Model settings failed');
-      });
+      (ModelConfigurationService.getModelSettings as Mock).mockImplementation(
+        () => {
+          throw new Error('Model settings failed');
+        }
+      );
 
-      await expect(ChatContextBuilder.buildChatContext(baseBuildParams)).rejects.toThrow('Model settings failed');
+      await expect(
+        ChatContextBuilder.buildChatContext(baseBuildParams)
+      ).rejects.toThrow('Model settings failed');
     });
 
     it('should handle different reasoning summary values', async () => {
@@ -413,9 +472,12 @@ describe('ChatContextBuilder', () => {
         ...mockModelConfig,
         modelSupportsFileSearchTools: false,
       };
-      (ModelConfigurationService.getModelConfiguration as Mock).mockResolvedValue(noFileSearchConfig);
+      (
+        ModelConfigurationService.getModelConfiguration as Mock
+      ).mockResolvedValue(noFileSearchConfig);
 
-      const context = await ChatContextBuilder.buildChatContext(baseBuildParams);
+      const context =
+        await ChatContextBuilder.buildChatContext(baseBuildParams);
 
       expect(shouldEnableFileSearchTools).toHaveBeenCalledWith(true, false);
     });

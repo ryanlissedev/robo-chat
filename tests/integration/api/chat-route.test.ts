@@ -454,7 +454,13 @@ describe('Chat API Route', () => {
       const request = {
         method: 'POST',
         headers: new Headers({ 'Content-Type': 'application/json' }),
-        json: vi.fn().mockRejectedValue(new SyntaxError('Unexpected token \'i\', "invalid json" is not valid JSON')),
+        json: vi
+          .fn()
+          .mockRejectedValue(
+            new SyntaxError(
+              'Unexpected token \'i\', "invalid json" is not valid JSON'
+            )
+          ),
       } as any;
 
       const response = await POST(request);

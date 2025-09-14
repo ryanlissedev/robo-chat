@@ -250,8 +250,7 @@ export default function DemoGPT5() {
                   tokens
                 </div>
                 <div>
-                  Response Time:{' '}
-                  {modelStats?.stats?.responseTime || 'N/A'}
+                  Response Time: {modelStats?.stats?.responseTime || 'N/A'}
                 </div>
               </div>
             </div>

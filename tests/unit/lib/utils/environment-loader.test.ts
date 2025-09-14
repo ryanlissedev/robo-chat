@@ -83,7 +83,11 @@ describe('environment-loader utilities', () => {
 
       const config = loadEnvironmentConfig();
 
-      expect(config.vectorStoreIds).toEqual(['singular1', 'singular2', 'singular3']);
+      expect(config.vectorStoreIds).toEqual([
+        'singular1',
+        'singular2',
+        'singular3',
+      ]);
     });
 
     it('should filter out empty strings from vector store IDs', () => {
@@ -100,7 +104,9 @@ describe('environment-loader utilities', () => {
 
       const config = loadEnvironmentConfig();
 
-      expect(config.vectorStoreIds).toEqual(['vs_6849955367a88191bf89d7660230325f']);
+      expect(config.vectorStoreIds).toEqual([
+        'vs_6849955367a88191bf89d7660230325f',
+      ]);
     });
 
     it('should use default vector store when both plural and singular have only empty strings', () => {
@@ -109,7 +115,9 @@ describe('environment-loader utilities', () => {
 
       const config = loadEnvironmentConfig();
 
-      expect(config.vectorStoreIds).toEqual(['vs_6849955367a88191bf89d7660230325f']);
+      expect(config.vectorStoreIds).toEqual([
+        'vs_6849955367a88191bf89d7660230325f',
+      ]);
     });
 
     it('should handle single vector store ID without commas', () => {
@@ -136,11 +144,16 @@ describe('environment-loader utilities', () => {
     });
 
     it('should handle complex vector store IDs with special characters', () => {
-      process.env.OPENAI_VECTOR_STORE_IDS = 'vs_abc123,vs_def456-ghi,vs_789_xyz';
+      process.env.OPENAI_VECTOR_STORE_IDS =
+        'vs_abc123,vs_def456-ghi,vs_789_xyz';
 
       const config = loadEnvironmentConfig();
 
-      expect(config.vectorStoreIds).toEqual(['vs_abc123', 'vs_def456-ghi', 'vs_789_xyz']);
+      expect(config.vectorStoreIds).toEqual([
+        'vs_abc123',
+        'vs_def456-ghi',
+        'vs_789_xyz',
+      ]);
     });
   });
 
@@ -152,7 +165,10 @@ describe('environment-loader utilities', () => {
         vectorStoreIds: ['store1'],
       };
 
-      const result = validateEnvironmentConfig(config, ['openaiApiKey', 'anthropicApiKey']);
+      const result = validateEnvironmentConfig(config, [
+        'openaiApiKey',
+        'anthropicApiKey',
+      ]);
 
       expect(result).toBeNull();
     });
@@ -164,9 +180,14 @@ describe('environment-loader utilities', () => {
         vectorStoreIds: ['store1'],
       };
 
-      const result = validateEnvironmentConfig(config, ['openaiApiKey', 'anthropicApiKey']);
+      const result = validateEnvironmentConfig(config, [
+        'openaiApiKey',
+        'anthropicApiKey',
+      ]);
 
-      expect(result).toBe('Missing required environment variable for anthropicApiKey');
+      expect(result).toBe(
+        'Missing required environment variable for anthropicApiKey'
+      );
     });
 
     it('should return error for first missing key when multiple are missing', () => {
@@ -175,9 +196,14 @@ describe('environment-loader utilities', () => {
         vectorStoreIds: ['store1'],
       };
 
-      const result = validateEnvironmentConfig(config, ['openaiApiKey', 'anthropicApiKey']);
+      const result = validateEnvironmentConfig(config, [
+        'openaiApiKey',
+        'anthropicApiKey',
+      ]);
 
-      expect(result).toBe('Missing required environment variable for openaiApiKey');
+      expect(result).toBe(
+        'Missing required environment variable for openaiApiKey'
+      );
     });
 
     it('should handle empty required keys array', () => {
@@ -196,7 +222,9 @@ describe('environment-loader utilities', () => {
 
       const result = validateEnvironmentConfig(config, ['openaiApiKey']);
 
-      expect(result).toBe('Missing required environment variable for openaiApiKey');
+      expect(result).toBe(
+        'Missing required environment variable for openaiApiKey'
+      );
     });
 
     it('should handle empty string values as missing', () => {
@@ -207,7 +235,9 @@ describe('environment-loader utilities', () => {
 
       const result = validateEnvironmentConfig(config, ['openaiApiKey']);
 
-      expect(result).toBe('Missing required environment variable for openaiApiKey');
+      expect(result).toBe(
+        'Missing required environment variable for openaiApiKey'
+      );
     });
 
     it('should validate vectorStoreIds array', () => {
@@ -217,7 +247,9 @@ describe('environment-loader utilities', () => {
 
       const result = validateEnvironmentConfig(config, ['vectorStoreIds']);
 
-      expect(result).toBe('Missing required environment variable for vectorStoreIds');
+      expect(result).toBe(
+        'Missing required environment variable for vectorStoreIds'
+      );
     });
 
     it('should accept non-empty vectorStoreIds array', () => {
@@ -237,7 +269,9 @@ describe('environment-loader utilities', () => {
 
       const result = validateEnvironmentConfig(config, ['langsmithConfig']);
 
-      expect(result).toBe('Missing required environment variable for langsmithConfig');
+      expect(result).toBe(
+        'Missing required environment variable for langsmithConfig'
+      );
     });
   });
 
@@ -451,7 +485,10 @@ describe('environment-loader utilities', () => {
 
       const config = getVectorStoreConfig();
 
-      expect(config.vectorStoreIds).toEqual(['singular-store1', 'singular-store2']);
+      expect(config.vectorStoreIds).toEqual([
+        'singular-store1',
+        'singular-store2',
+      ]);
     });
 
     it('should handle whitespace in vector store IDs', () => {
@@ -460,7 +497,11 @@ describe('environment-loader utilities', () => {
       const config = getVectorStoreConfig();
 
       // Note: The implementation doesn't trim whitespace, so this reflects actual behavior
-      expect(config.vectorStoreIds).toEqual([' store1 ', ' store2 ', ' store3 ']);
+      expect(config.vectorStoreIds).toEqual([
+        ' store1 ',
+        ' store2 ',
+        ' store3 ',
+      ]);
       expect(config.hasVectorStores).toBe(true);
     });
   });
@@ -479,7 +520,9 @@ describe('environment-loader utilities', () => {
       expect(config.openaiApiKey).toBe('');
       expect(config.anthropicApiKey).toBe('');
       expect(config.googleApiKey).toBe('');
-      expect(config.vectorStoreIds).toEqual(['vs_6849955367a88191bf89d7660230325f']);
+      expect(config.vectorStoreIds).toEqual([
+        'vs_6849955367a88191bf89d7660230325f',
+      ]);
       expect(config.langsmithConfig?.apiKey).toBe('');
       expect(config.langsmithConfig?.project).toBe('');
 
@@ -490,13 +533,19 @@ describe('environment-loader utilities', () => {
     it('should handle configuration with special characters and unicode', () => {
       process.env.OPENAI_API_KEY = 'key-with-special-chars!@#$%^&*()_+-=';
       process.env.LANGSMITH_PROJECT = 'project-with-unicode-café-🚀';
-      process.env.OPENAI_VECTOR_STORE_IDS = 'store-with-émojis-🔥,another-store-日本語';
+      process.env.OPENAI_VECTOR_STORE_IDS =
+        'store-with-émojis-🔥,another-store-日本語';
 
       const config = loadEnvironmentConfig();
 
       expect(config.openaiApiKey).toBe('key-with-special-chars!@#$%^&*()_+-=');
-      expect(config.langsmithConfig?.project).toBe('project-with-unicode-café-🚀');
-      expect(config.vectorStoreIds).toEqual(['store-with-émojis-🔥', 'another-store-日本語']);
+      expect(config.langsmithConfig?.project).toBe(
+        'project-with-unicode-café-🚀'
+      );
+      expect(config.vectorStoreIds).toEqual([
+        'store-with-émojis-🔥',
+        'another-store-日本語',
+      ]);
     });
 
     it('should maintain consistency across multiple calls', () => {
@@ -518,7 +567,10 @@ describe('environment-loader utilities', () => {
 
     it('should handle very long environment variable values', () => {
       const longKey = 'a'.repeat(1000);
-      const longStoreIds = Array.from({ length: 100 }, (_, i) => `store-${i}`).join(',');
+      const longStoreIds = Array.from(
+        { length: 100 },
+        (_, i) => `store-${i}`
+      ).join(',');
 
       process.env.OPENAI_API_KEY = longKey;
       process.env.OPENAI_VECTOR_STORE_IDS = longStoreIds;

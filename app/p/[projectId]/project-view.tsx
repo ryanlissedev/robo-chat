@@ -1,6 +1,7 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { useQuery } from '@tanstack/react-query';
 import { MessageCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -88,6 +89,9 @@ export function ProjectView({ projectId }: ProjectViewProps) {
 
   const { messages, status, stop, setMessages, sendMessage } = useChat({
     id: `project-${projectId}-${currentChatId}`,
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+    }),
     onFinish: ({ message }) => cacheAndAddMessage(message),
     onError: handleError,
   });
@@ -240,6 +244,7 @@ export function ProjectView({ projectId }: ProjectViewProps) {
 
       const options = {
         body: {
+          messages: [...messages, optimisticMessage],
           chatId: currentChatId,
           userId: user.id,
           model: selectedModel,

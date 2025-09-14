@@ -417,7 +417,9 @@ describe('UI Store', () => {
         expect(result.current.isLoading).toBe(false);
         expect(result.current.error).toBe(null);
 
-        const mockAsyncFn = vi.fn().mockRejectedValue(new Error('Upload failed'));
+        const mockAsyncFn = vi
+          .fn()
+          .mockRejectedValue(new Error('Upload failed'));
 
         let resultPromise: Promise<any> = Promise.resolve();
         act(() => {

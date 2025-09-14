@@ -21,6 +21,7 @@ test-results/
 
 # Conductor and agent files
 .conductor/
+.conductor/**
 .swarm/
 .hive-mind/
 memory/
@@ -56,3 +57,4 @@ test-results.json
 
 # Memory and coordination files
 memories.json
+tests/unit/edge-cases-and-errors.test.ts

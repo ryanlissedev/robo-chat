@@ -565,7 +565,9 @@ describe('MultiModelSelector', () => {
   describe('Model Selection', () => {
     it('should select a new model', async () => {
       // Debug: spy on console to see if there are any errors
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       renderComponent();
 
@@ -574,7 +576,10 @@ describe('MultiModelSelector', () => {
 
       // Wait for dropdown to open
       await waitFor(() => {
-        expect(screen.getByTestId('dropdown-menu')).toHaveAttribute('data-open', 'true');
+        expect(screen.getByTestId('dropdown-menu')).toHaveAttribute(
+          'data-open',
+          'true'
+        );
       });
 
       // The dropdown content is already rendered, so we can find menu items immediately
