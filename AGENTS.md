@@ -3,26 +3,26 @@
 ## Quick Start
 ```bash
 ./SETUP.sh              # Run initial setup (installs deps, configures env)
-npm run dev             # Start development server with Turbopack
-npm run build           # Production build
-npm start               # Start production server
+pnpm run dev             # Start development server with Turbopack
+pnpm run build           # Production build
+pnpm start               # Start production server
 ```
 
 ## Development Commands
 ```bash
-npm run type-check      # TypeScript validation
-npm run lint            # Check code quality with Biome
-npm run lint:fix        # Auto-fix linting issues
-npm run format          # Format code with Biome
+pnpm run type-check      # TypeScript validation
+pnpm run lint            # Check code quality with Biome
+pnpm run lint:fix        # Auto-fix linting issues
+pnpm run format          # Format code with Biome
 ```
 
 ## Testing Commands
 ```bash
-npm test                # Run all tests with Vitest
-npm run test:unit       # Unit tests only
-npm run test:integration # Integration tests
-npm run test:e2e        # End-to-end tests with Playwright
-npm run test:coverage   # Generate coverage report
+pnpm test                # Run all tests with Vitest
+pnpm run test:unit       # Unit tests only
+pnpm run test:integration # Integration tests
+pnpm run test:e2e        # End-to-end tests with Playwright
+pnpm run test:coverage   # Generate coverage report
 ```
 
 ## Key Files

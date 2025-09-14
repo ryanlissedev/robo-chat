@@ -52,7 +52,7 @@ export type ChatRequestOptions = {
     systemPrompt: string;
     enableSearch?: boolean;
     reasoningEffort: 'low' | 'medium' | 'high';
-    context?: 'chat' | 'voice';
+    context?: 'chat';
     personalityMode?:
       | 'safety-focused'
       | 'technical-expert'

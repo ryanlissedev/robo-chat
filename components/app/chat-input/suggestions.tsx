@@ -12,7 +12,7 @@ type SuggestionsProps = {
   value?: string;
 };
 
-const MotionPromptSuggestion = motion.create(PromptSuggestion);
+const MotionPromptSuggestion = motion(PromptSuggestion);
 
 export const Suggestions = memo(function Suggestions({
   onValueChange,

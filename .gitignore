@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+coverage-analysis/
+test-results.json
+debug-test.js
 
 # next.js
 /.next/

@@ -37,7 +37,11 @@ export function cleanMessagesForTools(
         } as ExtendedUIMessage;
       }
 
-      return message;
+      // Ensure all messages have createdAt
+      return {
+        ...message,
+        createdAt: message.createdAt || new Date(),
+      };
     })
     .filter((msg): msg is ExtendedUIMessage => msg !== null);
 
@@ -108,7 +112,7 @@ function getErrorMessageFromError(error: Error): string {
   ];
 
   for (const { pattern, message: errorMessage } of errorPatterns) {
-    if (message?.includes(pattern)) {
+    if (message?.toLowerCase().includes(pattern.toLowerCase())) {
       return errorMessage;
     }
   }
@@ -136,7 +140,11 @@ export function createErrorResponse(error: {
   message?: string;
   statusCode?: number;
 }) {
-  const status = error.statusCode || DEFAULT_ERROR_STATUS_CODE;
+  // Ensure status is valid for Response constructor (200-599)
+  let status = error.statusCode ?? DEFAULT_ERROR_STATUS_CODE;
+  if (status < 200 || status > 599) {
+    status = DEFAULT_ERROR_STATUS_CODE;
+  }
   const message = error.message || 'Internal server error';
 
   return new Response(

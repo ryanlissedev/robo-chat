@@ -2,7 +2,6 @@ import { createServerClient } from '@supabase/ssr';
 import type { Database } from '@/app/types/database.types';
 import { isSupabaseEnabled } from './config';
 
-// Return a broadly-typed client to avoid downstream TS inference issues
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createGuestServerClient(): Promise<any | null> {
   if (!isSupabaseEnabled()) {
@@ -15,8 +14,10 @@ export async function createGuestServerClient(): Promise<any | null> {
     {
       cookies: {
         getAll: () => [],
-        setAll: () => {},
+        setAll: () => {
+          /* no-op in guest server client */
+        },
       },
     }
-  ) as any;
+  ) as unknown as any;
 }

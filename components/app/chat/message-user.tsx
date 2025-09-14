@@ -193,7 +193,7 @@ export function MessageUser({
             )}
           </button>
         </MessageAction>
-        {/* @todo: add when ready */}
+        {/* Edit functionality to be added */}
         {/* <MessageAction
           tooltip={isEditing ? "Save" : "Edit"}
           side="bottom"

@@ -30,7 +30,7 @@ export default function VerifyChat() {
 
       <div className="space-y-4 mb-4">
         {messages.map((message, idx) => {
-          const content = getMessageContent(message as any);
+          const content = getMessageContent(message);
 
           // Debug logging
           if (typeof window !== 'undefined') {

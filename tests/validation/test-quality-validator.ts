@@ -350,7 +350,8 @@ export class TestQualityValidator {
       'stub',
       'spy',
       'vi.fn',
-      'jest.fn',
+      'vi.mock',
+      'vi.spyOn',
       'mockImplementation',
     ];
     return this.checkTestContent(testFiles, mockKeywords);

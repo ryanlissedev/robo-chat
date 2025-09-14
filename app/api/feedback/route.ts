@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 function getFeedbackScore(feedback: string): number | undefined {
   if (feedback === 'upvote') {
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     }
 
     // Get user authentication from cookies/headers (optional for LangSmith-only feedback)
-    let supabase: any | null = null;
+    let supabase: SupabaseClient | null = null;
     try {
       const { createClient } = await import('@/lib/supabase/server');
       supabase = await createClient();
@@ -108,7 +109,7 @@ export async function GET(req: Request) {
     }
 
     // Get user authentication from cookies/headers
-    let supabase: any | null = null;
+    let supabase: SupabaseClient | null = null;
     try {
       const { createClient } = await import('@/lib/supabase/server');
       supabase = await createClient();

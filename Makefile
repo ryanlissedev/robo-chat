@@ -57,12 +57,12 @@ build:
 # Run tests (using npm for compatibility with vitest)
 test:
 	@echo "Running tests..."
-	@npm test
+	@npm run test:run
 
 # Run all tests with coverage
 test-all:
 	@echo "Running all tests with coverage..."
-	@npm test -- --coverage --run
+	@npm run test:coverage:ci
 
 # Lint code
 lint:

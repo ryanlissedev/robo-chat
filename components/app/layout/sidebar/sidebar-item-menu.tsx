@@ -34,7 +34,7 @@ export function SidebarItemMenu({
 
   const handleConfirmDelete = async () => {
     await deleteMessages();
-    await deleteChat(chat.id, chatId!, () => router.push('/'));
+    await deleteChat(chat.id, chatId || chat.id, () => router.push('/'));
   };
 
   return (
@@ -46,6 +46,7 @@ export function SidebarItemMenu({
       >
         <DropdownMenuTrigger asChild>
           <button
+            type="button"
             className="flex size-7 items-center justify-center rounded-md p-1 transition-colors duration-150 hover:bg-secondary"
             onClick={(e) => e.stopPropagation()}
           >
@@ -55,7 +56,7 @@ export function SidebarItemMenu({
         <DropdownMenuContent align="end" className="w-40">
           <DropdownMenuItem
             className="cursor-pointer"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent) => {
               e.preventDefault();
               e.stopPropagation();
               onStartEditing();
@@ -66,7 +67,7 @@ export function SidebarItemMenu({
           </DropdownMenuItem>
           <DropdownMenuItem
             className="text-destructive"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent) => {
               e.preventDefault();
               e.stopPropagation();
               setIsDeleteDialogOpen(true);

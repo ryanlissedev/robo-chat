@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
   "files": {
     "ignoreUnknown": true,
     "maxSize": 1024000
@@ -21,7 +21,6 @@
       "suspicious": {
         "noConsole": "error",
         "noDebugger": "error",
-        "noUnknownAtRules": "off",
         "noExplicitAny": "warn"
       },
       "style": {
@@ -89,7 +88,8 @@
         "app/types/api.types.ts",
         "app/auth/callback/route.ts",
         "app/p/\\[projectId\\]/project-view.tsx",
-        "app/settings/components/retrieval-settings.tsx"
+        "app/settings/components/retrieval-settings.tsx",
+        "app/settings/components/security-settings.tsx"
       ],
       "linter": {
         "rules": {

@@ -119,8 +119,8 @@ describe('Test Isolation Validation', () => {
     });
 
     it('should handle React component cleanup', () => {
-      const _TestComponent = () => <div data-testid="test-component">Test</div>;
-      
+      const TestComponent = () => <div data-testid="test-component">Test</div>;
+
       const { getByTestId } = render(<TestComponent />);
       expect(getByTestId('test-component')).toBeInTheDocument();
       

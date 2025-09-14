@@ -24,7 +24,7 @@ export function FeedbackTrigger() {
   };
 
   const trigger = (
-    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+    <DropdownMenuItem onSelect={(e: Event) => e.preventDefault()}>
       <HelpCircle className="size-4" />
       <span>Feedback</span>
     </DropdownMenuItem>

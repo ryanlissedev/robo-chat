@@ -294,9 +294,9 @@ describe('Chat API Route', () => {
       });
     });
 
-    it('should handle voice context with personality mode', async () => {
+    it('should handle chat context with personality mode', async () => {
       const request = createValidRequest({
-        context: 'voice',
+        context: 'chat',
         personalityMode: 'technical-expert',
       });
 
@@ -450,11 +450,12 @@ describe('Chat API Route', () => {
     });
 
     it('should handle invalid JSON requests', async () => {
-      const request = new Request('http://localhost:3000/api/chat', {
+      // Mock request.json() to throw an error to simulate invalid JSON
+      const request = {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: 'invalid json',
-      });
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+        json: vi.fn().mockRejectedValue(new SyntaxError('Unexpected token \'i\', "invalid json" is not valid JSON')),
+      } as any;
 
       const response = await POST(request);
       expect(response.status).toBe(500);

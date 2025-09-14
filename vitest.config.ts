@@ -1,257 +1,136 @@
 /// <reference types="vitest" />
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
-import { getCoverageConfig } from './tests/coverage.config';
 
 const ENCRYPTION_KEY_LENGTH = 32;
 
-// Base configuration optimized for all test scenarios
+// Simplified base configuration for reliable testing
 const baseConfig = {
   plugins: [],
   css: {
-    modules: {
-      generateScopedName: '[name]__[local]___[hash:base64:5]',
-    },
+    // Disable CSS modules for simpler testing
+    modules: false,
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),
       '~': path.resolve(__dirname, '.'),
       'ai/react': '@ai-sdk/react',
-      // Mock CSS imports that cause resolution issues
-      'tailwindcss/tailwind.css': path.resolve(
-        __dirname,
-        'tests/mocks/empty.css'
-      ),
-      'katex/dist/katex.min.css': path.resolve(
-        __dirname,
-        'tests/mocks/empty.css'
-      ),
     },
   },
   define: {
-    // Define environment variables for tests - handle readonly NODE_ENV
-    ...(process.env.NODE_ENV !== 'test' && {
-      'process.env.NODE_ENV': '"test"',
-    }),
+    'process.env.NODE_ENV': '"test"',
     'process.env.NEXT_PUBLIC_SUPABASE_URL': '"http://localhost:54321"',
     'process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY': '"test-anon-key"',
     'process.env.ENCRYPTION_KEY': `"${Buffer.from('a'.repeat(ENCRYPTION_KEY_LENGTH)).toString('base64')}"`,
   },
 };
 
-// Optimized test configurations
-const testConfigs = {
-  // Standard configuration optimized for stability and performance
-  standard: {
-    css: true,
-    environment: 'jsdom' as const,
-    testTimeout: 15000, // Reduced from 20000 for faster feedback
-    hookTimeout: 10000, // Reduced from 15000
-    teardownTimeout: 5000, // Reduced from 10000
-    slowTestThreshold: 3000, // Reduced for better performance tracking
-    setupFiles: ['./tests/setup.ts'],
-    server: {
-      deps: {
-        inline: [
-          '@testing-library/react',
-          '@testing-library/jest-dom/vitest',
-          'framer-motion',
-        ],
-      },
-    },
-    globals: true,
-    include: [
-      'tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
-      '**/__tests__/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
-    ],
-    exclude: [
-      'node_modules',
-      'dist',
-      '.next',
-      'tests/e2e/**',
-      'playwright-tests/**',
-      '**/test-*.{js,ts,html}', // Exclude debug test files
-      '**/*.stories.*',
-      '**/*.spec.ts', // Exclude playwright spec files
-    ],
-    coverage: getCoverageConfig(
-      process.env.NODE_ENV === 'production'
-        ? 'production'
-        : process.env.CI === '1'
-          ? 'ci'
-          : 'development'
-    ),
-    pool: 'threads' as const,
-    poolOptions: {
-      threads: {
-        singleThread: process.env.CI === '1', // Single thread in CI for stability
-        useAtomics: true,
-        minThreads: process.env.CI === '1' ? 1 : 2,
-        maxThreads: process.env.CI === '1' ? 2 : Math.min(6, 4), // Reduced for stability
-        isolate: true,
-        // Enhanced thread isolation
-        execArgv: ['--enable-source-maps'],
-      },
-    },
-    // Additional isolation settings
-    deps: {
-      inline: [
-        // Inline problematic modules to prevent ESM/CJS conflicts
-        '@supabase/supabase-js',
-        '@supabase/ssr',
-      ],
-    },
-    mockReset: true,
-    clearMocks: true,
-    restoreMocks: true,
-    unstubEnvs: true,
-    unstubGlobals: true,
-    isolate: true,
-    retry: process.env.CI ? 1 : 0, // Reduced retries
-    sequence: {
-      shuffle: false, // Disable shuffle for consistency
-      concurrent: !process.env.CI, // Sequential in CI
-      setupFiles: 'parallel' as const,
-    },
-  },
+// Determine test type based on environment variables
+const testType = process.env.TEST_TYPE || 'standard';
+const isCI = process.env.CI === '1';
 
-  // Fast configuration for unit tests
-  fast: {
-    css: false,
-    environment: 'happy-dom' as const,
-    testTimeout: 5000,
-    hookTimeout: 3000,
-    teardownTimeout: 1000,
-    setupFiles: ['./tests/setup.ts'], // Use unified setup
-    server: {
-      deps: {
-        inline: [
-          '@testing-library/react',
-          '@testing-library/jest-dom/vitest',
-          'framer-motion',
-        ],
-      },
-    },
-    globals: true,
-    include: ['tests/unit/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    exclude: [
-      'node_modules',
-      'dist',
-      '.next',
-      'tests/e2e/**',
-      'tests/integration/**',
-      'playwright-tests/**',
-      '**/test-*.{js,ts,html}',
-      'tests/unit/**/voice-*.test.*', // Exclude slow tests
-      'tests/unit/**/*integration*.test.*',
-      'tests/unit/**/*slow*.test.*',
-    ],
-    coverage: {
-      enabled: false,
-    },
-    pool: 'threads' as const,
-    poolOptions: {
-      threads: {
-        singleThread: false,
-        useAtomics: true,
-        minThreads: 1,
-        maxThreads: 4, // Reduced for fast mode
-        isolate: true, // FIXED: Enable isolation even in fast mode for consistency
-      },
-    },
-    mockReset: true, // FIXED: Enable mock reset to prevent pollution
-    clearMocks: true,
-    restoreMocks: true, // FIXED: Enable mock restoration
-    retry: 0,
-    reporters: [
-      [
-        'default',
-        {
-          summary: false,
-        },
-      ],
-    ],
-    sequence: {
-      concurrent: true,
-    },
-    // Add missing isolation settings
-    unstubEnvs: true,
-    unstubGlobals: true,
-    isolate: true,
-  },
-
-  // Integration test configuration
-  integration: {
-    css: true,
-    environment: 'jsdom' as const,
-    testTimeout: 30000, // Longer for API calls
-    hookTimeout: 20000, // Longer for setup/teardown
-    teardownTimeout: 10000,
-    setupFiles: ['./tests/setup.ts', './tests/supabase-test-setup.ts'],
-    server: {
-      deps: {
-        inline: [
-          '@testing-library/react',
-          '@testing-library/jest-dom/vitest',
-          'framer-motion',
-          '@supabase/supabase-js',
-          '@ai-sdk/react',
-        ],
-      },
-    },
-    globals: true,
-    include: [
-      'tests/integration/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
-    ],
-    exclude: [
-      'node_modules',
-      'dist',
-      '.next',
-      'tests/e2e/**',
-      'tests/unit/**',
-      'playwright-tests/**',
-      '**/test-*.{js,ts,html}',
-    ],
-    coverage: {
-      enabled: false, // Disable for integration tests
-    },
-    pool: 'threads' as const,
-    poolOptions: {
-      threads: {
-        singleThread: true, // Sequential for DB consistency
-        useAtomics: true,
-        minThreads: 1,
-        maxThreads: 1,
-        isolate: true,
-      },
-    },
-    mockReset: true,
-    clearMocks: true,
-    restoreMocks: true,
-    retry: process.env.CI ? 2 : 1,
-    sequence: {
-      concurrent: false, // Sequential execution for stability
-    },
-  },
-};
-
-// Determine configuration based on environment
+// Single, reliable test configuration
 const getTestConfig = () => {
-  const testType = process.env.TEST_TYPE || 'standard';
+  const baseTestConfig = {
+    // Use happy-dom for faster, more reliable testing
+    environment: 'happy-dom' as const,
+    testTimeout: testType === 'integration' ? 30000 : 10000,
+    hookTimeout: testType === 'integration' ? 15000 : 5000,
+    teardownTimeout: testType === 'integration' ? 5000 : 2000,
+    slowTestThreshold: 2000,
+    setupFiles: ['./tests/setup.ts'],
+    globals: true,
 
-  switch (testType) {
-    case 'fast':
-    case 'unit':
-      return testConfigs.fast;
-    case 'integration':
-      return testConfigs.integration;
-    default:
-      return testConfigs.standard;
-  }
+    // Include/exclude patterns based on test type
+    include: testType === 'unit'
+      ? ['tests/unit/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}']
+      : testType === 'integration'
+      ? ['tests/integration/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}']
+      : [
+          'tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+          '**/__tests__/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+        ],
+
+    exclude: [
+      'node_modules',
+      'dist',
+      '.next',
+      'tests/e2e/**',
+      'playwright-tests/**',
+      '**/test-*.{js,ts,html}',
+      '**/*.stories.*',
+      '**/*.spec.ts',
+    ],
+
+    // Optimized pool configuration for reliability
+    pool: 'threads' as const,
+    poolOptions: {
+      threads: {
+        singleThread: isCI || testType === 'integration',
+        useAtomics: true,
+        minThreads: 1,
+        maxThreads: isCI ? 2 : (testType === 'integration' ? 1 : 4),
+        isolate: true,
+      },
+    },
+
+    // Mock and cleanup settings
+    mockReset: true,
+    clearMocks: true,
+    restoreMocks: true,
+    unstubEnvs: true,
+    unstubGlobals: true,
+
+    // Dependencies that need to be inlined
+    server: {
+      deps: {
+        inline: [
+          '@testing-library/react',
+          '@testing-library/jest-dom/vitest',
+          '@supabase/supabase-js',
+          '@supabase/ssr',
+          'framer-motion',
+          'motion/react',
+        ],
+      },
+    },
+
+    // Execution settings
+    retry: 0, // No retries for faster feedback
+    sequence: {
+      shuffle: false,
+      concurrent: !isCI && testType !== 'integration',
+    },
+
+    // Coverage settings
+    coverage: {
+      enabled: process.env.COVERAGE === '1',
+      provider: 'v8' as const,
+      reporter: ['text', 'json-summary', 'html'],
+      all: false,
+      skipFull: true,
+      exclude: [
+        'node_modules/**',
+        'tests/**',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '**/.*',
+      ],
+    },
+
+    // Reporter configuration
+    reporters: process.env.CI ? ['verbose', 'json'] : ['default'],
+  };
+
+  return baseTestConfig;
 };
 
 export default defineConfig({
   ...baseConfig,
+  // Force Node.js runtime to ensure vi.mock compatibility
+  esbuild: {
+    target: 'node14',
+  },
   test: getTestConfig(),
 });

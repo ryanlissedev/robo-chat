@@ -27,9 +27,18 @@ export interface SourceUrlUIPart {
 /**
  * Extended UIMessage interface that safely handles both v4 and v5 message formats
  */
+interface ContentPart {
+  type: string;
+  text?: string;
+  [key: string]: unknown;
+}
+
 export interface ExtendedUIMessage extends UIMessage {
   // v4 compatibility - content string
-  content?: string;
+  content?: string | Array<ContentPart>;
+
+  // Edge case - direct text property
+  text?: string;
 
   // Experimental attachments for file handling
   experimental_attachments?: Attachment[];
@@ -65,7 +74,7 @@ export interface ChatRequest {
   reasoningEffort?: 'low' | 'medium' | 'high';
   verbosity?: 'low' | 'medium' | 'high';
   reasoningSummary?: 'auto' | 'detailed';
-  context?: 'chat' | 'voice';
+  context?: 'chat';
   personalityMode?:
     | 'safety-focused'
     | 'technical-expert'
@@ -137,7 +146,20 @@ export function hasAttachments(
  * Extracts text content from AI SDK v5 messages
  */
 export function getMessageContent(message: ExtendedUIMessage): string {
-  // AI SDK v5 primary format - parts array
+  // AI SDK v5 content array format (new)
+  if (message.content && Array.isArray(message.content)) {
+    return message.content
+      .filter((part: ContentPart) => part.type === 'text')
+      .map((part: ContentPart) => part.text)
+      .join('');
+  }
+
+  // AI SDK v4 string content format
+  if (typeof message.content === 'string') {
+    return message.content;
+  }
+
+  // AI SDK v5 parts array format
   if (message.parts && Array.isArray(message.parts)) {
     const textParts = extractTextContent(message.parts as MessagePart[]);
     if (textParts) {
@@ -145,8 +167,9 @@ export function getMessageContent(message: ExtendedUIMessage): string {
     }
   }
 
-  // Debug logging for troubleshooting
-  if (typeof window !== 'undefined' && message.role === 'assistant') {
+  // Handle direct text property (edge case)
+  if (message.text) {
+    return message.text as string;
   }
 
   return '';

@@ -1,6 +1,6 @@
 import { ChatService } from '@/lib/services/ChatService';
-import { ChatRequestSchema } from '@/lib/validation/schemas';
 import logger from '@/lib/utils/logger';
+import { ChatRequestSchema } from '@/lib/validation/schemas';
 import { createErrorResponse } from './utils';
 
 export const maxDuration = 60;
@@ -17,10 +17,13 @@ export async function POST(req: Request) {
         { errors: validationResult.error.flatten() },
         'Invalid chat request'
       );
-      return new Response(JSON.stringify({ errors: validationResult.error.flatten() }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ errors: validationResult.error.flatten() }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     const requestData = validationResult.data;

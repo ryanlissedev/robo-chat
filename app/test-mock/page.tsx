@@ -9,7 +9,6 @@ import {
   isReasoningPart,
   isTextPart,
   type MessagePart,
-  type TypedMessage,
 } from '@/app/types/message-parts';
 
 export default function TestMock() {
@@ -35,7 +34,7 @@ export default function TestMock() {
 
       <div className="border p-4 mb-4 h-96 overflow-y-auto bg-white rounded">
         {messages.map((message, _idx) => {
-          const content = getMessageContent(message as any);
+          const content = getMessageContent(message);
 
           // Extract reasoning and text parts using type-safe utilities
           const messageParts = (message.parts as MessagePart[]) || [];

@@ -124,7 +124,7 @@ export function MultiModelSelector({
             checked={isSelected}
             disabled={isLocked || (!isSelected && isAtLimit)}
             onChange={() => handleModelToggle(model.id, isLocked)}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
           />
           {provider?.icon && <provider.icon className="size-5" />}
           <div className="flex flex-col gap-0">
@@ -354,7 +354,7 @@ export function MultiModelSelector({
                 <Input
                   className="pl-8"
                   onChange={handleSearchChange}
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
                   placeholder="Search models..."
                   ref={searchInputRef}
                   value={searchQuery}
@@ -433,7 +433,7 @@ export function MultiModelSelector({
                 <Input
                   className="rounded-b-none border border-none pl-8 shadow-none focus-visible:ring-0 dark:bg-popover"
                   onChange={handleSearchChange}
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
                   onFocus={(e) => e.stopPropagation()}
                   onKeyDown={(e) => e.stopPropagation()}
                   placeholder="Search models..."
@@ -474,7 +474,7 @@ export function MultiModelSelector({
                           setHoveredModel(model.id);
                         }
                       }}
-                      onSelect={(e) => {
+                      onSelect={(e: Event) => {
                         e.preventDefault();
                         handleModelToggle(model.id, isLocked);
                       }}

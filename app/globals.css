@@ -1,10 +1,5 @@
-@import "tailwindcss" source(none);
-@source "./";
-@source "../components";
-@source "../lib";
-@source "../src";
-@source not "../.qlty";
-@plugin "@tailwindcss/typography";
+@import "tailwindcss";
+@import "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 

@@ -39,9 +39,8 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
 }));
 
-// Import after mocking
-const { createClient } = await import('@/lib/supabase/server');
-const mockCreateClient = vi.mocked(createClient);
+// Import will be done in beforeEach to avoid top-level await
+let mockCreateClient: any;
 
 const mockUser = {
   id: 'user-123',
@@ -78,8 +77,13 @@ describe('User Preferences API Route', () => {
     });
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+
+    // Import after mocking to avoid top-level await
+    const { createClient } = await import('@/lib/supabase/server');
+    mockCreateClient = vi.mocked(createClient);
+
     mockCreateClient.mockResolvedValue(mockSupabaseClient as any);
     mockSupabaseClient.auth.getUser.mockResolvedValue({
       data: { user: mockUser },

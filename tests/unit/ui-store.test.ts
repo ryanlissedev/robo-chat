@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { act, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   useChatUIActions,
@@ -20,6 +20,8 @@ describe('UI Store', () => {
     act(() => {
       useUIStore.getState().reset();
     });
+    // Also clear any React Testing Library state
+    cleanup();
   });
 
   afterEach(() => {
@@ -372,51 +374,64 @@ describe('UI Store', () => {
       expect(result.current.isOpen).toBe(false);
     });
 
-    it('should provide optimistic state management', async () => {
-      const { result } = renderHook(() =>
-        useOptimisticState('initial', 'fileUpload')
-      );
-
-      expect(result.current.isLoading).toBe(false);
-      expect(result.current.error).toBe(null);
-
-      const mockAsyncFn = vi.fn().mockResolvedValue('success');
-
-      let resultPromise: Promise<any> = Promise.resolve();
-      act(() => {
-        resultPromise = result.current.execute(mockAsyncFn);
+    describe('Optimistic State Management', () => {
+      beforeEach(() => {
+        // Ensure clean state for optimistic tests
+        cleanup();
+        act(() => {
+          useUIStore.getState().reset();
+        });
       });
 
-      expect(result.current.isLoading).toBe(true);
+      it('should provide optimistic state management', async () => {
+        const { result } = renderHook(() =>
+          useOptimisticState('initial', 'fileUpload')
+        );
 
-      const executionResult = await act(async () => {
-        return await resultPromise;
+        expect(result.current.isLoading).toBe(false);
+        expect(result.current.error).toBe(null);
+
+        const mockAsyncFn = vi.fn().mockResolvedValue('success');
+
+        let resultPromise: Promise<any> = Promise.resolve();
+        act(() => {
+          resultPromise = result.current.execute(mockAsyncFn);
+        });
+
+        expect(result.current.isLoading).toBe(true);
+
+        const executionResult = await act(async () => {
+          return await resultPromise;
+        });
+
+        expect(executionResult).toBe('success');
+        expect(result.current.isLoading).toBe(false);
+        expect(result.current.error).toBe(null);
       });
 
-      expect(executionResult).toBe('success');
-      expect(result.current.isLoading).toBe(false);
-      expect(result.current.error).toBe(null);
-    });
+      it('should handle optimistic state errors', async () => {
+        const { result } = renderHook(() =>
+          useOptimisticState('initial', 'fileUpload')
+        );
 
-    it('should handle optimistic state errors', async () => {
-      const { result } = renderHook(() =>
-        useOptimisticState('initial', 'fileUpload')
-      );
+        expect(result.current.isLoading).toBe(false);
+        expect(result.current.error).toBe(null);
 
-      const mockAsyncFn = vi.fn().mockRejectedValue(new Error('Upload failed'));
+        const mockAsyncFn = vi.fn().mockRejectedValue(new Error('Upload failed'));
 
-      let resultPromise: Promise<any> = Promise.resolve();
-      act(() => {
-        resultPromise = result.current.execute(mockAsyncFn);
+        let resultPromise: Promise<any> = Promise.resolve();
+        act(() => {
+          resultPromise = result.current.execute(mockAsyncFn);
+        });
+
+        const executionResult = await act(async () => {
+          return await resultPromise;
+        });
+
+        expect(executionResult).toBe(null);
+        expect(result.current.isLoading).toBe(false);
+        expect(result.current.error).toBe('Upload failed');
       });
-
-      const executionResult = await act(async () => {
-        return await resultPromise;
-      });
-
-      expect(executionResult).toBe(null);
-      expect(result.current.isLoading).toBe(false);
-      expect(result.current.error).toBe('Upload failed');
     });
   });
 

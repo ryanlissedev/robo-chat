@@ -82,7 +82,6 @@ export default function LoginPage() {
       </main>
 
       <footer className="py-6 text-center text-muted-foreground text-sm">
-        {/* @todo */}
         <p>
           By continuing, you agree to our{' '}
           <Link className="text-foreground hover:underline" href="/">

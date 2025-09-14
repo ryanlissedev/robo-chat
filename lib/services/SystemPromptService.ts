@@ -5,7 +5,7 @@ import { shouldEnableFileSearchTools } from '@/lib/retrieval/gating';
  * SystemPromptService
  *
  * Handles system prompt configuration logic extracted from chat route.
- * Supports voice context with personality modes and file search integration.
+ * Supports chat context with personality modes and file search integration.
  */
 export class SystemPromptService {
   /**
@@ -22,32 +22,15 @@ export class SystemPromptService {
     enableSearch: boolean,
     modelSupportsFileSearchTools: boolean,
     options?: {
-      context?: 'chat' | 'voice';
+      context?: 'chat';
       personalityMode?:
         | 'safety-focused'
         | 'technical-expert'
         | 'friendly-assistant';
     }
   ): Promise<string> {
-    const context = options?.context;
-    const personalityMode = options?.personalityMode;
-
-    // For voice context with personality mode, use personality-specific prompts
-    if (context === 'voice' && personalityMode) {
-      try {
-        // Import personality configs dynamically to get voice-specific prompts
-        const { PERSONALITY_CONFIGS } = await import(
-          '@/components/app/voice/config/personality-configs'
-        );
-        if (PERSONALITY_CONFIGS[personalityMode]) {
-          return PERSONALITY_CONFIGS[personalityMode].instructions.systemPrompt;
-        }
-      } catch {
-        // Fall back to standard prompt selection on import error
-      }
-    }
-
-    // For chat context or when no personality mode, use standard prompt selection
+    // Note: Personality mode handling removed with voice functionality
+    // Use standard prompt selection
     const useSearchPrompt = shouldEnableFileSearchTools(
       enableSearch,
       modelSupportsFileSearchTools
@@ -56,16 +39,6 @@ export class SystemPromptService {
     return useSearchPrompt
       ? FILE_SEARCH_SYSTEM_PROMPT
       : systemPrompt || SYSTEM_PROMPT_DEFAULT;
-  }
-
-  /**
-   * Determines if the given context is voice context.
-   *
-   * @param context - The context to check
-   * @returns boolean - True if context is voice, false otherwise
-   */
-  static isVoiceContext(context: 'chat' | 'voice' | undefined): boolean {
-    return context === 'voice';
   }
 
   /**

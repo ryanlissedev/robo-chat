@@ -55,24 +55,7 @@ describe('SystemPromptService', () => {
       expect(result).toBe(SYSTEM_PROMPT_DEFAULT);
     });
 
-    it('should handle voice context with personality mode', async () => {
-      // Since personality configs are dynamically imported, we test the behavior
-      const result = await SystemPromptService.getEffectiveSystemPrompt(
-        'default-system-prompt',
-        true,
-        true,
-        {
-          context: 'voice',
-          personalityMode: 'safety-focused',
-        }
-      );
-
-      // Should return some prompt (either personality or fallback)
-      expect(typeof result).toBe('string');
-      expect(result.length).toBeGreaterThan(0);
-    });
-
-    it('should prioritize chat context over voice', async () => {
+    it('should handle chat context with personality mode', async () => {
       mockShouldEnableFileSearchTools.mockReturnValue(false);
 
       const result = await SystemPromptService.getEffectiveSystemPrompt(
@@ -90,23 +73,6 @@ describe('SystemPromptService', () => {
         false
       );
       expect(result).toBe('custom-prompt');
-    });
-  });
-
-  describe('isVoiceContext', () => {
-    it('should return true for voice context', () => {
-      const result = SystemPromptService.isVoiceContext('voice');
-      expect(result).toBe(true);
-    });
-
-    it('should return false for chat context', () => {
-      const result = SystemPromptService.isVoiceContext('chat');
-      expect(result).toBe(false);
-    });
-
-    it('should return false for undefined context', () => {
-      const result = SystemPromptService.isVoiceContext(undefined);
-      expect(result).toBe(false);
     });
   });
 

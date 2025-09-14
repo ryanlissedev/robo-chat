@@ -17,10 +17,9 @@ export async function POST(request: Request) {
       return new Response(JSON.stringify({ success: true }), { status: 200 });
     }
 
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('chats')
-      // Cast to any to satisfy TS inference issues with Supabase types
-      .update({ model } as any)
+      .update({ model })
       .eq('id', chatId);
 
     if (error) {

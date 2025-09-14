@@ -55,8 +55,8 @@ export function UserMenu() {
         align="end"
         className="w-56"
         forceMount
-        onCloseAutoFocus={(e) => e.preventDefault()}
-        onInteractOutside={(e) => {
+        onCloseAutoFocus={(e: Event) => e.preventDefault()}
+        onInteractOutside={(e: Event) => {
           if (isSettingsOpen) {
             e.preventDefault();
             return;

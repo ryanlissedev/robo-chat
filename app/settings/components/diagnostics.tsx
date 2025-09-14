@@ -184,9 +184,9 @@ export function DiagnosticsPanel() {
                 .slice(-50)
                 .reverse()
                 .map((u, idx) => (
-                  <tr key={idx} className="border-b/50">
+                  <tr key={`${u.timestamp}-${idx}`} className="border-b/50">
                     <td className="py-2 pr-4">
-                      {new Date(u.timestamp as any).toLocaleTimeString()}
+                      {new Date(String(u.timestamp)).toLocaleTimeString()}
                     </td>
                     <td className="py-2 pr-4">{u.source}</td>
                     <td className="py-2 pr-4">{u.provider}</td>

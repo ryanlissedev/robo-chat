@@ -456,44 +456,6 @@ export type Database = {
           },
         ];
       };
-      voice_transcripts: {
-        Row: {
-          id: string;
-          user_id: string;
-          session_id: string | null;
-          transcript: string;
-          file_id: string;
-          metadata: Json;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          session_id?: string | null;
-          transcript: string;
-          file_id: string;
-          metadata?: Json;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          session_id?: string | null;
-          transcript?: string;
-          file_id?: string;
-          metadata?: Json;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'voice_transcripts_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
     };
     Views: {
       [_ in never]: never;
@@ -591,9 +553,7 @@ export type Enums<
     : never;
 
 export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema['CompositeTypes']
-    | { schema: keyof Database },
+  PublicCompositeTypeNameOrOptions extends { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database;
   }

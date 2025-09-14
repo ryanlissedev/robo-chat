@@ -28,7 +28,7 @@ export function SettingsTrigger({ onOpenChange }: SettingsTriggerProps) {
   };
 
   const trigger = (
-    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+    <DropdownMenuItem onSelect={(e: Event) => e.preventDefault()}>
       <User className="size-4" />
       <span>Settings</span>
     </DropdownMenuItem>

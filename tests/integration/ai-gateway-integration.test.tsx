@@ -3,19 +3,19 @@
  * Tests gateway routing, fallback, and provider switching
  */
 
-import { expect, test } from '@playwright/test';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { openproviders } from '@/lib/openproviders';
 import { getGatewayConfig } from '@/lib/openproviders/env';
 import type { SupportedModel } from '@/lib/openproviders/types';
 
-test.describe('AI Gateway Integration Tests', () => {
-  test.beforeEach(() => {
+describe('AI Gateway Integration Tests', () => {
+  beforeEach(() => {
     // Reset environment for each test
     delete process.env.AI_GATEWAY_API_KEY;
     delete process.env.AI_GATEWAY_BASE_URL;
   });
 
-  test('should detect gateway configuration correctly', () => {
+  it('should detect gateway configuration correctly', () => {
     // Test without gateway configured
     let config = getGatewayConfig();
     expect(config.enabled).toBe(false);
@@ -34,7 +34,7 @@ test.describe('AI Gateway Integration Tests', () => {
     });
   });
 
-  test('should inject gateway configuration for all providers', () => {
+  it('should inject gateway configuration for all providers', () => {
     // Set up gateway environment
     process.env.AI_GATEWAY_API_KEY = 'test-gateway-key';
     process.env.AI_GATEWAY_BASE_URL = 'https://ai-gateway.test.com/v1/ai';
@@ -70,7 +70,7 @@ test.describe('AI Gateway Integration Tests', () => {
     delete process.env.AI_GATEWAY_BASE_URL;
   });
 
-  test('should handle direct provider access when gateway is disabled', () => {
+  it('should handle direct provider access when gateway is disabled', () => {
     // Ensure gateway is disabled
     delete process.env.AI_GATEWAY_API_KEY;
 
@@ -86,7 +86,7 @@ test.describe('AI Gateway Integration Tests', () => {
     expect(typeof languageModel.doStream).toBe('function');
   });
 
-  test('should handle custom API keys with gateway injection', () => {
+  it('should handle custom API keys with gateway injection', () => {
     // Set up gateway
     process.env.AI_GATEWAY_API_KEY = 'gateway-key';
     process.env.AI_GATEWAY_BASE_URL = 'https://gateway.test.com/v1/ai';
@@ -105,7 +105,7 @@ test.describe('AI Gateway Integration Tests', () => {
     delete process.env.AI_GATEWAY_BASE_URL;
   });
 
-  test('should handle OpenAI GPT-5 specific configurations with gateway', () => {
+  it('should handle OpenAI GPT-5 specific configurations with gateway', () => {
     // Set up gateway
     process.env.AI_GATEWAY_API_KEY = 'gateway-key';
     process.env.AI_GATEWAY_BASE_URL = 'https://gateway.test.com/v1/ai';
@@ -137,7 +137,7 @@ test.describe('AI Gateway Integration Tests', () => {
     delete process.env.AI_GATEWAY_BASE_URL;
   });
 
-  test('should handle reasoning models (o-series) with proper headers', () => {
+  it('should handle reasoning models (o-series) with proper headers', () => {
     // Set up gateway
     process.env.AI_GATEWAY_API_KEY = 'gateway-key';
 
@@ -153,8 +153,8 @@ test.describe('AI Gateway Integration Tests', () => {
     delete process.env.AI_GATEWAY_API_KEY;
   });
 
-  test.describe('Error Handling and Fallbacks', () => {
-    test('should handle invalid gateway configuration gracefully', () => {
+  describe('Error Handling and Fallbacks', () => {
+    it('should handle invalid gateway configuration gracefully', () => {
       // Set invalid gateway configuration
       process.env.AI_GATEWAY_API_KEY = '';
       process.env.AI_GATEWAY_BASE_URL = 'invalid-url';
@@ -173,7 +173,7 @@ test.describe('AI Gateway Integration Tests', () => {
       delete process.env.AI_GATEWAY_BASE_URL;
     });
 
-    test('should fallback to direct provider when gateway fails', () => {
+    it('should fallback to direct provider when gateway fails', () => {
       // This test would need actual API calls to test properly
       // For now, we test that the provider can be created without gateway
 
@@ -186,8 +186,8 @@ test.describe('AI Gateway Integration Tests', () => {
     });
   });
 
-  test.describe('Performance and Load Testing', () => {
-    test('should handle concurrent provider initializations', () => {
+  describe('Performance and Load Testing', () => {
+    it('should handle concurrent provider initializations', () => {
       const models: SupportedModel[] = [
         'gpt-5-mini',
         'gpt-4o',
@@ -221,8 +221,8 @@ test.describe('AI Gateway Integration Tests', () => {
     });
   });
 
-  test.describe('Environment Variable Handling', () => {
-    test('should respect environment variable precedence', () => {
+  describe('Environment Variable Handling', () => {
+    it('should respect environment variable precedence', () => {
       // Test that user-provided API keys override environment variables
       const originalKey = process.env.OPENAI_API_KEY;
       process.env.OPENAI_API_KEY = 'env-key';
@@ -242,7 +242,7 @@ test.describe('AI Gateway Integration Tests', () => {
       }
     });
 
-    test('should handle missing environment variables gracefully', () => {
+    it('should handle missing environment variables gracefully', () => {
       // Temporarily remove all API keys
       const originalKeys = {
         OPENAI_API_KEY: process.env.OPENAI_API_KEY,
@@ -277,8 +277,8 @@ test.describe('AI Gateway Integration Tests', () => {
     });
   });
 
-  test.describe('Model Provider Mapping', () => {
-    test('should correctly map models to providers', () => {
+  describe('Model Provider Mapping', () => {
+    it('should correctly map models to providers', () => {
       const testCases: Array<[SupportedModel, string]> = [
         ['gpt-5-mini', 'openai'],
         ['gpt-4o', 'openai'],
@@ -298,7 +298,7 @@ test.describe('AI Gateway Integration Tests', () => {
       });
     });
 
-    test('should handle unknown models with fallback to OpenAI', () => {
+    it('should handle unknown models with fallback to OpenAI', () => {
       const unknownModel = 'unknown-model-123' as SupportedModel;
 
       // Should not throw and should fallback to OpenAI

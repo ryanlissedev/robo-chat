@@ -38,14 +38,51 @@ vi.mock('@/lib/providers', () => ({
   ],
 }));
 
+// Helper function to filter motion props
+const filterMotionProps = (props: Record<string, any>): Record<string, any> => {
+  const {
+    animate,
+    initial,
+    exit,
+    transition,
+    variants,
+    whileHover,
+    whileTap,
+    whileFocus,
+    whileInView,
+    whileDrag,
+    drag,
+    dragConstraints,
+    dragElastic,
+    dragMomentum,
+    dragTransition,
+    onDrag,
+    onDragStart,
+    onDragEnd,
+    layoutId,
+    layout,
+    layoutScroll,
+    layoutRoot,
+    ...domProps
+  } = props;
+
+  return domProps;
+};
+
 // Mock motion components
 vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
   motion: {
-    span: ({ children, ...props }: any) => <span {...props}>{children}</span>,
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    span: ({ children, ...props }: any) => {
+      const domProps = filterMotionProps(props);
+      return <span {...domProps}>{children}</span>;
+    },
+    div: ({ children, ...props }: any) => {
+      const domProps = filterMotionProps(props);
+      return <div {...domProps}>{children}</div>;
+    },
   },
 }));
 
@@ -155,8 +192,8 @@ vi.mock('@/components/ui/dropdown-menu', () => {
       const handleClick = (e: any) => {
         e.preventDefault();
         if (onSelect) {
-          // Call onSelect without the event to match expected interface
-          onSelect();
+          // Call onSelect with the event to match expected interface
+          onSelect(e);
         }
       };
 
@@ -364,7 +401,7 @@ const mockModels = [
 
 describe('MultiModelSelector', () => {
   const user = userEvent.setup();
-  const mockSetSelectedModelIds = vi.fn();
+  let mockSetSelectedModelIds: ReturnType<typeof vi.fn>;
   const selectedModelIds = ['gpt-4'];
   let queryClient: QueryClient;
 
@@ -384,6 +421,9 @@ describe('MultiModelSelector', () => {
   };
 
   beforeEach(() => {
+    // Create a fresh mock for each test
+    mockSetSelectedModelIds = vi.fn();
+
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -524,19 +564,32 @@ describe('MultiModelSelector', () => {
 
   describe('Model Selection', () => {
     it('should select a new model', async () => {
+      // Debug: spy on console to see if there are any errors
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
       renderComponent();
 
       const button = screen.getByRole('button');
       await user.click(button);
 
+      // Wait for dropdown to open
+      await waitFor(() => {
+        expect(screen.getByTestId('dropdown-menu')).toHaveAttribute('data-open', 'true');
+      });
+
       // The dropdown content is already rendered, so we can find menu items immediately
       const menuItems = screen.getAllByRole('menuitem');
+      expect(menuItems.length).toBeGreaterThan(0);
+
       const gpt35Item = menuItems.find((item) =>
         item.textContent?.includes('GPT-3.5')
       );
       expect(gpt35Item).toBeDefined();
 
       if (gpt35Item) {
+        // Debug: check if the mock function is correctly passed
+        expect(mockSetSelectedModelIds).toBeInstanceOf(Function);
+
         await user.click(gpt35Item);
 
         // Check that the handler was called with the correct model selection
@@ -545,6 +598,10 @@ describe('MultiModelSelector', () => {
           'gpt-3.5',
         ]);
       }
+
+      // Check for any console errors
+      expect(consoleSpy).not.toHaveBeenCalled();
+      consoleSpy.mockRestore();
     });
 
     it('should deselect a selected model', async () => {

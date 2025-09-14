@@ -8,7 +8,7 @@ import {
   Lock,
   Shield,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -70,6 +70,16 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
   const [loading, setLoading] = useState(false);
   const [newDomain, setNewDomain] = useState('');
   const supabase = createClient();
+
+  // Generate unique IDs for form elements
+  const contentFilteringId = useId();
+  const promptInjectionId = useId();
+  const sanitizeOutputsId = useId();
+  const jailbreakDetectionId = useId();
+  const rateLimitingId = useId();
+  const encryptApiKeysId = useId();
+  const apiKeyRotationId = useId();
+  const logQueriesId = useId();
 
   const loadSettings = useCallback(async () => {
     if (!supabase) return;
@@ -228,14 +238,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="content-filtering">Content Filtering</Label>
+              <Label htmlFor={contentFilteringId}>Content Filtering</Label>
               <p className="text-muted-foreground text-xs">
                 Block harmful or inappropriate content
               </p>
             </div>
             <Switch
               checked={config.enableContentFiltering}
-              id="content-filtering"
+              id={contentFilteringId}
               onCheckedChange={(checked) =>
                 updateConfig('enableContentFiltering', checked)
               }
@@ -244,14 +254,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="prompt-injection">Block Prompt Injection</Label>
+              <Label htmlFor={promptInjectionId}>Block Prompt Injection</Label>
               <p className="text-muted-foreground text-xs">
                 Detect and prevent prompt injection attacks
               </p>
             </div>
             <Switch
               checked={config.blockPromptInjection}
-              id="prompt-injection"
+              id={promptInjectionId}
               onCheckedChange={(checked) =>
                 updateConfig('blockPromptInjection', checked)
               }
@@ -260,14 +270,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="sanitize-outputs">Sanitize Outputs</Label>
+              <Label htmlFor={sanitizeOutputsId}>Sanitize Outputs</Label>
               <p className="text-muted-foreground text-xs">
                 Remove potentially dangerous content from responses
               </p>
             </div>
             <Switch
               checked={config.sanitizeOutputs}
-              id="sanitize-outputs"
+              id={sanitizeOutputsId}
               onCheckedChange={(checked) =>
                 updateConfig('sanitizeOutputs', checked)
               }
@@ -276,14 +286,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="jailbreak-detection">Jailbreak Detection</Label>
+              <Label htmlFor={jailbreakDetectionId}>Jailbreak Detection</Label>
               <p className="text-muted-foreground text-xs">
                 Identify attempts to bypass safety measures
               </p>
             </div>
             <Switch
               checked={config.enableJailbreakDetection}
-              id="jailbreak-detection"
+              id={jailbreakDetectionId}
               onCheckedChange={(checked) =>
                 updateConfig('enableJailbreakDetection', checked)
               }
@@ -302,10 +312,10 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label htmlFor="rate-limiting">Enable Rate Limiting</Label>
+            <Label htmlFor={rateLimitingId}>Enable Rate Limiting</Label>
             <Switch
               checked={config.enableRateLimiting}
-              id="rate-limiting"
+              id={rateLimitingId}
               onCheckedChange={(checked) =>
                 updateConfig('enableRateLimiting', checked)
               }
@@ -363,14 +373,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="encrypt-keys">Encrypt API Keys</Label>
+              <Label htmlFor={encryptApiKeysId}>Encrypt API Keys</Label>
               <p className="text-muted-foreground text-xs">
                 Store API keys with encryption at rest
               </p>
             </div>
             <Switch
               checked={config.encryptApiKeys}
-              id="encrypt-keys"
+              id={encryptApiKeysId}
               onCheckedChange={(checked) =>
                 updateConfig('encryptApiKeys', checked)
               }
@@ -379,14 +389,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="key-rotation">Require Key Rotation</Label>
+              <Label htmlFor={apiKeyRotationId}>Require Key Rotation</Label>
               <p className="text-muted-foreground text-xs">
                 Enforce periodic API key rotation
               </p>
             </div>
             <Switch
               checked={config.requireApiKeyRotation}
-              id="key-rotation"
+              id={apiKeyRotationId}
               onCheckedChange={(checked) =>
                 updateConfig('requireApiKeyRotation', checked)
               }
@@ -424,14 +434,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="log-queries">Log Queries</Label>
+              <Label htmlFor={logQueriesId}>Log Queries</Label>
               <p className="text-muted-foreground text-xs">
                 Store user queries for analysis (with consent)
               </p>
             </div>
             <Switch
               checked={config.logQueries}
-              id="log-queries"
+              id={logQueriesId}
               onCheckedChange={(checked) => updateConfig('logQueries', checked)}
             />
           </div>

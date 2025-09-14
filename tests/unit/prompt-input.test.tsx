@@ -5,7 +5,7 @@ import {
   PromptInput,
   PromptInputTextarea,
 } from '@/components/prompt-kit/prompt-input';
-import { render, screen } from '@/tests/test-utils';
+import { renderWithProviders, screen } from '@/tests/test-utils';
 
 function ControlledPrompt() {
   const [val, setVal] = useState('');
@@ -19,7 +19,7 @@ function ControlledPrompt() {
 describe('PromptInput controlled behavior', () => {
   it('updates value as user types and calls onValueChange', async () => {
     const user = userEvent.setup();
-    render(<ControlledPrompt />);
+    renderWithProviders(<ControlledPrompt />);
 
     const textarea = screen.getByPlaceholderText(
       'Type here'

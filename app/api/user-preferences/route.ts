@@ -48,14 +48,13 @@ export async function GET() {
       );
     }
 
-    const prefs = data as any;
     return NextResponse.json({
-      layout: prefs.layout,
-      prompt_suggestions: prefs.prompt_suggestions,
-      show_tool_invocations: prefs.show_tool_invocations,
-      show_conversation_previews: prefs.show_conversation_previews,
-      multi_model_enabled: prefs.multi_model_enabled,
-      hidden_models: prefs.hidden_models || [],
+      layout: data.layout,
+      prompt_suggestions: data.prompt_suggestions,
+      show_tool_invocations: data.show_tool_invocations,
+      show_conversation_previews: data.show_conversation_previews,
+      multi_model_enabled: data.multi_model_enabled,
+      hidden_models: data.hidden_models || [],
     });
   } catch {
     return NextResponse.json(
@@ -155,15 +154,14 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const prefs = data as any;
     return NextResponse.json({
       success: true,
-      layout: prefs.layout,
-      prompt_suggestions: prefs.prompt_suggestions,
-      show_tool_invocations: prefs.show_tool_invocations,
-      show_conversation_previews: prefs.show_conversation_previews,
-      multi_model_enabled: prefs.multi_model_enabled,
-      hidden_models: prefs.hidden_models || [],
+      layout: data.layout,
+      prompt_suggestions: data.prompt_suggestions,
+      show_tool_invocations: data.show_tool_invocations,
+      show_conversation_previews: data.show_conversation_previews,
+      multi_model_enabled: data.multi_model_enabled,
+      hidden_models: data.hidden_models || [],
     });
   } catch {
     return NextResponse.json(

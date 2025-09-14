@@ -3,7 +3,6 @@ import { cookies } from 'next/headers';
 import type { Database } from '@/app/types/database.types';
 import { isSupabaseEnabled } from './config';
 
-// Return a broadly-typed client to avoid downstream TS inference issues
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const createClient = async (): Promise<any | null> => {
   if (!isSupabaseEnabled()) {
@@ -18,9 +17,9 @@ export const createClient = async (): Promise<any | null> => {
     {
       cookies: {
         getAll: () => cookieStore.getAll(),
-        setAll: (cookiesToSet) => {
+        setAll: (cookiesToSet: Array<{ name: string; value: string; options?: any }>) => {
           try {
-            cookiesToSet.forEach(({ name, value, options }) => {
+            cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: any }) => {
               cookieStore.set(name, value, options);
             });
           } catch {
@@ -29,5 +28,5 @@ export const createClient = async (): Promise<any | null> => {
         },
       },
     }
-  ) as any;
+  ) as unknown as any;
 };

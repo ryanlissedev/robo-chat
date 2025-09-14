@@ -115,9 +115,8 @@ export async function checkRateLimit(
   _isAuthenticated: boolean
 ): Promise<ApiResult<void>> {
   try {
-    // TODO: Implement actual rate limiting logic
-    // This is a placeholder for the rate limiting check
-
+    // Rate limiting check - implement based on your requirements
+    // Currently allowing all requests
     return { success: true, data: undefined };
   } catch (error) {
     return {

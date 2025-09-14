@@ -212,53 +212,8 @@ test.describe('Settings and Preferences E2E', () => {
   });
 
   test.describe('Voice Settings', () => {
-    test('should configure voice recording preferences', async ({ page }) => {
-      await page.goto('/settings/voice');
-
-      // Grant microphone permissions
-      await page.context().grantPermissions(['microphone']);
-
-      // Configure voice settings
-      await page.selectOption(
-        '[data-testid="voice-provider-select"]',
-        'openai'
-      );
-      await page.selectOption(
-        '[data-testid="voice-model-select"]',
-        'whisper-1'
-      );
-      await page.check('[data-testid="auto-transcription-toggle"]');
-
-      // Test microphone
-      await page.click('[data-testid="test-microphone-button"]');
-
-      // Verify microphone test
-      await expect(
-        page.locator('[data-testid="microphone-status"]')
-      ).toContainText('Microphone working');
-
-      // Save voice settings
-      await page.click('[data-testid="save-voice-settings"]');
-
-      // Verify settings saved
-      await expect(page.locator('[data-testid="success-toast"]')).toContainText(
-        'Voice settings saved'
-      );
-    });
-
-    test('should handle microphone permission denied', async ({ page }) => {
-      await page.goto('/settings/voice');
-
-      // Deny microphone permissions
-      await page.context().grantPermissions([]);
-
-      await page.click('[data-testid="test-microphone-button"]');
-
-      // Verify error handling
-      await expect(
-        page.locator('[data-testid="microphone-error"]')
-      ).toContainText('Microphone access denied');
-    });
+    // Voice recording preferences test removed with voice functionality
+    // Microphone permission test removed with voice functionality
   });
 
   test.describe('Chat History Settings', () => {
@@ -356,7 +311,7 @@ test.describe('Settings and Preferences E2E', () => {
           body: JSON.stringify({
             tokensUsed: 25000,
             messagesCount: 150,
-            voiceMinutes: 45,
+            // voiceMinutes removed with voice functionality
             apiCalls: 200,
             period: 'current_month',
           }),
@@ -372,9 +327,7 @@ test.describe('Settings and Preferences E2E', () => {
       await expect(
         page.locator('[data-testid="messages-count"]')
       ).toContainText('150');
-      await expect(page.locator('[data-testid="voice-minutes"]')).toContainText(
-        '45'
-      );
+      // Voice minutes assertion removed with voice functionality
       await expect(page.locator('[data-testid="api-calls"]')).toContainText(
         '200'
       );

@@ -27,59 +27,9 @@ vi.mock('@/components/common/model-selector/base', () => ({
   ),
 }));
 
-vi.mock('@/components/app/voice/button/voice-button', () => ({
-  VoiceButton: ({ onTranscriptReady, disabled, size }: any) => (
-    <button
-      type="button"
-      data-testid="voice-button"
-      disabled={disabled}
-      onClick={() => onTranscriptReady?.('Voice transcript test')}
-    >
-      Voice ({size})
-    </button>
-  ),
-}));
+// Voice-related mocks removed with voice functionality
 
-vi.mock('@/components/app/voice/panel/transcription-panel', () => ({
-  TranscriptionPanel: ({
-    onSendTranscript,
-    onClose,
-    isVisible,
-    className,
-  }: any) =>
-    isVisible ? (
-      <div data-testid="transcription-panel" className={className}>
-        <button
-          type="button"
-          onClick={() => onSendTranscript('Transcription text')}
-        >
-          Send
-        </button>
-        <button type="button" onClick={onClose}>
-          Close
-        </button>
-      </div>
-    ) : null,
-}));
-
-vi.mock('@/components/app/voice/store/voice-store', () => ({
-  useVoiceStore: vi.fn(() => ({})),
-}));
-
-vi.mock('@/components/app/voice/hooks/use-voice-integration', () => ({
-  useVoiceIntegration: vi.fn(() => ({})),
-}));
-
-vi.mock('@/components/audio/RealtimeAudioModal', () => ({
-  RealtimeAudioModal: ({ children, onTranscriptReady }: any) => (
-    <div
-      data-testid="realtime-audio-modal"
-      onClick={() => onTranscriptReady?.('Realtime audio')}
-    >
-      {children}
-    </div>
-  ),
-}));
+// RealtimeAudioModal mock removed with voice functionality
 
 vi.mock('@/components/prompt-kit/prompt-input', () => {
   const PromptInputTextareaComponent = React.forwardRef(
@@ -332,7 +282,7 @@ describe('ChatInput', () => {
       expect(screen.getByTestId('prompt-input')).toBeInTheDocument();
       expect(screen.getByTestId('chat-textarea')).toBeInTheDocument();
       expect(screen.getByTestId('model-selector')).toBeInTheDocument();
-      expect(screen.getByTestId('voice-button')).toBeInTheDocument();
+      // Voice button removed with voice functionality
       expect(screen.getByTestId('file-upload-button')).toBeInTheDocument();
       expect(
         screen.getByTestId('reasoning-effort-selector')
@@ -727,65 +677,7 @@ describe('ChatInput', () => {
 
   // Search functionality has been removed - vector store search is always enabled
 
-  describe('Voice Features', () => {
-    it('should handle voice button transcript', async () => {
-      const onValueChange = vi.fn();
-      const { container } = renderComponent({
-        value: 'existing text',
-        onValueChange,
-      });
-
-      const voiceButton = container.querySelector(
-        '[data-testid="voice-button"]'
-      );
-      expect(voiceButton).toBeInTheDocument();
-
-      if (voiceButton) {
-        // Use direct fireEvent.click
-        fireEvent.click(voiceButton);
-
-        await waitFor(
-          () => {
-            expect(onValueChange).toHaveBeenCalledWith(
-              'existing text\nVoice transcript test'
-            );
-          },
-          { timeout: 1000 }
-        );
-      }
-    });
-
-    it('should handle realtime audio modal transcript', async () => {
-      const onValueChange = vi.fn();
-      const { container } = renderComponent({ value: '', onValueChange });
-
-      const audioModal = container.querySelector(
-        '[data-testid="realtime-audio-modal"]'
-      );
-      expect(audioModal).toBeInTheDocument();
-
-      if (audioModal) {
-        // Use direct fireEvent.click
-        fireEvent.click(audioModal);
-
-        await waitFor(
-          () => {
-            expect(onValueChange).toHaveBeenCalledWith('Realtime audio');
-          },
-          { timeout: 1000 }
-        );
-      }
-    });
-
-    it('should disable voice button when submitting', () => {
-      const { container } = renderComponent({ isSubmitting: true });
-
-      const voiceButton = container.querySelector(
-        '[data-testid="voice-button"]'
-      );
-      expect(voiceButton).toHaveAttribute('disabled');
-    });
-  });
+  // Voice Features tests removed with voice functionality
 
   describe('Reasoning Effort', () => {
     it('should handle reasoning effort change', async () => {

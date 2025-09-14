@@ -97,19 +97,12 @@ const mockFetch = vi.fn().mockImplementation((_url: string, _options?: any) => {
 // Set up global fetch mock
 global.fetch = mockFetch;
 
-// Enhanced global test cleanup and isolation setup
+// Simplified test setup without complex isolation
 import { afterEach, beforeEach } from 'vitest';
-import { setupTestIsolation } from './test-isolation';
 
-// Store original environment to prevent pollution
-const _originalEnv = { ...process.env };
-
-// Set up automatic test isolation
-setupTestIsolation();
-
-// Optimized global beforeEach - conditional setup based on test type
+// Simplified beforeEach setup
 beforeEach(() => {
-  // Always clear mocks and timers
+  // Clear mocks and timers
   vi.clearAllMocks();
   vi.clearAllTimers();
 
@@ -118,81 +111,27 @@ beforeEach(() => {
     (global.fetch as any).mockClear();
   }
 
-  // Console mocking (reduced in fast mode)
-  if (!IS_FAST_MODE) {
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-  }
-
-  // React cleanup - always needed
+  // React cleanup
   cleanup();
 
-  // DOM reset - optimized for different environments
+  // Simple DOM reset
   if (typeof document !== 'undefined') {
     document.body.innerHTML = '';
-    // Only setup event listeners if not in fast mode
-    if (!IS_FAST_MODE) {
-      document.removeEventListener = document.removeEventListener || vi.fn();
-    }
-  }
-  if (typeof window !== 'undefined' && !IS_FAST_MODE) {
-    window.removeEventListener = window.removeEventListener || vi.fn();
   }
 });
 
-// Global afterEach - runs after every single test
+// Simplified afterEach cleanup
 afterEach(() => {
-  // Clean up React components first
+  // Clean up React components
   cleanup();
-
-  // Handle timer cleanup safely - but don't force real timers
-  // Individual tests should manage their own timer lifecycle
-  if (vi.isFakeTimers()) {
-    try {
-      vi.runOnlyPendingTimers();
-    } catch {
-      // Ignore errors if no pending timers
-    }
-  }
 
   // Clear mocks and timers
   vi.clearAllMocks();
   vi.clearAllTimers();
 
-  // Reset modules to prevent cross-test contamination
-  vi.resetModules();
-
-  // Clear DOM completely
+  // Clear DOM
   if (typeof document !== 'undefined') {
     document.body.innerHTML = '';
-  }
-
-  // Clean up any global state
-  if (typeof window !== 'undefined') {
-    // Clear any timers that might be lingering
-    let id = window.setTimeout(() => {}, 0);
-    while (id--) {
-      window.clearTimeout(id);
-      window.clearInterval(id);
-    }
-  }
-
-  // Reset fetch mock state
-  if (global.fetch && vi.isMockFunction(global.fetch)) {
-    (global.fetch as any).mockClear();
-  }
-
-  // Restore console
-  if (vi.isMockFunction(console.error)) {
-    (console.error as any).mockRestore();
-  }
-  if (vi.isMockFunction(console.warn)) {
-    (console.warn as any).mockRestore();
-  }
-
-  // Force garbage collection if available (Node.js)
-  if (typeof global !== 'undefined' && global.gc) {
-    global.gc();
   }
 });
 
@@ -465,16 +404,8 @@ export const mockHelpers = {
   },
 };
 
-// Define test environment constants BEFORE using them
-const IS_FAST_MODE = process.env.VITEST_FAST_MODE === 'true';
-const IS_CI = process.env.CI === '1';
-const TEST_TYPE = process.env.TEST_TYPE || 'unit';
-
-// Export test utilities for different test types
+// Export simplified test utilities
 export const testUtils = {
-  IS_FAST_MODE,
-  IS_CI,
-  TEST_TYPE,
   mockHelpers,
 };
 
@@ -552,7 +483,8 @@ vi.mock('crypto', async (importOriginal) => {
 
 // Mock CSS imports to prevent "Unknown file extension" errors
 vi.mock('katex/dist/katex.min.css', () => ({}));
-vi.mock('tailwindcss/tailwind.css', () => ({}));
+vi.mock('tailwindcss', () => ({}));
+vi.mock('@tailwindcss/typography', () => ({}));
 
 // Mock streamdown which imports katex CSS
 vi.mock('streamdown', () => ({
@@ -573,7 +505,7 @@ vi.mock('lucide-react', async (importOriginal) => {
         className,
         width: size || 24,
         height: size || 24,
-        'stroke-width': strokeWidth || 2,
+        strokeWidth: strokeWidth || 2,
         ...props,
         ref,
         'data-testid': 'mock-icon',

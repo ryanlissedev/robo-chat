@@ -58,9 +58,16 @@ export default function DemoGPT5() {
   const [input, setInput] = useState('');
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
-  const [modelStats, setModelStats] = useState<Record<string, unknown> | null>(
-    null
-  );
+  interface ModelStats {
+    model: string;
+    stats?: {
+      speed?: string;
+      contextWindow?: number;
+      responseTime?: string;
+    };
+  }
+
+  const [modelStats, setModelStats] = useState<ModelStats | null>(null);
 
   const inputId = useId();
   const descriptionId = useId();
@@ -236,12 +243,16 @@ export default function DemoGPT5() {
               <h3 className="font-semibold mb-2">Model Information:</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>Model: {String(modelStats.model)}</div>
-                <div>Speed: {(modelStats as any)?.stats?.speed || 'N/A'}</div>
+                <div>Speed: {modelStats?.stats?.speed || 'N/A'}</div>
                 <div>
-                  Context: {(modelStats as any)?.stats?.contextWindow?.toLocaleString() || 'N/A'}{' '}
+                  Context:{' '}
+                  {modelStats?.stats?.contextWindow?.toLocaleString() || 'N/A'}{' '}
                   tokens
                 </div>
-                <div>Response Time: {(modelStats as any)?.stats?.responseTime || 'N/A'}</div>
+                <div>
+                  Response Time:{' '}
+                  {modelStats?.stats?.responseTime || 'N/A'}
+                </div>
               </div>
             </div>
           )}

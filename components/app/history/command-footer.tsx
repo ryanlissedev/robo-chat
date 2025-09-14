@@ -6,7 +6,7 @@ export function CommandFooter() {
     <div className="right-0 bottom-0 left-0 flex items-center justify-between border-input border-t bg-card px-4 py-3">
       <div className="flex w-full items-center gap-2 text-muted-foreground text-xs">
         <div className="flex w-full flex-1 flex-row items-center justify-between gap-1">
-          {/* @todo: need to work on the morph effect */}
+          {/* Morph effect to be implemented */}
           {/* <div className="flex flex-1 items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>

@@ -82,9 +82,12 @@ describe('Chat Utils Functions', () => {
 
       const result = cleanMessagesForTools(messages, false);
 
-      expect(result).toHaveLength(2);
+      // Should be 3: user, assistant, and fallback user message (last message must be user)
+      expect(result).toHaveLength(3);
       expect(result[0]).toEqual(sampleUserMessage);
       expect(result[1].role).toBe('assistant');
+      expect(result[2].role).toBe('user'); // Fallback user message added
+      expect(result[2].content).toBe('Continue');
       expect(getMessageContent).toHaveBeenCalledWith(sampleAssistantMessage);
     });
 
@@ -113,7 +116,8 @@ describe('Chat Utils Functions', () => {
 
       const result = cleanMessagesForTools(messages, false);
 
-      expect(result).toHaveLength(2);
+      // Should be 3: user, cleaned assistant, and fallback user message (last message must be user)
+      expect(result).toHaveLength(3);
       expect(result[1]).toEqual({
         id: 'assistant-2',
         role: 'assistant',
@@ -121,6 +125,8 @@ describe('Chat Utils Functions', () => {
         content: 'Let me search for that information.',
         createdAt: assistantWithToolInvocation.createdAt,
       });
+      expect(result[2].role).toBe('user'); // Fallback user message
+      expect(result[2].content).toBe('Continue');
     });
 
     it('should add fallback message when all messages are filtered out', () => {
@@ -177,6 +183,7 @@ describe('Chat Utils Functions', () => {
 
       const result = cleanMessagesForTools([messageWithoutDate], false);
 
+      // The message should get a createdAt date added during processing
       expect(result[0].createdAt).toBeInstanceOf(Date);
     });
 
@@ -417,7 +424,8 @@ describe('Chat Utils Functions', () => {
 
       const response = createErrorResponse(error);
 
-      expect(response.status).toBe(0);
+      // Status 0 is invalid for Response, should default to 500
+      expect(response.status).toBe(500);
     });
 
     it('should include code in response when provided', () => {

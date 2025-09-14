@@ -2,7 +2,6 @@
 
 import { ArrowUp, Send, Square } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { RealtimeAudioModal } from '@/components/audio/RealtimeAudioModal';
 import { ModelSelector } from '@/components/common/model-selector/base';
 import {
   PromptInput,
@@ -63,17 +62,17 @@ export function ChatInput({
   onSelectModel,
   selectedModel,
   isUserAuthenticated,
-  userId,
+  userId: _userId,
   stop,
   status,
   setEnableSearch,
   quotedText,
   reasoningEffort,
   onReasoningEffortChange,
-  verbosity,
-  onVerbosityChange,
-  reasoningSummary,
-  onReasoningSummaryChange,
+  verbosity: _verbosity,
+  onVerbosityChange: _onVerbosityChange,
+  reasoningSummary: _reasoningSummary,
+  onReasoningSummaryChange: _onReasoningSummaryChange,
 }: ChatInputProps) {
   // Search is always enabled regardless of model webSearch capability
   const isOnlyWhitespace = useCallback(
@@ -100,7 +99,7 @@ export function ChatInput({
       const newValue = value ? `${value}\n${transcript}` : transcript;
       onValueChange(newValue);
 
-      // Focus textarea after voice input
+      // Focus textarea after transcript input
       requestAnimationFrame(() => {
         textareaRef.current?.focus();
       });
@@ -285,21 +284,15 @@ export function ChatInput({
                   </Button>
                 </PromptInputAction>
               ) : (
-                <RealtimeAudioModal
-                  onTranscriptReady={handleVoiceTranscript}
-                  isUserAuthenticated={isUserAuthenticated}
-                  userId={userId}
+                <Button
+                  aria-label="Open realtime audio modal"
+                  className="size-10 rounded-full transition-all duration-300 ease-out"
+                  size="sm"
+                  type="button"
+                  variant="ghost"
                 >
-                  <Button
-                    aria-label="Open realtime audio modal"
-                    className="size-10 rounded-full transition-all duration-300 ease-out"
-                    size="sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <Send className="size-5" />
-                  </Button>
-                </RealtimeAudioModal>
+                  <Send className="size-5" />
+                </Button>
               )}
             </div>
           </PromptInputActions>

@@ -9,6 +9,29 @@ import {
   safeRunAllTimers,
 } from './utils/timer-test-utils';
 
+// Helper function to filter DOM props
+const filterDOMProps = (props: Record<string, any>): Record<string, any> => {
+  const domProps: Record<string, any> = {};
+
+  Object.keys(props).forEach((key) => {
+    // Allow standard HTML attributes and data/aria attributes
+    if (
+      key.startsWith('data-') ||
+      key.startsWith('aria-') ||
+      key === 'id' ||
+      key === 'role' ||
+      key === 'tabIndex' ||
+      key === 'className' ||
+      key === 'style' ||
+      key === 'title'
+    ) {
+      domProps[key] = props[key];
+    }
+  });
+
+  return domProps;
+};
+
 // Mock child components with minimal implementations that include interactive elements
 vi.mock('@/components/app/chat/message-assistant', () => ({
   MessageAssistant: ({
@@ -24,8 +47,11 @@ vi.mock('@/components/app/chat/message-assistant', () => ({
       }
     };
 
+    // Filter out non-DOM props to prevent React warnings
+    const domProps = filterDOMProps(props);
+
     return (
-      <div data-testid="message-assistant" {...props}>
+      <div data-testid="message-assistant" {...domProps}>
         {children}
         <button aria-label="copy" onClick={copyToClipboard}>
           Copy
@@ -39,14 +65,19 @@ vi.mock('@/components/app/chat/message-assistant', () => ({
 }));
 
 vi.mock('@/components/app/chat/message-user', () => ({
-  MessageUser: ({ children, copyToClipboard, ...props }: any) => (
-    <div data-testid="message-user" {...props}>
-      {children}
-      <button aria-label="copy" onClick={copyToClipboard}>
-        Copy
-      </button>
-    </div>
-  ),
+  MessageUser: ({ children, copyToClipboard, ...props }: any) => {
+    // Filter out non-DOM props to prevent React warnings
+    const domProps = filterDOMProps(props);
+
+    return (
+      <div data-testid="message-user" {...domProps}>
+        {children}
+        <button aria-label="copy" onClick={copyToClipboard}>
+          Copy
+        </button>
+      </div>
+    );
+  },
 }));
 
 // Mock clipboard operations

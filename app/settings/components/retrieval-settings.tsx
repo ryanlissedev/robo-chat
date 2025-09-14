@@ -1,7 +1,7 @@
 'use client';
 
 import { Brain, Filter, RefreshCw, Search } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,6 +55,10 @@ type RetrievalSettingsProps = {
 };
 
 export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
+  const queryRewritingId = useId();
+  const useHydeId = useId();
+  const rerankingId = useId();
+
   const [config, setConfig] = useState<RetrievalConfig>({
     queryRewriting: true,
     rewriteStrategy: 'expansion',
@@ -196,10 +200,10 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label htmlFor="query-rewriting">Enable Query Rewriting</Label>
+            <Label htmlFor={queryRewritingId}>Enable Query Rewriting</Label>
             <Switch
               checked={config.queryRewriting}
-              id="query-rewriting"
+              id={queryRewritingId}
               onCheckedChange={(checked) =>
                 updateConfig('queryRewriting', checked)
               }
@@ -264,12 +268,12 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
           )}
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="use-hyde">
+            <Label htmlFor={useHydeId}>
               Use Hypothetical Document Embedding (HyDE)
             </Label>
             <Switch
               checked={config.useHyDE}
-              id="use-hyde"
+              id={useHydeId}
               onCheckedChange={(checked) => updateConfig('useHyDE', checked)}
             />
           </div>
@@ -288,10 +292,10 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label htmlFor="reranking">Enable Reranking</Label>
+            <Label htmlFor={rerankingId}>Enable Reranking</Label>
             <Switch
               checked={config.reranking}
-              id="reranking"
+              id={rerankingId}
               onCheckedChange={(checked) => updateConfig('reranking', checked)}
             />
           </div>
@@ -352,7 +356,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
                   <Slider
                     max={1}
                     min={0}
-                    onValueChange={([value]) =>
+                    onValueChange={([value]: number[]) =>
                       updateConfig('diversityLambda', value)
                     }
                     step={0.1}
@@ -389,7 +393,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
             <Slider
               max={20}
               min={1}
-              onValueChange={([value]) => updateConfig('topK', value)}
+              onValueChange={([value]: number[]) => updateConfig('topK', value)}
               step={1}
               value={[config.topK]}
             />
@@ -405,7 +409,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
             <Slider
               max={1}
               min={0}
-              onValueChange={([value]) => updateConfig('temperature', value)}
+              onValueChange={([value]: number[]) => updateConfig('temperature', value)}
               step={0.1}
               value={[config.temperature]}
             />
@@ -424,7 +428,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
             <Slider
               max={1}
               min={0}
-              onValueChange={([value]) => updateConfig('minScore', value)}
+              onValueChange={([value]: number[]) => updateConfig('minScore', value)}
               step={0.05}
               value={[config.minScore]}
             />
@@ -456,7 +460,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
             <Slider
               max={4000}
               min={200}
-              onValueChange={([value]) => updateConfig('chunkSize', value)}
+              onValueChange={([value]: number[]) => updateConfig('chunkSize', value)}
               step={100}
               value={[config.chunkSize]}
             />
@@ -472,7 +476,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
             <Slider
               max={500}
               min={0}
-              onValueChange={([value]) => updateConfig('chunkOverlap', value)}
+              onValueChange={([value]: number[]) => updateConfig('chunkOverlap', value)}
               step={50}
               value={[config.chunkOverlap]}
             />

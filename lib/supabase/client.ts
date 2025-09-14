@@ -2,7 +2,6 @@ import { createBrowserClient } from '@supabase/ssr';
 import type { Database } from '@/app/types/database.types';
 import { isSupabaseEnabled } from './config';
 
-// Return a broadly-typed client to avoid downstream TS inference issues
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createClient(): any | null {
   if (!isSupabaseEnabled()) {
@@ -16,5 +15,8 @@ export function createClient(): any | null {
     throw new Error('Missing Supabase environment variables');
   }
 
-  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey) as any;
+  return createBrowserClient<Database>(
+    supabaseUrl,
+    supabaseAnonKey
+  ) as unknown as any;
 }

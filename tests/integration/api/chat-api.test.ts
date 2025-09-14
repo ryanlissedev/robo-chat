@@ -54,8 +54,8 @@ vi.mock('@/lib/utils/logger', () => ({
 }));
 
 vi.mock('@/lib/config', () => ({
-  FREE_MODELS_IDS: ['gpt-3.5-turbo', 'claude-3-haiku'],
-  NON_AUTH_ALLOWED_MODELS: ['gpt-4o-mini'],
+  FREE_MODELS_IDS: ['gpt-3.5-turbo', 'claude-3-haiku', 'gpt-4o-mini'],
+  NON_AUTH_ALLOWED_MODELS: ['gpt-5-mini'],
 }));
 
 // Mock Supabase client

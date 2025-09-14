@@ -61,8 +61,8 @@ export async function POST(request: Request) {
           .select('favorite_models')
           .eq('id', authData.user.id)
           .single();
-        // Coerce to any to avoid TS inferring never
-        const currentFavorites = (userData as any)?.favorite_models || [];
+        // Extract favorite models safely
+        const currentFavorites = userData?.favorite_models || [];
 
         // Get models for this provider
         const providerModels = await getModelsForProvider(provider);

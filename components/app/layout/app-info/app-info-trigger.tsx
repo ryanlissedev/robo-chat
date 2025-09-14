@@ -31,7 +31,7 @@ export function AppInfoTrigger({ trigger }: AppInfoTriggerProps) {
   const isMobile = useBreakpoint(768);
 
   const defaultTrigger = (
-    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+    <DropdownMenuItem onSelect={(e: Event) => e.preventDefault()}>
       <Info className="size-4" />
       About {APP_NAME}
     </DropdownMenuItem>

@@ -1,10 +1,14 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import type React from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { renderWithProviders } from '@/tests/test-utils';
 
-// Mock TextMorph to just render children
+// Mock TextMorph to render text content properly
 vi.mock('@/components/motion-primitives/text-morph', () => ({
-  TextMorph: ({ children }: { children: React.ReactNode }) => children,
+  TextMorph: ({ children, as = 'span' }: { children: React.ReactNode; as?: string }) => {
+    const Component = as as keyof JSX.IntrinsicElements;
+    return <Component>{children}</Component>;
+  },
 }));
 
 // Import after mock
@@ -12,7 +16,7 @@ import { ButtonCopy } from '@/components/common/button-copy';
 
 describe('ButtonCopy', () => {
   it('should render with initial "Copy" text', () => {
-    render(<ButtonCopy code="test" />);
+    renderWithProviders(<ButtonCopy code="test" />);
     expect(screen.getByText('Copy')).toBeInTheDocument();
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
@@ -25,7 +29,7 @@ describe('ButtonCopy', () => {
     });
 
     const testCode = 'console.log("test");';
-    render(<ButtonCopy code={testCode} />);
+    renderWithProviders(<ButtonCopy code={testCode} />);
 
     const button = screen.getByRole('button');
     fireEvent.click(button);
@@ -43,7 +47,7 @@ describe('ButtonCopy', () => {
       configurable: true,
     });
 
-    render(<ButtonCopy code="test" />);
+    renderWithProviders(<ButtonCopy code="test" />);
     expect(screen.getByText('Copy')).toBeInTheDocument();
 
     const button = screen.getByRole('button');

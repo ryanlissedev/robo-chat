@@ -187,7 +187,7 @@ function Sidebar({
           data-mobile="true"
           data-sidebar="sidebar"
           data-slot="sidebar"
-          onOpenAutoFocus={(e) => e.preventDefault()}
+          onOpenAutoFocus={(e: Event) => e.preventDefault()}
           side={side}
           style={
             {

@@ -86,7 +86,7 @@ export default async function RootLayout({
                       >
                         <SidebarProvider defaultOpen>
                           <Toaster position="top-center" />
-                          {/* biome-ignore correctness/useUniqueElementIds: Portal root needs stable ID */}
+                          {/* biome-ignore lint/correctness/useUniqueElementIds: Portal root needs stable ID */}
                           <div id="guest-byok-modal-root" />
                           {children}
                         </SidebarProvider>

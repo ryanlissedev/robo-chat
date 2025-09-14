@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      favorite_models: (data as any).favorite_models,
+      favorite_models: data.favorite_models,
     });
   } catch {
     return NextResponse.json(
@@ -107,7 +107,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      favorite_models: (data as any).favorite_models || ['gpt-5-mini'],
+      favorite_models: data.favorite_models || ['gpt-5-mini'],
     });
   } catch {
     return NextResponse.json(
