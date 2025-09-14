@@ -1,4 +1,6 @@
 import type { ChatRequest } from '@/app/types/ai-extended';
+import { ChatRequestSchema } from '@/lib/validation/schemas';
+import type { ValidatedChatRequest } from '@/lib/services/types';
 import { ChatService } from '@/lib/services/ChatService';
 import { MessageService } from '@/lib/services/MessageService';
 import logger from '@/lib/utils/logger';
@@ -13,19 +15,33 @@ export async function POST(req: Request): Promise<Response> {
   let requestData: ChatRequest | undefined;
 
   try {
-    // Parse and validate request
-    requestData = (await req.json()) as ChatRequest;
+    // Parse JSON
+    const body = (await req.json()) as unknown;
 
-    // Validate request using service
-    const validationError = MessageService.validateChatRequest(requestData);
+    // Zod-validate and normalize shape (e.g., message_group_id -> messageGroupId)
+    const parsed = ChatRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return new Response(
+        JSON.stringify({ error: parsed.error.flatten() }),
+        { status: 400 }
+      );
+    }
+
+    // Additional light validation for required ids
+    const validationError = MessageService.validateChatRequest(
+      parsed.data as unknown as ChatRequest
+    );
     if (validationError) {
       return new Response(JSON.stringify({ error: validationError }), {
         status: 400,
       });
     }
 
-    // Delegate to ChatService for processing
-    return await ChatService.processChatRequest(req, requestData);
+    // Delegate to ChatService using the fully validated type
+    return await ChatService.processChatRequest(
+      req,
+      parsed.data as ValidatedChatRequest
+    );
   } catch (err: unknown) {
     const error = err as {
       code?: string;

@@ -156,10 +156,10 @@ export class MessageService {
    * Transforms an array of messages to v5 format
    */
   static transformMessagesToV5Format(
-    messages: ExtendedUIMessage[]
+    messages: unknown[]
   ): TransformedMessage[] {
-    // Accepts ExtendedUIMessage[], but robustly handles unknown shapes
-    return (messages as unknown[]).map((msg) =>
+    // Accepts unknown[], robustly handles shapes
+    return messages.map((msg) =>
       MessageService.transformMessageToV5Format(msg)
     );
   }

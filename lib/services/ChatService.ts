@@ -25,28 +25,32 @@ import { ModelConfigurationService } from './ModelConfigurationService';
 import { StreamingService } from './StreamingService';
 import { SystemPromptService } from './SystemPromptService';
 import type {
-  ChatRequest,
   ExtendedUIMessage,
   SupabaseClientType,
+  ValidatedChatRequest,
 } from './types';
+
+/** Narrow type for model settings; pass-through from model configuration. */
+type ModelSettings = Record<string, unknown>;
+
+/** Shape for retrieved context chunks used to augment the system prompt. */
+type RetrievedChunk = {
+  fileId: string;
+  fileName: string;
+  score: number;
+  content: string;
+  url?: string;
+};
 
 export class ChatService {
   /**
-   * Main entry point for processing chat requests
+   * Entry point: process a chat request and return a streamed Response.
    */
   static async processChatRequest(
     req: Request,
-    requestData: ChatRequest
+    requestData: ValidatedChatRequest
   ): Promise<Response> {
     try {
-      // Validate request
-      const validationError = MessageService.validateChatRequest(requestData);
-      if (validationError) {
-        return new Response(JSON.stringify({ error: validationError }), {
-          status: 400,
-        });
-      }
-
       const {
         messages,
         chatId,
@@ -55,7 +59,7 @@ export class ChatService {
         isAuthenticated,
         systemPrompt,
         enableSearch,
-        message_group_id,
+        messageGroupId,
         reasoningEffort = 'medium',
         verbosity = 'medium',
         reasoningSummary = 'auto',
@@ -63,36 +67,33 @@ export class ChatService {
         personalityMode,
       } = requestData;
 
-      // Resolve model and get configuration
+      // Resolve model id and validate usage (also yields Supabase client for logging/quotas).
       const resolvedModel = ModelConfigurationService.resolveModelId(model);
       const supabase = await ChatService.validateAndTrackUsage({
         userId,
         model: resolvedModel,
         isAuthenticated,
-        hasGuestCredentials:
-          !isAuthenticated &&
-          Boolean(
-            req.headers.get('x-provider-api-key') ||
-              req.headers.get('X-Provider-Api-Key')
-          ),
+        hasGuestCredentials: ChatService.hasGuestCredentials(req),
       });
 
-      // Handle user message logging
+      // Prepare messages early so downstream logging/integrations use a consistent shape.
+      const compatibleMessages = ChatService.prepareCompatibleMessages(messages);
+
+      // Log user message + increment counters (best-effort; do not block).
       await ChatService.handleUserMessageLogging({
         supabase,
         userId,
         chatId,
-        messages,
-        message_group_id,
+        messages: compatibleMessages,
+        messageGroupId,
       });
 
-      // Get model configuration
+      // Pull model configuration and derive effective runtime settings.
       const modelConfig = await ModelConfigurationService.getModelConfiguration(
         resolvedModel,
         model
       );
 
-      // Set GPT-5 defaults
       const effectiveSettings =
         ModelConfigurationService.calculateEffectiveSettings(
           reasoningEffort,
@@ -100,7 +101,7 @@ export class ChatService {
           modelConfig.isGPT5Model
         );
 
-      // Log request context
+      // Context log (best-effort).
       ChatService.logRequestContext({
         resolvedModel,
         enableSearch,
@@ -110,10 +111,10 @@ export class ChatService {
         modelSupportsFileSearchTools: modelConfig.modelSupportsFileSearchTools,
       });
 
-      // Log user query preview
-      ChatService.logUserQuery(messages, chatId, userId, resolvedModel);
+      // User query preview log (best-effort).
+      ChatService.logUserQuery(compatibleMessages, chatId, userId, resolvedModel);
 
-      // Get effective system prompt and API key
+      // Compose the effective system prompt (may embed search/tool hints).
       const effectiveSystemPrompt =
         await SystemPromptService.getEffectiveSystemPrompt(
           systemPrompt,
@@ -122,66 +123,49 @@ export class ChatService {
           { context, personalityMode }
         );
 
-      const credentialResult = await CredentialService.resolveCredentials(
+      // Resolve provider credentials (user-level or guest API key delegation).
+      const { apiKey } = await CredentialService.resolveCredentials(
         { isAuthenticated, userId },
         resolvedModel,
         req.headers
       );
-      const apiKey = credentialResult.apiKey;
 
-      // Create LangSmith run
+      // Create a LangSmith run (optional; best-effort by the service).
       const langsmithRunId = await LangSmithService.createLangSmithRun({
         resolvedModel,
-        messages,
+        messages: compatibleMessages,
         reasoningEffort: effectiveSettings.reasoningEffort,
         enableSearch,
         userId,
         chatId,
       });
 
-      // Configure tools and model settings
+      // Tools + model settings (strict pass-through).
       const tools = ChatService.configureTools(
         enableSearch,
         modelConfig.modelSupportsFileSearchTools
       );
-      const modelSettings = ModelConfigurationService.getModelSettings(
-        modelConfig,
-        effectiveSettings.reasoningEffort,
-        effectiveSettings.verbosity,
-        reasoningSummary
+
+      const modelSettings: ModelSettings =
+        ModelConfigurationService.getModelSettings(
+          modelConfig,
+          effectiveSettings.reasoningEffort,
+          effectiveSettings.verbosity,
+          reasoningSummary
+        );
+
+      // Convert to model messages once.
+      const modelMessages = ChatService.toModelMessagesOrThrow(
+        compatibleMessages
       );
 
-      // Process messages
-      const transformedMessages =
-        MessageService.transformMessagesToV5Format(messages);
-      if (!(transformedMessages && Array.isArray(transformedMessages))) {
-        return new Response(
-          JSON.stringify({ error: 'Failed to transform messages' }),
-          { status: 500 }
-        );
-      }
-
-      const validatedMessages =
-        MessageService.filterValidMessages(transformedMessages);
-      if (validatedMessages.length === 0) {
-        return new Response(
-          JSON.stringify({ error: 'No valid messages to process' }),
-          { status: 400 }
-        );
-      }
-
-      const uiMessages =
-        MessageService.convertToExtendedUIMessages(validatedMessages);
-      const compatibleMessages =
-        MessageService.createCompatibleMessages(uiMessages);
-
-      // Create language model
+      // Create the language model instance from the provider SDK.
       const languageModel = ChatService.requireApiSdk(modelConfig.modelConfig)(
         apiKey,
         modelSettings
-      );
+      ) as LanguageModel;
 
-      // Handle fallback retrieval if needed
+      // Decide on retrieval strategy. If tools are not available or disabled, run fallback retrieval.
       if (
         shouldUseFallbackRetrieval(
           enableSearch,
@@ -202,25 +186,15 @@ export class ChatService {
           reasoningEffort: effectiveSettings.reasoningEffort,
           enableSearch,
           supabase,
-          message_group_id,
+          messageGroupId,
           langsmithRunId,
-          messages,
+          messages: compatibleMessages,
+          // We already have modelMessages; reuse to avoid duplicate conversion work.
+          precomputedModelMessages: modelMessages,
         });
       }
 
-      // Convert to model messages and stream
-      let modelMessages;
-      try {
-        modelMessages = convertToModelMessages(compatibleMessages);
-      } catch {
-        return new Response(
-          JSON.stringify({
-            error: 'Failed to convert messages to model format',
-          }),
-          { status: 500 }
-        );
-      }
-
+      // Stream the response with the baseline system prompt and tools.
       return await StreamingService.createStreamingResponse(
         languageModel,
         effectiveSystemPrompt,
@@ -233,44 +207,48 @@ export class ChatService {
         effectiveSettings.reasoningEffort,
         enableSearch,
         supabase,
-        message_group_id,
+        messageGroupId,
         langsmithRunId
       );
     } catch (err: unknown) {
+      // Normalize and track.
       const error = err as {
         code?: string;
         message?: string;
         statusCode?: number;
       };
 
-      // Extract model and user info for error tracking
       let modelToUse = 'unknown-model';
       let userIdToUse = 'unknown-user';
 
       if (requestData) {
         modelToUse = requestData.model || 'unknown-model';
         userIdToUse = requestData.userId || 'unknown-user';
-
         try {
           modelToUse = ModelConfigurationService.resolveModelId(
             requestData.model
           );
         } catch {
-          // Use original model if resolution fails
+          // leave as original if resolution fails
         }
       }
 
-      // Track credential error
       CredentialService.trackCredentialError(err, modelToUse, userIdToUse);
-
-      // Log error
       logger.error({ error: err, at: 'api.chat.POST' }, 'Chat API error');
 
       return createErrorResponse(error);
     }
   }
 
-  // Private helper methods
+  // ---------------------------
+  // Internal helpers (static)
+  // ---------------------------
+
+  private static hasGuestCredentials(req: Request): boolean {
+    // Support common header casings; do not throw if headers absent.
+    const h = req.headers;
+    return Boolean(h.get('x-provider-api-key') || h.get('X-Provider-Api-Key'));
+  }
 
   private static async validateAndTrackUsage({
     userId,
@@ -292,42 +270,54 @@ export class ChatService {
     });
   }
 
+  /**
+   * Increment message counters and persist the last user message preview + attachments.
+   * Best-effort; never throws.
+   */
   private static async handleUserMessageLogging({
     supabase,
     userId,
     chatId,
     messages,
-    message_group_id,
+    messageGroupId,
   }: {
     supabase: SupabaseClientType | null;
     userId: string;
     chatId: string;
     messages: ExtendedUIMessage[];
-    message_group_id?: string;
+    messageGroupId?: string;
   }) {
     if (!supabase) return;
 
-    const { incrementMessageCount, logUserMessage } = await import(
-      '../../app/api/chat/api'
-    );
-    const { getMessageContent } = await import('@/app/types/ai-extended');
-    type Attachment = import('@ai-sdk/ui-utils').Attachment;
+    try {
+      const { incrementMessageCount, logUserMessage } = await import(
+        '../../app/api/chat/api'
+      );
+      type Attachment = import('@ai-sdk/ui-utils').Attachment;
 
-    await incrementMessageCount({ supabase, userId });
+      await incrementMessageCount({ supabase, userId });
 
-    const userMessage = messages.at(-1);
-    if (userMessage?.role === 'user') {
-      const textContent = getMessageContent(userMessage);
-      const attachments = userMessage.experimental_attachments || [];
+      const lastUser = messages.at(-1);
+      if (lastUser?.role === 'user') {
+        const textContent = getMessageContent(lastUser);
+        const attachments = (lastUser.experimental_attachments ||
+          []) as Attachment[];
 
-      await logUserMessage({
-        supabase,
-        userId,
-        chatId,
-        content: textContent,
-        attachments: attachments as Attachment[],
-        message_group_id,
-      });
+        await logUserMessage({
+          supabase,
+          userId,
+          chatId,
+          content: textContent,
+          attachments,
+          message_group_id: messageGroupId,
+        });
+      }
+    } catch (e) {
+      // Swallow logging errors; do not impact the main flow.
+      logger.warn(
+        { at: 'userMessageLogging', error: e },
+        'Non-fatal logging error'
+      );
     }
   }
 
@@ -348,10 +338,9 @@ export class ChatService {
         isGPT5Model,
         modelSupportsFileSearchTools,
       } = options;
-      const {
-        getProviderForModel,
-      } = require('@/lib/openproviders/provider-map');
-      const provider = getProviderForModel(resolvedModel);
+
+      const provider = ChatService.resolveProvider(resolvedModel);
+
       logger.info(
         {
           at: 'api.chat.POST',
@@ -362,11 +351,12 @@ export class ChatService {
           verbosity,
           temperature: getModelTemperature(resolvedModel),
           fileSearchToolsCapable: modelSupportsFileSearchTools,
+          isGPT5Model,
         },
         'chat request'
       );
     } catch {
-      // Silently handle error in logging operation
+      // Never throw from logging.
     }
   }
 
@@ -377,108 +367,41 @@ export class ChatService {
     resolvedModel: string
   ) {
     try {
-      const lastUserMessage = messages.at(-1);
-      const userText = lastUserMessage
-        ? getMessageContent(lastUserMessage)
-        : '';
+      const userText = ChatService.getLastUserText(messages);
+      const userTextPreview = ChatService.getPreview(userText);
       logger.info(
         {
-          at: 'api.chat.userQuery',
+          at: 'api.chat.POST',
+          model: resolvedModel,
           chatId,
           userId,
-          model: resolvedModel,
-          preview: ChatService.getPreview(userText),
+          preview: userTextPreview,
         },
-        'User query preview'
+        'user query'
       );
     } catch {
-      // ignore logging errors
+      // Never throw from logging.
     }
   }
 
-  private static configureTools(
-    enableSearch: boolean,
-    modelSupportsFileSearchTools: boolean
-  ): ToolSet {
-    const useTools = shouldEnableFileSearchTools(
-      enableSearch,
-      modelSupportsFileSearchTools
-    );
-
-    if (!useTools) return {} as ToolSet;
-
-    // Prefer OpenAI native file_search tool when vector stores are configured.
-    // Falls back to our custom tool if not available.
-    try {
-      const {
-        getVectorStoreConfig,
-      } = require('@/lib/utils/environment-loader');
-      const { createOpenAI, openai } = require('@ai-sdk/openai');
-      const { vectorStoreIds } = getVectorStoreConfig();
-
-      if (Array.isArray(vectorStoreIds) && vectorStoreIds.length > 0) {
-        logger.info(
-          {
-            at: 'api.chat.configureTools',
-            enableSearch,
-            fileSearchToolsCapable: modelSupportsFileSearchTools,
-            toolsEnabled: true,
-            toolNames: ['file_search'],
-            vectorStoreIds,
-          },
-          'Configuring native OpenAI file_search tool'
-        );
-
-        return {
-          // Must be exactly 'file_search' per OpenAI spec
-          file_search: openai.tools.fileSearch({
-            vectorStoreIds,
-            maxNumResults: 10,
-            ranking: { ranker: 'auto' },
-          }),
-        } as unknown as ToolSet;
-      }
-    } catch {
-      // ignore and fall back to custom tool
-    }
-
-    logger.info(
-      {
-        at: 'api.chat.configureTools',
-        enableSearch,
-        fileSearchToolsCapable: modelSupportsFileSearchTools,
-        toolsEnabled: true,
-        toolNames: ['file_search (custom fallback)'],
-      },
-      'Configuring custom file_search fallback tool'
-    );
-
-    // Expose custom tool under native name for consistency
-    return { file_search: file_search } as unknown as ToolSet;
-  }
-
-  private static requireApiSdk(modelConfig: unknown) {
-    const apiSdk = (modelConfig as { apiSdk?: unknown })?.apiSdk;
-    if (typeof apiSdk !== 'function') {
-      throw new Error('Model is missing apiSdk configuration');
-    }
-    return apiSdk as (
-      key: string | undefined,
-      settings: unknown
-    ) => LanguageModel;
+  private static getLastUserText(messages: ExtendedUIMessage[]): string {
+    const last = messages.at(-1);
+    return last ? (getMessageContent(last) ?? '') : '';
   }
 
   private static getPreview(
     text: string | undefined | null,
     max = 500
   ): string {
-    if (!text) {
-      return '';
-    }
+    if (!text) return '';
     const trimmed = String(text).trim();
     return trimmed.length > max ? `${trimmed.slice(0, max)}…` : trimmed;
   }
 
+  /**
+   * Fallback retrieval path when file-search tools are not enabled/supported.
+   * Builds an augmented system prompt with retrieved chunks and streams with a fallback method.
+   */
   private static async handleFallbackRetrieval({
     compatibleMessages,
     languageModel,
@@ -493,16 +416,17 @@ export class ChatService {
     reasoningEffort,
     enableSearch,
     supabase,
-    message_group_id,
+    messageGroupId,
     langsmithRunId,
     messages,
+    precomputedModelMessages,
   }: {
     compatibleMessages: ExtendedUIMessage[];
     languageModel: LanguageModel;
     effectiveSystemPrompt: string;
     apiKey: string | undefined;
-    modelSettings: any;
-    modelConfig: any;
+    modelSettings: ModelSettings;
+    modelConfig: unknown;
     chatId: string;
     userId: string;
     resolvedModel: string;
@@ -510,21 +434,16 @@ export class ChatService {
     reasoningEffort: string;
     enableSearch: boolean;
     supabase: SupabaseClientType | null;
-    message_group_id: string | undefined;
+    messageGroupId: string | undefined;
     langsmithRunId: string | null;
     messages: ExtendedUIMessage[];
+    precomputedModelMessages: ReturnType<typeof convertToModelMessages>;
   }): Promise<Response> {
-    const lastUserMessage = messages.at(-1);
-    const userQuery = lastUserMessage ? getMessageContent(lastUserMessage) : '';
+    const userQuery = ChatService.getLastUserText(messages);
 
-    let retrieved: {
-      fileId: string;
-      fileName: string;
-      score: number;
-      content: string;
-      url?: string;
-    }[];
+    let retrieved: RetrievedChunk[];
 
+    // Choose retrieval mode, with two-pass preferred when flagged.
     try {
       const mode = selectRetrievalMode(RETRIEVAL_TWO_PASS_ENABLED);
       retrieved =
@@ -532,45 +451,107 @@ export class ChatService {
           ? await retrieveWithGpt41(userQuery, messages, {
               topK: RETRIEVAL_TOP_K,
             })
-          : await performVectorRetrieval(userQuery, {
-              topK: RETRIEVAL_TOP_K,
-            });
-    } catch {
+          : await performVectorRetrieval(userQuery, { topK: RETRIEVAL_TOP_K });
+    } catch (e) {
+      // On failure, fall back to vector retrieval.
+      logger.warn(
+        { at: 'fallbackRetrieval', error: e },
+        'two-pass retrieval failed; falling back to vector retrieval'
+      );
       retrieved = await performVectorRetrieval(userQuery, {
         topK: RETRIEVAL_TOP_K,
       });
     }
 
+    // Build augmented system prompt with token budget.
     const augmentedSystem = buildAugmentedSystemPrompt(
       effectiveSystemPrompt,
       retrieved,
       { budgetTokens: RETRIEVAL_MAX_TOKENS }
     );
 
-    const systemForInjection = augmentedSystem;
+    // Stream using the service variant that is aware of the augmented system.
+    return await StreamingService.createStreamingResponseWithFallback(
+      languageModel,
+      augmentedSystem,
+      precomputedModelMessages,
+      apiKey,
+      modelSettings,
+      modelConfig,
+      chatId,
+      userId,
+      resolvedModel,
+      isGPT5Model,
+      reasoningEffort,
+      enableSearch,
+      supabase,
+      messageGroupId,
+      langsmithRunId
+    );
+  }
 
+  private static configureTools(
+    enableSearch: boolean,
+    modelSupportsFileSearchTools: boolean
+  ): ToolSet {
+    // Respect both user toggle and model capability; otherwise empty toolset.
+    const canUseFileSearch = shouldEnableFileSearchTools(
+      enableSearch,
+      modelSupportsFileSearchTools
+    );
+    const tools: ToolSet = {};
+    if (canUseFileSearch) {
+      tools.file_search = file_search;
+    }
+    return tools;
+  }
+
+  /**
+   * Prepare messages for the provider:
+   *  - transform ➜ filter valid ➜ convert to Extended UI format ➜ make compatible
+   */
+  private static prepareCompatibleMessages(raw: unknown[]): ExtendedUIMessage[] {
+    const transformed = MessageService.transformMessagesToV5Format(raw);
+    if (!Array.isArray(transformed)) {
+      throw new Error('Failed to transform messages');
+    }
+
+    const validated = MessageService.filterValidMessages(transformed);
+    if (validated.length === 0) {
+      const err = new Error('No valid messages to process');
+      // Throw to be shaped by the outer catch into a Response.
+      throw err;
+    }
+
+    const uiMessages = MessageService.convertToExtendedUIMessages(validated);
+    return MessageService.createCompatibleMessages(uiMessages);
+  }
+
+  /** Single place to convert and surface conversion errors uniformly. */
+  private static toModelMessagesOrThrow(
+    compatibleMessages: ExtendedUIMessage[]
+  ) {
     try {
-      const modelMessages = convertToModelMessages(compatibleMessages);
-
-      return await StreamingService.createStreamingResponseWithFallback(
-        languageModel,
-        systemForInjection,
-        modelMessages,
-        apiKey,
-        modelSettings,
-        modelConfig,
-        chatId,
-        userId,
-        resolvedModel,
-        isGPT5Model,
-        reasoningEffort,
-        enableSearch,
-        supabase,
-        message_group_id,
-        langsmithRunId
-      );
-    } catch {
+      return convertToModelMessages(compatibleMessages);
+    } catch (e) {
+      logger.error({ error: e }, 'Failed to convert messages to model format');
       throw new Error('Failed to convert messages to model format');
     }
+  }
+
+  private static resolveProvider(resolvedModel: string): string | undefined {
+    try {
+      const {
+        getProviderForModel,
+      } = require('@/lib/openproviders/provider-map');
+      return getProviderForModel(resolvedModel);
+    } catch {
+      return undefined;
+    }
+  }
+
+  private static requireApiSdk(modelConfig: unknown) {
+    const { requireApiSdk } = require('@/lib/models/api-sdk');
+    return requireApiSdk(modelConfig);
   }
 }

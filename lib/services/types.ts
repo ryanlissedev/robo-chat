@@ -1,9 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { z } from 'zod';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
+import type { ChatRequestSchema } from '@/lib/validation/schemas';
 import type { CredentialSource } from '@/lib/utils/metrics';
 
 // Re-export commonly used types
 export type { ChatRequest, ExtendedUIMessage } from '@/app/types/ai-extended';
+export type ValidatedChatRequest = z.infer<typeof ChatRequestSchema>;
 
 // Supabase client type - properly typed instead of any
 export type SupabaseClientType = SupabaseClient;

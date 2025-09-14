@@ -1,5 +1,5 @@
 import { ChatService } from '@/lib/services/ChatService';
-import type { ChatRequest } from '@/lib/services/types';
+import { ChatRequestSchema } from '@/lib/validation/schemas';
 import logger from '@/lib/utils/logger';
 import { createErrorResponse } from './utils';
 
@@ -7,8 +7,23 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    // Parse request data
-    const requestData = (await req.json()) as ChatRequest;
+    const requestBody = await req.json();
+
+    // Validate request body with Zod
+    const validationResult = ChatRequestSchema.safeParse(requestBody);
+
+    if (!validationResult.success) {
+      logger.warn(
+        { errors: validationResult.error.flatten() },
+        'Invalid chat request'
+      );
+      return new Response(JSON.stringify({ errors: validationResult.error.flatten() }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const requestData = validationResult.data;
 
     // Log the request for debugging
     logger.info({ requestData }, 'Chat API request received');
