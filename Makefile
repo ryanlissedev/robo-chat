@@ -3,16 +3,16 @@
 
 .PHONY: help setup install dev build test test-all lint typecheck clean kill-ports start quick-start ci-test pre-commit
 
-# Detect available package manager (prefer bun, then pnpm, then npm)
+# Detect available package manager (prefer pnpm, then bun, then npm)
 PKG ?=
-ifeq (,$(shell command -v bun 2>/dev/null))
-  ifeq (,$(shell command -v pnpm 2>/dev/null))
+ifeq (,$(shell command -v pnpm 2>/dev/null))
+  ifeq (,$(shell command -v bun 2>/dev/null))
     PKG := npm
   else
-    PKG := pnpm
+    PKG := bun
   endif
 else
-  PKG := bun
+  PKG := pnpm
 endif
 
 # Default target - show help

@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { ChevronLeft, CircleCheck, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';

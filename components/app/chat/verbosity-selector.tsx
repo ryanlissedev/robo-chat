@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { Gauge, ListFilter, Volume2 } from 'lucide-react';
 import { useState } from 'react';

@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { Brain, Gauge, Zap } from 'lucide-react';
 import { useState } from 'react';

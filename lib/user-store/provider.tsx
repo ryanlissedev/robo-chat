@@ -1,5 +1,6 @@
-// app/providers/user-provider.tsx
 'use client';
+
+// app/providers/user-provider.tsx
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useEffect } from 'react';

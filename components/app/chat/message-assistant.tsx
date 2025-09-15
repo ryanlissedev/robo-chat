@@ -446,8 +446,12 @@ export function MessageAssistant({
       className={cn(
         'group flex w-full max-w-3xl flex-1 items-start gap-4 px-6 pb-2',
         hasScrollAnchor && 'min-h-scroll-anchor',
+        status === 'error' && 'border-red-200 bg-red-50',
         className
       )}
+      data-testid="chat-message"
+      data-role="assistant"
+      data-status={status}
     >
       <div
         className={cn(
@@ -482,6 +486,17 @@ export function MessageAssistant({
         {/* Image search resultaten */}
         {searchImageResults.length > 0 && (
           <SearchImages results={searchImageResults} />
+        )}
+
+        {/* Error state display */}
+        {status === 'error' && (
+          <div
+            className="rounded-md bg-red-50 p-3 text-sm text-red-700"
+            data-testid="message-error"
+            role="alert"
+          >
+            An error occurred processing this message. Please try again.
+          </div>
         )}
 
         {/* Text content */}
@@ -552,6 +567,7 @@ export function MessageAssistant({
                   className="flex size-7.5 items-center justify-center rounded-full bg-transparent text-muted-foreground transition hover:bg-accent/60 hover:text-foreground"
                   onClick={handleReload}
                   type="button"
+                  data-testid="retry-button"
                 >
                   <RotateCw className="size-4" />
                 </button>

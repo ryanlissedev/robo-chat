@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { Header } from '@/components/app/layout/header';
 import { AppSidebar } from '@/components/app/layout/sidebar/app-sidebar';

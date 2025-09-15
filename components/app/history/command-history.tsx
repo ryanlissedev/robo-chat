@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { Check, Pencil, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';

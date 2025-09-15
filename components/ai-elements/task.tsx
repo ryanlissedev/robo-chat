@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 type CollapsibleProps = React.HTMLAttributes<HTMLDivElement> & {
   defaultOpen?: boolean;

@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { Check, MessageCircle, X } from 'lucide-react';
 import Link from 'next/link';

@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { type HTMLMotionProps, motion } from 'motion/react';
 import { cn } from '@/lib/utils';

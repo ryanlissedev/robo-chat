@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { PanelLeft } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';

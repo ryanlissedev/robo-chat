@@ -220,6 +220,8 @@ describe('Message', () => {
     });
 
     it('should pass correct props to MessageUser', () => {
+      cleanup(); // Ensure clean DOM before this test
+
       const props = {
         variant: 'user' as const,
         id: 'user-msg-123',

@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { useEffect, useMemo, useState } from 'react';
 // Minimal UI primitives already used elsewhere

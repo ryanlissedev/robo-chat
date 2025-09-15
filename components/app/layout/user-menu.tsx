@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { Github } from 'lucide-react';
 import { useState } from 'react';

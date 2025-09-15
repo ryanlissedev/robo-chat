@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { StickToBottom } from 'use-stick-to-bottom';
 import { cn } from '@/lib/utils';

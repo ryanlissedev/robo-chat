@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import type { VariantProps } from 'class-variance-authority';
 import { ChevronDown } from 'lucide-react';

@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { HelpCircle } from 'lucide-react';
 import { motion } from 'motion/react';

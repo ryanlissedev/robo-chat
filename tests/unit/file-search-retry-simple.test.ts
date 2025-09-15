@@ -92,7 +92,7 @@ describe('File Search Retry Logic', () => {
   });
 
   it('should not retry on non-retriable errors', async () => {
-    const nonRetriableError = Object.assign(new Error('Bad request'), { status: 400 });
+    const nonRetriableError = Object.assign(new Error('Persistent server error'), { status: 400 });
 
     mockEnhancedRetrieval.mockImplementation(() => {
       throw nonRetriableError;
@@ -109,7 +109,7 @@ describe('File Search Retry Logic', () => {
 
     // Non-retriable errors should fail quickly
     expect(result.success).toBe(false);
-    expect(result.error).toBe('Bad request');
+    expect(result.error).toBe('Persistent server error');
   });
 
   it('should handle network timeout errors with retry', async () => {
@@ -135,7 +135,7 @@ describe('File Search Retry Logic', () => {
 
     // Should eventually succeed after timeout retry
     expect(result.success).toBe(true);
-    expect(result.total_results).toBe(0);
+    expect(callCount).toBe(2);
   });
 
   it('should handle rate limit errors with retry', async () => {
@@ -151,7 +151,7 @@ describe('File Search Retry Logic', () => {
         {
           id: 'doc1',
           file_id: 'file1',
-          file_name: 'rate-limit-success.pdf',
+          file_name: 'success.pdf',
           content: 'Success after rate limit',
           score: 0.8,
           metadata: {},
@@ -170,7 +170,7 @@ describe('File Search Retry Logic', () => {
 
     // Should succeed after rate limit retry
     expect(result.success).toBe(true);
-    expect(result.results[0].file_name).toBe('rate-limit-success.pdf');
+    expect(result.results[0].file_name).toBe('success.pdf');
   });
 
   it('should fail after maximum retry attempts', async () => {
@@ -237,7 +237,7 @@ describe('File Search Retry Logic', () => {
         {
           id: 'doc1',
           file_id: 'file1',
-          file_name: 'immediate-success.pdf',
+          file_name: 'success.pdf',
           content: 'No retry needed',
           score: 1.0,
           metadata: {},
@@ -256,6 +256,6 @@ describe('File Search Retry Logic', () => {
 
     // Should succeed immediately without retries
     expect(result.success).toBe(true);
-    expect(result.results[0].file_name).toBe('immediate-success.pdf');
+    expect(result.results[0].file_name).toBe('success.pdf');
   });
 });

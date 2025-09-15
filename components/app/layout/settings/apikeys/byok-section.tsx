@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Key, Loader2, Plus, Trash2 } from 'lucide-react';

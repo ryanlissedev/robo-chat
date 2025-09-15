@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { Box, Cable, Key, Paintbrush, Settings, X } from 'lucide-react';
 import { useState } from 'react';

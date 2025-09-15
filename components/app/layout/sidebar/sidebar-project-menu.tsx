@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { MoreHorizontal, Pencil, Trash } from 'lucide-react';
 import { useState } from 'react';

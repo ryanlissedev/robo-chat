@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { Check, ChevronDown, Search, Star } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';

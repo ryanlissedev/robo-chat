@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { toast as sonnerToast } from 'sonner';

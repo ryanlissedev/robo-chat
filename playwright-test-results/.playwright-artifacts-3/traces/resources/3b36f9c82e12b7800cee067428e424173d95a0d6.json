@@ -1,0 +1,1 @@
+{"models":[{"id":"gpt-4","name":"GPT-4","provider":"openai","description":"Latest GPT-4 model","contextWindow":8000,"maxOutput":4000,"pricing":{"input":0.03,"output":0.06},"capabilities":["chat"]}]}

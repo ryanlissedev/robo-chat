@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
 import { useMemo } from 'react';

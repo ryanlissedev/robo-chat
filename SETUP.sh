@@ -28,8 +28,11 @@ if [ "$NODE_VERSION" -lt 18 ]; then
 fi
 echo -e "${GREEN}✅ Node.js $(node -v) detected${NC}"
 
-# Check package manager (prefer bun, fallback to npm)
-if command -v bun &> /dev/null; then
+# Check package manager (prefer pnpm, fallback to npm)
+if command -v pnpm &> /dev/null; then
+    PKG_MANAGER="pnpm"
+    echo -e "${GREEN}✅ Using pnpm package manager${NC}"
+elif command -v bun &> /dev/null; then
     PKG_MANAGER="bun"
     echo -e "${GREEN}✅ Using Bun package manager${NC}"
 else
@@ -39,7 +42,9 @@ fi
 
 # Install dependencies
 echo -e "\n${YELLOW}Installing dependencies...${NC}"
-if [ "$PKG_MANAGER" = "bun" ]; then
+if [ "$PKG_MANAGER" = "pnpm" ]; then
+    pnpm install
+elif [ "$PKG_MANAGER" = "bun" ]; then
     bun install
 else
     npm install
@@ -65,7 +70,13 @@ else
 fi
 
 # Install Playwright browsers if needed
-if [ "$PKG_MANAGER" = "bun" ]; then
+if [ "$PKG_MANAGER" = "pnpm" ]; then
+    if ! pnpm exec playwright --version &> /dev/null; then
+        echo -e "\n${YELLOW}Installing Playwright browsers for E2E testing...${NC}"
+        pnpm exec playwright install
+        echo -e "${GREEN}✅ Playwright browsers installed${NC}"
+    fi
+elif [ "$PKG_MANAGER" = "bun" ]; then
     if ! bunx playwright --version &> /dev/null; then
         echo -e "\n${YELLOW}Installing Playwright browsers for E2E testing...${NC}"
         bunx playwright install
@@ -81,18 +92,34 @@ fi
 
 # Run type check
 echo -e "\n${YELLOW}Running type check...${NC}"
-if npm run type-check; then
-    echo -e "${GREEN}✅ TypeScript validation passed${NC}"
+if [ "$PKG_MANAGER" = "pnpm" ]; then
+    if pnpm type-check; then
+        echo -e "${GREEN}✅ TypeScript validation passed${NC}"
+    else
+        echo -e "${YELLOW}⚠️  TypeScript issues detected (non-blocking)${NC}"
+    fi
 else
-    echo -e "${YELLOW}⚠️  TypeScript issues detected (non-blocking)${NC}"
+    if npm run type-check; then
+        echo -e "${GREEN}✅ TypeScript validation passed${NC}"
+    else
+        echo -e "${YELLOW}⚠️  TypeScript issues detected (non-blocking)${NC}"
+    fi
 fi
 
 # Run linting
 echo -e "\n${YELLOW}Checking code quality...${NC}"
-if npm run lint; then
-    echo -e "${GREEN}✅ Code quality check passed${NC}"
+if [ "$PKG_MANAGER" = "pnpm" ]; then
+    if pnpm lint; then
+        echo -e "${GREEN}✅ Code quality check passed${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Linting issues detected. Run 'pnpm lint:fix' to auto-fix${NC}"
+    fi
 else
-    echo -e "${YELLOW}⚠️  Linting issues detected. Run 'npm run lint:fix' to auto-fix${NC}"
+    if npm run lint; then
+        echo -e "${GREEN}✅ Code quality check passed${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Linting issues detected. Run 'npm run lint:fix' to auto-fix${NC}"
+    fi
 fi
 
 # Setup complete
@@ -100,13 +127,24 @@ echo -e "\n${GREEN}🎉 Setup complete!${NC}"
 echo "================================================"
 echo -e "\n${YELLOW}Next steps:${NC}"
 echo "1. Update .env.local with your API keys"
-echo "2. Run 'npm run dev' to start development server"
+if [ "$PKG_MANAGER" = "pnpm" ]; then
+    echo "2. Run 'pnpm dev' to start development server"
+else
+    echo "2. Run 'npm run dev' to start development server"
+fi
 echo "3. Visit http://localhost:3000"
 echo ""
 echo -e "${YELLOW}Available commands:${NC}"
-echo "  npm run dev        - Start development server"
-echo "  npm run build      - Build for production"
-echo "  npm test           - Run tests"
-echo "  npm run lint:fix   - Auto-fix code issues"
+if [ "$PKG_MANAGER" = "pnpm" ]; then
+    echo "  pnpm dev           - Start development server"
+    echo "  pnpm build         - Build for production"
+    echo "  pnpm test          - Run tests"
+    echo "  pnpm lint:fix      - Auto-fix code issues"
+else
+    echo "  npm run dev        - Start development server"
+    echo "  npm run build      - Build for production"
+    echo "  npm test           - Run tests"
+    echo "  npm run lint:fix   - Auto-fix code issues"
+fi
 echo ""
 echo -e "${GREEN}Happy coding! 🚀${NC}"

@@ -1,5 +1,6 @@
-import React from 'react';
 'use client';
+
+import React from 'react';
 
 import { Check, Copy, Trash } from 'lucide-react';
 import Image from 'next/image';
@@ -84,6 +85,8 @@ export function MessageUser({
         hasScrollAnchor && 'min-h-scroll-anchor',
         className
       )}
+      data-testid="chat-message"
+      data-role="user"
     >
       {attachments?.map((attachment, index) => (
         <div
