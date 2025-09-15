@@ -10,7 +10,7 @@ export type { ChatRequest, ExtendedUIMessage } from '@/app/types/ai-extended';
 export type ValidatedChatRequest = z.infer<typeof ChatRequestSchema>;
 
 // Supabase client type - properly typed instead of any
-export type SupabaseClientType = SupabaseClient<Database> | SupabaseClient;
+export type SupabaseClientType = SupabaseClient<Database>;
 
 // Message content type for better type safety
 export interface MessageContent {

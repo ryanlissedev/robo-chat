@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import type { ComponentProps } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {

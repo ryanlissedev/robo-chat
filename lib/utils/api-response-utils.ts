@@ -199,10 +199,16 @@ export async function parseRequestBody<T>(
     return { success: true, data };
   } catch (error) {
     if (error instanceof Error) {
-      if (error.message.includes('Unexpected token') || error.message.includes('Expected property name')) {
+      if (
+        error.message.includes('Unexpected token') ||
+        error.message.includes('Expected property name')
+      ) {
         return { success: false, error: 'Invalid JSON in request body' };
       }
-      return { success: false, error: `Failed to parse request body: ${error.message}` };
+      return {
+        success: false,
+        error: `Failed to parse request body: ${error.message}`,
+      };
     }
     return { success: false, error: 'Failed to parse request body' };
   }
@@ -283,7 +289,7 @@ export function createErrorResponse(
   let jsonString: string;
   try {
     jsonString = JSON.stringify(body);
-  } catch (error) {
+  } catch (_error) {
     // If circular reference, create simplified body
     const safeBody = {
       error: errorType,
@@ -303,34 +309,25 @@ export function createErrorResponse(
 /**
  * Handle API errors with consistent logging and response format
  */
-export function handleApiError(error: unknown, operation: string): Response {
+export function handleApiError(error: unknown, _operation: string): Response {
   if (error instanceof ResponseError) {
-    console.error(`API Error in ${operation}:`, {
-      type: error.type,
-      message: error.message,
-      status: error.status,
-    });
-
-    return createErrorResponse(error.type, error.message, error.status, error.details);
+    return createErrorResponse(
+      error.type,
+      error.message,
+      error.status,
+      error.details
+    );
   }
 
   if (error instanceof Error) {
-    console.error(`API Error in ${operation}:`, {
-      type: 'internal_error',
-      message: error.message,
-      status: 500,
-    });
-
     return createErrorResponse('internal_error', error.message, 500);
   }
 
-  console.error(`API Error in ${operation}:`, {
-    type: 'internal_error',
-    message: 'An unexpected error occurred',
-    status: 500,
-  });
-
-  return createErrorResponse('internal_error', 'An unexpected error occurred', 500);
+  return createErrorResponse(
+    'internal_error',
+    'An unexpected error occurred',
+    500
+  );
 }
 
 /**
@@ -342,7 +339,10 @@ export function validateJsonPayload(
 ): { valid: true } | { valid: false; error: string } {
   if (!payload) {
     if (requiredFields.length > 0) {
-      return { valid: false, error: `Missing required field: ${requiredFields[0]}` };
+      return {
+        valid: false,
+        error: `Missing required field: ${requiredFields[0]}`,
+      };
     }
     return { valid: true };
   }
@@ -376,7 +376,6 @@ export function createStreamingErrorResponse(
     headers: { 'Content-Type': 'text/plain' },
   });
 }
-
 
 /**
  * Legacy create error response with old signature

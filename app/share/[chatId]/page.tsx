@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+import type { Tables } from '@/app/types/database.types';
 import { APP_DOMAIN } from '@/lib/config';
 import { isSupabaseEnabled } from '@/lib/supabase/config';
 import { createClient } from '@/lib/supabase/server';
 import Article from './article';
+
+type ChatRow = Pick<Tables<'chats'>, 'id' | 'title' | 'created_at'>;
 
 export const dynamic = 'force-static';
 
@@ -28,7 +31,7 @@ export async function generateMetadata({
     .select('title, created_at')
     .eq('id', chatId)
     .single();
-  const title = (chat as any)?.title || 'Chat';
+  const title = (chat as ChatRow | null)?.title || 'Chat';
   const description = 'A chat in Zola';
 
   return {
@@ -86,10 +89,10 @@ export default async function ShareChat({
 
   return (
     <Article
-      date={(chatData as any).created_at || ''}
+      date={chatData.created_at || ''}
       messages={messagesData}
       subtitle={'A conversation in Zola'}
-      title={(chatData as any).title || ''}
+      title={chatData.title || ''}
     />
   );
 }

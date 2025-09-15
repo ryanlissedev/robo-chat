@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { type ComponentProps, memo, useMemo } from 'react';
 import { Streamdown } from 'streamdown';
 import { cn } from '@/lib/utils';

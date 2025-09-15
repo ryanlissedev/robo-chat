@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDown, Search, Star } from 'lucide-react';
-import React from 'react';
+import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import { useKeyShortcut } from '@/app/hooks/use-key-shortcut';
@@ -448,73 +448,73 @@ export function ModelSelector({
         >
           {triggerContent}
         </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="flex h-[320px] w-[300px] flex-col space-y-0.5 overflow-visible p-0"
-            data-testid="model-selector-content"
-            forceMount
-            side="top"
-            sideOffset={4}
-          >
-            <div className="sticky top-0 z-10 rounded-t-md border-b bg-background px-0 pt-0 pb-0">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  className="rounded-b-none border border-none pl-8 shadow-none focus-visible:ring-0 dark:bg-popover"
-                  onChange={handleSearchChange}
-                  onClick={(e) => e.stopPropagation()}
-                  onFocus={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  placeholder="Search models..."
-                  ref={searchInputRef}
-                  value={searchQuery}
-                />
+        <DropdownMenuContent
+          align="start"
+          className="flex h-[320px] w-[300px] flex-col space-y-0.5 overflow-visible p-0"
+          data-testid="model-selector-content"
+          forceMount
+          side="top"
+          sideOffset={4}
+        >
+          <div className="sticky top-0 z-10 rounded-t-md border-b bg-background px-0 pt-0 pb-0">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="rounded-b-none border border-none pl-8 shadow-none focus-visible:ring-0 dark:bg-popover"
+                onChange={handleSearchChange}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                placeholder="Search models..."
+                ref={searchInputRef}
+                value={searchQuery}
+              />
+            </div>
+          </div>
+          <div className="flex h-full flex-col space-y-0 overflow-y-auto px-1 pt-0 pb-0">
+            {isLoadingModels ? (
+              <div className="flex h-full flex-col items-center justify-center p-6 text-center">
+                <p className="mb-2 text-sm text-muted-foreground">
+                  Loading models...
+                </p>
               </div>
-            </div>
-            <div className="flex h-full flex-col space-y-0 overflow-y-auto px-1 pt-0 pb-0">
-              {isLoadingModels ? (
-                <div className="flex h-full flex-col items-center justify-center p-6 text-center">
-                  <p className="mb-2 text-sm text-muted-foreground">
-                    Loading models...
-                  </p>
-                </div>
-              ) : filteredModels.length > 0 ? (
-                filteredModels.map((model) => (
-                  <ModelItem
-                    key={model.id}
-                    isMobile={false}
-                    model={model as ModelWithCred}
-                    selectedModelId={selectedModelId}
-                    setIsDrawerOpen={setIsDrawerOpen}
-                    setIsProDialogOpen={setIsProDialogOpen}
-                    setSelectedModelId={setSelectedModelId}
-                    setSelectedProModel={(id) => setSelectedProModel(id)}
-                  />
-                ))
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center p-6 text-center">
-                  <p className="mb-1 text-sm text-muted-foreground">
-                    No results found.
-                  </p>
-                  <a
-                    className="text-sm text-muted-foreground underline"
-                    href="https://github.com/ibelick/zola/issues/new?title=Model%20Request%3A%20"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    Request a new model
-                  </a>
-                </div>
-              )}
-            </div>
-
-            {/* Submenu positioned absolutely */}
-            {hoveredModelData && (
-              <div className="absolute top-0 left-[calc(100%+8px)]">
-                <SubMenu hoveredModelData={hoveredModelData} />
+            ) : filteredModels.length > 0 ? (
+              filteredModels.map((model) => (
+                <ModelItem
+                  key={model.id}
+                  isMobile={false}
+                  model={model as ModelWithCred}
+                  selectedModelId={selectedModelId}
+                  setIsDrawerOpen={setIsDrawerOpen}
+                  setIsProDialogOpen={setIsProDialogOpen}
+                  setSelectedModelId={setSelectedModelId}
+                  setSelectedProModel={(id) => setSelectedProModel(id)}
+                />
+              ))
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center p-6 text-center">
+                <p className="mb-1 text-sm text-muted-foreground">
+                  No results found.
+                </p>
+                <a
+                  className="text-sm text-muted-foreground underline"
+                  href="https://github.com/ibelick/zola/issues/new?title=Model%20Request%3A%20"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Request a new model
+                </a>
               </div>
             )}
-          </DropdownMenuContent>
+          </div>
+
+          {/* Submenu positioned absolutely */}
+          {hoveredModelData && (
+            <div className="absolute top-0 left-[calc(100%+8px)]">
+              <SubMenu hoveredModelData={hoveredModelData} />
+            </div>
+          )}
+        </DropdownMenuContent>
       </DropdownMenu>
     </div>
   );

@@ -5,10 +5,12 @@ import type * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
+type LabelProps = React.ComponentProps<typeof LabelPrimitive.Root>;
+
 function Label({
   className,
   ...props
-}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+}: LabelProps) {
   return (
     <LabelPrimitive.Root
       className={cn(

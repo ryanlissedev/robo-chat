@@ -1,8 +1,7 @@
 'use client';
 
-import React from 'react';
-
 import { AnimatePresence, motion } from 'motion/react';
+import type React from 'react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';

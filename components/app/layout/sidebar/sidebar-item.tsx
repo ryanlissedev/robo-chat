@@ -1,6 +1,6 @@
-import React from 'react';
 import { Check, X } from 'lucide-react';
 import Link from 'next/link';
+import type React from 'react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import useClickOutside from '@/app/hooks/use-click-outside';

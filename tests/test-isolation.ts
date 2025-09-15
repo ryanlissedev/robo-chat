@@ -154,6 +154,24 @@ export const mockIsolation = {
           remove: vi.fn(() => Promise.resolve({ data: null, error: null })),
         })),
       },
+      // Mock realtime to prevent disconnect errors
+      realtime: {
+        channels: new Map(),
+        conn: {
+          close: vi.fn(),
+          disconnect: vi.fn(),
+        },
+        disconnect: vi.fn().mockResolvedValue(undefined),
+        removeChannel: vi.fn(),
+        removeAllChannels: vi.fn(),
+        getChannels: vi.fn(() => []),
+      },
+      channel: vi.fn(() => ({
+        on: vi.fn(() => ({ subscribe: vi.fn() })),
+        subscribe: vi.fn(),
+        unsubscribe: vi.fn().mockResolvedValue({ error: null }),
+        send: vi.fn(),
+      })),
     };
 
     return mockClient;

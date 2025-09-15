@@ -1,4 +1,3 @@
-import React from 'react';
 import { FileUp, Paperclip } from 'lucide-react';
 import {
   FileUpload,

@@ -1,4 +1,3 @@
-import React from 'react';
 export function CommandFooter() {
   //   const [showPreview, setShowPreview] = useState(false)
   //   const { preferences, setShowConversationPreviews } = useUserPreferences()

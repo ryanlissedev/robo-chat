@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { Check, Copy, Trash } from 'lucide-react';
 import Image from 'next/image';
 import { useRef, useState } from 'react';
@@ -178,9 +176,9 @@ export function MessageUser({
             ol: ({ children }) => <>{children}</>,
           }}
           markdown={!isMultiline}
-          ref={contentRef}
+          ref={contentRef as React.RefObject<HTMLDivElement>}
         >
-          <span style={{ whiteSpace: 'pre-wrap' }}>{children}</span>
+          {children}
         </MessageContent>
       )}
       <MessageActions className="flex gap-0 opacity-0 transition-opacity duration-0 group-hover:opacity-100">

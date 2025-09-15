@@ -1,8 +1,7 @@
 'use client';
 
-import React from 'react';
-
 import { FileText, ListTree } from 'lucide-react';
+import type React from 'react';
 import { useState } from 'react';
 import {
   Select,
@@ -26,19 +25,19 @@ const options: Array<{
   value: ReasoningSummary;
   label: string;
   description: string;
-  Icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string }>;
 }> = [
   {
     value: 'auto',
     label: 'Auto summary',
     description: 'Provider chooses concise summaries',
-    Icon: ListTree,
+    icon: ListTree,
   },
   {
     value: 'detailed',
     label: 'Detailed summary',
     description: 'Include longer reasoning summaries when available',
-    Icon: FileText,
+    icon: FileText,
   },
 ];
 
@@ -66,7 +65,7 @@ export function ReasoningSummarySelector({
       >
         <SelectValue>
           <div className="flex items-center gap-2">
-            <selected.Icon className="h-5 w-5 text-muted-foreground" />
+            <selected.icon className="h-5 w-5 text-muted-foreground" />
             <span className="font-medium text-sm">{selected.label}</span>
           </div>
         </SelectValue>
@@ -80,7 +79,7 @@ export function ReasoningSummarySelector({
           >
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
-                <opt.Icon className="h-5 w-5 text-muted-foreground" />
+                <opt.icon className="h-5 w-5 text-muted-foreground" />
                 <span className="font-medium text-base">{opt.label}</span>
               </div>
               <span className="pl-7 text-muted-foreground text-sm">

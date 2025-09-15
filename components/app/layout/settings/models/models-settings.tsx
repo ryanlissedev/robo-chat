@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 // framer-motion v11 types are stricter; import specific components
 import { AnimatePresence, motion, Reorder } from 'framer-motion';
 import { GripVertical, Minus, Plus, Star } from 'lucide-react';

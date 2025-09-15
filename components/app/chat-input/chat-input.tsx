@@ -1,8 +1,7 @@
 'use client';
 
-import React from 'react';
-
 import { ArrowUp, Send, Square } from 'lucide-react';
+import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ModelSelector } from '@/components/common/model-selector/base';
 import {
@@ -96,7 +95,7 @@ export function ChatInput({
     [onReasoningEffortChange]
   );
 
-  const handleVoiceTranscript = useCallback(
+  const _handleVoiceTranscript = useCallback(
     (transcript: string) => {
       const newValue = value ? `${value}\n${transcript}` : transcript;
       onValueChange(newValue);

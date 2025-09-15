@@ -16,8 +16,9 @@ export function useBreakpoint(breakpoint: number) {
       mql.addEventListener('change', onChange);
     } else {
       // Legacy fallback for older browsers
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (mql as any).addListener?.(onChange);
+      (
+        mql as MediaQueryList & { addListener?: (listener: () => void) => void }
+      ).addListener?.(onChange);
     }
 
     setIsBelowBreakpoint(window.innerWidth < breakpoint);
@@ -27,8 +28,11 @@ export function useBreakpoint(breakpoint: number) {
         mql.removeEventListener('change', onChange);
       } else {
         // Legacy fallback for older browsers
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (mql as any).removeListener?.(onChange);
+        (
+          mql as MediaQueryList & {
+            removeListener?: (listener: () => void) => void;
+          }
+        ).removeListener?.(onChange);
       }
     };
   }, [breakpoint]);

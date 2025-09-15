@@ -203,7 +203,6 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
             <Label htmlFor={queryRewritingId}>Enable Query Rewriting</Label>
             <Switch
               checked={config.queryRewriting}
-              id={queryRewritingId}
               onCheckedChange={(checked) =>
                 updateConfig('queryRewriting', checked)
               }
@@ -231,35 +230,27 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="expansion">
-                    <div>
-                      <div className="font-medium">Query Expansion</div>
-                      <div className="text-muted-foreground text-xs">
-                        Add synonyms and related terms
-                      </div>
+                    <div className="font-medium">Query Expansion</div>
+                    <div className="text-muted-foreground text-xs">
+                      Add synonyms and related terms
                     </div>
                   </SelectItem>
                   <SelectItem value="refinement">
-                    <div>
-                      <div className="font-medium">Query Refinement</div>
-                      <div className="text-muted-foreground text-xs">
-                        Improve clarity and specificity
-                      </div>
+                    <div className="font-medium">Query Refinement</div>
+                    <div className="text-muted-foreground text-xs">
+                      Improve clarity and specificity
                     </div>
                   </SelectItem>
                   <SelectItem value="decomposition">
-                    <div>
-                      <div className="font-medium">Query Decomposition</div>
-                      <div className="text-muted-foreground text-xs">
-                        Break into sub-queries
-                      </div>
+                    <div className="font-medium">Query Decomposition</div>
+                    <div className="text-muted-foreground text-xs">
+                      Break into sub-queries
                     </div>
                   </SelectItem>
                   <SelectItem value="multi-perspective">
-                    <div>
-                      <div className="font-medium">Multi-Perspective</div>
-                      <div className="text-muted-foreground text-xs">
-                        Generate different angles
-                      </div>
+                    <div className="font-medium">Multi-Perspective</div>
+                    <div className="text-muted-foreground text-xs">
+                      Generate different angles
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -273,7 +264,6 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
             </Label>
             <Switch
               checked={config.useHyDE}
-              id={useHydeId}
               onCheckedChange={(checked) => updateConfig('useHyDE', checked)}
             />
           </div>
@@ -295,7 +285,6 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
             <Label htmlFor={rerankingId}>Enable Reranking</Label>
             <Switch
               checked={config.reranking}
-              id={rerankingId}
               onCheckedChange={(checked) => updateConfig('reranking', checked)}
             />
           </div>
@@ -318,27 +307,21 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="semantic">
-                      <div>
-                        <div className="font-medium">Semantic Reranking</div>
-                        <div className="text-muted-foreground text-xs">
-                          Fast, context-aware ranking
-                        </div>
+                      <div className="font-medium">Semantic Reranking</div>
+                      <div className="text-muted-foreground text-xs">
+                        Fast, context-aware ranking
                       </div>
                     </SelectItem>
                     <SelectItem value="cross-encoder">
-                      <div>
-                        <div className="font-medium">Cross-Encoder</div>
-                        <div className="text-muted-foreground text-xs">
-                          High accuracy, slower
-                        </div>
+                      <div className="font-medium">Cross-Encoder</div>
+                      <div className="text-muted-foreground text-xs">
+                        High accuracy, slower
                       </div>
                     </SelectItem>
                     <SelectItem value="diversity">
-                      <div>
-                        <div className="font-medium">Diversity (MMR)</div>
-                        <div className="text-muted-foreground text-xs">
-                          Balance relevance and variety
-                        </div>
+                      <div className="font-medium">Diversity (MMR)</div>
+                      <div className="text-muted-foreground text-xs">
+                        Balance relevance and variety
                       </div>
                     </SelectItem>
                   </SelectContent>

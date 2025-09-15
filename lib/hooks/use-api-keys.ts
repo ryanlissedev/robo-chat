@@ -4,6 +4,8 @@ import { CredentialResolver } from '@/lib/services/credential-resolver';
 import type {
   ApiKey,
   GuestCredential,
+  IApiKeyService,
+  IGuestCredentialService,
   StorageScope,
 } from '@/lib/services/types';
 import { ValidationService } from '@/lib/services/validation-service';
@@ -56,10 +58,12 @@ export function useApiKeys(
       const service = resolver.getApiKeyService();
 
       if (isGuest) {
-        const credentials = await (service as any).loadCredentials();
+        const credentials = await (
+          service as IGuestCredentialService
+        ).loadCredentials();
         setGuestCredentials(credentials);
       } else {
-        const keys = await (service as any).loadApiKeys();
+        const keys = await (service as IApiKeyService).loadApiKeys();
         setApiKeys(keys);
       }
     } catch (_error) {
@@ -98,7 +102,9 @@ export function useApiKeys(
         const service = resolver.getApiKeyService();
 
         if (isGuest) {
-          const credential = await (service as any).saveCredential({
+          const credential = await (
+            service as IGuestCredentialService
+          ).saveCredential({
             provider,
             key,
             storageScope,
@@ -112,7 +118,7 @@ export function useApiKeys(
 
           toast.success(`${provider} API key saved (${storageScope} storage)`);
         } else {
-          const savedKey = await (service as any).saveApiKey({
+          const savedKey = await (service as IApiKeyService).saveApiKey({
             provider,
             key,
           });
@@ -141,7 +147,7 @@ export function useApiKeys(
         const service = resolver.getApiKeyService();
 
         if (isGuest) {
-          await (service as any).deleteCredential(provider);
+          await (service as IGuestCredentialService).deleteCredential(provider);
           setGuestCredentials((prev) => {
             const updated = { ...prev };
             delete updated[provider];
@@ -149,7 +155,7 @@ export function useApiKeys(
           });
           toast.success(`${provider} API key deleted from local storage`);
         } else {
-          await (service as any).deleteApiKey(provider);
+          await (service as IApiKeyService).deleteApiKey(provider);
           setApiKeys((prev) => {
             const updated = { ...prev };
             delete updated[provider];
@@ -172,12 +178,15 @@ export function useApiKeys(
 
       try {
         const service = resolver.getApiKeyService();
-        const result = await (service as any).testApiKey(provider);
-
-        if (result.success) {
-          toast.success(`${provider} API key is valid`);
+        if ('testApiKey' in service) {
+          const result = await (service as IApiKeyService).testApiKey(provider);
+          if (result.success) {
+            toast.success(`${provider} API key is valid`);
+          } else {
+            toast.error(`${provider} API key test failed: ${result.error}`);
+          }
         } else {
-          toast.error(`${provider} API key test failed: ${result.error}`);
+          toast.error('Testing not available in guest mode');
         }
       } catch (_error) {
         toast.error('Failed to test API key');
@@ -193,7 +202,7 @@ export function useApiKeys(
       if (!isGuest) return;
 
       try {
-        const service = resolver.getApiKeyService() as any;
+        const service = resolver.getApiKeyService() as IGuestCredentialService;
         const credential = await service.loadPersistentCredential(
           provider,
           passphrase

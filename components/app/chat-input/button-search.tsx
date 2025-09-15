@@ -1,4 +1,3 @@
-import React from 'react';
 import { Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger } from '@/components/ui/popover';

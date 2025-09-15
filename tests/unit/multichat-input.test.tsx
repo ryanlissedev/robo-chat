@@ -3,12 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-// Mock components at module level
-vi.mock('@/components/common/multi-model-selector', () => ({
-  MultiModelSelector: vi.fn(() => (
-    React.createElement('div', { 'data-testid': 'mock-multi-model-selector' })
-  )),
-}));
+// Mock components are now handled in setup.ts
 
 import { MultiChatInput } from '@/components/app/multi-chat/multi-chat-input';
 import { TooltipProvider } from '@/components/ui/tooltip';

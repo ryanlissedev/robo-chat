@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { Box, Cable, Key, Paintbrush, Settings, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';

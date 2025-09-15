@@ -32,7 +32,7 @@ export function createVercelAIProvider(
   let isGateway = false;
 
   if (config.provider === 'openai') {
-    const openaiConfig: any = {};
+    const openaiConfig: Record<string, unknown> = {};
 
     // Use gateway if baseURL is provided
     if (config.baseURL) {
@@ -51,7 +51,7 @@ export function createVercelAIProvider(
     const openai = createOpenAI(openaiConfig);
     model = openai('gpt-4o-mini'); // Default model
   } else if (config.provider === 'anthropic') {
-    const anthropicConfig: any = {};
+    const anthropicConfig: Record<string, unknown> = {};
 
     // Use gateway if baseURL is provided
     if (config.baseURL) {

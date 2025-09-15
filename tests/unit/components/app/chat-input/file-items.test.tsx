@@ -185,11 +185,15 @@ describe('FileItem', () => {
       expect(hoverCardText).toHaveAttribute('data-open', 'false');
     });
 
-    it('should create and revoke object URL for images', () => {
+    it('should create object URL for images', () => {
+      // Clear previous calls to get accurate count
+      vi.mocked(global.URL.createObjectURL).mockClear();
+
       const file = createMockFile('photo.png', 'image/png');
       renderFileItem({ file });
 
       expect(global.URL.createObjectURL).toHaveBeenCalledWith(file);
+      expect(global.URL.createObjectURL).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -462,14 +466,14 @@ describe('FileItem', () => {
       const file = createMockFile('document.txt', 'text/plain'); // Use non-image file
       const { rerender } = renderFileItem({ file });
 
-      // Component calls URL.createObjectURL twice: once for trigger, once for hover content
-      expect(global.URL.createObjectURL).toHaveBeenCalledTimes(2);
+      // Component calls URL.createObjectURL once via useMemo for any file type
+      expect(global.URL.createObjectURL).toHaveBeenCalledTimes(1);
 
-      // Re-render with same file
+      // Re-render with same file (useMemo should prevent re-creation)
       rerender(<FileItem file={file} onRemove={vi.fn()} />);
 
-      // Should be called again on re-render (2 more calls)
-      expect(global.URL.createObjectURL).toHaveBeenCalledTimes(4);
+      // Should still be called only once due to useMemo dependency on file
+      expect(global.URL.createObjectURL).toHaveBeenCalledTimes(1);
     });
   });
 });

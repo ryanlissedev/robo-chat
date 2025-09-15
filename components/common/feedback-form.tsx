@@ -1,9 +1,8 @@
 'use client';
 
-import React from 'react';
-
 import { ChevronLeft, CircleCheck, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import type React from 'react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';

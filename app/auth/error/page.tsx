@@ -43,13 +43,12 @@ export default function AuthErrorPage() {
     <div className="flex h-screen flex-col bg-zinc-800 text-white">
       {/* Header */}
       <header className="p-4">
-        <Link
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-white hover:bg-zinc-700"
-          href="/"
-        >
-          <ArrowLeft className="size-5 text-white" />
-          <span className="ml-2 hidden font-base text-sm sm:inline-block">
-            Back to Chat
+        <Link href="/">
+          <span className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-white hover:bg-zinc-700">
+            <ArrowLeft className="size-5 text-white" />
+            <span className="ml-2 hidden font-base text-sm sm:inline-block">
+              Back to Chat
+            </span>
           </span>
         </Link>
       </header>
@@ -62,9 +61,11 @@ export default function AuthErrorPage() {
 
       <footer className="py-6 text-center text-sm text-zinc-500">
         <p>
-          Need help?
-          <Link className="text-zinc-400 hover:underline" href="/">
-            Contact Support
+          Need help?{' '}
+          <Link href="/">
+            <span className="text-zinc-400 hover:underline">
+              Contact Support
+            </span>
           </Link>
         </p>
       </footer>

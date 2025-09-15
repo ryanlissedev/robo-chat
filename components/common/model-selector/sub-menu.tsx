@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowUpRight, Brain, Globe, Image, Wrench } from 'lucide-react';
 import { addUTM } from '@/components/app/chat/utils';
 import type { ModelConfig } from '@/lib/models/types';

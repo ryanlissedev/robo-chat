@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { HelpCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';

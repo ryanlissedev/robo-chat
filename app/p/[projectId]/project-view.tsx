@@ -1,8 +1,8 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
 import { useQuery } from '@tanstack/react-query';
+import { DefaultChatTransport } from 'ai';
 import { MessageCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { usePathname } from 'next/navigation';
@@ -283,7 +283,7 @@ export function ProjectView({ projectId }: ProjectViewProps) {
     handleFileUploads,
     selectedModel,
     sendMessage,
-    messages.length,
+    messages,
     bumpChat,
     enableSearch,
   ]);

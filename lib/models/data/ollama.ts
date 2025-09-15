@@ -106,7 +106,7 @@ async function detectOllamaModels(): Promise<ModelConfig[]> {
         apiSdk: () => {
           // Ollama models use dynamic strings, not the predefined SupportedModel types
           // Return null since Ollama doesn't use the openproviders system
-          return null as any;
+          return null;
         },
       };
     });
@@ -352,7 +352,7 @@ const staticOllamaModels: ModelConfig[] = [
     modelPage: 'https://ollama.com/library/llama3.2',
     apiSdk: () => {
       // Ollama models use dynamic strings, not the predefined SupportedModel types
-      return null as any;
+      return null;
     },
   },
   {
@@ -381,7 +381,7 @@ const staticOllamaModels: ModelConfig[] = [
     modelPage: 'https://ollama.com/library/qwen2.5-coder',
     apiSdk: () => {
       // Ollama models use dynamic strings, not the predefined SupportedModel types
-      return null as any;
+      return null;
     },
   },
 ];

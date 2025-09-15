@@ -70,7 +70,7 @@ export interface ChatRequest {
   isAuthenticated: boolean;
   systemPrompt: string;
   enableSearch: boolean;
-  message_group_id?: string;
+  messageGroupId?: string;
   reasoningEffort?: 'low' | 'medium' | 'high';
   verbosity?: 'low' | 'medium' | 'high';
   reasoningSummary?: 'auto' | 'detailed';

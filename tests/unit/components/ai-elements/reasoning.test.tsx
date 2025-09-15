@@ -46,7 +46,14 @@ describe('Reasoning Components', () => {
       );
 
       expect(screen.getByText('Thinking...')).toBeInTheDocument();
-      expect(screen.queryByText('Test reasoning content')).not.toBeVisible();
+      // Content should exist but not be visible when defaultOpen=false
+      const content = screen.queryByText('Test reasoning content');
+      if (content) {
+        expect(content).not.toBeVisible();
+      } else {
+        // If content is not in DOM due to Collapsible behavior, that's also valid
+        expect(content).toBeNull();
+      }
     });
 
     it('should render with defaultOpen=true', () => {

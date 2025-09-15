@@ -21,7 +21,7 @@ export class SystemPromptService {
     systemPrompt: string,
     enableSearch: boolean,
     modelSupportsFileSearchTools: boolean,
-    options?: {
+    _options?: {
       context?: 'chat';
       personalityMode?:
         | 'safety-focused'

@@ -5,133 +5,11 @@ import { Conversation } from '@/components/app/chat/conversation';
 import type { UIMessage } from '@ai-sdk/react';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 
-// Mock the Message component
-vi.mock('@/components/app/chat/message', () => ({
-  Message: ({
-    children,
-    variant,
-    id,
-    isLast,
-    hasScrollAnchor,
-    onDelete,
-    onEdit,
-    onReload,
-    onQuote,
-    status,
-    attachments,
-    parts,
-    langsmithRunId
-  }: any) => (
-    <div
-      data-testid={`message-${variant}`}
-      data-message-id={id}
-      data-is-last={isLast}
-      data-has-scroll-anchor={hasScrollAnchor}
-      data-status={status}
-      data-langsmith-run-id={langsmithRunId}
-    >
-      <div data-testid="message-content">{children}</div>
-      {attachments && attachments.length > 0 && (
-        <div data-testid="message-attachments">
-          {attachments.map((att: any, idx: number) => (
-            <div key={idx} data-testid={`attachment-${idx}`}>
-              {att.name}
-            </div>
-          ))}
-        </div>
-      )}
-      {parts && parts.length > 0 && (
-        <div data-testid="message-parts">
-          {parts.map((part: any, idx: number) => (
-            <div key={idx} data-testid={`part-${idx}`} data-part-type={part.type}>
-              {part.text || part.toolName || 'Part'}
-            </div>
-          ))}
-        </div>
-      )}
-      <button
-        type="button"
-        data-testid="delete-button"
-        onClick={() => onDelete?.(id)}
-      >
-        Delete
-      </button>
-      <button
-        type="button"
-        data-testid="edit-button"
-        onClick={() => onEdit?.(id, 'edited')}
-      >
-        Edit
-      </button>
-      <button
-        type="button"
-        data-testid="reload-button"
-        onClick={() => onReload?.()}
-      >
-        Reload
-      </button>
-      <button
-        type="button"
-        data-testid="quote-button"
-        onClick={() => onQuote?.('quoted text', id)}
-      >
-        Quote
-      </button>
-    </div>
-  ),
-}));
+// Mock components are now handled in setup.ts
 
-// Mock the prompt-kit components
-vi.mock('@/components/prompt-kit/chat-container', () => ({
-  ChatContainerRoot: ({ children, className }: any) => (
-    <div data-testid="chat-container-root" className={className}>
-      {children}
-    </div>
-  ),
-  ChatContainerContent: ({ children, className, style }: any) => (
-    <div data-testid="chat-container-content" className={className} style={style}>
-      {children}
-    </div>
-  ),
-}));
+// Additional mock components can be added to setup.ts if needed globally
 
-vi.mock('@/components/prompt-kit/loader', () => ({
-  Loader: () => <div data-testid="loader">Loading...</div>,
-}));
-
-vi.mock('@/components/prompt-kit/scroll-button', () => ({
-  ScrollButton: ({ className }: any) => (
-    <button data-testid="scroll-button" className={className}>
-      Scroll
-    </button>
-  ),
-}));
-
-// Mock the AI types helper functions
-vi.mock('@/app/types/ai-extended', () => ({
-  getMessageContent: vi.fn((message: any) => {
-    if (message.content && typeof message.content === 'string') {
-      return message.content;
-    }
-    if (message.content && Array.isArray(message.content)) {
-      return message.content
-        .filter((part: any) => part.type === 'text')
-        .map((part: any) => part.text)
-        .join('');
-    }
-    if (message.parts && Array.isArray(message.parts)) {
-      return message.parts
-        .filter((part: any) => part.type === 'text')
-        .map((part: any) => part.text)
-        .join('');
-    }
-    return message.text || '';
-  }),
-  hasAttachments: vi.fn((message: any) => {
-    return Array.isArray(message.experimental_attachments) &&
-           message.experimental_attachments.length > 0;
-  }),
-}));
+// AI type helper functions can be mocked in setup.ts if needed globally
 
 const createMockMessage = (
   id: string,
@@ -168,21 +46,24 @@ describe('Conversation (ChatMessages)', () => {
     it('should render empty div when no messages', () => {
       renderConversation({ messages: [] });
 
-      expect(screen.getByRole('generic')).toHaveClass('h-full', 'w-full');
+      const container = document.querySelector('.h-full.w-full');
+      expect(container).toBeInTheDocument();
       expect(screen.queryByTestId('chat-container-root')).not.toBeInTheDocument();
     });
 
     it('should render empty div when messages is null', () => {
       renderConversation({ messages: null as any });
 
-      expect(screen.getByRole('generic')).toHaveClass('h-full', 'w-full');
+      const container = document.querySelector('.h-full.w-full');
+      expect(container).toBeInTheDocument();
       expect(screen.queryByTestId('chat-container-root')).not.toBeInTheDocument();
     });
 
     it('should render empty div when messages is undefined', () => {
       renderConversation({ messages: undefined as any });
 
-      expect(screen.getByRole('generic')).toHaveClass('h-full', 'w-full');
+      const container = document.querySelector('.h-full.w-full');
+      expect(container).toBeInTheDocument();
       expect(screen.queryByTestId('chat-container-root')).not.toBeInTheDocument();
     });
   });
@@ -246,8 +127,9 @@ describe('Conversation (ChatMessages)', () => {
 
       renderConversation({ messages, status: 'ready' });
 
-      const firstMessage = screen.getByTestId('message-user').parentElement;
-      const lastMessage = screen.getAllByTestId('message-user')[1];
+      const userMessages = screen.getAllByTestId('message-user');
+      const firstMessage = userMessages[0];
+      const lastMessage = userMessages[1];
 
       expect(firstMessage).toHaveAttribute('data-is-last', 'false');
       expect(lastMessage).toHaveAttribute('data-is-last', 'true');

@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { Github, MessageCircle, PenTool, Search, X } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useMemo } from 'react';

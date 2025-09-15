@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { useState } from 'react';
 import { TextMorph } from '../motion-primitives/text-morph';
 

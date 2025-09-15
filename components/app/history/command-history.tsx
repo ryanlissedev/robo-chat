@@ -1,9 +1,8 @@
 'use client';
 
-import React from 'react';
-
 import { Check, Pencil, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import type React from 'react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useKeyShortcut } from '@/app/hooks/use-key-shortcut';
 import { Badge } from '@/components/ui/badge';

@@ -279,7 +279,7 @@ describe('Integration with Existing Test Patterns', () => {
     });
 
     it('should work with React component tests', () => {
-      const _TestComponent = ({ message }: { message: string }) => (
+      const TestComponent = ({ message }: { message: string }) => (
         <div data-testid="message">{message}</div>
       );
 

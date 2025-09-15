@@ -1,9 +1,8 @@
 'use client';
 
-import React from 'react';
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import type React from 'react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {

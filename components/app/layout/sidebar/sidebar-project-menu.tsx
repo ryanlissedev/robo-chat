@@ -1,8 +1,7 @@
 'use client';
 
-import React from 'react';
-
 import { MoreHorizontal, Pencil, Trash } from 'lucide-react';
+import type React from 'react';
 import { useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import { DialogDeleteProject } from '@/components/app/layout/sidebar/dialog-delete-project';
@@ -16,8 +15,8 @@ import {
 type Project = {
   id: string;
   name: string;
-  user_id: string;
-  created_at: string;
+  userId: string;
+  createdAt: string;
 };
 
 type SidebarProjectMenuProps = {

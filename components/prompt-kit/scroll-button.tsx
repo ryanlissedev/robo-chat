@@ -1,9 +1,8 @@
 'use client';
 
-import React from 'react';
-
 import type { VariantProps } from 'class-variance-authority';
 import { ChevronDown } from 'lucide-react';
+import type React from 'react';
 import { useStickToBottomContext } from 'use-stick-to-bottom';
 import { Button, type buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { useQuery } from '@tanstack/react-query';
 import { FolderPlus } from 'lucide-react';
 import { useState } from 'react';
@@ -11,8 +9,8 @@ import { SidebarProjectItem } from './sidebar-project-item';
 type Project = {
   id: string;
   name: string;
-  user_id: string;
-  created_at: string;
+  userId: string;
+  createdAt: string;
 };
 
 export function SidebarProject() {

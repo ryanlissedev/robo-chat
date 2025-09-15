@@ -1,8 +1,96 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
+// Make vi available globally to prevent "vi.mock is not a function" errors
+globalThis.vi = vi;
+
+// Enhance vi.fn to include Jest-style methods automatically
+const originalViFn = vi.fn;
+vi.fn = ((impl?: any) => {
+  const mock = originalViFn(impl);
+  // Add Jest-style methods for compatibility
+  mock.mockResolvedValue = (value: any) => mock.mockResolvedValueOnce(value);
+  mock.mockResolvedValueOnce = (value: any) => mock.mockImplementationOnce(() => Promise.resolve(value));
+  mock.mockRejectedValue = (value: any) => mock.mockRejectedValueOnce(value);
+  mock.mockRejectedValueOnce = (value: any) => mock.mockImplementationOnce(() => Promise.reject(value));
+  return mock;
+}) as any;
+
+// Helper function to add Jest-style methods to vi mocks
+const createMockWithJestMethods = (baseMock: any) => {
+  // Add Jest-style methods for compatibility
+  baseMock.mockResolvedValue = (value: any) => baseMock.mockResolvedValueOnce(value);
+  baseMock.mockResolvedValueOnce = (value: any) => baseMock.mockImplementationOnce(() => Promise.resolve(value));
+  baseMock.mockRejectedValue = (value: any) => baseMock.mockRejectedValueOnce(value);
+  baseMock.mockRejectedValueOnce = (value: any) => baseMock.mockImplementationOnce(() => Promise.reject(value));
+  return baseMock;
+};
+
+// Mock fetch globally for all tests with enhanced methods
+const mockFetch = createMockWithJestMethods(vi.fn());
+globalThis.fetch = mockFetch;
+
+// Ensure DOM globals are available (sometimes happy-dom doesn't expose them properly)
+if (typeof global.document === 'undefined') {
+  global.document = globalThis.document || {
+    body: { style: {} },
+    createElement: () => ({ style: {} }),
+    getElementsByTagName: () => [],
+  } as any;
+}
+
+if (typeof global.window === 'undefined') {
+  global.window = globalThis.window || ({
+    document: global.document,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+    getComputedStyle: () => ({
+      getPropertyValue: () => '',
+    }),
+  } as any);
+}
+
 // Global setup for all tests
+
+// Ensure environment variables do not leak between tests
+// We snapshot the environment at the start of every test and restore it afterward.
+let __envBaseline: NodeJS.ProcessEnv | null = null;
+
+beforeEach(() => {
+  // Capture a shallow snapshot of current env just before each test begins
+  __envBaseline = { ...process.env };
+});
+
+afterEach(() => {
+  // Reset any vi.stubEnv calls first
+  if (typeof (vi as any).unstubAllEnvs === 'function') {
+    try {
+      (vi as any).unstubAllEnvs();
+    } catch {
+      // ignore
+    }
+  }
+
+  // Restore environment variables to the per-test baseline
+  if (__envBaseline) {
+    // Remove keys added during the test
+    for (const key of Object.keys(process.env)) {
+      if (!(key in __envBaseline)) {
+        delete process.env[key];
+      }
+    }
+    // Restore baseline values
+    for (const [key, value] of Object.entries(__envBaseline)) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value as string;
+      }
+    }
+  }
+});
 
 // Mock motion/react (the new framer-motion import)
 vi.mock('motion/react', () => {
@@ -131,6 +219,105 @@ vi.mock('@radix-ui/react-tooltip', async (importOriginal) => {
   };
 });
 
+// Mock Supabase client and realtime to prevent unhandled rejection errors
+vi.mock('@supabase/ssr', () => ({
+  createBrowserClient: vi.fn(() => ({
+    auth: {
+      getUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+      getSession: vi.fn(() => Promise.resolve({ data: { session: null }, error: null })),
+      onAuthStateChange: vi.fn(() => ({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      })),
+      signOut: vi.fn(() => Promise.resolve({ error: null })),
+      signIn: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+      signUp: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+    },
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+            single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+          })),
+          maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+          single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        })),
+        maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      })),
+      insert: vi.fn(() => ({
+        select: vi.fn(() => Promise.resolve({ data: [], error: null })),
+      })),
+      update: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          select: vi.fn(() => Promise.resolve({ data: [], error: null })),
+        })),
+      })),
+      delete: vi.fn(() => ({
+        eq: vi.fn(() => Promise.resolve({ data: [], error: null })),
+      })),
+    })),
+    functions: {
+      invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
+    },
+    rpc: vi.fn(() => Promise.resolve({ data: null, error: null })),
+    storage: {
+      from: vi.fn(() => ({
+        upload: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        download: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        remove: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      })),
+    },
+    // Mock realtime to prevent disconnect errors
+    realtime: {
+      channels: new Map(),
+      conn: {
+        close: vi.fn(),
+        disconnect: vi.fn(),
+      },
+      disconnect: vi.fn().mockResolvedValue(undefined),
+      removeChannel: vi.fn(),
+      removeAllChannels: vi.fn(),
+      getChannels: vi.fn(() => []),
+    },
+    channel: vi.fn(() => ({
+      on: vi.fn(() => ({ subscribe: vi.fn() })),
+      subscribe: vi.fn(),
+      unsubscribe: vi.fn().mockResolvedValue({ error: null }),
+      send: vi.fn(),
+    })),
+  })),
+}));
+
+// Mock @supabase/realtime-js to prevent connection errors
+vi.mock('@supabase/realtime-js', () => ({
+  RealtimeClient: vi.fn().mockImplementation(() => ({
+    conn: {
+      close: vi.fn(),
+      disconnect: vi.fn(),
+    },
+    channels: new Map(),
+    disconnect: vi.fn().mockResolvedValue(undefined),
+    removeChannel: vi.fn(),
+    removeAllChannels: vi.fn(),
+    getChannels: vi.fn(() => []),
+    channel: vi.fn(() => ({
+      on: vi.fn(() => ({ subscribe: vi.fn() })),
+      subscribe: vi.fn(),
+      unsubscribe: vi.fn().mockResolvedValue({ error: null }),
+      send: vi.fn(),
+    })),
+  })),
+}));
+
+// Mock Supabase config functions
+vi.mock('@/lib/supabase/config', () => ({
+  IS_SUPABASE_ENABLED: false,
+  isSupabaseEnabled: vi.fn(() => false),
+  isDevelopmentMode: true,
+  isRealtimeEnabled: false,
+}));
+
 // Mock other common UI dependencies
 vi.mock('@/components/ui/toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
@@ -144,6 +331,7 @@ vi.mock('@/lib/user-preference-store/provider', () => ({
       showToolInvocations: true,
     },
   }),
+  UserPreferencesProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 // Ensure React is available globally for test files that assume it
@@ -167,3 +355,80 @@ vi.mock('@/components/ui/button', async (importOriginal) => {
     }),
   };
 });
+
+// Mock common chat components to prevent test interference
+vi.mock('@/components/app/chat/message-assistant', () => ({
+  MessageAssistant: ({
+    children,
+    copyToClipboard,
+    onQuote,
+    messageId,
+    ...props
+  }: any) => {
+    const handleQuote = () => {
+      if (onQuote) {
+        onQuote(children, messageId);
+      }
+    };
+    return (
+      <div data-testid="message-assistant" {...props}>
+        {children}
+        <button aria-label="copy" onClick={copyToClipboard}>
+          Copy
+        </button>
+        <button aria-label="quote" onClick={handleQuote}>
+          Quote
+        </button>
+      </div>
+    );
+  },
+}));
+
+vi.mock('@/components/app/chat/message-user', () => ({
+  MessageUser: ({ children, onEdit, messageId, ...props }: any) => {
+    const handleEdit = () => {
+      if (onEdit) {
+        onEdit(messageId, 'edited content');
+      }
+    };
+    return (
+      <div data-testid="message-user" {...props}>
+        {children}
+        <button aria-label="edit" onClick={handleEdit}>
+          Edit
+        </button>
+      </div>
+    );
+  },
+}));
+
+// Mock multi-model selector
+vi.mock('@/components/common/multi-model-selector', () => ({
+  MultiModelSelector: () => <div data-testid="mock-multi-model-selector" />,
+}));
+
+// Mock langsmith client
+vi.mock('@/lib/langsmith/client', () => ({
+  createFeedback: vi.fn(),
+}));
+
+// Mock Supabase server client with enhanced methods
+const mockCreateClient = createMockWithJestMethods(vi.fn(() => ({
+  auth: {
+    getUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+  },
+  from: vi.fn(() => ({
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      })),
+    })),
+    insert: vi.fn(() => ({
+      select: vi.fn(() => Promise.resolve({ data: [], error: null })),
+    })),
+  })),
+})));
+
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: mockCreateClient,
+}));

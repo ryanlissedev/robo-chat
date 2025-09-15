@@ -89,7 +89,7 @@ export default function Article({
                     )}
                     markdown={true}
                   >
-                    {message.content!}
+                    {message.content || ''}
                   </MessageContent>
                 </Message>
                 {sources && sources.length > 0 && (

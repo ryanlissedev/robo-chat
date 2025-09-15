@@ -30,7 +30,7 @@ const UIMessageSchema = z
       z.date().optional()
     ),
     parts: z.array(MessagePartSchema).optional().default([]),
-    experimental_attachments: z.array(z.any()).optional(),
+    experimentalAttachments: z.array(z.any()).optional(),
     model: z.string().optional(),
     provider: z.string().optional(),
     reasoning: z
@@ -46,13 +46,7 @@ const UIMessageSchema = z
     ),
   })
   .passthrough()
-  .transform((data) => {
-    const { experimentalAttachments, ...rest } = data;
-    return {
-      ...rest,
-      experimentalAttachments,
-    };
-  });
+  .passthrough();
 
 export const ChatRequestSchema = z
   .object({
@@ -63,7 +57,7 @@ export const ChatRequestSchema = z
     isAuthenticated: z.boolean(),
     systemPrompt: z.string(),
     enableSearch: z.boolean(),
-    message_group_id: z.string().optional(),
+    messageGroupId: z.string().optional(),
     reasoningEffort: z.enum(['low', 'medium', 'high']).optional(),
     verbosity: z.enum(['low', 'medium', 'high']).optional(),
     reasoningSummary: z.enum(['auto', 'detailed']).optional(),
@@ -72,10 +66,4 @@ export const ChatRequestSchema = z
       .enum(['safety-focused', 'technical-expert', 'friendly-assistant'])
       .optional(),
   })
-  .transform((data) => {
-    const { message_group_id: messageGroupId, ...rest } = data;
-    return {
-      ...rest,
-      messageGroupId,
-    };
-  });
+  .passthrough();

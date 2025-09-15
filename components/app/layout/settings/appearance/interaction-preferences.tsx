@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { Switch } from '@/components/ui/switch';
 import { useUserPreferences } from '@/lib/user-preference-store/provider';
 

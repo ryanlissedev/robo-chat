@@ -81,9 +81,10 @@ describe('API Routes', () => {
         expect(json.error).toBe('Invalid feedback type');
       });
 
-      it('should return 401 if user authentication fails', async () => {
-        const { validateUserIdentity } = await import('@/lib/server/api');
-        vi.mocked(validateUserIdentity).mockResolvedValue(null);
+      it('should return 200 even if user authentication fails', async () => {
+        // Mock createClient to return null (auth fails)
+        const { createClient } = await import('@/lib/supabase/server');
+        vi.mocked(createClient).mockResolvedValue(null);
 
         const mockRequest = {
           json: vi.fn().mockResolvedValue({
@@ -96,12 +97,13 @@ describe('API Routes', () => {
         const response = await feedbackPOST(mockRequest);
         const json = await response.json();
 
-        expect(response.status).toBe(401);
-        expect(json.error).toBe('User authentication required');
+        expect(response.status).toBe(200);
+        expect(json.success).toBe(true);
+        expect(json.message).toBe('Feedback submitted successfully');
       });
 
-      it('should return 401 if getUser fails', async () => {
-        const { validateUserIdentity } = await import('@/lib/server/api');
+      it('should return 200 even if getUser fails', async () => {
+        const { createClient } = await import('@/lib/supabase/server');
         const mockSupabase = {
           auth: {
             getUser: vi.fn().mockResolvedValue({
@@ -110,7 +112,7 @@ describe('API Routes', () => {
             }),
           },
         };
-        vi.mocked(validateUserIdentity).mockResolvedValue(mockSupabase as any);
+        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
 
         const mockRequest = {
           json: vi.fn().mockResolvedValue({
@@ -123,12 +125,13 @@ describe('API Routes', () => {
         const response = await feedbackPOST(mockRequest);
         const json = await response.json();
 
-        expect(response.status).toBe(401);
-        expect(json.error).toBe('Failed to authenticate user');
+        expect(response.status).toBe(200);
+        expect(json.success).toBe(true);
+        expect(json.message).toBe('Feedback submitted successfully');
       });
 
-      it('should return 500 if database insert fails', async () => {
-        const { validateUserIdentity } = await import('@/lib/server/api');
+      it('should return 200 even if database insert fails', async () => {
+        const { createClient } = await import('@/lib/supabase/server');
         const mockSupabase = {
           auth: {
             getUser: vi.fn().mockResolvedValue({
@@ -142,7 +145,7 @@ describe('API Routes', () => {
             }),
           }),
         };
-        vi.mocked(validateUserIdentity).mockResolvedValue(mockSupabase as any);
+        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
 
         const mockRequest = {
           json: vi.fn().mockResolvedValue({
@@ -155,12 +158,14 @@ describe('API Routes', () => {
         const response = await feedbackPOST(mockRequest);
         const json = await response.json();
 
-        expect(response.status).toBe(500);
-        expect(json.error).toBe('Failed to save feedback');
+        // Should still succeed for LangSmith even if DB fails
+        expect(response.status).toBe(200);
+        expect(json.success).toBe(true);
+        expect(json.message).toBe('Feedback submitted successfully');
       });
 
       it('should successfully submit feedback without runId', async () => {
-        const { validateUserIdentity } = await import('@/lib/server/api');
+        const { createClient } = await import('@/lib/supabase/server');
         const mockSupabase = {
           auth: {
             getUser: vi.fn().mockResolvedValue({
@@ -174,7 +179,7 @@ describe('API Routes', () => {
             }),
           }),
         };
-        vi.mocked(validateUserIdentity).mockResolvedValue(mockSupabase as any);
+        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
 
         const mockRequest = {
           json: vi.fn().mockResolvedValue({
@@ -195,7 +200,8 @@ describe('API Routes', () => {
       });
 
       it('should successfully submit feedback with runId and call LangSmith', async () => {
-        const { validateUserIdentity } = await import('@/lib/server/api');
+        // Mock createClient for Supabase
+        const { createClient } = await import('@/lib/supabase/server');
         const { createFeedback } = await import('@/lib/langsmith/client');
 
         const mockSupabase = {
@@ -211,7 +217,7 @@ describe('API Routes', () => {
             }),
           }),
         };
-        vi.mocked(validateUserIdentity).mockResolvedValue(mockSupabase as any);
+        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
         vi.mocked(createFeedback).mockResolvedValue({
           success: true,
           runId: 'test-run-id',
@@ -251,7 +257,7 @@ describe('API Routes', () => {
       });
 
       it('should handle LangSmith failure gracefully', async () => {
-        const { validateUserIdentity } = await import('@/lib/server/api');
+        const { createClient } = await import('@/lib/supabase/server');
         const { createFeedback } = await import('@/lib/langsmith/client');
 
         const mockSupabase = {
@@ -267,7 +273,7 @@ describe('API Routes', () => {
             }),
           }),
         };
-        vi.mocked(validateUserIdentity).mockResolvedValue(mockSupabase as any);
+        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
         vi.mocked(createFeedback).mockRejectedValue(
           new Error('LangSmith error')
         );
@@ -312,10 +318,40 @@ describe('API Routes', () => {
         const json = await response.json();
 
         expect(response.status).toBe(400);
-        expect(json.error).toBe('Message ID and user ID are required');
+        expect(json.error).toBe('Message ID is required');
       });
 
-      it('should return 400 if userId is missing', async () => {
+      it('should return 500 if createClient fails', async () => {
+        const mockRequest = {
+          url: 'http://localhost/api/feedback?messageId=test-message-id',
+        } as Request;
+
+        // Mock createClient to throw
+        const { createClient } = await import('@/lib/supabase/server');
+        vi.mocked(createClient).mockImplementation(async () => {
+          throw new Error('Supabase error');
+        });
+
+        const response = await feedbackGET(mockRequest);
+        const json = await response.json();
+
+        expect(response.status).toBe(500);
+        expect(json.error).toBe('Database connection failed');
+      });
+
+      it('should return 401 if user authentication fails', async () => {
+        const { createClient } = await import('@/lib/supabase/server');
+
+        const mockSupabase = {
+          auth: {
+            getUser: vi.fn().mockResolvedValue({
+              data: { user: null },
+              error: new Error('Auth error'),
+            }),
+          },
+        };
+        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+
         const mockRequest = {
           url: 'http://localhost/api/feedback?messageId=test-message-id',
         } as Request;
@@ -323,27 +359,12 @@ describe('API Routes', () => {
         const response = await feedbackGET(mockRequest);
         const json = await response.json();
 
-        expect(response.status).toBe(400);
-        expect(json.error).toBe('Message ID and user ID are required');
-      });
-
-      it('should return 401 if user authentication fails', async () => {
-        const { validateUserIdentity } = await import('@/lib/server/api');
-        vi.mocked(validateUserIdentity).mockResolvedValue(null);
-
-        const mockRequest = {
-          url: 'http://localhost/api/feedback?messageId=test-message-id&userId=test-user-id',
-        } as Request;
-
-        const response = await feedbackGET(mockRequest);
-        const json = await response.json();
-
         expect(response.status).toBe(401);
-        expect(json.error).toBe('User authentication required');
+        expect(json.error).toBe('Unauthorized');
       });
 
       it('should return feedback successfully', async () => {
-        const { validateUserIdentity } = await import('@/lib/server/api');
+        const { createClient } = await import('@/lib/supabase/server');
         const mockSupabase = {
           auth: {
             getUser: vi.fn().mockResolvedValue({
@@ -369,10 +390,10 @@ describe('API Routes', () => {
             }),
           }),
         };
-        vi.mocked(validateUserIdentity).mockResolvedValue(mockSupabase as any);
+        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
 
         const mockRequest = {
-          url: 'http://localhost/api/feedback?messageId=test-message-id&userId=test-user-id',
+          url: 'http://localhost/api/feedback?messageId=test-message-id',
         } as Request;
 
         const response = await feedbackGET(mockRequest);
@@ -385,7 +406,7 @@ describe('API Routes', () => {
       });
 
       it('should handle no feedback found', async () => {
-        const { validateUserIdentity } = await import('@/lib/server/api');
+        const { createClient } = await import('@/lib/supabase/server');
         const mockSupabase = {
           auth: {
             getUser: vi.fn().mockResolvedValue({
@@ -408,10 +429,10 @@ describe('API Routes', () => {
             }),
           }),
         };
-        vi.mocked(validateUserIdentity).mockResolvedValue(mockSupabase as any);
+        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
 
         const mockRequest = {
-          url: 'http://localhost/api/feedback?messageId=test-message-id&userId=test-user-id',
+          url: 'http://localhost/api/feedback?messageId=test-message-id',
         } as Request;
 
         const response = await feedbackGET(mockRequest);

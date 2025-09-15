@@ -1,4 +1,3 @@
-import React from 'react';
 import type { UIMessage as MessageType } from '@ai-sdk/react';
 import { memo, useMemo, useRef } from 'react';
 import {
@@ -31,13 +30,13 @@ function ConversationComponent({
   onReload,
   onQuote,
 }: ConversationProps) {
-  const initialMessageCount = useRef((messages?.length ?? 0));
+  const initialMessageCount = useRef(messages?.length ?? 0);
 
   // Memoize empty state check
   const isEmpty = useMemo(() => !messages || messages.length === 0, [messages]);
 
   if (isEmpty) {
-    return <div className="h-full w-full" role="generic" />;
+    return <div className="h-full w-full" />;
   }
 
   return (
@@ -115,11 +114,19 @@ function ConversationComponent({
 export const Conversation = memo(
   ConversationComponent,
   (prevProps, nextProps) => {
+    // Handle null/undefined messages cases
+    if (!prevProps.messages && !nextProps.messages) return true;
+    if (!prevProps.messages || !nextProps.messages) return false;
+
+    // At this point, both messages arrays are defined
+    const prevMessages = prevProps.messages;
+    const nextMessages = nextProps.messages;
+
     return (
       prevProps.status === nextProps.status &&
-      prevProps.messages.length === nextProps.messages.length &&
-      prevProps.messages.every((msg, idx) => {
-        const nextMsg = nextProps.messages[idx];
+      prevMessages.length === nextMessages.length &&
+      prevMessages.every((msg, idx) => {
+        const nextMsg = nextMessages[idx];
         return (
           msg &&
           nextMsg &&

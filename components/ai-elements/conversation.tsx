@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { ArrowDownIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { useCallback } from 'react';

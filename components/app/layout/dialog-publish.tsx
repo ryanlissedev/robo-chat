@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { Check, Copy, Globe, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
@@ -30,6 +28,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useChatSession } from '@/lib/chat-store/session/provider';
 import { APP_DOMAIN } from '@/lib/config';
+import type { Database } from '@/app/types/database.types';
 import { createClient } from '@/lib/supabase/client';
 import { isSupabaseEnabled } from '@/lib/supabase/config';
 
@@ -72,10 +71,9 @@ export function DialogPublish() {
       throw new Error('Supabase is not configured');
     }
 
-    const { data, error } = await (supabase as any)
-      .from('chats')
-      // Cast to any to satisfy TS inference issues with Supabase types
-      .update({ public: true } as any)
+    const { data, error } = await supabase
+      ?.from('chats')
+      .update({ public: true })
       .eq('id', chatId)
       .select()
       .single();

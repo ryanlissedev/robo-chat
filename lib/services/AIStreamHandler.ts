@@ -124,14 +124,6 @@ export class AIStreamHandler {
   ): Response {
     const { chatId, userId, resolvedModel, operation } = context;
 
-    // Log the error for monitoring
-    console.error(`Streaming error in ${operation}:`, {
-      error,
-      chatId,
-      userId,
-      model: resolvedModel,
-    });
-
     // Create a user-friendly error response
     const errorMessage =
       error instanceof Error

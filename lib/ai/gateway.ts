@@ -79,7 +79,11 @@ export class AIGateway {
     this.config = {
       mode:
         config.mode ||
-        ((process.env.AI_GATEWAY_MODE as 'direct' | 'gateway' | 'auto' | undefined) ??
+        ((process.env.AI_GATEWAY_MODE as
+          | 'direct'
+          | 'gateway'
+          | 'auto'
+          | undefined) ??
           'auto'),
       gatewayUrl: config.gatewayUrl || process.env.AI_GATEWAY_BASE_URL,
       gatewayApiKey: config.gatewayApiKey || process.env.AI_GATEWAY_API_KEY,
@@ -92,7 +96,9 @@ export class AIGateway {
   /**
    * Test gateway connection for a specific provider
    */
-  async testGatewayConnection(provider: 'openai' | 'anthropic'): Promise<GatewayTestResult> {
+  async testGatewayConnection(
+    provider: 'openai' | 'anthropic'
+  ): Promise<GatewayTestResult> {
     const gatewayUrl = this.config.gatewayUrl;
     const gatewayApiKey = this.config.gatewayApiKey;
 
@@ -126,21 +132,31 @@ export class AIGateway {
           model:
             provider === 'openai' ? 'gpt-3.5-turbo' : 'claude-3-haiku-20240307',
           messages: [{ role: 'user', content: 'test' }],
-          'max_tokens': 1,
+          maxTokens: 1,
         }),
       });
 
       // Accept various response codes that indicate the gateway is responding
-      if (response.status === 200 || response.status === 401 || response.status === 403) {
+      if (
+        response.status === 200 ||
+        response.status === 401 ||
+        response.status === 403
+      ) {
         return { success: true };
       }
 
       // 404/405 typically means the gateway doesn't have the provider configured
       if (response.status === 404 || response.status === 405) {
-        return { success: false, error: `Gateway does not support ${provider} provider` };
+        return {
+          success: false,
+          error: `Gateway does not support ${provider} provider`,
+        };
       }
 
-      return { success: false, error: `Gateway returned status ${response.status}` };
+      return {
+        success: false,
+        error: `Gateway returned status ${response.status}`,
+      };
     } catch (_error) {
       return {
         success: false,
@@ -288,7 +304,7 @@ export class AIGateway {
       };
       this.clientCache.set(cacheKey, client);
       return client;
-    } catch (error) {
+    } catch (_error) {
       throw new Error('No Anthropic configuration available');
     }
   }
@@ -349,7 +365,9 @@ export class AIGateway {
       const result = await generateText({
         model,
         prompt,
-        ...(options.maxTokens ? { maxCompletionTokens: options.maxTokens } : {}),
+        ...(options.maxTokens
+          ? { maxCompletionTokens: options.maxTokens }
+          : {}),
         temperature: options.temperature,
         topP: options.topP,
       });
@@ -380,7 +398,9 @@ export class AIGateway {
         const result = await generateText({
           model,
           prompt,
-          ...(options.maxTokens ? { maxCompletionTokens: options.maxTokens } : {}),
+          ...(options.maxTokens
+            ? { maxCompletionTokens: options.maxTokens }
+            : {}),
           temperature: options.temperature,
           topP: options.topP,
         });

@@ -44,10 +44,10 @@ export function ProviderList({
 }: ProviderListProps) {
   const getExistingKey = (
     provider: string
-  ): { encrypted_key?: string } | undefined => {
+  ): ApiKey | { encryptedKey?: string } | undefined => {
     if (isGuest) {
       const cred = guestCredentials[provider];
-      return cred ? { encrypted_key: cred.plaintext } : undefined;
+      return cred ? { encryptedKey: cred.plaintext } : undefined;
     }
     return apiKeys[provider];
   };

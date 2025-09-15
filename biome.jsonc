@@ -39,6 +39,16 @@
   },
   "overrides": [
     {
+      "includes": ["app/globals.css"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noUnknownAtRules": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["tests/**/*", "**/*.test.ts", "**/*.test.tsx"],
       "linter": {
         "rules": {
@@ -89,7 +99,8 @@
         "app/auth/callback/route.ts",
         "app/p/\\[projectId\\]/project-view.tsx",
         "app/settings/components/retrieval-settings.tsx",
-        "app/settings/components/security-settings.tsx"
+        "app/settings/components/security-settings.tsx",
+        "app/settings/components/vector-store-manager.tsx"
       ],
       "linter": {
         "rules": {

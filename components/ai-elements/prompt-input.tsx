@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import type { ChatStatus } from 'ai';
 import { Loader2Icon, SendIcon, SquareIcon, XIcon } from 'lucide-react';
 import type {

@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
 
 function getFeedbackScore(feedback: string): number | undefined {
   if (feedback === 'upvote') {

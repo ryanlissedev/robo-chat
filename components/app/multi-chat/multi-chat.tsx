@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import type { UIMessage as MessageType } from '@ai-sdk/react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useMemo, useState } from 'react';

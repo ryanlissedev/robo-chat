@@ -1,6 +1,5 @@
 import type { LanguageModel, ToolSet } from 'ai';
 import { convertToModelMessages } from 'ai';
-import { getMessageContent } from '@/app/types/ai-extended';
 import { requireApiSdk } from '@/lib/models/api-sdk';
 import { getModelTemperature } from '@/lib/models/temperature-utils';
 import type { ModelConfig } from '@/lib/models/types';

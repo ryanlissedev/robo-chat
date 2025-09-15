@@ -215,7 +215,7 @@ export class StreamingResponseService {
 
       if (reasoning) {
         // Store reasoning for potential future use (database, cache, etc.)
-        const reasoningData = {
+        const _reasoningData = {
           chatId,
           userId,
           model: resolvedModel,

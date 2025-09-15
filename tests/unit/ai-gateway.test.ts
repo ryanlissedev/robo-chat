@@ -5,33 +5,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AIGateway, createAIProvider, getAIGateway } from '@/lib/ai/gateway';
 
-// Mock fetch globally
-global.fetch = vi.fn();
-
-// Mock OpenAI and Anthropic
-vi.mock('openai', () => ({
-  OpenAI: vi.fn().mockImplementation((config) => ({
-    _config: config,
-    chat: {
-      completions: {
-        create: vi.fn().mockResolvedValue({
-          choices: [{ message: { content: 'test response' } }],
-        }),
-      },
-    },
-  })),
-}));
-
-vi.mock('@anthropic-ai/sdk', () => ({
-  default: vi.fn().mockImplementation((config) => ({
-    _config: config,
-    messages: {
-      create: vi.fn().mockResolvedValue({
-        content: [{ text: 'test response' }],
-      }),
-    },
-  })),
-}));
+// Mock setup is now handled in setup.ts
+// Additional test-specific mocks can be set up in beforeEach if needed
 
 describe('AIGateway', () => {
   let originalEnv: NodeJS.ProcessEnv;

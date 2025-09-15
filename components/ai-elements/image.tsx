@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Experimental_GeneratedImage } from 'ai';
 import NextImage from 'next/image';
 import { cn } from '@/lib/utils';

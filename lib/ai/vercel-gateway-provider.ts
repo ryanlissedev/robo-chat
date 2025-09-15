@@ -13,13 +13,7 @@ export interface GatewayProviderConfig {
   apiKey?: string;
   gatewayApiKey?: string;
   useGateway?: boolean;
-  providerOptions?: {
-    gateway?: {
-      order?: string[];
-      only?: string[];
-    };
-    [key: string]: any;
-  };
+  providerOptions?: Record<string, any>;
 }
 
 export class VercelGatewayProvider {
@@ -66,11 +60,11 @@ export class VercelGatewayProvider {
   /**
    * Generate text using the configured model
    */
-  async generate(prompt: string, options?: any) {
+  async generate(prompt: string, options?: Record<string, unknown>) {
     const result = await generateText({
       model: this.model,
       messages: [{ role: 'user', content: prompt }],
-      providerOptions: this.config.providerOptions,
+      providerOptions: this.config.providerOptions as any,
       ...options,
     });
 
@@ -85,11 +79,11 @@ export class VercelGatewayProvider {
   /**
    * Stream text using the configured model
    */
-  async *stream(prompt: string, options?: any) {
+  async *stream(prompt: string, options?: Record<string, unknown>) {
     const result = streamText({
       model: this.model,
       messages: [{ role: 'user', content: prompt }],
-      providerOptions: this.config.providerOptions,
+      providerOptions: this.config.providerOptions as any,
       ...options,
     });
 

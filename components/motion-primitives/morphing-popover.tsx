@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import {
   AnimatePresence,
   MotionConfig,
@@ -9,6 +7,7 @@ import {
   type Transition,
   type Variants,
 } from 'motion/react';
+import type React from 'react';
 import {
   createContext,
   isValidElement,

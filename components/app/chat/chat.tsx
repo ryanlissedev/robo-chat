@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { AnimatePresence, motion } from 'motion/react';
 import dynamic from 'next/dynamic';
 import { redirect } from 'next/navigation';

@@ -1,9 +1,8 @@
 'use client';
 
-import React from 'react';
-
 import { Info } from 'lucide-react';
 import Image from 'next/image';
+import type React from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import {
   Dialog,

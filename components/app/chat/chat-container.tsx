@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { MultiChat } from '@/components/app/multi-chat/multi-chat';
 import { useUserPreferences } from '@/lib/user-preference-store/provider';
 import { Chat } from './chat';

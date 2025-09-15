@@ -1,4 +1,3 @@
-import React from 'react';
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
 import { Check, Copy, RotateCw } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
@@ -51,6 +50,15 @@ type ToolPartState =
   | 'input-available'
   | 'input-streaming'
   | 'output-error';
+
+// Type for reasoning parts
+interface ReasoningPart {
+  type: 'reasoning' | 'reasoning-delta' | string;
+  text?: string;
+  delta?: string;
+  reasoningText?: string;
+  toolName?: string;
+}
 
 interface TypedToolPart {
   toolCallId?: string;
@@ -195,7 +203,7 @@ const extractReasoningText = (
   // Collect all reasoning parts and combine them
   const reasoningTexts: string[] = [];
 
-  for (const part of parts as unknown as any[]) {
+  for (const part of parts as ReasoningPart[]) {
     // AI SDK v5 reasoning parts - handle both text and delta
     if (part?.type === 'reasoning' || part?.type === 'reasoning-delta') {
       const reasoningText = part?.text || part?.delta || part?.reasoningText;

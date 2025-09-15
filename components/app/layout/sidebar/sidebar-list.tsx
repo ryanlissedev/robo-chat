@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Chat } from '@/lib/chat-store/types';
 import { SidebarItem } from './sidebar-item';
 

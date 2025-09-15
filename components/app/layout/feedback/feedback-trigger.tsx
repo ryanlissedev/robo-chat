@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { HelpCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';

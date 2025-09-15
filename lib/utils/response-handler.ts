@@ -9,15 +9,15 @@ export interface ApiError {
   message: string;
   code?: string;
   status?: number;
-  details?: any;
+  details?: unknown;
 }
 
-export interface ApiSuccess<T = any> {
+export interface ApiSuccess<T = unknown> {
   data: T;
   status?: number;
 }
 
-export type ApiResult<T = any> =
+export type ApiResult<T = unknown> =
   | { success: true; data: T; status?: number }
   | { success: false; error: ApiError };
 
@@ -33,7 +33,7 @@ export function createErrorResponse(
       ? { message: error, status }
       : { ...error, status: error.status || status };
 
-  logger.error('API Error:', errorObj as any);
+  logger.error({ error: errorObj }, 'API Error');
 
   return new Response(
     JSON.stringify({
@@ -77,7 +77,7 @@ export async function handleAsyncOperation<T>(
       details: error instanceof Error ? error.message : String(error),
     };
 
-    logger.error(errorMessage, error as any);
+    logger.error({ error }, errorMessage);
     return { success: false, error: errorObj };
   }
 }

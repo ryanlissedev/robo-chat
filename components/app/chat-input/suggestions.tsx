@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { AnimatePresence, motion } from 'motion/react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { PromptSuggestion } from '@/components/prompt-kit/prompt-suggestion';

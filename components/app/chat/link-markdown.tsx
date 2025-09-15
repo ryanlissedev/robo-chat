@@ -1,5 +1,5 @@
-import React from 'react';
 import Image from 'next/image';
+import type React from 'react';
 
 export function LinkMarkdown({
   href,

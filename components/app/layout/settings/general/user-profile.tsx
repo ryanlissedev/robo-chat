@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 import { User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser } from '@/lib/user-store/provider';

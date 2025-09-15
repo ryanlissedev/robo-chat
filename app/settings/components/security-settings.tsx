@@ -329,7 +329,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
                 <Input
                   max={1000}
                   min={1}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     updateConfig(
                       'maxRequestsPerMinute',
                       Number.parseInt(e.target.value, 10)
@@ -345,7 +345,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
                 <Input
                   max={10_000_000}
                   min={1000}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     updateConfig(
                       'maxTokensPerDay',
                       Number.parseInt(e.target.value, 10)

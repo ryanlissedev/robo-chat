@@ -33,53 +33,7 @@ const filterDOMProps = (props: Record<string, any>): Record<string, any> => {
   return domProps;
 };
 
-// Mock child components with minimal implementations that include interactive elements
-vi.mock('@/components/app/chat/message-assistant', () => ({
-  MessageAssistant: ({
-    children,
-    copyToClipboard,
-    onQuote,
-    messageId,
-    ...props
-  }: any) => {
-    const handleQuote = () => {
-      if (onQuote) {
-        onQuote(children, messageId);
-      }
-    };
-
-    // Filter out non-DOM props to prevent React warnings
-    const domProps = filterDOMProps(props);
-
-    return (
-      <div data-testid="message-assistant" {...domProps}>
-        {children}
-        <button aria-label="copy" onClick={copyToClipboard}>
-          Copy
-        </button>
-        <button aria-label="quote" onClick={handleQuote}>
-          Quote
-        </button>
-      </div>
-    );
-  },
-}));
-
-vi.mock('@/components/app/chat/message-user', () => ({
-  MessageUser: ({ children, copyToClipboard, ...props }: any) => {
-    // Filter out non-DOM props to prevent React warnings
-    const domProps = filterDOMProps(props);
-
-    return (
-      <div data-testid="message-user" {...domProps}>
-        {children}
-        <button aria-label="copy" onClick={copyToClipboard}>
-          Copy
-        </button>
-      </div>
-    );
-  },
-}));
+// Mock child components are now handled in setup.ts
 
 // Mock clipboard operations
 const mockClipboard = {

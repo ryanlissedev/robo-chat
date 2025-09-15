@@ -1,7 +1,7 @@
 'use client';
 
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
-import React from 'react';
+import type React from 'react';
 import { cn } from '@/lib/utils';
 
 function TooltipProvider({
@@ -33,7 +33,6 @@ function TooltipTrigger({
 function TooltipContent({
   className,
   sideOffset = 0,
-  children,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Content>) {
   return (
@@ -47,7 +46,6 @@ function TooltipContent({
         sideOffset={sideOffset}
         {...props}
       >
-        {children}
         <TooltipPrimitive.Arrow className="z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] bg-primary fill-primary" />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>

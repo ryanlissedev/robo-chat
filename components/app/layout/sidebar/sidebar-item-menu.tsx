@@ -1,6 +1,6 @@
-import React from 'react';
 import { MoreHorizontal, Pencil, Trash } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import type React from 'react';
 import { useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import {

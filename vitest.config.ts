@@ -41,6 +41,8 @@ const getTestConfig = () => {
     slowTestThreshold: 2000,
     setupFiles: ['./tests/setup.ts'],
     globals: true,
+    // Ensure vi is available globally for mocking
+    globalSetup: undefined,
 
     // Include/exclude patterns based on test type
     include:

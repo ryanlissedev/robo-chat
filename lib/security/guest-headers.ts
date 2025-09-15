@@ -3,7 +3,6 @@
 // Client-only helper to build Guest BYOK headers from session storage
 // Keys never persist server-side; this only attaches per-request headers.
 
-
 import { getProviderForModel } from '@/lib/openproviders/provider-map';
 import type { SupportedModel } from '@/lib/openproviders/types';
 import {

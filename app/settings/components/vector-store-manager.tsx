@@ -31,20 +31,20 @@ type VectorStore = {
   id: string;
   name: string;
   status: 'active' | 'processing' | 'error';
-  file_count: number;
-  usage_bytes: number;
-  created_at: string;
-  expires_at?: string;
+  fileCount: number;
+  usageBytes: number;
+  createdAt: string;
+  expiresAt?: string;
 };
 
 type VectorStoreFile = {
   id: string;
-  vector_store_id: string;
-  file_id: string;
-  file_name: string;
-  file_size: number;
+  vectorStoreId: string;
+  fileId: string;
+  fileName: string;
+  fileSize: number;
   status: 'completed' | 'processing' | 'failed';
-  created_at: string;
+  createdAt: string;
 };
 
 type VectorStoreManagerProps = {
@@ -91,9 +91,9 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
           id: s.id,
           name: s.name,
           status: (s.status as VectorStore['status']) || 'active',
-          file_count: s.file_counts?.total ?? 0,
-          usage_bytes: s.usage_bytes ?? 0,
-          created_at: s.created_at || new Date().toISOString(),
+          fileCount: s.file_counts?.total ?? 0,
+          usageBytes: s.usage_bytes ?? 0,
+          createdAt: s.created_at || new Date().toISOString(),
         }))
       );
     } catch {
@@ -119,12 +119,12 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
       }>;
       const mapped: VectorStoreFile[] = files.map((f) => ({
         id: f.id,
-        vector_store_id: storeId,
-        file_id: f.file_id || f.id,
-        file_name: f.filename || f.name || 'file',
-        file_size: f.bytes ?? 0,
+        vectorStoreId: storeId,
+        fileId: f.file_id || f.id,
+        fileName: f.filename || f.name || 'file',
+        fileSize: f.bytes ?? 0,
         status: (f.status as VectorStoreFile['status']) || 'completed',
-        created_at: f.created_at || new Date().toISOString(),
+        createdAt: f.created_at || new Date().toISOString(),
       }));
       setStoreFiles(mapped);
     } catch {}
