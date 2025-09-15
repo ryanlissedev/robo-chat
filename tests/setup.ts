@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest';
-import { vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
+import { cleanup } from '@testing-library/react';
 
 // Global setup for all tests
 
@@ -144,3 +145,25 @@ vi.mock('@/lib/user-preference-store/provider', () => ({
     },
   }),
 }));
+
+// Ensure React is available globally for test files that assume it
+// This aligns with React 17+ JSX transform inconsistencies across mocks
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+globalThis.React = require('react');
+
+// Ensure a clean DOM after every test to prevent cross-test interference
+afterEach(() => {
+  cleanup();
+});
+
+// Partial mock for ui/button to provide buttonVariants for tests that import it
+vi.mock('@/components/ui/button', async (importOriginal) => {
+  const actual = (await importOriginal()) as any;
+  return {
+    ...actual,
+    buttonVariants: actual.buttonVariants ?? (({ variant, size, className }: any) => {
+      const base = 'inline-flex items-center justify-center';
+      return [base, className].filter(Boolean).join(' ');
+    }),
+  };
+});

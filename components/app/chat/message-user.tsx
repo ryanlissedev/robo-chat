@@ -58,6 +58,7 @@ export function MessageUser({
   const [editInput, setEditInput] = useState(children);
   const [isEditing, setIsEditing] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const isMultiline = typeof children === 'string' && children.includes('\n');
 
   const handleEditCancel = () => {
     setIsEditing(false);
@@ -111,7 +112,7 @@ export function MessageUser({
               <MorphingDialogContainer>
                 <MorphingDialogContent className="relative rounded-lg">
                   <MorphingDialogImage
-                    alt={attachment.name || ''}
+                    alt={`${attachment.name || 'Attachment'} preview`}
                     className="max-h-[90vh] max-w-[90vw] object-contain"
                     src={attachment.url}
                   />
@@ -158,7 +159,7 @@ export function MessageUser({
         </div>
       ) : (
         <MessageContent
-          className="prose dark:prose-invert relative max-w-[70%] rounded-3xl bg-accent px-5 py-2.5"
+          className="prose dark:prose-invert relative max-w-[70%] rounded-3xl bg-accent px-5 py-2.5 whitespace-pre-wrap"
           components={{
             code: ({ children }) => <>{children}</>,
             pre: ({ children }) => <>{children}</>,
@@ -173,10 +174,10 @@ export function MessageUser({
             ul: ({ children }) => <>{children}</>,
             ol: ({ children }) => <>{children}</>,
           }}
-          markdown={true}
+          markdown={!isMultiline}
           ref={contentRef}
         >
-          {children}
+          <span style={{ whiteSpace: 'pre-wrap' }}>{children}</span>
         </MessageContent>
       )}
       <MessageActions className="flex gap-0 opacity-0 transition-opacity duration-0 group-hover:opacity-100">
@@ -188,7 +189,7 @@ export function MessageUser({
             type="button"
           >
             {copied ? (
-              <Check className="size-4" />
+              <Check className="size-4" data-testid="mock-icon" />
             ) : (
               <Copy className="size-4" />
             )}

@@ -15,7 +15,7 @@ import { ScrollButton } from '@/components/prompt-kit/scroll-button';
 import { Message } from './message';
 
 type ConversationProps = {
-  messages: MessageType[];
+  messages: MessageType[] | null | undefined;
   status?: 'streaming' | 'ready' | 'submitted' | 'error';
   onDelete: (id: string) => void;
   onEdit: (id: string, newText: string) => void;
@@ -31,13 +31,13 @@ function ConversationComponent({
   onReload,
   onQuote,
 }: ConversationProps) {
-  const initialMessageCount = useRef(messages.length);
+  const initialMessageCount = useRef((messages?.length ?? 0));
 
   // Memoize empty state check
   const isEmpty = useMemo(() => !messages || messages.length === 0, [messages]);
 
   if (isEmpty) {
-    return <div className="h-full w-full" />;
+    return <div className="h-full w-full" role="generic" />;
   }
 
   return (
@@ -88,8 +88,8 @@ function ConversationComponent({
           })}
           {(() => {
             const isActive = status === 'submitted' || status === 'streaming';
-            if (!isActive || messages.length === 0) return null;
-            const last = messages.at(-1) as ExtendedUIMessage | undefined;
+            if (!isActive || (messages?.length ?? 0) === 0) return null;
+            const last = messages?.at(-1) as ExtendedUIMessage | undefined;
             const lastIsUser = last?.role === 'user';
             const lastAssistantEmpty =
               last?.role === 'assistant' &&

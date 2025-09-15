@@ -103,7 +103,8 @@ const getTestConfig = () => {
     retry: 0, // No retries for faster feedback
     sequence: {
       shuffle: false,
-      concurrent: !isCI && testType !== 'integration',
+      // Disable concurrent test file execution to avoid shared DOM collisions
+      concurrent: false,
     },
 
     // Coverage settings

@@ -3,7 +3,7 @@ import React from 'react';
 
 import { X } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   HoverCard,
   HoverCardContent,
@@ -23,6 +23,7 @@ type FileItemProps = {
 export function FileItem({ file, onRemove }: FileItemProps) {
   const [isRemoving, setIsRemoving] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const objectUrl = useMemo(() => URL.createObjectURL(file), [file]);
 
   const handleRemove = () => {
     setIsRemoving(true);
@@ -43,7 +44,7 @@ export function FileItem({ file, onRemove }: FileItemProps) {
                   alt={file.name}
                   className="h-full w-full object-cover"
                   height={40}
-                  src={URL.createObjectURL(file)}
+                  src={objectUrl}
                   width={40}
                 />
               ) : (
@@ -65,7 +66,7 @@ export function FileItem({ file, onRemove }: FileItemProps) {
             alt={file.name}
             className="h-full w-full object-cover"
             height={200}
-            src={URL.createObjectURL(file)}
+            src={objectUrl}
             width={200}
           />
         </HoverCardContent>
