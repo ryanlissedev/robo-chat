@@ -11,7 +11,7 @@ export type ImageProps = Experimental_GeneratedImage & {
 export const Image = ({ base64, mediaType, ...props }: ImageProps) => (
   <NextImage
     {...props}
-    alt={props.alt || 'Generated image'}
+    alt={props.alt !== undefined ? props.alt : 'Generated image'}
     className={cn(
       'h-auto max-w-full overflow-hidden rounded-md',
       props.className

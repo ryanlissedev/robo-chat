@@ -40,9 +40,12 @@ export class RequestValidator {
    * Checks if the request has guest credentials in headers.
    */
   static hasGuestCredentials(req: Request): boolean {
-    // Support common header casings; do not throw if headers absent.
+    // Intentionally check only exact common casings used by the app/tests
     const h = req.headers;
-    return Boolean(h.get('x-provider-api-key') || h.get('X-Provider-Api-Key'));
+    if (!h) return false;
+    if (h.get('x-provider-api-key')) return true;
+    if (h.get('X-Provider-Api-Key')) return true;
+    return false;
   }
 
   /**
@@ -142,8 +145,9 @@ export class RequestValidator {
    * Extracts the last user text from messages for logging and retrieval.
    */
   static getLastUserText(messages: ExtendedUIMessage[]): string {
-    const last = messages.at(-1);
-    return last ? (getMessageContent(last) ?? '') : '';
+    // Per tests, last USER message text is expected
+    const lastUser = [...messages].reverse().find((m) => m?.role === 'user');
+    return lastUser ? (getMessageContent(lastUser as any) ?? '') : '';
   }
 
   /**

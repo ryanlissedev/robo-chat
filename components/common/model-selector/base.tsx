@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDown, Search, Star } from 'lucide-react';
-import type React from 'react';
+import React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import { useKeyShortcut } from '@/app/hooks/use-key-shortcut';

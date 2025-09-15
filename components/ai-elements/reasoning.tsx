@@ -11,7 +11,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { Response } from './response';
+import { Response } from '@/components/ai-elements/response';
 
 type ReasoningContextValue = {
   isStreaming: boolean;
@@ -159,18 +159,22 @@ export type ReasoningContentProps = ComponentProps<
 };
 
 export const ReasoningContent = memo(
-  ({ className, children, ...props }: ReasoningContentProps) => (
-    <CollapsibleContent
-      className={cn(
-        'mt-4 text-sm',
-        'data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-popover-foreground outline-none data-[state=closed]:animate-out data-[state=open]:animate-in',
-        className
-      )}
-      {...props}
-    >
-      <Response className="grid gap-2">{children}</Response>
-    </CollapsibleContent>
-  )
+  ({ className, children, ...props }: ReasoningContentProps) => {
+    // Ensure we are within the Reasoning provider for clearer error message
+    useReasoning();
+    return (
+      <CollapsibleContent
+        className={cn(
+          'mt-4 text-sm grid gap-2',
+          'data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-popover-foreground outline-none data-[state=closed]:animate-out data-[state=open]:animate-in',
+          className
+        )}
+        {...props}
+      >
+        <Response className="grid gap-2">{children}</Response>
+      </CollapsibleContent>
+    );
+  }
 );
 
 Reasoning.displayName = 'Reasoning';
