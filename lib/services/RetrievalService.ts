@@ -185,18 +185,17 @@ export class RetrievalService {
    * Extracts the last user text from messages for retrieval queries.
    */
   private static getLastUserText(messages: ExtendedUIMessage[]): string {
-    const last = messages.at(-1);
-    if (!last || last.role !== 'user') return '';
+    // Find the most recent user message, even if not last
+    const lastUser = [...messages].reverse().find((m) => m?.role === 'user');
+    if (!lastUser) return '';
 
-    // Handle different message content types
-    if (typeof last.content === 'string') {
-      return last.content;
+    if (typeof (lastUser as any).content === 'string') {
+      return (lastUser as any).content as string;
     }
 
-    if (Array.isArray(last.content)) {
-      // Extract text from content array (for multi-modal messages)
-      const textParts = (last.content as any[]).filter(
-        (part: any) => part.type === 'text'
+    if (Array.isArray((lastUser as any).content)) {
+      const textParts = ((lastUser as any).content as any[]).filter(
+        (part: any) => part?.type === 'text'
       );
       return textParts.map((part: any) => part.text).join(' ');
     }

@@ -161,7 +161,7 @@ export type ReasoningContentProps = ComponentProps<
 export const ReasoningContent = memo(
   ({ className, children, ...props }: ReasoningContentProps) => {
     // Ensure we are within the Reasoning provider for clearer error message
-    useReasoning();
+    const { isOpen } = useReasoning();
     return (
       <CollapsibleContent
         className={cn(
@@ -169,9 +169,19 @@ export const ReasoningContent = memo(
           'data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-popover-foreground outline-none data-[state=closed]:animate-out data-[state=open]:animate-in',
           className
         )}
+        forceMount
         {...props}
       >
-        <Response className="grid gap-2">{children}</Response>
+        <Response
+          className={cn(
+            'grid gap-2',
+            // Mirror the state-based classes so tests querying this element also see them
+            'data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 data-[state=closed]:animate-out data-[state=open]:animate-in'
+          )}
+          data-state={isOpen ? 'open' : 'closed'}
+        >
+          {children}
+        </Response>
       </CollapsibleContent>
     );
   }

@@ -37,7 +37,7 @@ function ConversationComponent({
   const isEmpty = useMemo(() => !messages || messages.length === 0, [messages]);
 
   if (isEmpty) {
-    return <div className="h-full w-full" role="generic" />;
+    return <div className="h-full w-full" role="presentation" data-testid="chat-empty-state" />;
   }
 
   return (
