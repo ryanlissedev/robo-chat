@@ -1,0 +1,593 @@
+import React from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Conversation } from '@/components/app/chat/conversation';
+import type { UIMessage } from '@ai-sdk/react';
+import type { ExtendedUIMessage } from '@/app/types/ai-extended';
+
+// Mock the Message component
+vi.mock('@/components/app/chat/message', () => ({
+  Message: ({
+    children,
+    variant,
+    id,
+    isLast,
+    hasScrollAnchor,
+    onDelete,
+    onEdit,
+    onReload,
+    onQuote,
+    status,
+    attachments,
+    parts,
+    langsmithRunId
+  }: any) => (
+    <div
+      data-testid={`message-${variant}`}
+      data-message-id={id}
+      data-is-last={isLast}
+      data-has-scroll-anchor={hasScrollAnchor}
+      data-status={status}
+      data-langsmith-run-id={langsmithRunId}
+    >
+      <div data-testid="message-content">{children}</div>
+      {attachments && attachments.length > 0 && (
+        <div data-testid="message-attachments">
+          {attachments.map((att: any, idx: number) => (
+            <div key={idx} data-testid={`attachment-${idx}`}>
+              {att.name}
+            </div>
+          ))}
+        </div>
+      )}
+      {parts && parts.length > 0 && (
+        <div data-testid="message-parts">
+          {parts.map((part: any, idx: number) => (
+            <div key={idx} data-testid={`part-${idx}`} data-part-type={part.type}>
+              {part.text || part.toolName || 'Part'}
+            </div>
+          ))}
+        </div>
+      )}
+      <button
+        type="button"
+        data-testid="delete-button"
+        onClick={() => onDelete?.(id)}
+      >
+        Delete
+      </button>
+      <button
+        type="button"
+        data-testid="edit-button"
+        onClick={() => onEdit?.(id, 'edited')}
+      >
+        Edit
+      </button>
+      <button
+        type="button"
+        data-testid="reload-button"
+        onClick={() => onReload?.()}
+      >
+        Reload
+      </button>
+      <button
+        type="button"
+        data-testid="quote-button"
+        onClick={() => onQuote?.('quoted text', id)}
+      >
+        Quote
+      </button>
+    </div>
+  ),
+}));
+
+// Mock the prompt-kit components
+vi.mock('@/components/prompt-kit/chat-container', () => ({
+  ChatContainerRoot: ({ children, className }: any) => (
+    <div data-testid="chat-container-root" className={className}>
+      {children}
+    </div>
+  ),
+  ChatContainerContent: ({ children, className, style }: any) => (
+    <div data-testid="chat-container-content" className={className} style={style}>
+      {children}
+    </div>
+  ),
+}));
+
+vi.mock('@/components/prompt-kit/loader', () => ({
+  Loader: () => <div data-testid="loader">Loading...</div>,
+}));
+
+vi.mock('@/components/prompt-kit/scroll-button', () => ({
+  ScrollButton: ({ className }: any) => (
+    <button data-testid="scroll-button" className={className}>
+      Scroll
+    </button>
+  ),
+}));
+
+// Mock the AI types helper functions
+vi.mock('@/app/types/ai-extended', () => ({
+  getMessageContent: vi.fn((message: any) => {
+    if (message.content && typeof message.content === 'string') {
+      return message.content;
+    }
+    if (message.content && Array.isArray(message.content)) {
+      return message.content
+        .filter((part: any) => part.type === 'text')
+        .map((part: any) => part.text)
+        .join('');
+    }
+    if (message.parts && Array.isArray(message.parts)) {
+      return message.parts
+        .filter((part: any) => part.type === 'text')
+        .map((part: any) => part.text)
+        .join('');
+    }
+    return message.text || '';
+  }),
+  hasAttachments: vi.fn((message: any) => {
+    return Array.isArray(message.experimental_attachments) &&
+           message.experimental_attachments.length > 0;
+  }),
+}));
+
+const createMockMessage = (
+  id: string,
+  role: 'user' | 'assistant',
+  content: string,
+  options: Partial<ExtendedUIMessage> = {}
+): UIMessage => ({
+  id,
+  role,
+  content,
+  createdAt: new Date(),
+  ...options,
+});
+
+const defaultProps = {
+  messages: [],
+  status: 'ready' as const,
+  onDelete: vi.fn(),
+  onEdit: vi.fn(),
+  onReload: vi.fn(),
+  onQuote: vi.fn(),
+};
+
+function renderConversation(props = {}) {
+  return render(<Conversation {...defaultProps} {...props} />);
+}
+
+describe('Conversation (ChatMessages)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('Empty State', () => {
+    it('should render empty div when no messages', () => {
+      renderConversation({ messages: [] });
+
+      expect(screen.getByRole('generic')).toHaveClass('h-full', 'w-full');
+      expect(screen.queryByTestId('chat-container-root')).not.toBeInTheDocument();
+    });
+
+    it('should render empty div when messages is null', () => {
+      renderConversation({ messages: null as any });
+
+      expect(screen.getByRole('generic')).toHaveClass('h-full', 'w-full');
+      expect(screen.queryByTestId('chat-container-root')).not.toBeInTheDocument();
+    });
+
+    it('should render empty div when messages is undefined', () => {
+      renderConversation({ messages: undefined as any });
+
+      expect(screen.getByRole('generic')).toHaveClass('h-full', 'w-full');
+      expect(screen.queryByTestId('chat-container-root')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Message Rendering', () => {
+    it('should render single user message', () => {
+      const messages = [
+        createMockMessage('msg-1', 'user', 'Hello, how are you?'),
+      ];
+
+      renderConversation({ messages });
+
+      expect(screen.getByTestId('chat-container-root')).toBeInTheDocument();
+      expect(screen.getByTestId('message-user')).toBeInTheDocument();
+      expect(screen.getByTestId('message-content')).toHaveTextContent('Hello, how are you?');
+    });
+
+    it('should render single assistant message', () => {
+      const messages = [
+        createMockMessage('msg-1', 'assistant', 'I am doing well, thank you!'),
+      ];
+
+      renderConversation({ messages });
+
+      expect(screen.getByTestId('message-assistant')).toBeInTheDocument();
+      expect(screen.getByTestId('message-content')).toHaveTextContent('I am doing well, thank you!');
+    });
+
+    it('should render multiple messages in order', () => {
+      const messages = [
+        createMockMessage('msg-1', 'user', 'Hello'),
+        createMockMessage('msg-2', 'assistant', 'Hi there!'),
+        createMockMessage('msg-3', 'user', 'How are you?'),
+        createMockMessage('msg-4', 'assistant', 'I am doing well!'),
+      ];
+
+      renderConversation({ messages });
+
+      const userMessages = screen.getAllByTestId('message-user');
+      const assistantMessages = screen.getAllByTestId('message-assistant');
+
+      expect(userMessages).toHaveLength(2);
+      expect(assistantMessages).toHaveLength(2);
+
+      // Check order
+      const allMessages = screen.getAllByTestId(/^message-(user|assistant)$/);
+      expect(allMessages[0]).toHaveAttribute('data-message-id', 'msg-1');
+      expect(allMessages[1]).toHaveAttribute('data-message-id', 'msg-2');
+      expect(allMessages[2]).toHaveAttribute('data-message-id', 'msg-3');
+      expect(allMessages[3]).toHaveAttribute('data-message-id', 'msg-4');
+    });
+  });
+
+  describe('Message States and Props', () => {
+    it('should mark last message correctly', () => {
+      const messages = [
+        createMockMessage('msg-1', 'user', 'First message'),
+        createMockMessage('msg-2', 'assistant', 'Second message'),
+        createMockMessage('msg-3', 'user', 'Last message'),
+      ];
+
+      renderConversation({ messages, status: 'ready' });
+
+      const firstMessage = screen.getByTestId('message-user').parentElement;
+      const lastMessage = screen.getAllByTestId('message-user')[1];
+
+      expect(firstMessage).toHaveAttribute('data-is-last', 'false');
+      expect(lastMessage).toHaveAttribute('data-is-last', 'true');
+    });
+
+    it('should not mark last message as last when status is submitted', () => {
+      const messages = [
+        createMockMessage('msg-1', 'user', 'Message'),
+      ];
+
+      renderConversation({ messages, status: 'submitted' });
+
+      const message = screen.getByTestId('message-user');
+      expect(message).toHaveAttribute('data-is-last', 'false');
+    });
+
+    it('should handle scroll anchor for new messages', () => {
+      const { rerender } = renderConversation({
+        messages: [createMockMessage('msg-1', 'user', 'First')],
+      });
+
+      // Add a new message
+      const updatedMessages = [
+        createMockMessage('msg-1', 'user', 'First'),
+        createMockMessage('msg-2', 'assistant', 'Second'),
+      ];
+
+      rerender(<Conversation {...defaultProps} messages={updatedMessages} />);
+
+      const lastMessage = screen.getByTestId('message-assistant');
+      expect(lastMessage).toHaveAttribute('data-has-scroll-anchor', 'true');
+    });
+  });
+
+  describe('Message Attachments', () => {
+    it('should pass attachments to messages with attachments', () => {
+      const { hasAttachments } = require('@/app/types/ai-extended');
+      hasAttachments.mockReturnValue(true);
+
+      const messages = [
+        createMockMessage('msg-1', 'user', 'Message with attachment', {
+          experimental_attachments: [
+            { name: 'file.txt', contentType: 'text/plain', url: 'file.txt' },
+          ],
+        }),
+      ];
+
+      renderConversation({ messages });
+
+      expect(screen.getByTestId('message-attachments')).toBeInTheDocument();
+      expect(screen.getByTestId('attachment-0')).toHaveTextContent('file.txt');
+    });
+
+    it('should not render attachments for messages without them', () => {
+      const { hasAttachments } = require('@/app/types/ai-extended');
+      hasAttachments.mockReturnValue(false);
+
+      const messages = [
+        createMockMessage('msg-1', 'user', 'Message without attachment'),
+      ];
+
+      renderConversation({ messages });
+
+      expect(screen.queryByTestId('message-attachments')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Message Parts', () => {
+    it('should pass parts to messages with parts', () => {
+      const messages = [
+        createMockMessage('msg-1', 'assistant', 'Assistant message', {
+          parts: [
+            { type: 'text', text: 'Hello' },
+            { type: 'tool-call', toolName: 'search', toolCallId: 'call-1' },
+          ],
+        }),
+      ];
+
+      renderConversation({ messages });
+
+      expect(screen.getByTestId('message-parts')).toBeInTheDocument();
+      expect(screen.getByTestId('part-0')).toHaveAttribute('data-part-type', 'text');
+      expect(screen.getByTestId('part-1')).toHaveAttribute('data-part-type', 'tool-call');
+    });
+  });
+
+  describe('Loading State', () => {
+    it('should show loader when status is submitted after user message', () => {
+      const messages = [
+        createMockMessage('msg-1', 'user', 'User question'),
+      ];
+
+      renderConversation({ messages, status: 'submitted' });
+
+      expect(screen.getByTestId('loader')).toBeInTheDocument();
+    });
+
+    it('should show loader when status is streaming after user message', () => {
+      const messages = [
+        createMockMessage('msg-1', 'user', 'User question'),
+      ];
+
+      renderConversation({ messages, status: 'streaming' });
+
+      expect(screen.getByTestId('loader')).toBeInTheDocument();
+    });
+
+    it('should show loader when last assistant message is empty and streaming', () => {
+      const { getMessageContent } = require('@/app/types/ai-extended');
+      getMessageContent.mockReturnValue('');
+
+      const messages = [
+        createMockMessage('msg-1', 'user', 'User question'),
+        createMockMessage('msg-2', 'assistant', ''),
+      ];
+
+      renderConversation({ messages, status: 'streaming' });
+
+      expect(screen.getByTestId('loader')).toBeInTheDocument();
+    });
+
+    it('should not show loader when status is ready', () => {
+      const messages = [
+        createMockMessage('msg-1', 'user', 'User question'),
+      ];
+
+      renderConversation({ messages, status: 'ready' });
+
+      expect(screen.queryByTestId('loader')).not.toBeInTheDocument();
+    });
+
+    it('should not show loader when last message is not user or empty assistant', () => {
+      const messages = [
+        createMockMessage('msg-1', 'user', 'User question'),
+        createMockMessage('msg-2', 'assistant', 'Complete response'),
+      ];
+
+      renderConversation({ messages, status: 'submitted' });
+
+      expect(screen.queryByTestId('loader')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Scroll Button', () => {
+    it('should render scroll button', () => {
+      const messages = [
+        createMockMessage('msg-1', 'user', 'Message'),
+      ];
+
+      renderConversation({ messages });
+
+      expect(screen.getByTestId('scroll-button')).toBeInTheDocument();
+    });
+  });
+
+  describe('Message Actions', () => {
+    it('should handle delete action', async () => {
+      const onDelete = vi.fn();
+      const messages = [
+        createMockMessage('msg-1', 'user', 'Message to delete'),
+      ];
+
+      renderConversation({ messages, onDelete });
+
+      const deleteButton = screen.getByTestId('delete-button');
+      deleteButton.click();
+
+      expect(onDelete).toHaveBeenCalledWith('msg-1');
+    });
+
+    it('should handle edit action', async () => {
+      const onEdit = vi.fn();
+      const messages = [
+        createMockMessage('msg-1', 'user', 'Message to edit'),
+      ];
+
+      renderConversation({ messages, onEdit });
+
+      const editButton = screen.getByTestId('edit-button');
+      editButton.click();
+
+      expect(onEdit).toHaveBeenCalledWith('msg-1', 'edited');
+    });
+
+    it('should handle reload action', async () => {
+      const onReload = vi.fn();
+      const messages = [
+        createMockMessage('msg-1', 'assistant', 'Message to reload'),
+      ];
+
+      renderConversation({ messages, onReload });
+
+      const reloadButton = screen.getByTestId('reload-button');
+      reloadButton.click();
+
+      expect(onReload).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle quote action', async () => {
+      const onQuote = vi.fn();
+      const messages = [
+        createMockMessage('msg-1', 'assistant', 'Message to quote'),
+      ];
+
+      renderConversation({ messages, onQuote });
+
+      const quoteButton = screen.getByTestId('quote-button');
+      quoteButton.click();
+
+      expect(onQuote).toHaveBeenCalledWith('quoted text', 'msg-1');
+    });
+  });
+
+  describe('LangSmith Integration', () => {
+    it('should pass langsmithRunId to messages', () => {
+      const messages = [
+        createMockMessage('msg-1', 'assistant', 'Message with run ID', {
+          langsmithRunId: 'run-123',
+        }),
+      ];
+
+      renderConversation({ messages });
+
+      const message = screen.getByTestId('message-assistant');
+      expect(message).toHaveAttribute('data-langsmith-run-id', 'run-123');
+    });
+
+    it('should handle null langsmithRunId', () => {
+      const messages = [
+        createMockMessage('msg-1', 'assistant', 'Message without run ID', {
+          langsmithRunId: null,
+        }),
+      ];
+
+      renderConversation({ messages });
+
+      const message = screen.getByTestId('message-assistant');
+      expect(message).toHaveAttribute('data-langsmith-run-id', 'null');
+    });
+  });
+
+  describe('Performance and Memoization', () => {
+    it('should not re-render when messages have not changed', () => {
+      const messages = [
+        createMockMessage('msg-1', 'user', 'Static message'),
+      ];
+
+      const { rerender } = renderConversation({ messages });
+
+      // Re-render with same messages
+      rerender(<Conversation {...defaultProps} messages={messages} />);
+
+      // Should still render correctly
+      expect(screen.getByTestId('message-user')).toBeInTheDocument();
+    });
+
+    it('should handle large number of messages', () => {
+      const manyMessages = Array.from({ length: 100 }, (_, i) =>
+        createMockMessage(`msg-${i}`, i % 2 === 0 ? 'user' : 'assistant', `Message ${i}`)
+      );
+
+      expect(() => renderConversation({ messages: manyMessages })).not.toThrow();
+
+      const userMessages = screen.getAllByTestId('message-user');
+      const assistantMessages = screen.getAllByTestId('message-assistant');
+
+      expect(userMessages.length + assistantMessages.length).toBe(100);
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should handle messages with missing properties', () => {
+      const incompleteMessage = {
+        id: 'incomplete',
+        role: 'user',
+        // missing content and other properties
+      } as UIMessage;
+
+      const messages = [incompleteMessage];
+
+      expect(() => renderConversation({ messages })).not.toThrow();
+    });
+
+    it('should handle invalid message roles gracefully', () => {
+      const invalidMessage = createMockMessage('msg-1', 'invalid' as any, 'Invalid role');
+
+      const messages = [invalidMessage];
+
+      expect(() => renderConversation({ messages })).not.toThrow();
+    });
+
+    it('should handle missing callback functions', () => {
+      const messages = [
+        createMockMessage('msg-1', 'user', 'Message'),
+      ];
+
+      const props = {
+        messages,
+        status: 'ready' as const,
+        onDelete: undefined as any,
+        onEdit: undefined as any,
+        onReload: undefined as any,
+        onQuote: undefined as any,
+      };
+
+      expect(() => renderConversation(props)).not.toThrow();
+    });
+  });
+
+  describe('Layout and Styling', () => {
+    it('should apply correct container classes', () => {
+      const messages = [
+        createMockMessage('msg-1', 'user', 'Message'),
+      ];
+
+      renderConversation({ messages });
+
+      const chatContainer = screen.getByTestId('chat-container-content');
+      expect(chatContainer).toHaveClass(
+        'flex',
+        'w-full',
+        'flex-col',
+        'items-center',
+        'pt-20',
+        'pb-4'
+      );
+    });
+
+    it('should apply scroll styles', () => {
+      const messages = [
+        createMockMessage('msg-1', 'user', 'Message'),
+      ];
+
+      renderConversation({ messages });
+
+      const chatContainer = screen.getByTestId('chat-container-content');
+      expect(chatContainer).toHaveStyle({
+        scrollbarGutter: 'stable both-edges',
+        scrollbarWidth: 'none',
+      });
+    });
+  });
+});

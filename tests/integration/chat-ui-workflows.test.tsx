@@ -1,3 +1,4 @@
+import React from 'react';
 /**
  * Integration tests for Chat UI workflows
  * Testing complete user interactions and component integration

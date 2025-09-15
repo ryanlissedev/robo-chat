@@ -1,46 +1,20 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET, PUT } from '@/app/api/user-preferences/route';
+import {
+  createMockSupabaseClient,
+  setupTestEnvironment,
+  resetEnvironment,
+  createMockAuthUser,
+  createMockAuthResponse,
+} from '../../utils/supabase-mocks';
 
-const mockQuery = {
-  select: vi.fn(() => mockQuery),
-  eq: vi.fn(() => mockQuery),
-  single: vi.fn(),
-  upsert: vi.fn(() => mockQuery),
-};
-
-// Mock Supabase server client
-const mockSupabaseClient = {
-  auth: {
-    getUser: vi.fn(),
-  },
-  from: vi.fn(() => mockQuery),
-  supabaseUrl: 'https://test.supabase.co',
-  supabaseKey: 'test-key',
-  realtimeUrl: 'wss://test.supabase.co/realtime/v1',
-  authUrl: 'https://test.supabase.co/auth/v1',
-  storageUrl: 'https://test.supabase.co/storage/v1',
-  functionsUrl: 'https://test.supabase.co/functions/v1',
-  realtime: {},
-  storage: {},
-  functions: {},
-  schema: vi.fn(),
-  rpc: vi.fn(),
-  channel: vi.fn(),
-  getChannels: vi.fn(),
-  removeChannel: vi.fn(),
-  removeAllChannels: vi.fn(),
-  rest: {},
-  global: {},
-  headers: {},
-};
+// Hoisted mocks
+const mockCreateClient = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(),
+  createClient: mockCreateClient,
 }));
-
-// Import will be done in beforeEach to avoid top-level await
-let mockCreateClient: any;
 
 const mockUser = {
   id: 'user-123',
@@ -68,6 +42,9 @@ const defaultPreferences = {
 };
 
 describe('User Preferences API Route', () => {
+  let mockSupabaseClient: any;
+  let mockQuery: any;
+
   // Helper function for creating mock requests
   const createMockRequest = (body: any) => {
     return new NextRequest('http://localhost:3000/api/user-preferences', {
@@ -80,18 +57,32 @@ describe('User Preferences API Route', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Import after mocking to avoid top-level await
-    const { createClient } = await import('@/lib/supabase/server');
-    mockCreateClient = vi.mocked(createClient);
+    // Setup test environment
+    setupTestEnvironment(true);
 
-    mockCreateClient.mockResolvedValue(mockSupabaseClient as any);
-    mockSupabaseClient.auth.getUser.mockResolvedValue({
-      data: { user: mockUser },
-      error: null,
-    });
+    // Create mock client with query chain
+    mockSupabaseClient = createMockSupabaseClient();
+
+    // Setup query chain
+    mockQuery = {
+      select: vi.fn(() => mockQuery),
+      eq: vi.fn(() => mockQuery),
+      single: vi.fn(),
+      upsert: vi.fn(() => mockQuery),
+    };
+
+    mockSupabaseClient.from.mockReturnValue(mockQuery);
+
+    // Setup default auth response
+    const mockAuthResponse = createMockAuthResponse(createMockAuthUser(mockUser.id));
+    mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthResponse);
+
+    // Setup client creation
+    mockCreateClient.mockResolvedValue(mockSupabaseClient);
   });
 
   afterEach(() => {
+    resetEnvironment();
     vi.restoreAllMocks();
   });
 

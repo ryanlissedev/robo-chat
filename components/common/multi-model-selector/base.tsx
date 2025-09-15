@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { Check, ChevronDown, Search, Star } from 'lucide-react';

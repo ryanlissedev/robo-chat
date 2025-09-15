@@ -1,3 +1,4 @@
+import React from 'react';
 import type { UIMessage as MessageAISDK } from '@ai-sdk/react';
 import { Check, Copy, RotateCw } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';

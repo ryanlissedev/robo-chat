@@ -1,7 +1,6 @@
 'use client';
 
-import type React from 'react';
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Tooltip,
@@ -171,6 +170,20 @@ function PromptInputAction({
   ...props
 }: PromptInputActionProps) {
   const { disabled } = usePromptInput();
+
+  // Since we can't reliably detect Button components in React,
+  // and this component is commonly used with Button components,
+  // let's assume children are button-like and add title attribute directly
+  if (React.isValidElement(children)) {
+    const child =
+      children as React.ReactElement<{ disabled?: boolean; title?: string }>;
+    return React.cloneElement(child, {
+      // Adding a title for accessibility/tooltips on native elements
+      title: String(tooltip),
+      // Preserve existing disabled if present
+      disabled: disabled || child.props?.disabled,
+    });
+  }
 
   return (
     <Tooltip {...props}>

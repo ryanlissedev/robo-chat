@@ -1,3 +1,4 @@
+import React from 'react';
 import { MoreHorizontal, Pencil, Trash } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

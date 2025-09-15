@@ -1,39 +1,24 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ChatInput } from '@/components/app/chat-input/chat-input';
 import { ModelProvider } from '@/lib/model-store/provider';
 import { getModelInfo } from '@/lib/models';
 
-// Mock radix-ui tooltip
-vi.mock('@radix-ui/react-tooltip', async (importOriginal) => {
-  const actual = (await importOriginal()) as any;
-  return {
-    ...actual,
-    Arrow: () => null,
-  };
-});
-
-// Mock other dependencies that might be needed
-vi.mock('@/components/ui/toast', () => ({
-  useToast: () => ({ toast: vi.fn() }),
-  toast: vi.fn(),
-}));
-
-vi.mock('@/lib/user-preference-store/provider', () => ({
-  useUserPreferences: () => ({
-    preferences: {
-      multiModelEnabled: false,
-      showToolInvocations: true,
-    },
-  }),
-}));
-
-// Mock the model info
+// Mock the model info function
 vi.mock('@/lib/models', () => ({
   getModelInfo: vi.fn(),
 }));
 
+// Mock the ModelProvider
+vi.mock('@/lib/model-store/provider', () => ({
+  ModelProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 describe('Reasoning Effort Selector', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
   const mockProps = {
     value: '',
     onValueChange: vi.fn(),

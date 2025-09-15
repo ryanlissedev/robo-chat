@@ -1,3 +1,4 @@
+import type { ExtendedUIMessage } from '@/app/types/ai-extended';
 import { toast } from '@/components/ui/toast';
 import { getOrCreateGuestUserId } from '@/lib/api';
 import { MESSAGE_MAX_LENGTH, SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
@@ -28,18 +29,7 @@ export type MessageSubmissionContext = {
   verbosity?: 'low' | 'medium' | 'high';
   reasoningSummary?: 'auto' | 'detailed';
   chatId: string | null;
-  currentMessages?: Array<{
-    id: string;
-    role: 'user' | 'assistant' | 'system';
-    content: string;
-    createdAt?: Date;
-    // biome-ignore lint/style/useNamingConvention: external AI SDK API name
-    experimental_attachments?: Array<{
-      name: string;
-      contentType: string;
-      url: string;
-    }>;
-  }>;
+  currentMessages?: ExtendedUIMessage[];
 };
 
 export type OptimisticMessageData = {
@@ -57,18 +47,7 @@ export type OptimisticMessageData = {
 
 export type ChatRequestOptions = {
   body: {
-    messages: Array<{
-      id: string;
-      role: 'user' | 'assistant' | 'system';
-      content: string;
-      createdAt?: Date;
-      // biome-ignore lint/style/useNamingConvention: external AI SDK API name
-      experimental_attachments?: Array<{
-        name: string;
-        contentType: string;
-        url: string;
-      }>;
-    }>;
+    messages: ExtendedUIMessage[];
     chatId: string;
     userId: string;
     model: string;
@@ -203,13 +182,15 @@ export async function submitMessageScenario(
     };
 
     // Then: Prepare request options with proper messages array
-    const userMessage = {
+    const userMessage: ExtendedUIMessage = {
       id: optimisticMessage.id,
       role: 'user' as const,
-      content: input,
+      // Provide v5-compatible parts to satisfy UIMessage typing
+      parts: [{ type: 'text', text: input }],
       createdAt: new Date(),
       // biome-ignore lint/style/useNamingConvention: external AI SDK API name
-      experimental_attachments: optimisticAttachments.length > 0 ? optimisticAttachments : undefined,
+      experimental_attachments:
+        optimisticAttachments.length > 0 ? optimisticAttachments : undefined,
     };
 
     // Include current messages plus the new user message
@@ -401,10 +382,10 @@ export async function submitSuggestionScenario(
     };
 
     // Then: Prepare request options with proper messages array
-    const userMessage = {
+    const userMessage: ExtendedUIMessage = {
       id: optimisticMessage.id,
       role: 'user' as const,
-      content: suggestion,
+      parts: [{ type: 'text', text: suggestion }],
       createdAt: new Date(),
     };
 
@@ -475,11 +456,13 @@ export async function prepareReloadScenario(context: {
     // When: Preparing reload options
     const requestOptions = {
       body: {
+        messages: [],
         chatId: chatId || '',
         userId: uid,
         model: selectedModel,
         isAuthenticated,
         systemPrompt: systemPrompt || SYSTEM_PROMPT_DEFAULT,
+        enableSearch: false,
         reasoningEffort,
       },
     };

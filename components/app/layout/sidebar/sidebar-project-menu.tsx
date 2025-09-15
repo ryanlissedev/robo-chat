@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { MoreHorizontal, Pencil, Trash } from 'lucide-react';

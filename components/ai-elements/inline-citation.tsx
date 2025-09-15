@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
 import {
   type ComponentProps,

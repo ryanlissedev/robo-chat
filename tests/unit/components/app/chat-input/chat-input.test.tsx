@@ -202,6 +202,7 @@ vi.mock('@/components/app/chat-input/file-list', () => ({
 vi.mock('lucide-react', () => ({
   ArrowUp: () => <div data-testid="arrow-up-icon" />,
   Square: () => <div data-testid="square-icon" />,
+  Send: () => <div data-testid="send-icon" />,
   AudioWaveform: () => <div data-testid="audio-waveform-icon" />,
   Sparkle: () => <div data-testid="sparkle-icon" />,
   Code: () => <div data-testid="code-icon" />,
@@ -460,11 +461,12 @@ describe('ChatInput', () => {
     it('should show realtime audio modal when input is empty', () => {
       const { container } = renderComponent({ value: '' });
 
+      // Should show the Send icon for realtime audio modal
       expect(
-        container.querySelector('[data-testid="realtime-audio-modal"]')
+        container.querySelector('[aria-label="Open realtime audio modal"]')
       ).toBeInTheDocument();
       expect(
-        container.querySelector('[data-testid="audio-waveform-icon"]')
+        container.querySelector('[data-testid="send-icon"]')
       ).toBeInTheDocument();
     });
 
@@ -529,8 +531,9 @@ describe('ChatInput', () => {
         expect(sendButton).toHaveAttribute('disabled');
       } else {
         // If no send button is rendered for whitespace-only text, that's also valid
+        // Should show realtime audio modal instead
         expect(
-          container.querySelector('[data-testid="realtime-audio-modal"]')
+          container.querySelector('[aria-label="Open realtime audio modal"]')
         ).toBeInTheDocument();
       }
     });
@@ -825,9 +828,9 @@ describe('ChatInput', () => {
         value: '',
       });
 
-      // RealtimeAudioModal should receive the userId prop
+      // Should show realtime audio modal button when input is empty
       expect(
-        container.querySelector('[data-testid="realtime-audio-modal"]')
+        container.querySelector('[aria-label="Open realtime audio modal"]')
       ).toBeInTheDocument();
     });
   });

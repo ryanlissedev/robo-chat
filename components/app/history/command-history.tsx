@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { Check, Pencil, Trash2, X } from 'lucide-react';

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useBreakpoint } from '@/app/hooks/use-breakpoint';
 import { useKeyShortcut } from '@/app/hooks/use-key-shortcut';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Drawer,
   DrawerContent,
@@ -317,13 +317,8 @@ export function ModelSelector({
     isModelHidden
   );
 
-  const trigger = (
-    <Button
-      className={cn('justify-between dark:bg-secondary', className)}
-      data-testid="model-selector-trigger"
-      disabled={isLoadingModels}
-      variant="outline"
-    >
+  const triggerContent = (
+    <>
       <div className="flex items-center gap-2">
         {currentProvider?.icon && <currentProvider.icon className="size-5" />}
         <span data-testid="selected-model-name">
@@ -331,6 +326,17 @@ export function ModelSelector({
         </span>
       </div>
       <ChevronDown className="size-4 opacity-50" />
+    </>
+  );
+
+  const trigger = (
+    <Button
+      className={cn('justify-between dark:bg-secondary', className)}
+      data-testid="model-selector-trigger"
+      disabled={isLoadingModels}
+      variant="outline"
+    >
+      {triggerContent}
     </Button>
   );
 
@@ -416,25 +422,32 @@ export function ModelSelector({
         isOpen={isProDialogOpen}
         setIsOpen={setIsProDialogOpen}
       />
-      <Tooltip>
-        <DropdownMenu
-          onOpenChange={(open) => {
-            setIsDropdownOpen(open);
-            if (open) {
-              if (selectedModelId) {
-                setHoveredModel(selectedModelId);
-              }
-            } else {
-              setHoveredModel(null);
-              setSearchQuery('');
+      <DropdownMenu
+        onOpenChange={(open) => {
+          setIsDropdownOpen(open);
+          if (open) {
+            if (selectedModelId) {
+              setHoveredModel(selectedModelId);
             }
-          }}
-          open={isDropdownOpen}
+          } else {
+            setHoveredModel(null);
+            setSearchQuery('');
+          }
+        }}
+        open={isDropdownOpen}
+      >
+        <DropdownMenuTrigger
+          className={cn(
+            buttonVariants({ variant: 'outline' }),
+            'justify-between dark:bg-secondary',
+            className
+          )}
+          data-testid="model-selector-trigger"
+          disabled={isLoadingModels}
+          title="Switch model ⌘⇧P"
         >
-          <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
-          </TooltipTrigger>
-          <TooltipContent>Switch model ⌘⇧P</TooltipContent>
+          {triggerContent}
+        </DropdownMenuTrigger>
           <DropdownMenuContent
             align="start"
             className="flex h-[320px] w-[300px] flex-col space-y-0.5 overflow-visible p-0"
@@ -502,8 +515,7 @@ export function ModelSelector({
               </div>
             )}
           </DropdownMenuContent>
-        </DropdownMenu>
-      </Tooltip>
+      </DropdownMenu>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { Check, Copy, Globe, Loader2 } from 'lucide-react';

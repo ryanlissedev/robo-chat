@@ -82,12 +82,166 @@ vi.mock('@/components/ui/drawer', () => ({
     <div {...props}>{children}</div>
   ),
   DrawerTitle: ({ children, ...props }: any) => <h2 {...props}>{children}</h2>,
-  DrawerTrigger: ({ children, ...props }: any) => (
-    <div {...props}>{children}</div>
-  ),
+  DrawerTrigger: ({ children, asChild, ...props }: any) => {
+    // Filter out non-DOM props to prevent React warnings
+    const { asChild: _, ...domProps } = props;
+
+    if (asChild) {
+      // Pass through props to child when using asChild pattern
+      return React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child, {
+            ...child.props,
+            ...domProps,
+          });
+        }
+        return child;
+      });
+    }
+    return <div {...domProps}>{children}</div>;
+  },
 }));
 
 vi.mock('@/components/ui/dropdown-menu', () => {
+  // Define mock components first
+  const MockDropdownMenuContent = ({
+    children,
+    forceMount,
+    __dropdownContext,
+    sideOffset,
+    ...props
+  }: any) => {
+    // Get state from dropdown context
+    const isOpen = __dropdownContext?.isOpen || false;
+
+    // Filter out non-DOM props to prevent React warnings
+    const {
+      __dropdownContext: _,
+      sideOffset: __,
+      forceMount: ___,
+      ...domProps
+    } = props;
+
+    if (forceMount) {
+      // Always render when forceMount is true, control visibility with CSS
+      return (
+        <div
+          data-testid="model-selector-content"
+          role="menu"
+          tabIndex={-1}
+          data-state={isOpen ? 'open' : 'closed'}
+          style={{ display: isOpen ? 'block' : 'none' }}
+          {...domProps}
+        >
+          {children}
+        </div>
+      );
+    }
+
+    // When forceMount is false, only render when open
+    return isOpen ? (
+      <div
+        data-testid="model-selector-content"
+        role="menu"
+        tabIndex={-1}
+        data-state="open"
+        {...domProps}
+      >
+        {children}
+      </div>
+    ) : null;
+  };
+
+  const MockDropdownMenuTrigger = ({
+    children,
+    asChild,
+    __dropdownContext,
+    ...props
+  }: any) => {
+    // Get state and handlers from dropdown context
+    const isOpen = __dropdownContext?.isOpen || false;
+    const onOpenChange = __dropdownContext?.onOpenChange;
+
+    // Filter out non-DOM props to prevent React warnings
+    const {
+      __dropdownContext: _,
+      asChild: __,
+      ...domProps
+    } = props;
+
+    const handleClick = React.useCallback(
+      (event: React.MouseEvent) => {
+        event.preventDefault();
+        const newOpen = !isOpen;
+        if (onOpenChange) {
+          onOpenChange(newOpen);
+        }
+
+        // Also call any existing onClick handler
+        if (domProps.onClick) {
+          domProps.onClick(event);
+        }
+      },
+      [isOpen, onOpenChange, domProps.onClick]
+    );
+
+    const handleKeyDown = React.useCallback(
+      (event: React.KeyboardEvent) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          const newOpen = !isOpen;
+          if (onOpenChange) {
+            onOpenChange(newOpen);
+          }
+        }
+      },
+      [isOpen, onOpenChange]
+    );
+
+    if (asChild) {
+      // Pass props to child when using asChild pattern - filter out non-DOM props
+      return React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child, {
+            ...child.props,
+            ...domProps,
+            onClick: handleClick,
+            onKeyDown: handleKeyDown,
+            'aria-expanded': isOpen,
+            'aria-haspopup': true,
+            role: 'button',
+          });
+        }
+        return child;
+      });
+    }
+
+    return (
+      <button
+        {...domProps}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+      >
+        {children}
+      </button>
+    );
+  };
+
+  const MockDropdownMenuItem = ({ children, onSelect, ...props }: any) => (
+    <div
+      {...props}
+      role="menuitem"
+      onClick={(e: React.MouseEvent) => {
+        if (props.onClick) props.onClick(e);
+        if (onSelect) onSelect();
+      }}
+    >
+      {children}
+    </div>
+  );
+
   return {
     DropdownMenu: ({ children, open, onOpenChange }: any) => {
       // For controlled dropdowns (open prop provided), use that value
@@ -117,13 +271,22 @@ vi.mock('@/components/ui/dropdown-menu', () => {
         onOpenChange: handleOpenChange,
       };
 
-      // Clone children and pass dropdown context
+      // Clone children and pass dropdown context only to our specific mock components
       const processChildren = (children: React.ReactNode): React.ReactNode => {
         return React.Children.map(children, (child) => {
           if (React.isValidElement(child)) {
-            return React.cloneElement(child, {
+            // Check if this is one of our mock dropdown components
+            const isDropdownComponent = child.type === MockDropdownMenuContent ||
+              child.type === MockDropdownMenuTrigger ||
+              child.type === MockDropdownMenuItem;
+
+            const childProps = isDropdownComponent ? {
               ...child.props,
               __dropdownContext: dropdownContext,
+            } : child.props;
+
+            return React.cloneElement(child, {
+              ...childProps,
               children: child.props?.children
                 ? processChildren(child.props.children)
                 : child.props?.children,
@@ -140,127 +303,9 @@ vi.mock('@/components/ui/dropdown-menu', () => {
       );
     },
 
-    DropdownMenuContent: ({
-      children,
-      forceMount,
-      __dropdownContext,
-      ...props
-    }: any) => {
-      // Get state from dropdown context
-      const isOpen = __dropdownContext?.isOpen || false;
-
-      if (forceMount) {
-        // Always render when forceMount is true, control visibility with CSS
-        return (
-          <div
-            data-testid="model-selector-content"
-            role="menu"
-            tabIndex={-1}
-            data-state={isOpen ? 'open' : 'closed'}
-            style={{ display: isOpen ? 'block' : 'none' }}
-            {...props}
-          >
-            {children}
-          </div>
-        );
-      }
-
-      // When forceMount is false, only render when open
-      return isOpen ? (
-        <div
-          data-testid="model-selector-content"
-          role="menu"
-          tabIndex={-1}
-          data-state="open"
-          {...props}
-        >
-          {children}
-        </div>
-      ) : null;
-    },
-
-    DropdownMenuTrigger: ({
-      children,
-      asChild,
-      __dropdownContext,
-      ...props
-    }: any) => {
-      // Get state and handlers from dropdown context
-      const isOpen = __dropdownContext?.isOpen || false;
-      const onOpenChange = __dropdownContext?.onOpenChange;
-
-      const handleClick = React.useCallback(
-        (event: React.MouseEvent) => {
-          event.preventDefault();
-          const newOpen = !isOpen;
-          if (onOpenChange) {
-            onOpenChange(newOpen);
-          }
-
-          // Also call any existing onClick handler
-          if (props.onClick) {
-            props.onClick(event);
-          }
-        },
-        [isOpen, onOpenChange, props.onClick]
-      );
-
-      const handleKeyDown = React.useCallback(
-        (event: React.KeyboardEvent) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            const newOpen = !isOpen;
-            if (onOpenChange) {
-              onOpenChange(newOpen);
-            }
-          }
-        },
-        [isOpen, onOpenChange]
-      );
-
-      if (asChild) {
-        // Pass props to child when using asChild pattern - this is the key fix!
-        return React.Children.map(children, (child) => {
-          if (React.isValidElement(child)) {
-            return React.cloneElement(child, {
-              ...child.props,
-              ...props,
-              onClick: handleClick,
-              onKeyDown: handleKeyDown,
-              'aria-expanded': isOpen,
-              'aria-haspopup': true,
-              role: 'button',
-            });
-          }
-          return child;
-        });
-      }
-
-      return (
-        <button
-          {...props}
-          onClick={handleClick}
-          onKeyDown={handleKeyDown}
-          aria-haspopup="true"
-          aria-expanded={isOpen}
-        >
-          {children}
-        </button>
-      );
-    },
-
-    DropdownMenuItem: ({ children, onSelect, ...props }: any) => (
-      <div
-        {...props}
-        role="menuitem"
-        onClick={(e: React.MouseEvent) => {
-          if (props.onClick) props.onClick(e);
-          if (onSelect) onSelect();
-        }}
-      >
-        {children}
-      </div>
-    ),
+    DropdownMenuContent: MockDropdownMenuContent,
+    DropdownMenuTrigger: MockDropdownMenuTrigger,
+    DropdownMenuItem: MockDropdownMenuItem,
 
     DropdownMenuSeparator: (props: any) => <hr {...props} />,
     DropdownMenuLabel: ({ children, ...props }: any) => (
@@ -282,19 +327,22 @@ vi.mock('@/components/ui/tooltip', () => ({
     <div {...props}>{children}</div>
   ),
   TooltipTrigger: ({ children, asChild, ...props }: any) => {
+    // Filter out non-DOM props to prevent React warnings
+    const { asChild: _, ...domProps } = props;
+
     if (asChild) {
-      // Pass through props to child when using asChild pattern
+      // Pass through props to child when using asChild pattern - filter out non-DOM props
       return React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
           return React.cloneElement(child, {
             ...child.props,
-            ...props,
+            ...domProps,
           });
         }
         return child;
       });
     }
-    return <div {...props}>{children}</div>;
+    return <div {...domProps}>{children}</div>;
   },
   TooltipProvider: ({ children }: any) => <>{children}</>,
 }));

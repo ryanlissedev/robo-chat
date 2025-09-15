@@ -1,10 +1,11 @@
+import React from 'react';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PopoverContentAuth } from '@/components/app/chat-input/popover-content-auth';
-import * as api from '@/lib/api';
-import * as supabaseClient from '@/lib/supabase/client';
-import * as supabaseConfig from '@/lib/supabase/config';
+
+// Set up environment variables for test
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
 
 // Mock Next.js Image component
 vi.mock('next/image', () => ({
@@ -59,11 +60,18 @@ vi.mock('@/components/ui/popover', () => ({
 
 // Mock lib functions
 vi.mock('@/lib/api', () => ({
-  signInWithGoogle: vi.fn(),
+  signInWithGoogle: vi.fn().mockResolvedValue({
+    provider: 'google',
+    url: 'https://auth.google.com/oauth',
+  }),
 }));
 
 vi.mock('@/lib/supabase/client', () => ({
-  createClient: vi.fn(),
+  createClient: vi.fn().mockReturnValue({
+    auth: {
+      signInWithOAuth: vi.fn(),
+    },
+  }),
 }));
 
 vi.mock('@/lib/supabase/config', () => ({
@@ -73,6 +81,12 @@ vi.mock('@/lib/supabase/config', () => ({
 vi.mock('@/lib/config', () => ({
   APP_NAME: 'TestApp',
 }));
+
+// Import component after mocks
+import { PopoverContentAuth } from '@/components/app/chat-input/popover-content-auth';
+import * as api from '@/lib/api';
+import * as supabaseClient from '@/lib/supabase/client';
+import * as supabaseConfig from '@/lib/supabase/config';
 
 // Mock window.location
 const mockLocation = {
@@ -84,7 +98,6 @@ Object.defineProperty(window, 'location', {
 });
 
 function renderPopoverContentAuth(props = {}) {
-  cleanup(); // Clean up before each render
   return render(<PopoverContentAuth {...props} />);
 }
 
@@ -100,11 +113,9 @@ describe('PopoverContentAuth', () => {
     vi.clearAllMocks();
     mockLocation.href = '';
 
-    // Setup mocks using the imported modules
+    // Reset all mocks to default state
     vi.mocked(supabaseConfig.isSupabaseEnabled).mockReturnValue(true);
-    vi.mocked(supabaseClient.createClient).mockReturnValue(
-      mockSupabaseClient as any
-    );
+    vi.mocked(supabaseClient.createClient).mockReturnValue(mockSupabaseClient as any);
     vi.mocked(api.signInWithGoogle).mockResolvedValue({
       provider: 'google',
       url: 'https://auth.google.com/oauth',
@@ -127,7 +138,10 @@ describe('PopoverContentAuth', () => {
 
   describe('Initial render', () => {
     it('should render popover with banner image', () => {
-      renderPopoverContentAuth();
+      const { container } = renderPopoverContentAuth();
+
+      // Debug: log what's actually rendered
+      console.log('Rendered HTML:', container.innerHTML);
 
       const bannerImage = screen.getByAltText('calm paint generate by TestApp');
       expect(bannerImage).toBeInTheDocument();

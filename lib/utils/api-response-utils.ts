@@ -6,6 +6,28 @@
 import { NextResponse } from 'next/server';
 import logger from '@/lib/utils/logger';
 
+export type ApiErrorType =
+  | 'validation_error'
+  | 'authentication_error'
+  | 'authorization_error'
+  | 'rate_limit_error'
+  | 'api_key_error'
+  | 'model_error'
+  | 'internal_error'
+  | 'external_service_error';
+
+export class ResponseError extends Error {
+  constructor(
+    public type: ApiErrorType,
+    message: string,
+    public status: number = 500,
+    public details?: any
+  ) {
+    super(message);
+    this.name = 'ResponseError';
+  }
+}
+
 export interface ApiValidationResult<T = any> {
   isValid: boolean;
   data?: T;
@@ -161,32 +183,28 @@ export async function validateAuthentication(
 }
 
 /**
- * Parse and validate JSON request body
+ * Parse and validate JSON request body with test-compatible API
  */
 export async function parseRequestBody<T>(
-  request: Request,
-  requiredFields: string[] = []
-): Promise<ApiValidationResult<T>> {
+  request: Request
+): Promise<{ success: true; data: T } | { success: false; error: string }> {
   try {
-    const body = await request.json();
+    const text = await request.text();
 
-    if (requiredFields.length > 0) {
-      const validation = validateRequiredParams(body, requiredFields);
-      if (!validation.isValid) {
-        return validation;
-      }
+    if (!text.trim()) {
+      return { success: false, error: 'Empty request body' };
     }
 
-    return {
-      isValid: true,
-      data: body as T,
-    };
-  } catch (_error) {
-    return {
-      isValid: false,
-      error: 'Invalid JSON in request body',
-      statusCode: 400,
-    };
+    const data = JSON.parse(text);
+    return { success: true, data };
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('Unexpected token') || error.message.includes('Expected property name')) {
+        return { success: false, error: 'Invalid JSON in request body' };
+      }
+      return { success: false, error: `Failed to parse request body: ${error.message}` };
+    }
+    return { success: false, error: 'Failed to parse request body' };
   }
 }
 
@@ -228,29 +246,142 @@ export async function handleApiRoute<T>(
 }
 
 /**
- * Create success response with optional data
+ * Create success response with test-compatible API
  */
 export function createSuccessResponse<T>(
-  data?: T,
-  message?: string
-): NextResponse {
-  const response: any = { success: true };
-
-  if (data !== undefined) {
-    response.data = data;
-  }
-
-  if (message) {
-    response.message = message;
-  }
-
-  return NextResponse.json(response, { status: 200 });
+  data: T,
+  status: number = 200
+): Response {
+  // Handle undefined by using null as JSON fallback
+  const serializedData = data === undefined ? null : data;
+  return new Response(JSON.stringify(serializedData), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 /**
- * Create error response with consistent format
+ * Create error response with test-compatible API
  */
 export function createErrorResponse(
+  errorType: ApiErrorType,
+  message: string,
+  status: number = 500,
+  details?: any
+): Response {
+  const body: any = {
+    error: errorType,
+    message,
+    timestamp: new Date().toISOString(),
+  };
+
+  if (details !== undefined) {
+    body.details = details;
+  }
+
+  // Handle circular references safely
+  let jsonString: string;
+  try {
+    jsonString = JSON.stringify(body);
+  } catch (error) {
+    // If circular reference, create simplified body
+    const safeBody = {
+      error: errorType,
+      message,
+      timestamp: body.timestamp,
+      details: '[Circular Reference]',
+    };
+    jsonString = JSON.stringify(safeBody);
+  }
+
+  return new Response(jsonString, {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+/**
+ * Handle API errors with consistent logging and response format
+ */
+export function handleApiError(error: unknown, operation: string): Response {
+  if (error instanceof ResponseError) {
+    console.error(`API Error in ${operation}:`, {
+      type: error.type,
+      message: error.message,
+      status: error.status,
+    });
+
+    return createErrorResponse(error.type, error.message, error.status, error.details);
+  }
+
+  if (error instanceof Error) {
+    console.error(`API Error in ${operation}:`, {
+      type: 'internal_error',
+      message: error.message,
+      status: 500,
+    });
+
+    return createErrorResponse('internal_error', error.message, 500);
+  }
+
+  console.error(`API Error in ${operation}:`, {
+    type: 'internal_error',
+    message: 'An unexpected error occurred',
+    status: 500,
+  });
+
+  return createErrorResponse('internal_error', 'An unexpected error occurred', 500);
+}
+
+/**
+ * Validate JSON payload for required fields
+ */
+export function validateJsonPayload(
+  payload: any,
+  requiredFields: string[]
+): { valid: true } | { valid: false; error: string } {
+  if (!payload) {
+    if (requiredFields.length > 0) {
+      return { valid: false, error: `Missing required field: ${requiredFields[0]}` };
+    }
+    return { valid: true };
+  }
+
+  for (const field of requiredFields) {
+    const value = payload[field];
+    if (value === undefined || value === null || value === '') {
+      return { valid: false, error: `Missing required field: ${field}` };
+    }
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Create streaming error response for SSE
+ */
+export function createStreamingErrorResponse(
+  message: string,
+  errorType: ApiErrorType = 'internal_error'
+): Response {
+  const errorData = {
+    error: errorType,
+    message,
+  };
+
+  const sseData = `data: ${JSON.stringify(errorData)}\n\n`;
+
+  return new Response(sseData, {
+    status: 500,
+    headers: { 'Content-Type': 'text/plain' },
+  });
+}
+
+
+/**
+ * Legacy create error response with old signature
+ */
+export function createErrorResponseLegacy(
   error: string,
   statusCode: number = 500
 ): NextResponse {

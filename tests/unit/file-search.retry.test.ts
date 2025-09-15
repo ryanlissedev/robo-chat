@@ -1,31 +1,54 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Hoisted mocks to ensure stable references
+// Mock the retrieval module with specific behavior for retry testing
 const enhancedRetrievalMock = vi.fn();
 vi.mock('@/lib/retrieval/query-rewriting', () => ({
   enhancedRetrieval: enhancedRetrievalMock,
 }));
+
+// Override the global OpenAI mock for retry testing
+const mockOpenAIInstance = {
+  vectorStores: {
+    list: vi.fn(),
+    create: vi.fn(),
+    search: vi.fn(),
+  },
+  files: {
+    create: vi.fn(),
+  },
+  chat: {
+    completions: {
+      create: vi.fn(),
+    },
+  },
+};
+
 vi.mock('openai', () => ({
   __esModule: true,
-  default: class OpenAI {
-    vectorStores = {
-      list: vi.fn().mockResolvedValue({ data: [] }),
-      create: vi.fn().mockResolvedValue({ id: 'vs_mock', name: 'Mock' }),
-    };
-    files = { create: vi.fn() };
-  },
+  default: vi.fn(() => mockOpenAIInstance),
 }));
 
 describe.sequential('fileSearchTool retry/backoff', () => {
   beforeEach(async () => {
-    process.env.OPENAI_API_KEY = 'test-key';
-    enhancedRetrievalMock.mockReset();
+    // Set environment variable
+    vi.stubEnv('OPENAI_API_KEY', 'test-key');
+
+    // Clear all mocks
     vi.clearAllMocks();
-    // Clear module cache to ensure fresh imports
-    vi.resetModules();
+    enhancedRetrievalMock.mockReset();
+
+    // Set up default mocks
+    mockOpenAIInstance.vectorStores.list.mockResolvedValue({
+      data: [{ id: 'vs_123', name: 'Test Store' }],
+    });
+    mockOpenAIInstance.vectorStores.create.mockResolvedValue({
+      id: 'vs_new',
+      name: 'New Store',
+    });
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.clearAllMocks();
   });
 
@@ -39,7 +62,16 @@ describe.sequential('fileSearchTool retry/backoff', () => {
       if (calls < 3) {
         throw retriable;
       }
-      return Promise.resolve([]);
+      return Promise.resolve([
+        {
+          id: 'doc1',
+          file_id: 'file1',
+          file_name: 'test.pdf',
+          content: 'Test document content',
+          score: 0.9,
+          metadata: {},
+        },
+      ]);
     });
 
     const { file_search } = await import('@/lib/tools/file-search');
@@ -53,7 +85,7 @@ describe.sequential('fileSearchTool retry/backoff', () => {
 
     expect(calls).toBe(3);
     expect(result.success).toBe(true);
-    expect(result.total_results).toBe(0);
+    expect(result.total_results).toBe(1);
   });
 
   it('does not retry on non-retriable error and returns failure payload', async () => {

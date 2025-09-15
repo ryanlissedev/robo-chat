@@ -1,8 +1,10 @@
 # Architect's Refactoring and Architectural Improvement Plan
 
-**Last Updated:** 2025-09-14
-**Current Status:** Active refactoring in progress
-**Test Pass Rate:** 74% (improving from 19%)
+**Last Updated:** 2025-09-15
+**Current Status:** Active refactoring in progress (type-check clean)
+**Type-Check:** ✅ tsc passes with no errors
+**Lint:** Biome largely clean; a few style warnings in deprecated gateway shim
+**Test Pass Rate:** 74% (was 19% before recent fixes)
 
 ## 1. Executive Summary & Prioritized Plan
 
@@ -13,6 +15,11 @@ The codebase is robust and feature-rich, but suffers from high complexity in key
 - ✅ Migrated to AI SDK v5 with proper provider integration
 - ✅ Removed voice-related tests (deprecated feature)
 - ✅ Identified 30 unused dependencies for removal
+- ✅ Eliminated several `any` usages and non-null assertions
+- ✅ Fixed Next/React type issues in Prompt UI (value import of React)
+- ✅ Corrected Supabase feature flag bug (`isSupabaseEnabled()` invocation)
+- ✅ Standardized request parsing in vector store API
+- ✅ Type-safe message creation for chat business logic (v5 parts)
 - ⚠️ Discovered Bun/Vitest compatibility issues requiring resolution
 - 🔄 Test pass rate improved from 19% to 74%
 
@@ -22,7 +29,7 @@ The codebase is robust and feature-rich, but suffers from high complexity in key
 | **High** | Refactor `ChatService`             | High     | High   | 📝 Planned | Decompose the `processChatRequest` method into smaller, single-responsibility services.                    |
 | **High** | Implement Schema-Based Validation  | High     | Medium | ✅ Partial | Zod validation added for chat requests. Extend to all API routes.                                     |
 | **High** | Simplify AI Gateway                | High     | Medium | ✅ Done | Migrated to AI SDK v5, removed redundant custom gateway logic.                  |
-| **Medium** | Eliminate `any` Types              | High     | Medium | ✅ Done | Replaced `any` types in Supabase clients with specific Database types.                    |
+| **Medium** | Eliminate `any` Types              | High     | Medium | 🔄 In Progress | Reduced `any` usage in critical paths; typed Supabase clients; remaining anys confined to tests and deprecated shim.    |
 | **Medium** | Refactor Dynamic Imports           | Medium   | Low    | 📝 Planned | Replace dynamic `require()` and `import()` calls in `ChatService` with static imports.        |
 | **Medium** | Remove Unused Dependencies         | Medium   | Low    | 🔄 In Progress | 30 unused dependencies identified for removal.                            |
 | **Low**    | Decompose `Chat` UI Component      | Medium   | High   | 📝 Planned | Break down the main `Chat` component into smaller, more focused sub-components.                            |
@@ -63,8 +70,13 @@ The codebase is robust and feature-rich, but suffers from high complexity in key
 
 #### B. **Eliminate `any` Types (Medium Priority)**
 
-*   **Problem:** The Supabase clients in `lib/supabase/client.ts` and `lib/supabase/server.ts` use `any` as a return type, which undermines the benefits of TypeScript.
-*   **Recommendation:** Generate specific types for your Supabase schema and use them throughout the application. This will improve type safety and developer experience.
+*   **Problem:** Several modules used `any` types, undermining TypeScript guarantees (e.g., file uploads, API utils, gateway shim).
+*   **Actions Completed:**
+    - Typed `uploadFile` with `SupabaseClient<Database>`; fixed `isSupabaseEnabled()` call bug.
+    - Removed non-null assertions in gateway shim and narrowed env casts.
+    - Removed type-only React import misuse and unsafe casts in `prompt-input` cloning logic.
+    - Ensured `ExtendedUIMessage` literals include v5 `parts` where required.
+*   **Next:** Audit remaining anys flagged by Biome (mostly tests and deprecated shim), replace with narrow types or `unknown` plus safe parsing.
 
 #### C. **Refactor Dynamic Imports (Medium Priority)**
 
@@ -235,18 +247,18 @@ Notes:
 - Redundant Gateway Implementations:
   - `lib/ai/gateway.ts` overlaps with `lib/ai/vercel-*-provider.ts` and `openproviders()` routing via AI SDK. Prefer a single provider pathway.
 - Duplicate/simple chat route:
-  - `app/api/chat/route-simple.ts` duplicates `route.ts` responsibilities; not referenced by Next.js routing. Candidate for removal.
+  - `app/api/chat/route-simple.ts` previously duplicated `route.ts`; already removed (verified absent).
 - TODO Stubs to complete or remove:
-  - `lib/services/StreamingResponseService.ts`: reasoning/tool extraction TODOs.
-  - `lib/services/ChatFinishHandler.ts`: extraction and LangSmith logging TODOs.
+  - `lib/services/StreamingResponseService.ts` and `lib/services/ChatFinishHandler.ts`: implemented reasoning/tool extraction and LangSmith logging.
 
-Action: Consolidate to AI SDK v5 provider path (`openproviders()`), deprecate `lib/ai/gateway.ts` and keep `vercel-gateway-provider.ts` only if tests rely on it. Remove `route-simple.ts` after verifying no test imports.
+Action: Consolidate to AI SDK v5 provider path (`openproviders()`), deprecate `lib/ai/gateway.ts` and keep `vercel-gateway-provider.ts` only if tests rely on it. `route-simple.ts` has been removed.
 
 ---
 
 ## 6. Dependency and Import Optimization
 
 - Unused/Heavy deps check (recommendation): run `npx depcheck` to identify unused packages; consider lighter alternatives where feasible.
+  - Current snapshot (depcheck): tinyglobby (dep), @tailwindcss/postcss, @types/json-schema, @vitest/coverage-v8, ultracite (dev). Validate before removal.
 - Ensure tree-shaking-friendly imports from AI SDK v5 and Radix UI components.
 - Bundle size: consider `@next/bundle-analyzer` (already present) for inspection; lazy-load heavy components.
 
@@ -259,6 +271,10 @@ Action: Consolidate to AI SDK v5 provider path (`openproviders()`), deprecate `l
 - Supabase queries: coalesce checks (e.g., ensure chat exists) with UPSERT when safe; batch writes where possible.
 - Streaming finish hooks: process summaries asynchronously to keep request path fast; persist usage metrics best-effort only.
 - CSP in middleware: reduce `'unsafe-inline'/'unsafe-eval'` in production if feasible.
+
+Additional quick wins implemented:
+- Avoided expensive dynamic-import patterns in targeted paths.
+- Parallelized file validations/uploads where safe.
 
 ---
 
@@ -313,20 +329,22 @@ Action: Consolidate to AI SDK v5 provider path (`openproviders()`), deprecate `l
 
 ### 🟢 Medium Priority
 1. **Complete TODO Implementations** (Medium → Medium)
-   - `lib/services/StreamingResponseService.ts`: reasoning/tool extraction
-   - `lib/services/ChatFinishHandler.ts`: LangSmith logging
+   - `lib/services/StreamingResponseService.ts`: reasoning/tool extraction — completed
+   - `lib/services/ChatFinishHandler.ts`: LangSmith logging — completed
 
 2. **Code Cleanup** (Medium → Low)
-   - Delete `app/api/chat/route-simple.ts` (redundant)
-   - Add `.claude-flow/` to `.biomeignore`
-   - Ensure consistent Biome linting
+   - `app/api/chat/route-simple.ts` already removed
+   - `.claude-flow/` present in `.biomeignore`
+   - Address residual Biome warnings in deprecated gateway shim
 
-File-by-file recommendations (top subset):
-- `lib/services/ChatService.ts`: replace dynamic requires; narrow `ModelSettings`; centralize provider resolution via `openproviders()`.
-- `lib/ai/gateway.ts`: mark deprecated; migrate usage to `lib/openproviders` or `lib/ai/vercel-gateway-provider.ts` only if strictly needed by tests.
-- `app/api/chat/route-simple.ts`: remove after test verification.
-- `lib/services/StreamingResponseService.ts` and `lib/services/ChatFinishHandler.ts`: implement TODOs or remove placeholders.
-- `middleware.ts`: review CSP production policy to reduce unsafe directives.
+File-by-file updates and recommendations:
+- `components/prompt-kit/prompt-input.tsx`: Import React as value; safe clone typing; removed any casts. (Implemented)
+- `components/app/chat/chat-business-logic.ts`: Ensure UIMessage v5 parts; include required request fields. (Implemented)
+- `lib/file-handling.ts`: Type Supabase client, fix `isSupabaseEnabled()` bug, organize imports. (Implemented)
+- `app/api/vector-stores/route.ts`: Align with new `parseRequestBody` API; consistent error responses. (Implemented)
+- `lib/ai/gateway.ts`: Remove non-null assertions; narrow env types; adjust logger usage; keep as deprecated shim. (Implemented)
+- `lib/services/*`: Continue replacing dynamic requires with static imports; focus on `ChatService.ts` decomposition. (Planned)
+- `middleware.ts`: review CSP production policy to reduce unsafe directives. (Planned)
 
 Expected benefits:
 - Fewer runtime pitfalls (missing modules), stronger typing across DB/client code, clearer boundaries, and easier testability.
@@ -338,4 +356,65 @@ Expected benefits:
 - Architecture boundaries defined and diagrammed in this single file.
 - Services vs providers vs data layers clarified.
 - Missing api-sdk wrapper implemented; DB type errors fixed; Supabase clients typed.
+- Type-check now clean; targeted bug fixes applied in UI and API layers.
 - Next actions listed above are safe, incremental, and reversible.
+
+---
+
+## 11. Added Architecture Details (Mermaid)
+
+### 11.1. Module Boundaries
+
+```mermaid
+flowchart TB
+  subgraph UI[UI Layer]
+    Comp[components/**]
+    Hooks[app/hooks/**]
+    Stores[lib/*-store/**]
+  end
+
+  subgraph API[API Routes]
+    Chat[/api/chat/route.ts/]
+    Files[/api/files/[id]/route.ts/]
+    Settings[/api/settings/**]
+    Vectors[/api/vector-stores/**]
+  end
+
+  subgraph Services[Domain Services]
+    ReqVal[RequestValidator]
+    Ctx[ChatContextBuilder]
+    Ret[RetrievalService]
+    Stream[StreamingResponseService]
+    Finish[ChatFinishHandler]
+    Cred[CredentialService]
+  end
+
+  subgraph Providers[AI + Infra]
+    OpenProv[openproviders()]
+    AISDK[AI SDK v5]
+    Supa[Supabase]
+    Cache[Cache: memory|noop]
+  end
+
+  UI --> API
+  API --> Services
+  Services --> Providers
+  Providers --> Services
+  API --> UI
+```
+
+### 11.2. Observability & Metrics Flow
+
+```mermaid
+sequenceDiagram
+  participant Route as API Route
+  participant Stream as StreamingResponseService
+  participant LS as LangSmithService
+  participant Log as Logger (Pino)
+
+  Route->>Stream: streamText(model, messages,...)
+  Stream->>LS: createRun(inputs) [if enabled]
+  Stream-->>Route: SSE stream
+  Stream->>Log: info(reasoning extracted)
+  Stream->>LS: updateRun(outputs) [onFinish]
+```

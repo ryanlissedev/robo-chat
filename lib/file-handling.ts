@@ -1,4 +1,6 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import * as fileType from 'file-type';
+import type { Database } from '@/app/types/database.types';
 import { toast } from '@/components/ui/toast';
 import { DAILY_FILE_UPLOAD_LIMIT } from './config';
 import { createClient } from './supabase/client';
@@ -58,8 +60,7 @@ export async function validateFile(
 }
 
 export async function uploadFile(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   file: File
 ): Promise<string> {
   const fileExt = file.name.split('.').pop();
@@ -194,7 +195,7 @@ export class FileUploadLimitError extends Error {
 }
 
 export async function checkFileUploadLimit(userId: string) {
-  if (!isSupabaseEnabled) {
+  if (!isSupabaseEnabled()) {
     return 0;
   }
 

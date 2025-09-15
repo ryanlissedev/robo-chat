@@ -1,3 +1,4 @@
+import React from 'react';
 /**
  * AI Gateway Integration Tests
  * Tests gateway routing, fallback, and provider switching

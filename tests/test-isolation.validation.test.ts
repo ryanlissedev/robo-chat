@@ -10,6 +10,7 @@
  * 5. Module mock contamination
  */
 
+import React from 'react';
 import { render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { domIsolation, envIsolation, mockIsolation, testIsolation } from './test-isolation';
@@ -119,13 +120,13 @@ describe('Test Isolation Validation', () => {
     });
 
     it('should handle React component cleanup', () => {
-      const TestComponent = () => <div data-testid="test-component">Test</div>;
+      const TestComponent = () => React.createElement('div', { 'data-testid': 'test-component' }, 'Test');
 
-      const { getByTestId } = render(<TestComponent />);
+      const { getByTestId } = render(React.createElement(TestComponent));
       expect(getByTestId('test-component')).toBeInTheDocument();
-      
+
       domIsolation.cleanupDOM();
-      
+
       // Component should be cleaned up
       expect(() => getByTestId('test-component')).toThrow();
     });

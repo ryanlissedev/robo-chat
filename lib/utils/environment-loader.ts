@@ -58,8 +58,22 @@ export function validateEnvironmentConfig(
   requiredKeys: (keyof EnvironmentConfig)[]
 ): string | null {
   for (const key of requiredKeys) {
-    if (!config[key]) {
-      return `Missing required environment variable for ${key}`;
+    const value = config[key];
+
+    // Handle different types of required fields
+    if (key === 'vectorStoreIds') {
+      if (!Array.isArray(value) || value.length === 0) {
+        return `Missing required environment variable for ${key}`;
+      }
+    } else if (key === 'langsmithConfig') {
+      if (!value || typeof value !== 'object') {
+        return `Missing required environment variable for ${key}`;
+      }
+    } else {
+      // String fields
+      if (!value || value === '') {
+        return `Missing required environment variable for ${key}`;
+      }
     }
   }
   return null;
@@ -70,8 +84,9 @@ export function validateEnvironmentConfig(
  */
 export function getProviderApiKey(provider: string): string | undefined {
   const config = loadEnvironmentConfig();
+  const cleanProvider = provider.trim().toLowerCase();
 
-  switch (provider.toLowerCase()) {
+  switch (cleanProvider) {
     case 'openai':
       return config.openaiApiKey;
     case 'anthropic':

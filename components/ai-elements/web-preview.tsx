@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 
 type CollapsibleProps = React.HTMLAttributes<HTMLDivElement> & {
   open?: boolean;
@@ -114,28 +114,47 @@ export const WebPreviewNavigationButton = ({
   disabled,
   tooltip,
   children,
+  className,
   ...props
-}: WebPreviewNavigationButtonProps) => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          className="h-8 w-8 p-0 hover:text-foreground"
-          disabled={disabled}
-          onClick={onClick}
-          size="sm"
-          variant="ghost"
-          {...props}
-        >
-          {children}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>{tooltip}</p>
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
-);
+}: WebPreviewNavigationButtonProps) => {
+  if (tooltip) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger
+            className={cn(
+              buttonVariants({ variant: 'ghost', size: 'sm' }),
+              'h-8 w-8 p-0 hover:text-foreground',
+              className
+            )}
+            disabled={disabled}
+            onClick={onClick}
+            type="button"
+            {...props}
+          >
+            {children}
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return (
+    <Button
+      className={cn('h-8 w-8 p-0 hover:text-foreground', className)}
+      disabled={disabled}
+      onClick={onClick}
+      size="sm"
+      variant="ghost"
+      {...props}
+    >
+      {children}
+    </Button>
+  );
+};
 
 export type WebPreviewUrlProps = ComponentProps<typeof Input>;
 

@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { Github, MessageCircle, PenTool, Search, X } from 'lucide-react';

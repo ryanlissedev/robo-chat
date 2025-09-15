@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { Box, Cable, Key, Paintbrush, Settings, X } from 'lucide-react';

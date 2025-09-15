@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import {
-  createApiResponse,
+  createErrorResponse,
   handleApiRoute,
   parseRequestBody,
 } from '@/lib/utils/api-response-utils';
@@ -28,18 +28,18 @@ export async function POST(req: Request) {
     );
   }
 
-  // Parse and validate body
-  const validation = await parseRequestBody<{ name: string }>(req, ['name']);
-  if (!validation.isValid) {
-    return createApiResponse(validation);
+  // Parse JSON body (validate required fields below)
+  const parsed = await parseRequestBody<{ name: string }>(req);
+  if (!parsed.success) {
+    return createErrorResponse('validation_error', parsed.error, 400);
   }
 
   const openai = new OpenAI({ apiKey });
   return handleApiRoute(async () => {
-    if (!validation.data) {
-      throw new Error('Invalid request');
+    const { name } = parsed.data as { name: string };
+    if (!name || typeof name !== 'string') {
+      throw new Error('name is required');
     }
-    const { name } = validation.data as { name: string };
 
     const store = await openai.vectorStores.create({
       name,

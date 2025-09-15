@@ -1,3 +1,4 @@
+import React from 'react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { addUTM, getFavicon, getSiteName } from './utils';
@@ -20,36 +21,40 @@ export function SearchImages({ results }: { results: ImageResult[] }) {
   }
 
   return (
-    <div className="my-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="my-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       {results.map((img, i) => {
         const favicon = getFavicon(img.sourceUrl);
         const shouldShowFavicon = favicon && img.sourceUrl.trim();
-        return hiddenIndexes.has(i) ? null : (
+        return (
           <div key={`${img.imageUrl}-${img.sourceUrl}`} className="relative">
             <a
-              className="group/image relative block overflow-hidden rounded-xl"
+              className="group relative block overflow-hidden rounded-lg bg-gray-100 aspect-video"
               href={addUTM(img.sourceUrl)}
               rel="noopener noreferrer"
               target="_blank"
             >
               <Image
                 alt={img.title}
-                className="h-full max-h-48 min-h-40 w-full object-cover opacity-0 transition-opacity duration-150 ease-out"
+                className={`w-full h-full object-cover transition-transform duration-200 group-hover:scale-105 ${
+                  hiddenIndexes.has(i) ? 'hidden' : ''
+                }`}
                 onError={() => handleError(i)}
                 onLoad={(e: React.SyntheticEvent<HTMLImageElement>) =>
                   e.currentTarget.classList.remove('opacity-0')
                 }
                 src={img.imageUrl}
               />
-              <div className="absolute right-0 bottom-0 left-0 flex flex-col gap-0.5 bg-primary px-2.5 py-1.5 opacity-0 transition-opacity duration-100 ease-out group-hover/image:opacity-100">
-                <div className="flex items-center gap-1">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="absolute left-0 right-0 bottom-0 p-3">
+                  <div className="flex items-center gap-1">
+                    <span className="line-clamp-1 text-secondary text-xs">
+                      {getSiteName(img.sourceUrl)}
+                    </span>
+                  </div>
                   <span className="line-clamp-1 text-secondary text-xs">
-                    {getSiteName(img.sourceUrl)}
+                    {img.title}
                   </span>
                 </div>
-                <span className="line-clamp-1 text-secondary text-xs">
-                  {img.title}
-                </span>
               </div>
             </a>
             {shouldShowFavicon && (

@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import type { UIMessage as MessageType } from '@ai-sdk/react';

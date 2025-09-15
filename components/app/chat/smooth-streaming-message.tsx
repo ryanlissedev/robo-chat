@@ -1,3 +1,4 @@
+import React from 'react';
 import { memo, useEffect, useRef } from 'react';
 import { Response } from '@/components/ai-elements/response';
 import { useSmoothStream } from './hooks/use-smooth-stream';

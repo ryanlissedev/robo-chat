@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { FileText, ListTree } from 'lucide-react';

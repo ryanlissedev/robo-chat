@@ -1,7 +1,8 @@
+import React from 'react';
 'use client';
 
 import type { ComponentProps } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
@@ -32,7 +33,31 @@ export const Action = ({
   size = 'sm',
   ...props
 }: ActionProps) => {
-  const button = (
+  if (tooltip) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger
+            className={cn(
+              buttonVariants({ variant, size }),
+              'size-9 p-1.5 text-muted-foreground hover:text-foreground',
+              className
+            )}
+            type="button"
+            {...props}
+          >
+            {children}
+            <span className="sr-only">{tooltip}</span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return (
     <Button
       className={cn(
         'size-9 p-1.5 text-muted-foreground hover:text-foreground',
@@ -44,22 +69,7 @@ export const Action = ({
       {...props}
     >
       {children}
-      <span className="sr-only">{label || tooltip}</span>
+      <span className="sr-only">{label || ''}</span>
     </Button>
   );
-
-  if (tooltip) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>{button}</TooltipTrigger>
-          <TooltipContent>
-            <p>{tooltip}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
-  return button;
 };

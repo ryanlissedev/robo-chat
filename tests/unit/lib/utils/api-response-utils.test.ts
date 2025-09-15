@@ -144,7 +144,7 @@ describe('api-response-utils', () => {
       expect(response.status).toBe(200);
 
       return response.json().then((body) => {
-        expect(body).toBeUndefined();
+        expect(body).toBeNull();
       });
     });
 
@@ -184,8 +184,11 @@ describe('api-response-utils', () => {
   });
 
   describe('handleApiError', () => {
+    let consoleErrorSpy: any;
+
     beforeEach(() => {
-      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.clearAllMocks();
+      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     });
 
     afterEach(() => {
@@ -197,7 +200,7 @@ describe('api-response-utils', () => {
       const response = handleApiError(error, 'test-operation');
 
       expect(response.status).toBe(400);
-      expect(console.error).toHaveBeenCalledWith(
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
         'API Error in test-operation:',
         {
           type: 'validation_error',
@@ -255,7 +258,7 @@ describe('api-response-utils', () => {
       const error = new Error('Test error');
       handleApiError(error, 'custom-operation-name');
 
-      expect(console.error).toHaveBeenCalledWith(
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
         'API Error in custom-operation-name:',
         expect.any(Object)
       );
@@ -428,8 +431,8 @@ describe('api-response-utils', () => {
       );
 
       return response.text().then((body) => {
-        expect(body).toStartWith('data: ');
-        expect(body).toEndWith('\n\n');
+        expect(body.startsWith('data: ')).toBe(true);
+        expect(body.endsWith('\n\n')).toBe(true);
       });
     });
   });

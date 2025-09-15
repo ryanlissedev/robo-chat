@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { Gauge, ListFilter, Volume2 } from 'lucide-react';

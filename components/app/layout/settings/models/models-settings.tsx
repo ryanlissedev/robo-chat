@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 // framer-motion v11 types are stricter; import specific components

@@ -1,993 +1,146 @@
-// Environment variables are handled in vitest config via define section
-// Set up test environment variables that aren't handled by vitest config
-process.env.ENCRYPTION_KEY = Buffer.from('a'.repeat(32)).toString('base64');
-
-// Set IS_REACT_ACT_ENVIRONMENT for React Testing Library
-process.env.IS_REACT_ACT_ENVIRONMENT = 'true';
-
-import { act, cleanup, configure } from '@testing-library/react';
-// DOM environment is provided by jsdom via vitest config
-import React from 'react';
+import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
-import '@testing-library/jest-dom/vitest';
+// Global setup for all tests
 
-// Configure React testing environment for React 19
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(global as any).IS_REACT_ACT_ENVIRONMENT = true;
-
-// Fix React 19 DOM strict mode issues
-if (typeof document !== 'undefined') {
-  // Prevent multiple root elements
-  const originalAppendChild = document.body.appendChild;
-  document.body.appendChild = function (node: Node) {
-    // Only allow one test root at a time
-    if (node.nodeName === 'DIV' && document.body.children.length > 0) {
-      // Clean existing content first
-      while (document.body.firstChild) {
-        document.body.removeChild(document.body.firstChild);
+// Mock motion/react (the new framer-motion import)
+vi.mock('motion/react', () => {
+  const mockMotion = (component: any) => {
+    const MotionComponent = (props: any) => {
+      const { children, ...otherProps } = props;
+      if (typeof component === 'string') {
+        return { type: component, props: otherProps, children };
       }
-    }
-    return originalAppendChild.call(this, node);
+      return { type: component, props: otherProps, children };
+    };
+    MotionComponent.displayName = `Motion(${typeof component === 'string' ? component : component.displayName || component.name || 'Component'})`;
+    return MotionComponent;
   };
-}
 
-// Make React and act available globally for tests that need them
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(global as any).React = React;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(global as any).act = act;
-
-// Configure React Testing Library
-configure({
-  asyncUtilTimeout: 5000,
-  getElementError: (message) => new Error(message ?? 'Element not found'),
-  // Enable automatic act wrapping for React 19 compatibility
-  reactStrictMode: true,
-  // Configure testing library for React 19
-  testIdAttribute: 'data-testid',
-});
-
-// Ensure window object is available and properly configured
-if (typeof window === 'undefined') {
-  // Create minimal window mock
-  (global as any).window = {
-    localStorage: {
-      getItem: vi.fn(() => undefined),
-      setItem: vi.fn(),
-      removeItem: vi.fn(),
-      clear: vi.fn(),
+  return {
+    motion: new Proxy(mockMotion, {
+      get: (_target, prop) => {
+        if (typeof prop === 'string') {
+          return mockMotion(prop);
+        }
+        return mockMotion;
+      },
+    }),
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+    Reorder: {
+      Group: ({ children, ...props }: any) => ({ type: 'div', props: { ...props, children } }),
+      Item: ({ children, ...props }: any) => ({ type: 'div', props: { ...props, children } }),
     },
-    matchMedia: vi.fn().mockImplementation((query) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })),
   };
-}
+});
 
-// Ensure document is available in jsdom environment
-if (typeof document === 'undefined') {
-  // jsdom should provide document, but ensure it exists
-}
-
-// Global fetch mock to prevent real network calls
-const mockFetch = vi.fn().mockImplementation((_url: string, _options?: any) => {
-  // Mock successful responses for common endpoints
-  const mockResponse = {
-    ok: true,
-    status: 200,
-    statusText: 'OK',
-    headers: new Headers(),
-    json: () => Promise.resolve({ success: true }),
-    text: () => Promise.resolve('mock response'),
-    blob: () => Promise.resolve(new Blob()),
-    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-    clone: () => mockResponse,
+// Mock framer-motion for legacy imports
+vi.mock('framer-motion', () => {
+  const mockMotion = (component: any) => {
+    const MotionComponent = (props: any) => {
+      const { children, ...otherProps } = props;
+      if (typeof component === 'string') {
+        return { type: component, props: otherProps, children };
+      }
+      return { type: component, props: otherProps, children };
+    };
+    MotionComponent.displayName = `Motion(${typeof component === 'string' ? component : component.displayName || component.name || 'Component'})`;
+    return MotionComponent;
   };
 
-  return Promise.resolve(mockResponse);
+  return {
+    motion: new Proxy(mockMotion, {
+      get: (_target, prop) => {
+        if (typeof prop === 'string') {
+          return mockMotion(prop);
+        }
+        return mockMotion;
+      },
+    }),
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+    Reorder: {
+      Group: ({ children, ...props }: any) => ({ type: 'div', props: { ...props, children } }),
+      Item: ({ children, ...props }: any) => ({ type: 'div', props: { ...props, children } }),
+    },
+  };
 });
 
-// Set up global fetch mock
-global.fetch = mockFetch;
+// Mock OpenAI globally with realistic defaults
+vi.mock('openai', () => ({
+  __esModule: true,
+  default: class OpenAI {
+    vectorStores = {
+      list: vi.fn().mockResolvedValue({ data: [] }),
+      create: vi.fn().mockResolvedValue({ id: 'vs_mock', name: 'Mock Store' }),
+      search: vi.fn().mockResolvedValue({ data: [] }),
+    };
+    files = {
+      create: vi.fn().mockResolvedValue({ id: 'file_mock' }),
+    };
+    chat = {
+      completions: {
+        create: vi.fn().mockResolvedValue({
+          id: 'chatcmpl-mock',
+          object: 'chat.completion',
+          created: Date.now(),
+          model: 'gpt-5-mini',
+          choices: [
+            {
+              index: 0,
+              message: {
+                role: 'assistant',
+                content: 'Mock response',
+              },
+              finish_reason: 'stop',
+            },
+          ],
+          usage: {
+            prompt_tokens: 10,
+            completion_tokens: 5,
+            total_tokens: 15,
+          },
+        }),
+      },
+    };
+  },
+}));
 
-// Simplified test setup without complex isolation
-import { afterEach, beforeEach } from 'vitest';
+// Mock logger globally
+vi.mock('@/lib/utils/logger', () => ({
+  __esModule: true,
+  default: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
 
-// Simplified beforeEach setup
-beforeEach(() => {
-  // Clear mocks and timers
-  vi.clearAllMocks();
-  vi.clearAllTimers();
-
-  // Reset fetch mock
-  if (global.fetch && vi.isMockFunction(global.fetch)) {
-    (global.fetch as any).mockClear();
-  }
-
-  // React cleanup
-  cleanup();
-
-  // Simple DOM reset
-  if (typeof document !== 'undefined') {
-    document.body.innerHTML = '';
-  }
-});
-
-// Simplified afterEach cleanup
-afterEach(() => {
-  // Clean up React components
-  cleanup();
-
-  // Clear mocks and timers
-  vi.clearAllMocks();
-  vi.clearAllTimers();
-
-  // Clear DOM
-  if (typeof document !== 'undefined') {
-    document.body.innerHTML = '';
-  }
-});
-
-// Mock next/navigation redirect as vi.fn()
-vi.mock('next/navigation', async (orig) => {
-  const actual = await (orig() as Promise<any>);
+// Mock radix-ui components that might cause issues
+vi.mock('@radix-ui/react-tooltip', async (importOriginal) => {
+  const actual = (await importOriginal()) as any;
   return {
     ...actual,
-    redirect: vi.fn(),
+    Arrow: () => null,
+    Provider: ({ children }: { children: React.ReactNode }) => children,
+    Root: ({ children }: { children: React.ReactNode }) => children,
+    Trigger: ({ children, ...props }: any) => ({ type: 'button', props: { ...props, children } }),
+    Portal: ({ children }: { children: React.ReactNode }) => children,
+    Content: ({ children, ...props }: any) => ({ type: 'div', props: { ...props, children } }),
   };
 });
 
-// Mock motion/react (similar to framer-motion) to prevent animation issues in tests
-vi.mock('motion/react', () => {
-  const MockMotionComponent = React.forwardRef((props: any, ref: any) => {
-    const { children, as = 'div', ...restProps } = props;
-    const domProps = filterMotionProps(restProps);
-    return React.createElement(as, { ...domProps, ref }, children);
-  });
-  MockMotionComponent.displayName = 'MockMotionComponent';
-  return {
-    motion: new Proxy(
-      {},
-      {
-        get: (_target, tagName) => {
-          const Component = React.forwardRef((props: any, ref: any) => {
-            const { children, ...restProps } = props;
-            const domProps = filterMotionProps(restProps);
-            return React.createElement(
-              tagName as string,
-              { ...domProps, ref },
-              children
-            );
-          });
-          Component.displayName = `Motion${String(tagName).charAt(0).toUpperCase() + String(tagName).slice(1)}`;
-          return Component;
-        },
-      }
-    ),
-    AnimatePresence: ({ children }: any) =>
-      React.createElement(React.Fragment, null, children),
-    useAnimation: () => ({
-      start: vi.fn().mockResolvedValue(undefined),
-      stop: vi.fn(),
-      set: vi.fn(),
-    }),
-    useMotionValue: (initial: any) => ({
-      get: vi.fn(() => initial),
-      set: vi.fn(),
-      on: vi.fn(),
-      onChange: vi.fn(),
-      destroy: vi.fn(),
-    }),
-    useTransform: () => ({
-      get: vi.fn(() => 0),
-      set: vi.fn(),
-      on: vi.fn(),
-      onChange: vi.fn(),
-      destroy: vi.fn(),
-    }),
-  };
-});
-
-// Prevent creating real Supabase browser client during tests.
-// Many providers call `createClient()` from `lib/supabase/client`, which can
-// initialize Realtime/WebSocket connections that Happy DOM can't fully emulate.
-// We mock it to return `null` so feature flags that check for a client simply
-// no-op in tests.
-vi.mock('@/lib/supabase/client', () => ({
-  createClient: () => null,
-}));
-
-// Mock Supabase configuration for tests
-vi.mock('@/lib/supabase/config', () => ({
-  IS_SUPABASE_ENABLED: true,
-  isSupabaseEnabled: vi.fn().mockReturnValue(true),
-  isDevelopmentMode: vi.fn().mockReturnValue(false),
-  isRealtimeEnabled: vi.fn().mockReturnValue(false),
-}));
-
-// =============================================================================
-// STANDARDIZED MOCK HELPERS
-// =============================================================================
-
-// Standard UI Component Mocks
+// Mock other common UI dependencies
 vi.mock('@/components/ui/toast', () => ({
+  useToast: () => ({ toast: vi.fn() }),
   toast: vi.fn(),
-  useToast: vi.fn(() => ({
-    toast: vi.fn(),
-    dismiss: vi.fn(),
-  })),
 }));
 
-// Standard Radix UI Component Mocks
-vi.mock('@radix-ui/react-dialog', () => ({
-  Root: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('div', { ...filterDOMProps(props), ref }, children)
-  ),
-  Portal: ({ children }: any) => children,
-  Overlay: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('div', { ...filterDOMProps(props), ref }, children)
-  ),
-  Content: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('div', { ...filterDOMProps(props), ref }, children)
-  ),
-  Trigger: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('button', { ...filterDOMProps(props), ref }, children)
-  ),
-  Close: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('button', { ...filterDOMProps(props), ref }, children)
-  ),
-  Title: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('h2', { ...filterDOMProps(props), ref }, children)
-  ),
-  Description: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('p', { ...filterDOMProps(props), ref }, children)
-  ),
-}));
-
-vi.mock('@radix-ui/react-popover', () => ({
-  Root: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('div', { ...filterDOMProps(props), ref }, children)
-  ),
-  Trigger: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('button', { ...filterDOMProps(props), ref }, children)
-  ),
-  Content: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('div', { ...filterDOMProps(props), ref }, children)
-  ),
-  Portal: ({ children }: any) => children,
-  Anchor: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('div', { ...filterDOMProps(props), ref }, children)
-  ),
-}));
-
-vi.mock('@radix-ui/react-tooltip', () => ({
-  Provider: ({ children }: any) => children,
-  Root: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('div', { ...filterDOMProps(props), ref }, children)
-  ),
-  Trigger: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('button', { ...filterDOMProps(props), ref }, children)
-  ),
-  Content: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('div', { ...filterDOMProps(props), ref }, children)
-  ),
-  Portal: ({ children }: any) => children,
-  Arrow: React.forwardRef(({ ...props }: any, ref: any) =>
-    React.createElement('span', {
-      ...filterDOMProps(props),
-      ref,
-      'data-testid': 'tooltip-arrow',
-    })
-  ),
-}));
-
-vi.mock('@radix-ui/react-accordion', () => ({
-  Root: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('div', { ...filterDOMProps(props), ref }, children)
-  ),
-  Item: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('div', { ...filterDOMProps(props), ref }, children)
-  ),
-  Trigger: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('button', { ...filterDOMProps(props), ref }, children)
-  ),
-  Content: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('div', { ...filterDOMProps(props), ref }, children)
-  ),
-  Header: React.forwardRef(({ children, ...props }: any, ref: any) =>
-    React.createElement('h3', { ...filterDOMProps(props), ref }, children)
-  ),
-}));
-
-// Standard Supabase Client Mocks
-const createStandardSupabaseClient = () => ({
-  auth: {
-    getUser: vi.fn(() =>
-      Promise.resolve({ data: { user: null }, error: null })
-    ),
-    getSession: vi.fn(() =>
-      Promise.resolve({ data: { session: null }, error: null })
-    ),
-    onAuthStateChange: vi.fn(() => ({
-      data: { subscription: { unsubscribe: vi.fn() } },
-    })),
-    signOut: vi.fn(() => Promise.resolve({ error: null })),
-  },
-  from: vi.fn(() => ({
-    select: vi.fn(() => ({
-      eq: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          maybeSingle: vi.fn(() =>
-            Promise.resolve({ data: null, error: null })
-          ),
-          single: vi.fn(() => Promise.resolve({ data: null, error: null })),
-        })),
-        maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
-        single: vi.fn(() => Promise.resolve({ data: null, error: null })),
-      })),
-      maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
-      single: vi.fn(() => Promise.resolve({ data: null, error: null })),
-    })),
-    insert: vi.fn(() => ({
-      select: vi.fn(() => Promise.resolve({ data: [], error: null })),
-    })),
-    update: vi.fn(() => ({
-      eq: vi.fn(() => ({
-        select: vi.fn(() => Promise.resolve({ data: [], error: null })),
-      })),
-    })),
-    delete: vi.fn(() => ({
-      eq: vi.fn(() => Promise.resolve({ data: [], error: null })),
-    })),
-  })),
-  functions: {
-    invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
-  },
-});
-
-// Standard Next.js API Mocks
-const createStandardNextRequest = (body = {}, method = 'POST') => ({
-  json: vi.fn(() => Promise.resolve(body)),
-  method,
-  headers: new Headers(),
-  url: 'http://localhost:3000/api/test',
-});
-
-const createStandardNextResponse = (data = {}, status = 200) =>
-  new Response(JSON.stringify(data), { status });
-
-// =============================================================================
-// EXPORT STANDARD MOCK HELPERS
-// =============================================================================
-
-export const mockHelpers = {
-  // Supabase mocks
-  createSupabaseClient: createStandardSupabaseClient,
-
-  // Next.js mocks
-  createNextRequest: createStandardNextRequest,
-  createNextResponse: createStandardNextResponse,
-
-  // Standard mock functions for common patterns
-  mockIsSupabaseEnabled: vi.fn(() => true),
-  mockIsDevelopmentMode: vi.fn(() => false),
-  mockIsRealtimeEnabled: vi.fn(() => false),
-
-  // Standard encryption mocks
-  mockEncrypt: vi.fn(() => 'encrypted-data'),
-  mockDecrypt: vi.fn(() => 'decrypted-data'),
-
-  // Standard toast mock
-  mockToast: vi.fn(),
-
-  // Reset all mocks helper
-  resetAllMocks: () => {
-    vi.clearAllMocks();
-    vi.clearAllTimers();
-    vi.resetModules();
-  },
-
-  // Common assertion helpers
-  expectMockCalled: (mockFn: any, times = 1) => {
-    expect(mockFn).toHaveBeenCalledTimes(times);
-  },
-
-  expectMockCalledWith: (mockFn: any, ...args: any[]) => {
-    expect(mockFn).toHaveBeenCalledWith(...args);
-  },
-};
-
-// Export simplified test utilities
-export const testUtils = {
-  mockHelpers,
-};
-
-// Make helpers and utilities available globally for easy access in tests
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(global as any).mockHelpers = mockHelpers;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(global as any).testUtils = testUtils;
-
-// =============================================================================
-
-// Mock Node.js crypto module for browser tests
-vi.mock('node:crypto', async (importOriginal) => {
-  const actual = await importOriginal();
-  const actualObj = actual && typeof actual === 'object' ? actual : {};
-  return {
-    ...actualObj,
-    randomBytes: vi.fn((size: number) => Buffer.alloc(size, 0)),
-    randomUUID: vi.fn(() => 'mock-uuid-12345'),
-    createCipheriv: vi.fn(() => ({
-      update: vi.fn(() => 'encrypted'),
-      final: vi.fn(() => ''),
-      getAuthTag: vi.fn(() => Buffer.from('auth-tag')),
-    })),
-    createDecipheriv: vi.fn(() => ({
-      setAuthTag: vi.fn(),
-      update: vi.fn(() => 'decrypted'),
-      final: vi.fn(() => ''),
-    })),
-    timingSafeEqual: vi.fn(() => true),
-  };
-});
-
-// Mock encryption module that requires ENCRYPTION_KEY
-vi.mock('@/lib/encryption', () => ({
-  encrypt: vi.fn(() => 'encrypted-data'),
-  decrypt: vi.fn(() => 'decrypted-data'),
-  encryptKey: vi.fn(() => 'encrypted-key'),
-  decryptKey: vi.fn(() => 'decrypted-key'),
-  maskKey: vi.fn((key) => (key ? 'masked-key' : '')),
-}));
-
-// Mock user-keys module that imports encryption
-vi.mock('@/lib/user-keys', () => ({
-  getUserKey: vi.fn(() => Promise.resolve(null)),
-}));
-
-// Mock crypto as well for compatibility
-vi.mock('crypto', async (importOriginal) => {
-  const actual = await importOriginal();
-  const actualObj = actual && typeof actual === 'object' ? actual : {};
-  const mockCrypto = {
-    ...actualObj,
-    randomUUID: vi.fn(() => 'mock-uuid-12345'),
-    randomBytes: vi.fn((size: number) => Buffer.alloc(size, 0)),
-    createCipheriv: vi.fn(() => ({
-      update: vi.fn(() => 'encrypted'),
-      final: vi.fn(() => ''),
-      getAuthTag: vi.fn(() => Buffer.from('auth-tag')),
-    })),
-    createDecipheriv: vi.fn(() => ({
-      setAuthTag: vi.fn(),
-      update: vi.fn(() => 'decrypted'),
-      final: vi.fn(() => ''),
-    })),
-    timingSafeEqual: vi.fn(() => true),
-  };
-
-  // Ensure default export is available
-  return {
-    ...mockCrypto,
-    default: mockCrypto,
-  };
-});
-
-// Mock CSS imports to prevent "Unknown file extension" errors
-vi.mock('katex/dist/katex.min.css', () => ({}));
-vi.mock('tailwindcss', () => ({}));
-vi.mock('@tailwindcss/typography', () => ({}));
-
-// Mock streamdown which imports katex CSS
-vi.mock('streamdown', () => ({
-  Streamdown: ({ children, className }: any) => {
-    const React = require('react');
-    return React.createElement('div', { className }, children);
-  },
-}));
-
-// Mock Lucide React icons - comprehensive approach
-vi.mock('lucide-react', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('lucide-react')>();
-
-  // Create a mock icon component
-  const MockIcon = React.forwardRef(
-    ({ className, size, strokeWidth, ...props }: any, ref: any) =>
-      React.createElement('svg', {
-        className,
-        width: size || 24,
-        height: size || 24,
-        strokeWidth: strokeWidth || 2,
-        ...props,
-        ref,
-        'data-testid': 'mock-icon',
-      })
-  );
-  MockIcon.displayName = 'MockIcon';
-
-  // List of commonly used icons that need explicit mocking
-  const iconNames = [
-    'Send',
-    'ArrowUp',
-    'Square',
-    'Loader2Icon',
-    'SendIcon',
-    'SquareIcon',
-    'XIcon',
-    'Upload',
-    'File',
-    'Image',
-    'Search',
-    'Settings',
-    'User',
-    'Home',
-    'Menu',
-    'ChevronDown',
-    'ChevronUp',
-    'ChevronLeft',
-    'ChevronRight',
-    'Plus',
-    'Minus',
-    'Check',
-    'X',
-    'AlertCircle',
-    'Info',
-    'Trash',
-    'Edit',
-    'Copy',
-    'ExternalLink',
-    'Download',
-    'Refresh',
-    'Play',
-    'Pause',
-    'Stop',
-    'Volume2',
-    'VolumeX',
-    'Mic',
-    'MicOff',
-    'Camera',
-    'CameraOff',
-    'Phone',
-    'PhoneOff',
-    'Mail',
-    'Calendar',
-    'Clock',
-    'MapPin',
-    'Star',
-    'Heart',
-    'Bookmark',
-    'Share',
-    'MessageCircle',
-    'ThumbsUp',
-    'ThumbsDown',
-    'Eye',
-    'EyeOff',
-    'Lock',
-    'Unlock',
-    'Shield',
-    'Key',
-    'Wifi',
-    'WifiOff',
-    'Battery',
-    'BatteryLow',
-    'Sun',
-    'Moon',
-    'CloudRain',
-    'CloudSnow',
-    'Zap',
-    'Activity',
-    'TrendingUp',
-  ];
-
-  // Create explicit exports for each icon
-  const iconMocks: Record<string, any> = {};
-  iconNames.forEach((iconName) => {
-    iconMocks[iconName] = MockIcon;
-  });
-
-  // Create a proxy for any additional icons not explicitly listed
-  const _iconProxy = new Proxy(iconMocks, {
-    get: (target, prop) => {
-      if (typeof prop === 'string' && prop in target) {
-        return target[prop];
-      }
-      // For any other icon, return MockIcon
-      return MockIcon;
+vi.mock('@/lib/user-preference-store/provider', () => ({
+  useUserPreferences: () => ({
+    preferences: {
+      multiModelEnabled: false,
+      showToolInvocations: true,
     },
-  });
-
-  // Return the actual module spread with explicit icon overrides and proxy fallback
-  return new Proxy(
-    {
-      ...actual,
-      ...iconMocks,
-    },
-    {
-      get(target, prop) {
-        if (typeof prop === 'string') {
-          // If the property exists in our target, return it
-          if (prop in target) {
-            return target[prop];
-          }
-          // If it's an icon name (starts with capital letter), return MockIcon
-          if (/^[A-Z]/.test(prop)) {
-            return MockIcon;
-          }
-        }
-        // Return undefined for non-icon properties
-        return target[prop];
-      },
-    }
-  );
-});
-
-// Helper function to filter DOM props
-function filterDOMProps(props: Record<string, any>): Record<string, any> {
-  const domProps: Record<string, any> = {};
-
-  Object.keys(props).forEach((key) => {
-    // Allow standard HTML attributes
-    if (
-      key.startsWith('data-') ||
-      key.startsWith('aria-') ||
-      key === 'id' ||
-      key === 'role' ||
-      key === 'tabIndex' ||
-      key === 'className' ||
-      key === 'style' ||
-      key === 'title'
-    ) {
-      domProps[key] = props[key];
-    }
-  });
-
-  return domProps;
-}
-
-// Helper function to filter motion-specific props
-function filterMotionProps(props: Record<string, any>): Record<string, any> {
-  const {
-    animate,
-    initial,
-    exit,
-    transition,
-    variants,
-    whileHover,
-    whileTap,
-    whileFocus,
-    whileInView,
-    whileDrag,
-    drag,
-    dragConstraints,
-    dragElastic,
-    dragMomentum,
-    dragTransition,
-    onDrag,
-    onDragStart,
-    onDragEnd,
-    layoutId,
-    layout,
-    layoutScroll,
-    layoutRoot,
-    // Additional motion props that shouldn't reach DOM
-    style: motionStyle,
-    ...domProps
-  } = props;
-
-  // Handle style prop carefully - merge if both exist
-  const finalProps = filterDOMProps(domProps);
-  if (motionStyle && typeof motionStyle === 'object') {
-    finalProps.style = { ...finalProps.style, ...motionStyle };
-  }
-
-  return finalProps;
-}
-
-// Mock framer-motion globally with better DOM compatibility
-vi.mock('framer-motion', () => {
-  const MockMotionComponent = React.forwardRef((props: any, ref: any) => {
-    const { children, as = 'div', ...restProps } = props;
-    const domProps = filterMotionProps(restProps);
-    return React.createElement(as, { ...domProps, ref }, children);
-  });
-  MockMotionComponent.displayName = 'MockMotionComponent';
-
-  return {
-    motion: new Proxy(
-      {},
-      {
-        get: (_target, tagName) => {
-          const Component = React.forwardRef((props: any, ref: any) => {
-            const { children, ...restProps } = props;
-            const domProps = filterMotionProps(restProps);
-            return React.createElement(
-              tagName as string,
-              { ...domProps, ref },
-              children
-            );
-          });
-          Component.displayName = `Motion${String(tagName).charAt(0).toUpperCase() + String(tagName).slice(1)}`;
-          return Component;
-        },
-      }
-    ),
-    AnimatePresence: ({ children }: any) =>
-      React.createElement(React.Fragment, null, children),
-    useAnimation: () => ({
-      start: vi.fn().mockResolvedValue(undefined),
-      stop: vi.fn(),
-      set: vi.fn(),
-    }),
-    useMotionValue: (initial: any) => ({
-      get: vi.fn(() => initial),
-      set: vi.fn(),
-      on: vi.fn(),
-      onChange: vi.fn(),
-      destroy: vi.fn(),
-    }),
-    useTransform: () => ({
-      get: vi.fn(() => 0),
-      set: vi.fn(),
-      on: vi.fn(),
-      onChange: vi.fn(),
-      destroy: vi.fn(),
-    }),
-  };
-});
-
-// Mock TextMorph component for tests globally
-vi.mock('@/components/motion-primitives/text-morph', () => ({
-  TextMorph: ({
-    children,
-    as: Component = 'span',
-    className,
-    style,
-    ...props
-  }: {
-    children: React.ReactNode;
-    as?: React.ElementType;
-    className?: string;
-    style?: React.CSSProperties;
-    [key: string]: any;
-  }) => {
-    const Tag = Component as React.ElementType;
-    const filteredProps = filterDOMProps(props);
-    return React.createElement(
-      Tag,
-      {
-        ...filteredProps,
-        className,
-        style,
-        'aria-label': typeof children === 'string' ? children : undefined,
-      },
-      children
-    );
-  },
-}));
-
-// Mock matchMedia - ensure it's available globally
-if (typeof window !== 'undefined') {
-  Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    value: vi.fn().mockImplementation((query) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: vi.fn(), // deprecated
-      removeListener: vi.fn(), // deprecated
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })),
-  });
-} else if (typeof global !== 'undefined') {
-  (global as any).matchMedia = vi.fn().mockImplementation((query) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  }));
-}
-
-// Mock HTMLCanvasElement.getContext for tests that use canvas
-HTMLCanvasElement.prototype.getContext = vi
-  .fn()
-  .mockImplementation((contextType) => {
-    if (contextType === '2d') {
-      return {
-        fillStyle: '',
-        strokeStyle: '',
-        lineWidth: 1,
-        lineCap: 'butt',
-        lineJoin: 'miter',
-        globalAlpha: 1,
-        globalCompositeOperation: 'source-over',
-        canvas: { width: 300, height: 150 },
-        fillRect: vi.fn(),
-        clearRect: vi.fn(),
-        strokeRect: vi.fn(),
-        fillText: vi.fn(),
-        strokeText: vi.fn(),
-        measureText: vi.fn(() => ({ width: 0 })),
-        beginPath: vi.fn(),
-        closePath: vi.fn(),
-        moveTo: vi.fn(),
-        lineTo: vi.fn(),
-        bezierCurveTo: vi.fn(),
-        quadraticCurveTo: vi.fn(),
-        arc: vi.fn(),
-        arcTo: vi.fn(),
-        rect: vi.fn(),
-        fill: vi.fn(),
-        stroke: vi.fn(),
-        clip: vi.fn(),
-        isPointInPath: vi.fn(() => false),
-        isPointInStroke: vi.fn(() => false),
-        save: vi.fn(),
-        restore: vi.fn(),
-        scale: vi.fn(),
-        rotate: vi.fn(),
-        translate: vi.fn(),
-        transform: vi.fn(),
-        setTransform: vi.fn(),
-        resetTransform: vi.fn(),
-        createLinearGradient: vi.fn(() => ({
-          addColorStop: vi.fn(),
-        })),
-        createRadialGradient: vi.fn(() => ({
-          addColorStop: vi.fn(),
-        })),
-        createPattern: vi.fn(() => null),
-        drawImage: vi.fn(),
-        getImageData: vi.fn(() => ({
-          data: new Uint8ClampedArray(4),
-          width: 1,
-          height: 1,
-        })),
-        putImageData: vi.fn(),
-        createImageData: vi.fn(() => ({
-          data: new Uint8ClampedArray(4),
-          width: 1,
-          height: 1,
-        })),
-        setLineDash: vi.fn(),
-        getLineDash: vi.fn(() => []),
-      };
-    }
-    return null;
-  });
-
-// Mock ResizeObserver for Radix UI components
-global.ResizeObserver = class ResizeObserver {
-  observe = vi.fn();
-  unobserve = vi.fn();
-  disconnect = vi.fn();
-  constructor(callback: ResizeObserverCallback) {
-    // Store callback for potential future use
-    this.callback = callback;
-  }
-  private callback: ResizeObserverCallback;
-};
-
-// Mock Web APIs for navigator.clipboard - ensure consistency
-if (typeof navigator !== 'undefined' && !navigator.clipboard) {
-  const setupClipboard = {
-    writeText: vi.fn((_text: string) => {
-      return Promise.resolve();
-    }),
-    readText: vi.fn(() => {
-      return Promise.resolve('');
-    }),
-    read: vi.fn(() => Promise.resolve([])),
-    write: vi.fn(() => Promise.resolve()),
-  };
-
-  Object.defineProperty(navigator, 'clipboard', {
-    writable: true,
-    configurable: true,
-    value: setupClipboard,
-  });
-} else if (typeof global !== 'undefined' && !(global as any).navigator) {
-  (global as any).navigator = {
-    clipboard: {
-      writeText: vi.fn((_text: string) => Promise.resolve()),
-      readText: vi.fn(() => Promise.resolve('')),
-      read: vi.fn(() => Promise.resolve([])),
-      write: vi.fn(() => Promise.resolve()),
-    },
-  };
-}
-
-// Mock WebRTC APIs
-(global as any).RTCPeerConnection = vi.fn().mockImplementation(() => ({
-  createOffer: vi.fn(() =>
-    Promise.resolve({ sdp: 'mock-offer-sdp', type: 'offer' })
-  ),
-  createAnswer: vi.fn(() =>
-    Promise.resolve({ sdp: 'mock-answer-sdp', type: 'answer' })
-  ),
-  setLocalDescription: vi.fn(() => Promise.resolve()),
-  setRemoteDescription: vi.fn(() => Promise.resolve()),
-  addTrack: vi.fn(),
-  createDataChannel: vi.fn(() => ({
-    readyState: 'open',
-    send: vi.fn(),
-    close: vi.fn(),
-    onopen: null,
-    onmessage: null,
-    onerror: null,
-  })),
-  close: vi.fn(),
-  connectionState: 'new',
-  iceConnectionState: 'new',
-  onconnectionstatechange: null,
-  oniceconnectionstatechange: null,
-  ondatachannel: null,
-  generateCertificate: vi.fn(() => Promise.resolve({})),
-}));
-
-// Mock MediaDevices
-if (typeof navigator !== 'undefined' && !navigator.mediaDevices) {
-  Object.defineProperty(navigator, 'mediaDevices', {
-    writable: true,
-    value: {
-      getUserMedia: vi.fn(() =>
-        Promise.resolve({
-          getTracks: () => [{ stop: vi.fn() }],
-          getAudioTracks: () => [{ stop: vi.fn() }],
-          getVideoTracks: () => [{ stop: vi.fn() }],
-        })
-      ),
-      enumerateDevices: vi.fn(() => Promise.resolve([])),
-    },
-  });
-} else if (
-  typeof global !== 'undefined' &&
-  !(global as any).navigator?.mediaDevices
-) {
-  if (!(global as any).navigator) {
-    (global as any).navigator = {};
-  }
-  (global as any).navigator.mediaDevices = {
-    getUserMedia: vi.fn(() =>
-      Promise.resolve({
-        getTracks: () => [{ stop: vi.fn() }],
-        getAudioTracks: () => [{ stop: vi.fn() }],
-        getVideoTracks: () => [{ stop: vi.fn() }],
-      })
-    ),
-    enumerateDevices: vi.fn(() => Promise.resolve([])),
-  };
-}
-
-// Mock AudioContext
-global.AudioContext = vi.fn().mockImplementation(() => ({
-  createAnalyser: vi.fn().mockReturnValue({
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-    fftSize: 256,
-    frequencyBinCount: 128,
-    getByteFrequencyData: vi.fn(),
-    getFloatFrequencyData: vi.fn(),
-    smoothingTimeConstant: 0.8,
   }),
-  createMediaStreamSource: vi.fn().mockReturnValue({
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-  }),
-  close: vi.fn(),
-  state: 'running',
-  sampleRate: 44100,
 }));

@@ -1,10 +1,9 @@
+import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DialogAuth } from '@/components/app/chat/dialog-auth';
-import * as api from '@/lib/api';
-import * as supabaseClient from '@/lib/supabase/client';
-import * as supabaseConfig from '@/lib/supabase/config';
+import { createMockSupabaseClient } from '../../../../utils/supabase-mocks';
 
 // Mock Next.js Image component - minimal mock
 vi.mock('next/image', () => ({
@@ -13,24 +12,21 @@ vi.mock('next/image', () => ({
   ),
 }));
 
-// Mock external dependencies only
-const mockSupabaseClient = {
-  auth: {
-    signInWithOAuth: vi.fn(),
-  },
-};
+// Hoisted mocks
+const mockSignInWithGoogle = vi.hoisted(() => vi.fn());
+const mockIsSupabaseEnabled = vi.hoisted(() => vi.fn());
+const mockCreateClient = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/api', () => ({
-  signInWithGoogle: vi.fn(),
+  signInWithGoogle: mockSignInWithGoogle,
 }));
 
-// Mock Supabase modules properly
 vi.mock('@/lib/supabase/config', () => ({
-  isSupabaseEnabled: vi.fn(),
+  isSupabaseEnabled: mockIsSupabaseEnabled,
 }));
 
 vi.mock('@/lib/supabase/client', () => ({
-  createClient: vi.fn(),
+  createClient: mockCreateClient,
 }));
 
 // Mock UI Dialog components
@@ -113,17 +109,18 @@ function renderDialogAuth(props = {}) {
 
 describe('DialogAuth', () => {
   const user = userEvent.setup();
+  let mockSupabaseClient: any;
 
   beforeEach(() => {
     mockLocation.href = '';
     vi.clearAllMocks();
 
-    // Setup default mock implementations
-    const mockIsSupabaseEnabled = vi.mocked(supabaseConfig.isSupabaseEnabled);
-    const mockCreateClient = vi.mocked(supabaseClient.createClient);
+    // Create mock client
+    mockSupabaseClient = createMockSupabaseClient();
 
+    // Setup default mock implementations
     mockIsSupabaseEnabled.mockReturnValue(true);
-    mockCreateClient.mockReturnValue(mockSupabaseClient as any);
+    mockCreateClient.mockReturnValue(mockSupabaseClient);
   });
 
   describe('Rendering', () => {
@@ -158,24 +155,22 @@ describe('DialogAuth', () => {
 
   describe('Supabase Configuration', () => {
     it('should not render when Supabase is not enabled', () => {
-      vi.mocked(supabaseConfig.isSupabaseEnabled).mockReturnValue(false);
+      mockIsSupabaseEnabled.mockReturnValue(false);
 
       const { container } = renderDialogAuth();
       expect(container.firstChild).toBeNull();
     });
 
     it('should not render when Supabase client is null', () => {
-      vi.mocked(supabaseClient.createClient).mockReturnValue(null);
+      mockCreateClient.mockReturnValue(null);
 
       const { container } = renderDialogAuth();
       expect(container.firstChild).toBeNull();
     });
 
     it('should render when both Supabase is enabled and client exists', () => {
-      vi.mocked(supabaseConfig.isSupabaseEnabled).mockReturnValue(true);
-      vi.mocked(supabaseClient.createClient).mockReturnValue(
-        mockSupabaseClient as any
-      );
+      mockIsSupabaseEnabled.mockReturnValue(true);
+      mockCreateClient.mockReturnValue(mockSupabaseClient);
 
       renderDialogAuth();
       expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -200,7 +195,7 @@ describe('DialogAuth', () => {
         provider: 'google' as const,
         url: 'https://auth.google.com/redirect',
       };
-      vi.mocked(api.signInWithGoogle).mockResolvedValue(mockResponse);
+      mockSignInWithGoogle.mockResolvedValue(mockResponse);
 
       renderDialogAuth();
 
@@ -208,13 +203,13 @@ describe('DialogAuth', () => {
       await user.click(button);
 
       await waitFor(() => {
-        expect(api.signInWithGoogle).toHaveBeenCalledWith(mockSupabaseClient);
+        expect(mockSignInWithGoogle).toHaveBeenCalledWith(mockSupabaseClient);
       });
     });
 
     it('should redirect to auth URL on successful sign-in', async () => {
       const authUrl = 'https://auth.google.com/oauth/redirect';
-      vi.mocked(api.signInWithGoogle).mockResolvedValue({
+      mockSignInWithGoogle.mockResolvedValue({
         provider: 'google' as const,
         url: authUrl,
       });
@@ -230,7 +225,7 @@ describe('DialogAuth', () => {
     });
 
     it('should not redirect when no URL is returned', async () => {
-      vi.mocked(api.signInWithGoogle).mockResolvedValue({
+      mockSignInWithGoogle.mockResolvedValue({
         provider: 'google' as const,
         url: null as any,
       });
@@ -246,7 +241,7 @@ describe('DialogAuth', () => {
     });
 
     it('should not redirect when undefined URL is returned', async () => {
-      vi.mocked(api.signInWithGoogle).mockResolvedValue({} as any);
+      mockSignInWithGoogle.mockResolvedValue({} as any);
 
       renderDialogAuth();
 
@@ -261,7 +256,7 @@ describe('DialogAuth', () => {
 
   describe('Loading State', () => {
     it('should show loading text when signing in', async () => {
-      vi.mocked(api.signInWithGoogle).mockImplementation(
+      mockSignInWithGoogle.mockImplementation(
         () =>
           new Promise((resolve) =>
             setTimeout(
@@ -283,7 +278,7 @@ describe('DialogAuth', () => {
     });
 
     it('should disable button during loading', async () => {
-      vi.mocked(api.signInWithGoogle).mockImplementation(
+      mockSignInWithGoogle.mockImplementation(
         () =>
           new Promise((resolve) =>
             setTimeout(
@@ -304,7 +299,7 @@ describe('DialogAuth', () => {
     });
 
     it('should reset loading state after successful sign-in', async () => {
-      vi.mocked(api.signInWithGoogle).mockResolvedValue({
+      mockSignInWithGoogle.mockResolvedValue({
         provider: 'google' as const,
         url: 'https://auth.test.com',
       });
@@ -323,9 +318,7 @@ describe('DialogAuth', () => {
   describe('Error Handling', () => {
     it('should display error message when sign-in fails', async () => {
       const errorMessage = 'Authentication failed';
-      vi.mocked(api.signInWithGoogle).mockRejectedValue(
-        new Error(errorMessage)
-      );
+      mockSignInWithGoogle.mockRejectedValue(new Error(errorMessage));
 
       renderDialogAuth();
 
@@ -338,7 +331,7 @@ describe('DialogAuth', () => {
     });
 
     it('should display generic error for unknown errors', async () => {
-      vi.mocked(api.signInWithGoogle).mockRejectedValue('Unknown error');
+      mockSignInWithGoogle.mockRejectedValue('Unknown error');
 
       renderDialogAuth();
 
@@ -353,9 +346,7 @@ describe('DialogAuth', () => {
     });
 
     it('should apply error styling to error message', async () => {
-      vi.mocked(api.signInWithGoogle).mockRejectedValue(
-        new Error('Test error')
-      );
+      mockSignInWithGoogle.mockRejectedValue(new Error('Test error'));
 
       renderDialogAuth();
 
@@ -371,9 +362,7 @@ describe('DialogAuth', () => {
 
     it('should reset error state on new sign-in attempt', async () => {
       // First attempt fails
-      vi.mocked(api.signInWithGoogle).mockRejectedValueOnce(
-        new Error('First error')
-      );
+      mockSignInWithGoogle.mockRejectedValueOnce(new Error('First error'));
 
       renderDialogAuth();
 
@@ -385,7 +374,7 @@ describe('DialogAuth', () => {
       expect(screen.getByText('First error')).toBeInTheDocument();
 
       // Second attempt succeeds
-      vi.mocked(api.signInWithGoogle).mockResolvedValueOnce({
+      mockSignInWithGoogle.mockResolvedValueOnce({
         provider: 'google' as const,
         url: 'success',
       });
@@ -397,9 +386,7 @@ describe('DialogAuth', () => {
     });
 
     it('should reset loading state after error', async () => {
-      vi.mocked(api.signInWithGoogle).mockRejectedValue(
-        new Error('Test error')
-      );
+      mockSignInWithGoogle.mockRejectedValue(new Error('Test error'));
 
       renderDialogAuth();
 
@@ -423,7 +410,7 @@ describe('DialogAuth', () => {
           resolveSignIn = resolve;
         }
       );
-      vi.mocked(api.signInWithGoogle).mockReturnValue(signInPromise);
+      mockSignInWithGoogle.mockReturnValue(signInPromise);
 
       renderDialogAuth();
 
@@ -437,7 +424,7 @@ describe('DialogAuth', () => {
       });
 
       // Should only call once due to loading state disabling button
-      expect(api.signInWithGoogle).toHaveBeenCalledTimes(1);
+      expect(mockSignInWithGoogle).toHaveBeenCalledTimes(1);
       expect(button).toBeDisabled();
 
       // Resolve the promise to clean up
@@ -449,7 +436,7 @@ describe('DialogAuth', () => {
 
     it('should allow retry after error', async () => {
       // First attempt fails
-      vi.mocked(api.signInWithGoogle)
+      mockSignInWithGoogle
         .mockRejectedValueOnce(new Error('Network error'))
         .mockResolvedValueOnce({ provider: 'google' as const, url: 'success' });
 
@@ -469,7 +456,7 @@ describe('DialogAuth', () => {
       });
       expect(mockLocation.href).toBe('success');
 
-      expect(api.signInWithGoogle).toHaveBeenCalledTimes(2);
+      expect(mockSignInWithGoogle).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -501,7 +488,7 @@ describe('DialogAuth', () => {
     });
 
     it('should maintain focus management during loading', async () => {
-      vi.mocked(api.signInWithGoogle).mockImplementation(
+      mockSignInWithGoogle.mockImplementation(
         () =>
           new Promise((resolve) =>
             setTimeout(
@@ -528,7 +515,7 @@ describe('DialogAuth', () => {
 
   describe('Edge Cases', () => {
     it('should handle null response from signInWithGoogle', async () => {
-      vi.mocked(api.signInWithGoogle).mockResolvedValue(null as any);
+      mockSignInWithGoogle.mockResolvedValue(null as any);
 
       renderDialogAuth();
 
@@ -537,7 +524,7 @@ describe('DialogAuth', () => {
     });
 
     it('should handle empty error message', async () => {
-      vi.mocked(api.signInWithGoogle).mockRejectedValue(new Error(''));
+      mockSignInWithGoogle.mockRejectedValue(new Error(''));
 
       renderDialogAuth();
 
@@ -553,7 +540,7 @@ describe('DialogAuth', () => {
 
     it('should handle very long error messages', async () => {
       const longError = 'A'.repeat(1000);
-      vi.mocked(api.signInWithGoogle).mockRejectedValue(new Error(longError));
+      mockSignInWithGoogle.mockRejectedValue(new Error(longError));
 
       renderDialogAuth();
 

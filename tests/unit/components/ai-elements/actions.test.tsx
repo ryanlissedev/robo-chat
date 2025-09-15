@@ -1,3 +1,4 @@
+import React from 'react';
 /**
  * Comprehensive unit tests for Actions components
  * Ensuring 100% test coverage for production validation

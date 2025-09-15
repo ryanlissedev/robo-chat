@@ -1,3 +1,4 @@
+import React from 'react';
 /**
  * Comprehensive unit tests for Image component
  * Ensuring 100% test coverage for production validation
@@ -9,16 +10,26 @@ import { Image } from '@/components/ai-elements/image';
 
 // Mock Next.js Image component
 vi.mock('next/image', () => ({
-  default: ({ src, alt, width, height, className, ...props }: any) => (
-    <img
-      src={src}
-      alt={alt}
-      width={width}
-      height={height}
-      className={className}
-      {...props}
-    />
-  ),
+  default: ({ src, alt, width, height, className, priority, quality, placeholder, ...props }: any) => {
+    // Filter out Next.js-specific props that shouldn't be passed to DOM
+    const {
+      priority: _,
+      quality: __,
+      placeholder: ___,
+      ...domProps
+    } = props;
+
+    return (
+      <img
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        className={className}
+        {...domProps}
+      />
+    );
+  },
 }));
 
 describe('Image Component', () => {
@@ -133,7 +144,7 @@ describe('Image Component', () => {
     const { container } = render(
       <Image
         {...sampleImageData}
-        priority={true}
+        priority
         loading="eager"
         quality={90}
         placeholder="blur"

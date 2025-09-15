@@ -1,3 +1,4 @@
+import React from 'react';
 import { Check, X } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useMemo, useRef, useState } from 'react';

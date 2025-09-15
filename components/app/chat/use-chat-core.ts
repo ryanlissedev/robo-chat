@@ -212,6 +212,7 @@ export function useChatCore({
         verbosity,
         reasoningSummary,
         chatId,
+        currentMessages: messages,
       };
 
       const result = await submitMessageScenario(
@@ -300,6 +301,7 @@ export function useChatCore({
           systemPrompt,
           verbosity,
           reasoningSummary,
+          currentMessages: messages,
         };
 
         const dependencies = {

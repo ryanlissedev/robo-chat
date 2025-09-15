@@ -1,3 +1,4 @@
+import React from 'react';
 import type { UIMessage as MessageType } from '@ai-sdk/react';
 import { memo, useCallback, useState } from 'react';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';

@@ -1,77 +1,77 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { validateUserIdentity } from '@/lib/server/api';
-import { isSupabaseEnabled } from '@/lib/supabase/config';
-import { createClient } from '@/lib/supabase/server';
-import { createGuestServerClient } from '@/lib/supabase/server-guest';
+import {
+  createMockSupabaseClient,
+  setupTestEnvironment,
+  resetEnvironment,
+  setupMockDbChain,
+  createMockAuthResponse,
+  createMockAuthUser,
+  createMockDbResponse,
+} from '../../utils/supabase-mocks';
 
-// Mock dependencies
+// Mock dependencies with hoisted functions
+const mockCreateClient = vi.hoisted(() => vi.fn());
+const mockCreateGuestServerClient = vi.hoisted(() => vi.fn());
+const mockIsSupabaseEnabled = vi.hoisted(() => vi.fn());
+
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(),
+  createClient: mockCreateClient,
 }));
 
 vi.mock('@/lib/supabase/server-guest', () => ({
-  createGuestServerClient: vi.fn(),
+  createGuestServerClient: mockCreateGuestServerClient,
 }));
 
-// Using global standardized mock from tests/setup.ts
-
-// Mock Supabase client
-const mockSupabaseClient = {
-  auth: {
-    getUser: vi.fn(),
-  },
-  from: vi.fn(() => ({
-    select: vi.fn(() => ({
-      eq: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          maybeSingle: vi.fn(),
-        })),
-      })),
-    })),
-    insert: vi.fn(),
-  })),
-};
+vi.mock('@/lib/supabase/config', () => ({
+  isSupabaseEnabled: mockIsSupabaseEnabled,
+}));
 
 describe('lib/server/api.ts - Server API Validation', () => {
   const mockUserId = 'test-user-123';
   const mockGuestUserId = 'guest-456';
   const mockTempGuestUserId = 'temp-guest-789';
+  let mockSupabaseClient: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Setup test environment
+    setupTestEnvironment(true);
+
+    // Create mock client
+    mockSupabaseClient = createMockSupabaseClient();
+
+    // Setup default mock implementations
+    mockCreateClient.mockResolvedValue(mockSupabaseClient);
+    mockCreateGuestServerClient.mockResolvedValue(mockSupabaseClient);
+    mockIsSupabaseEnabled.mockReturnValue(true);
+
     // Reset environment variables
     delete process.env.DISABLE_RATE_LIMIT;
-    if (process.env.NODE_ENV !== undefined) {
-      delete (process.env as any).NODE_ENV;
-    }
-
-    // Default mock implementations
-    vi.mocked(createClient).mockResolvedValue(mockSupabaseClient as any);
-    vi.mocked(createGuestServerClient).mockResolvedValue(
-      mockSupabaseClient as any
-    );
-    vi.mocked(isSupabaseEnabled).mockReturnValue(true);
+    process.env.NODE_ENV = 'test';
   });
 
   afterEach(() => {
+    resetEnvironment();
     vi.restoreAllMocks();
   });
 
   describe('validateUserIdentity - Supabase Disabled', () => {
     it('should return null when Supabase is disabled', async () => {
-      vi.mocked(isSupabaseEnabled).mockReturnValue(false);
+      mockIsSupabaseEnabled.mockReturnValue(false);
 
       const result = await validateUserIdentity(mockUserId, true);
 
       expect(result).toBeNull();
-      expect(createClient).not.toHaveBeenCalled();
-      expect(createGuestServerClient).not.toHaveBeenCalled();
+      expect(mockCreateClient).not.toHaveBeenCalled();
+      expect(mockCreateGuestServerClient).not.toHaveBeenCalled();
     });
   });
 
   describe('validateUserIdentity - Client Creation Errors', () => {
     it('should throw error when authenticated client creation fails', async () => {
-      vi.mocked(createClient).mockResolvedValue(null);
+      mockCreateClient.mockResolvedValue(null);
 
       await expect(validateUserIdentity(mockUserId, true)).rejects.toThrow(
         'Failed to initialize Supabase client'
@@ -79,7 +79,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
     });
 
     it('should throw error when guest client creation fails', async () => {
-      vi.mocked(createGuestServerClient).mockResolvedValue(null);
+      mockCreateGuestServerClient.mockResolvedValue(null);
 
       await expect(
         validateUserIdentity(mockGuestUserId, false)
@@ -89,26 +89,19 @@ describe('lib/server/api.ts - Server API Validation', () => {
 
   describe('validateUserIdentity - Authenticated Users', () => {
     it('should validate authenticated user successfully', async () => {
-      const mockAuthData = {
-        data: {
-          user: { id: mockUserId },
-        },
-        error: null,
-      };
+      const mockUser = createMockAuthUser(mockUserId);
+      const mockAuthData = createMockAuthResponse(mockUser);
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
       const result = await validateUserIdentity(mockUserId, true);
 
       expect(result).toBe(mockSupabaseClient);
-      expect(createClient).toHaveBeenCalled();
+      expect(mockCreateClient).toHaveBeenCalled();
       expect(mockSupabaseClient.auth.getUser).toHaveBeenCalled();
     });
 
     it('should throw error when auth.getUser fails', async () => {
-      const mockAuthError = {
-        data: null,
-        error: { message: 'Auth error' },
-      };
+      const mockAuthError = createMockAuthResponse(null, { message: 'Auth error' });
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthError);
 
       await expect(validateUserIdentity(mockUserId, true)).rejects.toThrow(
@@ -117,10 +110,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
     });
 
     it('should throw error when no user data returned', async () => {
-      const mockAuthData = {
-        data: { user: null },
-        error: null,
-      };
+      const mockAuthData = createMockAuthResponse(null);
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
       await expect(validateUserIdentity(mockUserId, true)).rejects.toThrow(
@@ -129,12 +119,8 @@ describe('lib/server/api.ts - Server API Validation', () => {
     });
 
     it('should throw error when user ID does not match', async () => {
-      const mockAuthData = {
-        data: {
-          user: { id: 'different-user-id' },
-        },
-        error: null,
-      };
+      const mockUser = createMockAuthUser('different-user-id');
+      const mockAuthData = createMockAuthResponse(mockUser);
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
       await expect(validateUserIdentity(mockUserId, true)).rejects.toThrow(
@@ -143,12 +129,8 @@ describe('lib/server/api.ts - Server API Validation', () => {
     });
 
     it('should handle missing user ID in auth data', async () => {
-      const mockAuthData = {
-        data: {
-          user: { id: null },
-        },
-        error: null,
-      };
+      const mockUser = createMockAuthUser(null as any);
+      const mockAuthData = createMockAuthResponse(mockUser);
       mockSupabaseClient.auth.getUser.mockResolvedValue(mockAuthData);
 
       await expect(validateUserIdentity(mockUserId, true)).rejects.toThrow(
@@ -164,7 +146,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
       const result = await validateUserIdentity(mockGuestUserId, false);
 
       expect(result).toBe(mockSupabaseClient);
-      expect(createGuestServerClient).toHaveBeenCalled();
+      expect(mockCreateGuestServerClient).toHaveBeenCalled();
       expect(mockSupabaseClient.from).not.toHaveBeenCalled();
     });
 
@@ -174,7 +156,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
       const result = await validateUserIdentity(mockGuestUserId, false);
 
       expect(result).toBe(mockSupabaseClient);
-      expect(createGuestServerClient).toHaveBeenCalled();
+      expect(mockCreateGuestServerClient).toHaveBeenCalled();
       expect(mockSupabaseClient.from).not.toHaveBeenCalled();
     });
 
@@ -185,7 +167,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
       const result = await validateUserIdentity(mockGuestUserId, false);
 
       expect(result).toBe(mockSupabaseClient);
-      expect(createGuestServerClient).toHaveBeenCalled();
+      expect(mockCreateGuestServerClient).toHaveBeenCalled();
       expect(mockSupabaseClient.from).not.toHaveBeenCalled();
     });
   });

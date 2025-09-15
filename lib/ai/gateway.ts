@@ -7,7 +7,7 @@
  * All new code should use openproviders() directly from lib/openproviders/index.ts
  */
 
-import { generateText, streamText } from 'ai';
+import { generateText, type LanguageModel, streamText } from 'ai';
 import logger from '@/lib/utils/logger';
 import { openproviders } from '../openproviders';
 import { getGatewayConfig } from '../openproviders/env';
@@ -23,7 +23,7 @@ export interface GatewayConfig {
 
 export interface ProviderClient {
   type: 'openai' | 'anthropic' | 'ai-sdk';
-  client: any; // AI SDK v5 LanguageModel
+  client: LanguageModel; // AI SDK v5 LanguageModel
   isGateway: boolean;
 }
 
@@ -51,11 +51,18 @@ export interface GatewayStatus {
   openai: {
     configured: boolean;
     direct?: boolean;
+    gateway?: boolean;
   };
   anthropic: {
     configured: boolean;
     direct?: boolean;
+    gateway?: boolean;
   };
+}
+
+export interface GatewayTestResult {
+  success: boolean;
+  error?: string;
 }
 
 /**
@@ -65,11 +72,15 @@ export interface GatewayStatus {
 // eslint-disable-next-line deprecation/deprecation
 export class AIGateway {
   private readonly config: GatewayConfig;
+  private clientCache: Map<string, ProviderClient> = new Map();
 
   constructor(config: GatewayConfig = {}) {
     // Merge with environment variables for backward compatibility
     this.config = {
-      mode: config.mode || (process.env.AI_GATEWAY_MODE as any) || 'auto',
+      mode:
+        config.mode ||
+        ((process.env.AI_GATEWAY_MODE as 'direct' | 'gateway' | 'auto' | undefined) ??
+          'auto'),
       gatewayUrl: config.gatewayUrl || process.env.AI_GATEWAY_BASE_URL,
       gatewayApiKey: config.gatewayApiKey || process.env.AI_GATEWAY_API_KEY,
       openaiApiKey: config.openaiApiKey || process.env.OPENAI_API_KEY,
@@ -79,10 +90,78 @@ export class AIGateway {
   }
 
   /**
+   * Test gateway connection for a specific provider
+   */
+  async testGatewayConnection(provider: 'openai' | 'anthropic'): Promise<GatewayTestResult> {
+    const gatewayUrl = this.config.gatewayUrl;
+    const gatewayApiKey = this.config.gatewayApiKey;
+
+    // Check basic configuration
+    if (!gatewayUrl) {
+      return { success: false, error: 'Gateway URL not configured' };
+    }
+
+    if (!gatewayApiKey) {
+      return { success: false, error: 'Gateway API key not configured' };
+    }
+
+    // Validate URL format
+    try {
+      new URL(gatewayUrl);
+    } catch {
+      return { success: false, error: 'Invalid URL format' };
+    }
+
+    // Test gateway connectivity with a lightweight request
+    try {
+      const testUrl = `${gatewayUrl.replace(/\/$/, '')}/${provider}/chat/completions`;
+
+      const response = await fetch(testUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${gatewayApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model:
+            provider === 'openai' ? 'gpt-3.5-turbo' : 'claude-3-haiku-20240307',
+          messages: [{ role: 'user', content: 'test' }],
+          'max_tokens': 1,
+        }),
+      });
+
+      // Accept various response codes that indicate the gateway is responding
+      if (response.status === 200 || response.status === 401 || response.status === 403) {
+        return { success: true };
+      }
+
+      // 404/405 typically means the gateway doesn't have the provider configured
+      if (response.status === 404 || response.status === 405) {
+        return { success: false, error: `Gateway does not support ${provider} provider` };
+      }
+
+      return { success: false, error: `Gateway returned status ${response.status}` };
+    } catch (_error) {
+      return {
+        success: false,
+        error: _error instanceof Error ? _error.message : 'Network error',
+      };
+    }
+  }
+
+  /**
    * Get OpenAI client using AI SDK v5 openproviders()
    * @deprecated Use openproviders() directly
    */
   async getOpenAIClient(): Promise<ProviderClient> {
+    const cacheKey = 'openai';
+
+    // Check cache first
+    if (this.clientCache.has(cacheKey)) {
+      const cached = this.clientCache.get(cacheKey);
+      if (cached) return cached;
+    }
+
     const gateway = getGatewayConfig();
     const hasApiKey = this.config.openaiApiKey || process.env.OPENAI_API_KEY;
 
@@ -90,41 +169,87 @@ export class AIGateway {
       throw new Error('No OpenAI configuration available');
     }
 
-    try {
-      // Use a representative OpenAI model for the client
+    // Direct mode: always use direct API
+    if (this.config.mode === 'direct') {
+      const model = openproviders(
+        'gpt-4o-mini' as SupportedModel,
+        { forceDirect: true },
+        this.config.openaiApiKey
+      );
+      const client = {
+        type: 'openai' as const,
+        client: model,
+        isGateway: false,
+      };
+      this.clientCache.set(cacheKey, client);
+      return client;
+    }
+
+    // Gateway mode: must use gateway
+    if (this.config.mode === 'gateway') {
+      const testResult = await this.testGatewayConnection('openai');
+      if (!testResult.success) {
+        throw new Error(`Gateway required but failed: ${testResult.error}`);
+      }
+
       const model = openproviders(
         'gpt-4o-mini' as SupportedModel,
         {},
         this.config.openaiApiKey
       );
-
-      return {
-        type: 'openai',
+      const client = {
+        type: 'openai' as const,
         client: model,
-        isGateway: gateway.enabled && this.config.mode !== 'direct',
+        isGateway: true,
       };
-    } catch (error) {
-      if (this.config.mode === 'gateway') {
-        throw new Error(
-          `Gateway required but failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-        );
-      }
-      if (this.config.mode === 'auto') {
-        logger.warn('Gateway connection failed, falling back to direct API');
-        // Try direct mode
-        const model = openproviders(
-          'gpt-4o-mini' as SupportedModel,
-          { forceDirect: true },
-          this.config.openaiApiKey
-        );
-        return {
-          type: 'openai',
-          client: model,
-          isGateway: false,
-        };
-      }
-      throw error;
+      this.clientCache.set(cacheKey, client);
+      return client;
     }
+
+    // Auto mode: try gateway first, fallback to direct
+    if (gateway.enabled) {
+      try {
+        const testResult = await this.testGatewayConnection('openai');
+        if (testResult.success) {
+          const model = openproviders(
+            'gpt-4o-mini' as SupportedModel,
+            {},
+            this.config.openaiApiKey
+          );
+          const client = {
+            type: 'openai' as const,
+            client: model,
+            isGateway: true,
+          };
+          this.clientCache.set(cacheKey, client);
+          return client;
+        }
+      } catch (error) {
+        logger.warn(
+          { err: error },
+          'Gateway test failed, falling back to direct API'
+        );
+      }
+    }
+
+    // Fallback to direct API
+    if (hasApiKey) {
+      logger.warn('Using direct OpenAI API as fallback');
+      const model = openproviders(
+        'gpt-4o-mini' as SupportedModel,
+        { forceDirect: true },
+        this.config.openaiApiKey
+      );
+      const client = {
+        type: 'openai' as const,
+        client: model,
+        isGateway: false,
+      };
+      this.clientCache.set(cacheKey, client);
+      return client;
+    }
+
+    throw new Error('No OpenAI configuration available');
   }
 
   /**
@@ -132,6 +257,14 @@ export class AIGateway {
    * @deprecated Use openproviders() directly
    */
   async getAnthropicClient(): Promise<ProviderClient> {
+    const cacheKey = 'anthropic';
+
+    // Check cache first
+    if (this.clientCache.has(cacheKey)) {
+      const cached = this.clientCache.get(cacheKey);
+      if (cached) return cached;
+    }
+
     const gateway = getGatewayConfig();
     const hasApiKey =
       this.config.anthropicApiKey || process.env.ANTHROPIC_API_KEY;
@@ -148,13 +281,15 @@ export class AIGateway {
         this.config.anthropicApiKey
       );
 
-      return {
-        type: 'anthropic',
+      const client = {
+        type: 'anthropic' as const,
         client: model,
         isGateway: gateway.enabled && this.config.mode !== 'direct',
       };
+      this.clientCache.set(cacheKey, client);
+      return client;
     } catch (error) {
-      throw new Error(`No Anthropic configuration available`);
+      throw new Error('No Anthropic configuration available');
     }
   }
 
@@ -176,6 +311,7 @@ export class AIGateway {
             gateway.enabled
         ),
         direct: Boolean(this.config.openaiApiKey || process.env.OPENAI_API_KEY),
+        gateway: gateway.enabled,
       },
       anthropic: {
         configured: Boolean(
@@ -186,6 +322,7 @@ export class AIGateway {
         direct: Boolean(
           this.config.anthropicApiKey || process.env.ANTHROPIC_API_KEY
         ),
+        gateway: gateway.enabled,
       },
     };
   }
@@ -212,7 +349,7 @@ export class AIGateway {
       const result = await generateText({
         model,
         prompt,
-        ...(options.maxTokens && { maxCompletionTokens: options.maxTokens }),
+        ...(options.maxTokens ? { maxCompletionTokens: options.maxTokens } : {}),
         temperature: options.temperature,
         topP: options.topP,
       });
@@ -243,7 +380,7 @@ export class AIGateway {
         const result = await generateText({
           model,
           prompt,
-          ...(options.maxTokens && { maxCompletionTokens: options.maxTokens }),
+          ...(options.maxTokens ? { maxCompletionTokens: options.maxTokens } : {}),
           temperature: options.temperature,
           topP: options.topP,
         });
@@ -284,7 +421,7 @@ export class AIGateway {
     return streamText({
       model,
       prompt,
-      ...(options.maxTokens && { maxCompletionTokens: options.maxTokens }),
+      ...(options.maxTokens ? { maxCompletionTokens: options.maxTokens } : {}),
       temperature: options.temperature,
       topP: options.topP,
     });

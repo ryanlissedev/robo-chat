@@ -1,3 +1,4 @@
+import React from 'react';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiKeyManager } from '@/app/settings/components/api-key-manager';

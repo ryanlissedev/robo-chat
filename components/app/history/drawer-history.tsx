@@ -1,3 +1,4 @@
+import React from 'react';
 import { Check, Pencil, Search, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';

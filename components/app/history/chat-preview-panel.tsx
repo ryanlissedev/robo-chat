@@ -1,3 +1,4 @@
+import React from 'react';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { MessageContent } from '@/components/prompt-kit/message';

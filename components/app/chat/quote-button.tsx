@@ -1,3 +1,4 @@
+import React from 'react';
 import { Quote } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
 import useClickOutside from '@/components/motion-primitives/useClickOutside';

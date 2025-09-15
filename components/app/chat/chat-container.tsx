@@ -1,3 +1,4 @@
+import React from 'react';
 'use client';
 
 import { MultiChat } from '@/components/app/multi-chat/multi-chat';

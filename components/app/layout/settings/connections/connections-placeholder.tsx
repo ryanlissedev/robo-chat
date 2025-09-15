@@ -1,3 +1,4 @@
+import React from 'react';
 import { Plug } from 'lucide-react';
 
 export function ConnectionsPlaceholder() {

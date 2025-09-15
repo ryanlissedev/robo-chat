@@ -1,3 +1,4 @@
+import React from 'react';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchImages } from '@/components/app/chat/search-images';
@@ -21,13 +22,33 @@ vi.mock('next/image', () => ({
 
 // Mock utils functions
 vi.mock('@/components/app/chat/utils', () => ({
-  addUTM: vi.fn((url: string) => `${url}?utm_source=test`),
-  getFavicon: vi.fn(
-    (url: string) => `https://favicon.service/${encodeURIComponent(url)}`
-  ),
+  addUTM: vi.fn((url: string) => {
+    try {
+      const u = new URL(url);
+      u.searchParams.set('utm_source', 'zola.chat');
+      u.searchParams.set('utm_medium', 'research');
+      return u.toString();
+    } catch {
+      return url;
+    }
+  }),
+  getFavicon: vi.fn((url: string) => {
+    if (!url) return null;
+    try {
+      const urlObj = new URL(url);
+      if (!['http:', 'https:'].includes(urlObj.protocol)) {
+        return null;
+      }
+      const domain = urlObj.hostname;
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    } catch {
+      return null;
+    }
+  }),
   getSiteName: vi.fn((url: string) => {
     try {
-      return new URL(url).hostname.replace('www.', '');
+      const urlObj = new URL(url);
+      return urlObj.hostname.replace(/^www\./, '');
     } catch {
       return url;
     }
@@ -106,13 +127,14 @@ describe('SearchImages', () => {
 
       // Check that image links have correct href (with UTM)
       const imageLinks = links.filter((link) =>
-        link.getAttribute('href')?.includes('utm_source=test')
+        link.getAttribute('href')?.includes('utm_source=zola.chat')
       );
       expect(imageLinks.length).toBeGreaterThan(0);
 
       imageLinks.forEach((link) => {
         const href = link.getAttribute('href');
-        expect(href).toContain('utm_source=test');
+        expect(href).toContain('utm_source=zola.chat');
+        expect(href).toContain('utm_medium=research');
       });
     });
 
@@ -130,7 +152,8 @@ describe('SearchImages', () => {
     it('should apply correct CSS classes to grid', () => {
       renderSearchImages();
 
-      const gridContainer = document.querySelector('div');
+      const gridContainer = document.querySelector('.my-4.grid');
+      expect(gridContainer).toHaveClass('my-4');
       expect(gridContainer).toHaveClass('grid');
       expect(gridContainer).toHaveClass('grid-cols-1');
       expect(gridContainer).toHaveClass('md:grid-cols-2');
@@ -141,11 +164,13 @@ describe('SearchImages', () => {
     it('should apply correct styling to image links', () => {
       renderSearchImages();
 
-      const imageLinks = document.querySelectorAll('a');
+      const imageLinks = document.querySelectorAll('a.group.relative.block');
+      expect(imageLinks.length).toBe(3); // One for each mock result
+
       imageLinks.forEach((link) => {
-        expect(link).toHaveClass('block');
-        expect(link).toHaveClass('relative');
         expect(link).toHaveClass('group');
+        expect(link).toHaveClass('relative');
+        expect(link).toHaveClass('block');
         expect(link).toHaveClass('overflow-hidden');
         expect(link).toHaveClass('rounded-lg');
         expect(link).toHaveClass('bg-gray-100');
@@ -251,9 +276,8 @@ describe('SearchImages', () => {
         expect(favicons.length).toBe(3);
 
         favicons.forEach((favicon, index) => {
-          const expectedFaviconUrl = `https://favicon.service/${encodeURIComponent(
-            mockResults[index].sourceUrl
-          )}`;
+          const domain = new URL(mockResults[index].sourceUrl).hostname;
+          const expectedFaviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
           expect(favicon).toHaveAttribute('src', expectedFaviconUrl);
         });
       });
@@ -398,7 +422,7 @@ describe('SearchImages', () => {
     it('should apply responsive grid classes', async () => {
       renderSearchImages();
 
-      const gridContainer = document.querySelector('div');
+      const gridContainer = document.querySelector('.my-4.grid');
       expect(gridContainer).toHaveClass('grid-cols-1');
       expect(gridContainer).toHaveClass('md:grid-cols-2');
       expect(gridContainer).toHaveClass('lg:grid-cols-3');
@@ -407,7 +431,9 @@ describe('SearchImages', () => {
     it('should maintain aspect ratio constraints', async () => {
       renderSearchImages();
 
-      const imageLinks = document.querySelectorAll('a');
+      const imageLinks = document.querySelectorAll('a.group.relative.block');
+      expect(imageLinks.length).toBe(3);
+
       imageLinks.forEach((link) => {
         expect(link).toHaveClass('aspect-video');
       });
@@ -505,7 +531,7 @@ describe('SearchImages', () => {
       const imageLinks = screen.getAllByRole('link', { hidden: true });
       imageLinks.forEach((link) => {
         const href = link.getAttribute('href');
-        if (href?.includes('utm_source=test')) {
+        if (href?.includes('utm_source=zola.chat')) {
           // Image links should have proper context through their content
           expect(link.querySelector('img')).toBeInTheDocument();
         }
@@ -579,7 +605,8 @@ describe('SearchImages', () => {
         expect(mainImages.length).toBeGreaterThanOrEqual(0);
 
         // Verify the link structure is still there - should only have image link, no favicon link due to empty sourceUrl
-        const links = screen.getAllByRole('link', { hidden: true });
+        // Use querySelector instead of screen.getAllByRole since empty sourceUrl might make links not have proper role
+        const links = document.querySelectorAll('a');
         expect(links).toHaveLength(1); // Only the main image link, no favicon link
       });
     });
