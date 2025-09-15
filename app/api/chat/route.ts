@@ -13,17 +13,28 @@ export async function POST(req: Request) {
     const validationResult = ChatRequestSchema.safeParse(requestBody);
 
     if (!validationResult.success) {
-      logger.warn(
-        { errors: validationResult.error.flatten() },
-        'Invalid chat request'
-      );
-      return new Response(
-        JSON.stringify({ errors: validationResult.error.flatten() }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      const zerr = validationResult.error;
+      const issues = (zerr.issues || []) as Array<{ path?: unknown[] }>;
+      let message = 'Invalid chat request';
+      if (
+        issues.some((issue: { path?: unknown[] }) =>
+          Array.isArray(issue.path) && issue.path.includes('messages')
+        )
+      ) {
+        message = 'missing or invalid messages';
+      } else if (
+        issues.some((issue: { path?: unknown[] }) =>
+          Array.isArray(issue.path) && issue.path.includes('chatId')
+        ) ||
+        issues.some((issue: { path?: unknown[] }) =>
+          Array.isArray(issue.path) && issue.path.includes('userId')
+        )
+      ) {
+        message = 'missing chatId or userId';
+      }
+
+      logger.warn({ errors: zerr.flatten() }, 'Invalid chat request');
+      return createErrorResponse({ message, statusCode: 400 });
     }
 
     const requestData = validationResult.data;

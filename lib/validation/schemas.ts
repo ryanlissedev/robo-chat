@@ -17,11 +17,12 @@ const MessagePartSchema = z.discriminatedUnion('type', [
   ToolCallPartSchema.passthrough(),
 ]);
 
+// Loosen constraints to allow upstream transformers to normalize content
 const UIMessageSchema = z
   .object({
-    id: z.string(),
+    id: z.string().optional(),
     role: z.enum(['user', 'assistant', 'system']),
-    content: z.string(),
+    content: z.unknown().optional(),
     createdAt: z.preprocess(
       (arg) =>
         typeof arg === 'string' || arg instanceof Date
@@ -29,7 +30,7 @@ const UIMessageSchema = z
           : undefined,
       z.date().optional()
     ),
-    parts: z.array(MessagePartSchema).optional().default([]),
+    parts: z.array(MessagePartSchema).optional(),
     experimental_attachments: z.array(z.any()).optional(),
     model: z.string().optional(),
     provider: z.string().optional(),
@@ -47,7 +48,7 @@ const UIMessageSchema = z
   })
   .passthrough()
   .transform((data) => {
-    const { experimentalAttachments, ...rest } = data;
+    const { experimentalAttachments, ...rest } = data as any;
     return {
       ...rest,
       experimentalAttachments,
@@ -56,9 +57,11 @@ const UIMessageSchema = z
 
 export const ChatRequestSchema = z
   .object({
-    messages: z.array(UIMessageSchema),
-    chatId: z.string(),
-    userId: z.string(),
+    messages: z
+      .array(z.any())
+      .nonempty({ message: 'missing or invalid messages' }),
+    chatId: z.string().min(1, { message: 'missing chatId or userId' }),
+    userId: z.string().min(1, { message: 'missing chatId or userId' }),
     model: z.string(),
     isAuthenticated: z.boolean(),
     systemPrompt: z.string(),
@@ -73,7 +76,7 @@ export const ChatRequestSchema = z
       .optional(),
   })
   .transform((data) => {
-    const { message_group_id: messageGroupId, ...rest } = data;
+    const { message_group_id: messageGroupId, ...rest } = data as any;
     return {
       ...rest,
       messageGroupId,
