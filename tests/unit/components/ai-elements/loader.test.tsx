@@ -107,7 +107,7 @@ describe('Loader Component', () => {
     const paths = svg?.querySelectorAll('path');
     paths?.forEach((path) => {
       expect(path).toHaveAttribute('stroke', 'currentColor');
-      expect(path).toHaveAttribute('strokeWidth', '1.5');
+      expect(path).toHaveAttribute('stroke-width', '1.5');
     });
   });
 
@@ -115,7 +115,7 @@ describe('Loader Component', () => {
     const { container } = render(<Loader />);
 
     const svg = container.querySelector('svg');
-    expect(svg).toHaveAttribute('strokeLinejoin', 'round');
+    expect(svg).toHaveAttribute('stroke-linejoin', 'round');
   });
 
   it('should handle zero size', () => {

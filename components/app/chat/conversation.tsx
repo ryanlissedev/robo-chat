@@ -37,7 +37,7 @@ function ConversationComponent({
   const isEmpty = useMemo(() => !messages || messages.length === 0, [messages]);
 
   if (isEmpty) {
-    return <div className="h-full w-full" role="generic" />;
+    return <div className="h-full w-full" role="empty-conversation" />;
   }
 
   return (
@@ -117,9 +117,9 @@ export const Conversation = memo(
   (prevProps, nextProps) => {
     return (
       prevProps.status === nextProps.status &&
-      prevProps.messages.length === nextProps.messages.length &&
-      prevProps.messages.every((msg, idx) => {
-        const nextMsg = nextProps.messages[idx];
+      (prevProps.messages?.length ?? 0) === (nextProps.messages?.length ?? 0) &&
+      (prevProps.messages ?? []).every((msg, idx) => {
+        const nextMsg = nextProps.messages?.[idx];
         return (
           msg &&
           nextMsg &&
