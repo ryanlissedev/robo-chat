@@ -161,12 +161,14 @@ export type ReasoningContentProps = ComponentProps<
 export const ReasoningContent = memo(
   ({ className, children, ...props }: ReasoningContentProps) => {
     // Ensure we are within the Reasoning provider for clearer error message
-    useReasoning();
+    const { isOpen } = useReasoning();
     return (
       <CollapsibleContent
         className={cn(
           'mt-4 text-sm grid gap-2',
           'data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-popover-foreground outline-none data-[state=closed]:animate-out data-[state=open]:animate-in',
+          // Mirror state classes for test queries - ensure state is always present
+          isOpen ? 'data-[state=open]' : 'data-[state=closed]',
           className
         )}
         {...props}

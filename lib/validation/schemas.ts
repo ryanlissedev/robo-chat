@@ -47,10 +47,10 @@ const UIMessageSchema = z
   })
   .passthrough()
   .transform((data) => {
-    const { experimentalAttachments, ...rest } = data;
+    const { experimental_attachments, ...rest } = data;
     return {
       ...rest,
-      experimentalAttachments,
+      experimental_attachments,
     };
   });
 

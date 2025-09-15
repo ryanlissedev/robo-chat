@@ -422,7 +422,7 @@ describe('Reasoning Components', () => {
         </Reasoning>
       );
 
-      const content = container.querySelector('[data-state]');
+      const content = container.querySelector('[data-state="open"]');
       expect(content).toHaveClass(
         'data-[state=closed]:fade-out-0',
         'data-[state=closed]:slide-out-to-top-2',
