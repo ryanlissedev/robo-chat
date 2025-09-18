@@ -46,6 +46,7 @@ export class ChatService {
         model: resolvedModel,
         isAuthenticated,
         hasGuestCredentials: RequestValidator.hasGuestCredentials(req),
+        request: req,
       });
 
       // Step 3: Prepare and validate messages

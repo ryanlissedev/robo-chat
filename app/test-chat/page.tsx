@@ -73,7 +73,7 @@ export default function TestChat() {
       </div>
 
       <form
-        onSubmit={(e) => {
+        onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
           e.preventDefault();
           if (input.trim()) {
             // Send message with proper format for AI SDK v5
@@ -85,7 +85,7 @@ export default function TestChat() {
       >
         <input
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
           className="flex-1 border p-2"
           placeholder="Type a message..."
         />

@@ -1,7 +1,8 @@
 'use client';
 
 import { CheckIcon, CopyIcon } from 'lucide-react';
-import type { ComponentProps, HTMLAttributes, ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
+import type React from 'react';
 import { createContext, useContext, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import {
@@ -19,7 +20,7 @@ const CodeBlockContext = createContext<CodeBlockContextType>({
   code: '',
 });
 
-export type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
+export type CodeBlockProps = React.ComponentPropsWithoutRef<'div'> & {
   code: string;
   language: string;
   showLineNumbers?: boolean;
@@ -43,52 +44,54 @@ export const CodeBlock = ({
       {...props}
     >
       <div className="relative">
-        <SyntaxHighlighter
-          className="overflow-hidden dark:hidden"
-          codeTagProps={{
-            className: 'font-mono text-sm',
-          }}
-          customStyle={{
-            margin: 0,
-            padding: '1rem',
-            fontSize: '0.875rem',
-            background: 'hsl(var(--background))',
-            color: 'hsl(var(--foreground))',
-          }}
-          language={language}
-          lineNumberStyle={{
-            color: 'hsl(var(--muted-foreground))',
-            paddingRight: '1rem',
-            minWidth: '2.5rem',
-          }}
-          showLineNumbers={showLineNumbers}
-          style={oneLight}
-        >
-          {code}
-        </SyntaxHighlighter>
-        <SyntaxHighlighter
-          className="hidden overflow-hidden dark:block"
-          codeTagProps={{
-            className: 'font-mono text-sm',
-          }}
-          customStyle={{
-            margin: 0,
-            padding: '1rem',
-            fontSize: '0.875rem',
-            background: 'hsl(var(--background))',
-            color: 'hsl(var(--foreground))',
-          }}
-          language={language}
-          lineNumberStyle={{
-            color: 'hsl(var(--muted-foreground))',
-            paddingRight: '1rem',
-            minWidth: '2.5rem',
-          }}
-          showLineNumbers={showLineNumbers}
-          style={oneDark}
-        >
-          {code}
-        </SyntaxHighlighter>
+        <div className="overflow-hidden dark:hidden">
+          <SyntaxHighlighter
+            codeTagProps={{
+              style: { fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace', fontSize: '0.875rem' },
+            }}
+            customStyle={{
+              margin: 0,
+              padding: '1rem',
+              fontSize: '0.875rem',
+              background: 'hsl(var(--background))',
+              color: 'hsl(var(--foreground))',
+            }}
+            language={language}
+            lineNumberStyle={{
+              color: 'hsl(var(--muted-foreground))',
+              paddingRight: '1rem',
+              minWidth: '2.5rem',
+            }}
+            showLineNumbers={showLineNumbers}
+            style={oneLight}
+          >
+            {code}
+          </SyntaxHighlighter>
+        </div>
+        <div className="hidden overflow-hidden dark:block">
+          <SyntaxHighlighter
+            codeTagProps={{
+              style: { fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace', fontSize: '0.875rem' },
+            }}
+            customStyle={{
+              margin: 0,
+              padding: '1rem',
+              fontSize: '0.875rem',
+              background: 'hsl(var(--background))',
+              color: 'hsl(var(--foreground))',
+            }}
+            language={language}
+            lineNumberStyle={{
+              color: 'hsl(var(--muted-foreground))',
+              paddingRight: '1rem',
+              minWidth: '2.5rem',
+            }}
+            showLineNumbers={showLineNumbers}
+            style={oneDark}
+          >
+            {code}
+          </SyntaxHighlighter>
+        </div>
         {children && (
           <div className="absolute top-2 right-2 flex items-center gap-2">
             {children}

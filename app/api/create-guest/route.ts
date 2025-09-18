@@ -1,19 +1,28 @@
 import { createGuestServerClient } from '@/lib/supabase/server-guest';
+import { generateGuestUserId, isValidUUID } from '@/lib/utils';
 
 export async function POST(request: Request) {
   try {
     const { userId } = await request.json();
 
-    if (!userId) {
+    if (typeof userId !== 'string' || userId.trim().length === 0) {
       return new Response(JSON.stringify({ error: 'Missing userId' }), {
         status: 400,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
+
+    // For guest users, we generate a proper UUID instead of using the provided userId
+    // This ensures compatibility with PostgreSQL UUID columns
+    const normalizedUserId = userId.trim();
+    const guestUserId = isValidUUID(normalizedUserId)
+      ? normalizedUserId
+      : generateGuestUserId();
 
     const supabase = await createGuestServerClient();
     if (!supabase) {
       return new Response(
-        JSON.stringify({ user: { id: userId, anonymous: true } }),
+        JSON.stringify({ user: { id: guestUserId, anonymous: true } }),
         {
           status: 200,
         }
@@ -24,15 +33,15 @@ export async function POST(request: Request) {
     let { data: userData } = await supabase
       .from('users')
       .select('*')
-      .eq('id', userId)
+      .eq('id', guestUserId)
       .maybeSingle();
 
     if (!userData) {
       const { data, error } = await supabase
         .from('users')
         .insert({
-          id: userId,
-          email: `${userId}@anonymous.example`,
+          id: guestUserId,
+          email: `${guestUserId}@anonymous.example`,
           anonymous: true,
           message_count: 0,
           premium: false,

@@ -27,6 +27,7 @@ const getTextFromDataUrl = (dataUrl: string) => {
 
 export type MessageUserProps = {
   hasScrollAnchor?: boolean;
+  isLast?: boolean;
   attachments?: Array<{
     name: string;
     contentType: string;
@@ -44,6 +45,7 @@ export type MessageUserProps = {
 
 export function MessageUser({
   hasScrollAnchor,
+  isLast,
   attachments,
   children,
   copied,

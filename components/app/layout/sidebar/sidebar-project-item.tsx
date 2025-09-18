@@ -11,16 +11,10 @@ import useClickOutside from '@/app/hooks/use-click-outside';
 import { fetchClient } from '@/lib/fetch';
 import { cn } from '@/lib/utils';
 import { SidebarProjectMenu } from './sidebar-project-menu';
-
-type Project = {
-  id: string;
-  name: string;
-  user_id: string;
-  created_at: string;
-};
+import type { SidebarProject } from './types';
 
 type SidebarProjectItemProps = {
-  project: Project;
+  project: SidebarProject;
 };
 
 export function SidebarProjectItem({ project }: SidebarProjectItemProps) {
@@ -68,15 +62,15 @@ export function SidebarProjectItem({ project }: SidebarProjectItemProps) {
       await queryClient.cancelQueries({ queryKey: ['project', projectId] });
 
       // Snapshot the previous values
-      const previousProjects = queryClient.getQueryData(['projects']);
-      const previousProject = queryClient.getQueryData(['project', projectId]);
+      const previousProjects = queryClient.getQueryData<SidebarProject[]>(['projects']);
+      const previousProject = queryClient.getQueryData<SidebarProject>(['project', projectId]);
 
       // Optimistically update projects list
-      queryClient.setQueryData(['projects'], (old: Project[] | undefined) => {
+      queryClient.setQueryData(['projects'], (old: SidebarProject[] | undefined) => {
         if (!old) {
           return old;
         }
-        return old.map((p: Project) =>
+        return old.map((p: SidebarProject) =>
           p.id === projectId ? { ...p, name } : p
         );
       });
@@ -84,7 +78,7 @@ export function SidebarProjectItem({ project }: SidebarProjectItemProps) {
       // Optimistically update individual project
       queryClient.setQueryData(
         ['project', projectId],
-        (old: Project | undefined) => {
+        (old: SidebarProject | undefined) => {
           if (!old) {
             return old;
           }

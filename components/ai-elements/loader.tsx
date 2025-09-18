@@ -1,4 +1,4 @@
-import type { HTMLAttributes } from 'react';
+import type React from 'react';
 import { useId } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -85,7 +85,7 @@ const LoaderIcon = ({ size = 16 }: LoaderIconProps) => {
   );
 };
 
-export type LoaderProps = HTMLAttributes<HTMLDivElement> & {
+export type LoaderProps = React.ComponentPropsWithoutRef<'div'> & {
   size?: number;
 };
 

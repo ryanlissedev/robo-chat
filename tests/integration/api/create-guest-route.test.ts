@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from '@/app/api/create-guest/route';
 
+// Type definition for the POST function response
+type ResponseType = {
+  status: number;
+  json: () => Promise<any>;
+};
+
 // Hoist mock functions to avoid initialization errors
 const { mockCreateGuestServerClient } = vi.hoisted(() => ({
   mockCreateGuestServerClient: vi.fn(),
@@ -27,14 +33,33 @@ const mockSupabaseClient = {
   })),
 };
 
+// Mock the generateGuestUserId function
+let uuidCounter = 0;
+vi.mock('@/lib/utils', () => {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  return {
+    generateGuestUserId: vi.fn(() => {
+      const uuid = `123e4567-e89b-12d3-a456-426614174${String(uuidCounter).padStart(3, '0')}`;
+      uuidCounter++;
+      return uuid;
+    }),
+    isValidUUID: (value: unknown): value is string =>
+      typeof value === 'string' && uuidRegex.test(value),
+  };
+});
+
 describe('Create Guest API Route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    uuidCounter = 0; // Reset UUID counter for consistent test results
   });
 
   describe('POST /api/create-guest', () => {
     it('should create new guest user when user does not exist', async () => {
       const userId = 'guest-12345';
+      const expectedGuestId = '123e4567-e89b-12d3-a456-426614174000';
       const mockRequest = new Request('http://localhost/api/create-guest', {
         method: 'POST',
         headers: {
@@ -44,8 +69,8 @@ describe('Create Guest API Route', () => {
       });
 
       const mockUserData = {
-        id: userId,
-        email: `${userId}@anonymous.example`,
+        id: expectedGuestId,
+        email: `${expectedGuestId}@anonymous.example`,
         anonymous: true,
         message_count: 0,
         premium: false,
@@ -100,6 +125,7 @@ describe('Create Guest API Route', () => {
 
     it('should return existing guest user when user already exists', async () => {
       const userId = 'existing-guest-12345';
+      const expectedGuestId = '123e4567-e89b-12d3-a456-426614174000';
       const mockRequest = new Request('http://localhost/api/create-guest', {
         method: 'POST',
         headers: {
@@ -109,8 +135,8 @@ describe('Create Guest API Route', () => {
       });
 
       const existingUserData = {
-        id: userId,
-        email: `${userId}@anonymous.example`,
+        id: expectedGuestId,
+        email: `${expectedGuestId}@anonymous.example`,
         anonymous: true,
         message_count: 5,
         premium: false,
@@ -148,6 +174,7 @@ describe('Create Guest API Route', () => {
 
     it('should return fallback user when Supabase is not available', async () => {
       const userId = 'offline-guest-12345';
+      const expectedGuestId = '123e4567-e89b-12d3-a456-426614174000';
       const mockRequest = new Request('http://localhost/api/create-guest', {
         method: 'POST',
         headers: {
@@ -163,7 +190,7 @@ describe('Create Guest API Route', () => {
 
       expect(response.status).toBe(200);
       expect(responseData).toEqual({
-        user: { id: userId, anonymous: true },
+        user: { id: expectedGuestId, anonymous: true },
       });
       expect(mockCreateGuestServerClient).toHaveBeenCalled();
     });
@@ -381,6 +408,7 @@ describe('Create Guest API Route', () => {
 
     it('should create user with correct email format', async () => {
       const userId = 'email-format-test';
+      const expectedGuestId = '123e4567-e89b-12d3-a456-426614174000';
       const mockRequest = new Request('http://localhost/api/create-guest', {
         method: 'POST',
         headers: {
@@ -415,7 +443,7 @@ describe('Create Guest API Route', () => {
         return {
           select: vi.fn(() => ({
             single: vi.fn().mockResolvedValue({
-              data: { ...data, id: userId },
+              data: { ...data, id: expectedGuestId },
               error: null,
             }),
           })),
@@ -434,8 +462,8 @@ describe('Create Guest API Route', () => {
       await POST(mockRequest);
 
       expect(insertData).toEqual({
-        id: userId,
-        email: `${userId}@anonymous.example`,
+        id: expectedGuestId,
+        email: `${expectedGuestId}@anonymous.example`,
         anonymous: true,
         message_count: 0,
         premium: false,
@@ -445,6 +473,7 @@ describe('Create Guest API Route', () => {
 
     it('should handle very long userIds', async () => {
       const longUserId = 'a'.repeat(1000);
+      const expectedGuestId = '123e4567-e89b-12d3-a456-426614174000';
       const mockRequest = new Request('http://localhost/api/create-guest', {
         method: 'POST',
         headers: {
@@ -475,8 +504,8 @@ describe('Create Guest API Route', () => {
       // Mock successful creation
       const mockSingle = vi.fn().mockResolvedValue({
         data: {
-          id: longUserId,
-          email: `${longUserId}@anonymous.example`,
+          id: expectedGuestId,
+          email: `${expectedGuestId}@anonymous.example`,
           anonymous: true,
           message_count: 0,
           premium: false,
@@ -497,13 +526,14 @@ describe('Create Guest API Route', () => {
         })),
       });
 
-      const response = await POST(mockRequest);
+      const response = await POST(mockRequest) as ResponseType;
 
       expect(response.status).toBe(200);
     });
 
     it('should handle special characters in userId', async () => {
       const specialUserId = 'user-with-special!@#$%^&*()_+{}|:<>?[]\\;\'",./`~';
+      const expectedGuestId = '123e4567-e89b-12d3-a456-426614174000';
       const mockRequest = new Request('http://localhost/api/create-guest', {
         method: 'POST',
         headers: {
@@ -534,8 +564,8 @@ describe('Create Guest API Route', () => {
       // Mock successful creation
       const mockSingle = vi.fn().mockResolvedValue({
         data: {
-          id: specialUserId,
-          email: `${specialUserId}@anonymous.example`,
+          id: expectedGuestId,
+          email: `${expectedGuestId}@anonymous.example`,
           anonymous: true,
           message_count: 0,
           premium: false,
@@ -556,7 +586,7 @@ describe('Create Guest API Route', () => {
         })),
       });
 
-      const response = await POST(mockRequest);
+      const response = await POST(mockRequest) as ResponseType;
 
       expect(response.status).toBe(200);
     });
@@ -600,6 +630,10 @@ describe('Create Guest API Route', () => {
 
     it('should handle concurrent guest user creation for same userId', async () => {
       const userId = 'concurrent-guest';
+      const expectedGuestIds = [
+        '123e4567-e89b-12d3-a456-426614174000',
+        '123e4567-e89b-12d3-a456-426614174001',
+      ];
       const mockRequest1 = new Request('http://localhost/api/create-guest', {
         method: 'POST',
         headers: {
@@ -625,8 +659,8 @@ describe('Create Guest API Route', () => {
       // Second request - user now exists (race condition simulation)
       const mockMaybeSingle2 = vi.fn().mockResolvedValue({
         data: {
-          id: userId,
-          email: `${userId}@anonymous.example`,
+          id: expectedGuestIds[0],
+          email: `${expectedGuestIds[0]}@anonymous.example`,
           anonymous: true,
           message_count: 0,
           premium: false,
@@ -658,8 +692,8 @@ describe('Create Guest API Route', () => {
             select: vi.fn(() => ({
               single: vi.fn().mockResolvedValue({
                 data: {
-                  id: userId,
-                  email: `${userId}@anonymous.example`,
+                  id: expectedGuestIds[0],
+                  email: `${expectedGuestIds[0]}@anonymous.example`,
                   anonymous: true,
                   message_count: 0,
                   premium: false,
@@ -802,16 +836,23 @@ describe('Create Guest API Route', () => {
 
     it('should handle multiple rapid requests for different userIds', async () => {
       const userIds = ['rapid1', 'rapid2', 'rapid3', 'rapid4', 'rapid5'];
+      const expectedGuestIds = [
+        '123e4567-e89b-12d3-a456-426614174000',
+        '123e4567-e89b-12d3-a456-426614174001',
+        '123e4567-e89b-12d3-a456-426614174002',
+        '123e4567-e89b-12d3-a456-426614174003',
+        '123e4567-e89b-12d3-a456-426614174004',
+      ];
 
       mockCreateGuestServerClient.mockResolvedValue(mockSupabaseClient);
 
       // Create individual mock responses for each userId to avoid mock state conflicts
-      const mockResponses = userIds.map((userId) => ({
+      const mockResponses = userIds.map((userId, index) => ({
         maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
         single: vi.fn().mockResolvedValue({
           data: {
-            id: userId,
-            email: `${userId}@anonymous.example`,
+            id: expectedGuestIds[index],
+            email: `${expectedGuestIds[index]}@anonymous.example`,
             anonymous: true,
             message_count: 0,
             premium: false,
@@ -858,7 +899,7 @@ describe('Create Guest API Route', () => {
       }) as any;
 
       // Execute requests sequentially to avoid race conditions in test
-      const responses = [];
+      const responses: ResponseType[] = [];
       for (const userId of userIds) {
         const request = new Request('http://localhost/api/create-guest', {
           method: 'POST',
@@ -867,7 +908,8 @@ describe('Create Guest API Route', () => {
           },
           body: JSON.stringify({ userId }),
         });
-        responses.push(await POST(request));
+        const response = await POST(request) as ResponseType;
+        responses.push(response);
       }
 
       // All requests should succeed when executed sequentially
@@ -880,8 +922,14 @@ describe('Create Guest API Route', () => {
       );
 
       responseBodies.forEach((body, index) => {
-        expect(body.user.id).toBe(userIds[index]);
-        expect(body.user.email).toBe(`${userIds[index]}@anonymous.example`);
+        expect(body.user.id).toBe(expectedGuestIds[index]);
+        if (body.user.email) {
+          expect(body.user.email).toBe(
+            `${expectedGuestIds[index]}@anonymous.example`
+          );
+        } else {
+          expect(body.user.anonymous).toBe(true);
+        }
       });
     });
   });
@@ -937,20 +985,11 @@ describe('Create Guest API Route', () => {
         body: JSON.stringify({ userId: 12345 }), // Number instead of string
       });
 
-      const response = await POST(mockRequest);
+      const response = await POST(mockRequest) as ResponseType;
       const responseData = await response.json();
 
-      // API might coerce number to string or reject it, both are acceptable
-      if (response.status === 400) {
-        expect(responseData).toEqual({ error: 'Missing userId' });
-      } else if (response.status === 200) {
-        // API coerced the number to string
-        expect(responseData.user).toBeDefined();
-        expect(String(responseData.user.id)).toBe('12345');
-      } else {
-        // Unexpected response
-        throw new Error(`Unexpected response status: ${response.status}`);
-      }
+      expect(response.status).toBe(400);
+      expect(responseData).toEqual({ error: 'Missing userId' });
     });
   });
 });

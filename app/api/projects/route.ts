@@ -1,74 +1,103 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { type NextRequest, NextResponse } from 'next/server';
+import {
+  authenticateRequest,
+  createErrorResponse,
+} from '@/lib/api-auth';
+import { generateGuestUserId } from '@/lib/utils';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const authResult = await authenticateRequest(request);
+    const { name } = await request.json();
 
-    if (!supabase) {
-      return new Response(
-        JSON.stringify({ error: 'Supabase not available in this deployment.' }),
-        { status: 200 }
+    if (!name || typeof name !== 'string') {
+      return NextResponse.json(
+        { error: 'Project name is required' },
+        { status: 400 }
       );
     }
 
-    const { data: authData } = await supabase.auth.getUser();
+    if (authResult.isGuest) {
+      // For guest users, create a mock project response
+      // In a real app, this would be stored in localStorage on the client
+      const guestProject = {
+        id: generateGuestUserId(),
+        name,
+        user_id: authResult.userId || generateGuestUserId(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        guest: true,
+      };
 
-    if (!authData?.user?.id) {
-      return new Response(JSON.stringify({ error: 'Missing userId' }), {
-        status: 400,
-      });
+      return NextResponse.json(guestProject);
     }
 
-    const userId = authData.user.id;
+    // Handle authenticated users
+    if (!authResult.supabase) {
+      return NextResponse.json(
+        { error: 'Supabase not available in this deployment.' },
+        { status: 500 }
+      );
+    }
 
-    const { name } = await request.json();
+    if (!authResult.user?.id) {
+      return NextResponse.json(
+        { error: 'Missing userId' },
+        { status: 400 }
+      );
+    }
 
-    const { data, error } = await supabase
+    const { data, error } = await authResult.supabase
       .from('projects')
-      .insert({ name, user_id: userId } as never)
+      .insert({ name, user_id: authResult.user.id } as never)
       .select()
       .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
     return NextResponse.json(data);
   } catch (err: unknown) {
-    return new Response(
-      JSON.stringify({
-        error: (err as Error).message || 'Internal server error',
-      }),
-      { status: 500 }
-    );
+    const errorMessage = err instanceof Error ? err.message : 'Internal server error';
+    return createErrorResponse(errorMessage, 500);
   }
 }
 
-export async function GET() {
-  const supabase = await createClient();
+export async function GET(request: NextRequest) {
+  try {
+    const authResult = await authenticateRequest(request);
 
-  if (!supabase) {
-    return new Response(
-      JSON.stringify({ error: 'Supabase not available in this deployment.' }),
-      { status: 200 }
-    );
+    if (authResult.isGuest) {
+      // For guest users, return empty array
+      // Client should handle localStorage projects
+      return NextResponse.json([]);
+    }
+
+    if (!authResult.supabase) {
+      return NextResponse.json(
+        { error: 'Supabase not available in this deployment.' },
+        { status: 500 }
+      );
+    }
+
+    if (!authResult.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data, error } = await authResult.supabase
+      .from('projects')
+      .select('*')
+      .eq('user_id', authResult.user.id)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data);
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Internal server error';
+    return createErrorResponse(errorMessage, 500);
   }
-
-  const { data: authData } = await supabase.auth.getUser();
-
-  const userId = authData?.user?.id;
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { data, error } = await supabase
-    .from('projects')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: true });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-  return NextResponse.json(data);
 }

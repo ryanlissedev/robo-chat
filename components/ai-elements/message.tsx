@@ -1,9 +1,10 @@
 import type { UIMessage } from 'ai';
-import type { ComponentProps, HTMLAttributes } from 'react';
+import type { ComponentProps } from 'react';
+import type React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
-export type MessageProps = HTMLAttributes<HTMLDivElement> & {
+export type MessageProps = React.ComponentPropsWithoutRef<'div'> & {
   from: UIMessage['role'];
 };
 
@@ -19,7 +20,7 @@ export const Message = ({ className, from, ...props }: MessageProps) => (
   />
 );
 
-export type MessageContentProps = HTMLAttributes<HTMLDivElement>;
+export type MessageContentProps = React.ComponentPropsWithoutRef<'div'>;
 
 export const MessageContent = ({
   children,

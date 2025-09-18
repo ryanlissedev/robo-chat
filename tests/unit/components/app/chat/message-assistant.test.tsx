@@ -132,18 +132,22 @@ vi.mock('@/components/ui/toast', () => ({
 }));
 
 // Mock the get-sources helper
-const mockGetSources = vi.fn((parts: any[]) => [
-  { id: '1', url: 'https://example.com', title: 'Example Source' },
-]);
+const { mockGetSources } = vi.hoisted(() => ({
+  mockGetSources: vi.fn((parts: any[]) => [
+    { id: '1', url: 'https://example.com', title: 'Example Source' },
+  ]),
+}));
 
 vi.mock('@/components/app/chat/get-sources', () => ({
   getSources: mockGetSources,
 }));
 
 // Mock the selection hook
-const mockUseAssistantMessageSelection = vi.fn(() => ({
-  selectionInfo: null,
-  clearSelection: vi.fn(),
+const { mockUseAssistantMessageSelection } = vi.hoisted(() => ({
+  mockUseAssistantMessageSelection: vi.fn(() => ({
+    selectionInfo: null,
+    clearSelection: vi.fn(),
+  })),
 }));
 
 vi.mock('@/components/app/chat/useAssistantMessageSelection', () => ({
@@ -224,8 +228,10 @@ describe('MessageAssistant', () => {
     it('should show copied state when copied is true', () => {
       renderMessageAssistant({ copied: true });
 
-      const checkIcon = screen.getByTestId('mock-icon'); // Check icon should be shown
-      expect(checkIcon).toBeInTheDocument();
+      const copyButton = screen.getByLabelText('Copy text');
+      const icon = copyButton.querySelector('svg');
+      expect(icon).toBeInTheDocument();
+      expect(icon).toHaveClass('lucide-check');
     });
 
     it('should render reload button for last message', () => {
@@ -329,8 +335,14 @@ describe('MessageAssistant', () => {
 
       expect(screen.getByTestId('sources')).toBeInTheDocument();
       expect(screen.getByTestId('sources-trigger')).toHaveTextContent('Sources (2)');
-      expect(screen.getByTestId('source-0')).toHaveTextContent('Example Source');
-      expect(screen.getByTestId('source-1')).toHaveTextContent('Test Source');
+      const sourceZeroElements = screen.getAllByTestId('source-0');
+      expect(sourceZeroElements[sourceZeroElements.length - 1]).toHaveTextContent(
+        'Example Source'
+      );
+      const sourceOneElements = screen.getAllByTestId('source-1');
+      expect(sourceOneElements[sourceOneElements.length - 1]).toHaveTextContent(
+        'Test Source'
+      );
     });
 
     it('should not render sources when none available', () => {

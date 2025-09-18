@@ -2,7 +2,8 @@
 
 import type { UIMessage } from 'ai';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
-import type { ComponentProps, HTMLAttributes, ReactElement } from 'react';
+import type { ComponentProps, ReactElement } from 'react';
+import type React from 'react';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -28,7 +29,7 @@ const useBranch = () => {
   return context;
 };
 
-export type BranchProps = HTMLAttributes<HTMLDivElement> & {
+export type BranchProps = React.ComponentPropsWithoutRef<'div'> & {
   defaultBranch?: number;
   onBranchChange?: (branchIndex: number) => void;
 };
@@ -78,7 +79,7 @@ export const Branch = ({
   );
 };
 
-export type BranchMessagesProps = HTMLAttributes<HTMLDivElement>;
+export type BranchMessagesProps = React.ComponentPropsWithoutRef<'div'>;
 
 export const BranchMessages = ({ children, ...props }: BranchMessagesProps) => {
   const { currentBranch, setBranches, branches } = useBranch();
@@ -108,7 +109,7 @@ export const BranchMessages = ({ children, ...props }: BranchMessagesProps) => {
   ));
 };
 
-export type BranchSelectorProps = HTMLAttributes<HTMLDivElement> & {
+export type BranchSelectorProps = React.ComponentPropsWithoutRef<'div'> & {
   from: UIMessage['role'];
 };
 
@@ -196,7 +197,7 @@ export const BranchNext = ({
   );
 };
 
-export type BranchPageProps = HTMLAttributes<HTMLSpanElement>;
+export type BranchPageProps = React.ComponentPropsWithoutRef<'span'>;
 
 export const BranchPage = ({ className, ...props }: BranchPageProps) => {
   const { currentBranch, totalBranches } = useBranch();

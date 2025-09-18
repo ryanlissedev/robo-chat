@@ -10,8 +10,9 @@ import {
   Trash,
   Upload,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
+import type { DropzoneOptions } from 'react-dropzone';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -224,20 +225,25 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
     [selectedStore, loadStoreFiles]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'text/plain': ['.txt'],
-      'text/markdown': ['.md'],
-      'application/pdf': ['.pdf'],
-      'application/json': ['.json'],
-      'text/csv': ['.csv'],
-      'text/x-python': ['.py'],
-      'text/javascript': ['.js', '.jsx'],
-      'text/typescript': ['.ts', '.tsx'],
-    },
-    disabled: !selectedStore || uploading,
-  });
+  const dropzoneOptions = useMemo<DropzoneOptions>(
+    () => ({
+      onDrop,
+      accept: {
+        'text/plain': ['.txt'],
+        'text/markdown': ['.md'],
+        'application/pdf': ['.pdf'],
+        'application/json': ['.json'],
+        'text/csv': ['.csv'],
+        'text/x-python': ['.py'],
+        'text/javascript': ['.js', '.jsx'],
+        'text/typescript': ['.ts', '.tsx'],
+      },
+      disabled: !selectedStore || uploading,
+    }),
+    [onDrop, selectedStore, uploading]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone(dropzoneOptions);
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) {
@@ -267,7 +273,7 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
         <CardContent>
           <div className="flex gap-2">
             <Input
-              onChange={(e) => setNewStoreName(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewStoreName(e.target.value)}
               placeholder="Enter vector store name"
               value={newStoreName}
             />
@@ -308,7 +314,7 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
                   }`}
                   key={store.id}
                   onClick={() => setSelectedStore(store)}
-                  onKeyDown={(e) => {
+                  onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
                       setSelectedStore(store);
@@ -322,7 +328,7 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
                     </div>
                     <button
                       type="button"
-                      onClick={(e) => {
+                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                         e.stopPropagation();
                         deleteVectorStore(store.id);
                       }}
@@ -333,8 +339,8 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
                     </button>
                   </div>
                   <div className="mt-2 flex gap-4 text-muted-foreground text-xs">
-                    <span>{store.file_count} files</span>
-                    <span>{formatBytes(store.usage_bytes)}</span>
+                    <span>{store.fileCount} files</span>
+                    <span>{formatBytes(store.usageBytes)}</span>
                     <Badge
                       variant={
                         store.status === 'active' ? 'default' : 'secondary'
@@ -403,7 +409,7 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
                     </div>
                   ) : (
                     storeFiles.map((file) => {
-                      const Icon = getFileIcon(file.file_name);
+                      const Icon = getFileIcon(file.fileName);
                       return (
                         <div
                           className="flex items-center justify-between rounded p-2 hover:bg-muted"
@@ -411,7 +417,7 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
                         >
                           <div className="flex items-center gap-2">
                             <Icon className="h-4 w-4" />
-                            <span className="text-sm">{file.file_name}</span>
+                            <span className="text-sm">{file.fileName}</span>
                           </div>
                           <Badge
                             variant={

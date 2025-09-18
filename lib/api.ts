@@ -4,6 +4,7 @@ import type { UserProfile } from '@/lib/user/types';
 import { fetchClient } from './fetch';
 import { API_ROUTE_CREATE_GUEST, API_ROUTE_UPDATE_CHAT_MODEL } from './routes';
 import { createClient } from './supabase/client';
+import { generateGuestUserId, isValidUUID } from './utils';
 
 /**
  * Creates a guest user record on the server
@@ -123,52 +124,128 @@ export async function signInWithGoogle(supabase: SupabaseClient) {
 export const getOrCreateGuestUserId = async (
   user: UserProfile | null
 ): Promise<string | null> => {
-  if (user?.id) {
+  // STRATEGY 1: If user already has a valid ID, use it immediately
+  if (user?.id && isValidUUID(user.id)) {
+    console.log('[GuestUser] Using existing user ID:', user.id);
     return user.id;
   }
 
-  const supabase = createClient();
+  console.log('[GuestUser] No valid user ID found, attempting guest user creation...');
 
-  if (!supabase) {
-    return null;
+  // STRATEGY 2: Check if we're in guest mode (browser-only)
+  const isInGuestMode = typeof window !== 'undefined' &&
+    (document.cookie.includes('guest-user-id=') ||
+     window.location.pathname.includes('/guest') ||
+     !user?.id || // No authenticated user
+     user?.anonymous === true); // User object indicates guest
+
+  if (isInGuestMode) {
+    console.log('[GuestUser] Operating in guest mode, skipping Supabase operations');
+
+    // For guest mode, directly use localStorage-based ID
+    const guestId = getLocalStorageGuestId();
+
+    // Try to create guest profile on server (non-blocking)
+    try {
+      await createGuestUserWithRetry(guestId);
+      console.log('[GuestUser] Guest profile created successfully');
+    } catch (profileError) {
+      console.warn('[GuestUser] Guest profile creation failed, but continuing:', profileError);
+    }
+
+    return guestId;
   }
 
-  const existingGuestSessionUser = await supabase.auth.getUser();
-  if (existingGuestSessionUser.data?.user?.is_anonymous) {
-    const anonUserId = existingGuestSessionUser.data.user.id;
+  // STRATEGY 3: For authenticated users or server-side, try Supabase
+  const supabase = createClient();
 
-    const profileCreationAttempted = localStorage.getItem(
-      `guestProfileAttempted_${anonUserId}`
-    );
-
-    if (!profileCreationAttempted) {
-      try {
-        await createGuestUser(anonUserId);
-        localStorage.setItem(`guestProfileAttempted_${anonUserId}`, 'true');
-      } catch {
-        return null;
-      }
-    }
-    return anonUserId;
+  // STRATEGY 4: If Supabase is not available, fallback to localStorage UUID
+  if (!supabase) {
+    console.warn('[GuestUser] Supabase not available, using localStorage fallback');
+    return getLocalStorageGuestId();
   }
 
   try {
-    const { data: anonAuthData, error: anonAuthError } =
-      await supabase.auth.signInAnonymously();
+    // STRATEGY 5: Check for existing anonymous session (only for authenticated flow)
+    console.log('[GuestUser] Checking for existing anonymous session...');
+    const existingSession = await supabase.auth.getUser();
 
-    if (anonAuthError) {
-      return null;
+    if (existingSession.data?.user?.is_anonymous) {
+      const anonUserId = existingSession.data.user.id;
+      console.log('[GuestUser] Found existing anonymous user:', anonUserId);
+
+      // Try to create guest profile for this anonymous user
+      try {
+        await createGuestUserWithRetry(anonUserId);
+        return anonUserId;
+      } catch (profileError) {
+        console.warn('[GuestUser] Failed to create guest profile, but using anonymous ID:', profileError);
+        return anonUserId; // Still use the anonymous ID even if profile creation fails
+      }
     }
 
-    if (!anonAuthData?.user) {
-      return null;
-    }
+    // STRATEGY 6: If we reach here and anonymous sign-ins are disabled, fallback to localStorage
+    console.log('[GuestUser] No existing anonymous session, but anonymous sign-ins may be disabled');
+    console.log('[GuestUser] Falling back to localStorage guest ID');
+    return getLocalStorageGuestId();
 
-    const guestIdFromAuth = anonAuthData.user.id;
-    await createGuestUser(guestIdFromAuth);
-    localStorage.setItem(`guestProfileAttempted_${guestIdFromAuth}`, 'true');
-    return guestIdFromAuth;
-  } catch {
-    return null;
+  } catch (error) {
+    console.error('[GuestUser] Supabase operations failed:', error);
+
+    // STRATEGY 7: Final fallback to localStorage
+    console.log('[GuestUser] Falling back to localStorage guest ID');
+    return getLocalStorageGuestId();
   }
 };
+
+/**
+ * Get or create a guest user ID using localStorage as fallback
+ */
+function getLocalStorageGuestId(): string {
+  if (typeof localStorage === 'undefined') {
+    console.warn('[GuestUser] localStorage not available, generating new UUID');
+    return generateGuestUserId();
+  }
+
+  const STORAGE_KEY = 'guest-user-id';
+  let guestId = localStorage.getItem(STORAGE_KEY);
+
+  if (guestId && isValidUUID(guestId)) {
+    console.log('[GuestUser] Using existing localStorage guest ID:', guestId);
+    return guestId;
+  }
+
+  // Generate new guest ID and store it
+  guestId = generateGuestUserId();
+  try {
+    localStorage.setItem(STORAGE_KEY, guestId);
+    console.log('[GuestUser] Created new localStorage guest ID:', guestId);
+  } catch (error) {
+    console.warn('[GuestUser] Failed to store guest ID in localStorage:', error);
+  }
+
+  return guestId;
+}
+
+/**
+ * Create guest user with retry logic
+ */
+async function createGuestUserWithRetry(guestId: string, maxRetries = 3): Promise<void> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[GuestUser] Creating guest user profile (attempt ${attempt}/${maxRetries})`);
+      await createGuestUser(guestId);
+      console.log('[GuestUser] Guest user profile created successfully');
+      return;
+    } catch (error) {
+      console.warn(`[GuestUser] Guest user creation failed (attempt ${attempt}/${maxRetries}):`, error);
+
+      if (attempt === maxRetries) {
+        throw error;
+      }
+
+      // Wait before retry (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+    }
+  }
+}

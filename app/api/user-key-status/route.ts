@@ -8,16 +8,19 @@ export async function GET() {
   try {
     const supabase = await createClient();
     if (!supabase) {
-      return NextResponse.json(
-        { error: 'Supabase not available' },
-        { status: 500 }
+      const defaultStatus = Object.fromEntries(
+        SUPPORTED_PROVIDERS.map((provider) => [provider, false])
       );
+      return NextResponse.json(defaultStatus);
     }
 
     const { data: authData } = await supabase.auth.getUser();
+    const defaultStatus = Object.fromEntries(
+      SUPPORTED_PROVIDERS.map((provider) => [provider, false])
+    );
 
     if (!authData?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(defaultStatus);
     }
 
     const { data, error } = await supabase
@@ -45,8 +48,7 @@ export async function GET() {
     return NextResponse.json(providerStatus);
   } catch {
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      Object.fromEntries(SUPPORTED_PROVIDERS.map((provider) => [provider, false]))
     );
   }
 }

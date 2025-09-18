@@ -3,7 +3,7 @@
 import { useControllableState } from '@radix-ui/react-use-controllable-state';
 import { BrainIcon, ChevronDownIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
-import { createContext, memo, useContext, useEffect, useState } from 'react';
+import { createContext, memo, useContext, useEffect, useMemo, useState } from 'react';
 import { Response } from '@/components/ai-elements/response';
 import {
   Collapsible,
@@ -37,8 +37,8 @@ export type ReasoningProps = ComponentProps<typeof Collapsible> & {
   duration?: number;
 };
 
-// Auto-close disabled to avoid premature hiding of thinking UI
-const AUTO_CLOSE_DELAY = 0;
+const AUTO_CLOSE_DELAY_MS = 0;
+const MS_IN_SECOND = 1000;
 
 export const Reasoning = memo(
   ({
@@ -61,46 +61,74 @@ export const Reasoning = memo(
       defaultProp: 0,
     });
 
-    const [hasAutoClosedRef, setHasAutoClosedRef] = useState(false);
+    const [hasAutoClosed, setHasAutoClosed] = useState(false);
     const [startTime, setStartTime] = useState<number | null>(null);
 
-    // Track duration when streaming starts and ends
+    useEffect(() => {
+      if (process.env.NODE_ENV === 'test') {
+        // eslint-disable-next-line no-console
+        console.log('[Reasoning] isOpen state', isOpen);
+        const chevron = document.querySelector('.lucide-chevron-down');
+        if (chevron) {
+          // eslint-disable-next-line no-console
+          console.log('[Reasoning] chevron class', chevron.getAttribute('class'));
+        }
+      }
+    }, [isOpen]);
+
     useEffect(() => {
       if (isStreaming) {
         if (startTime === null) {
           setStartTime(Date.now());
         }
       } else if (startTime !== null) {
-        setDuration(Math.round((Date.now() - startTime) / 1000));
+        setDuration(Math.round((Date.now() - startTime) / MS_IN_SECOND));
         setStartTime(null);
       }
     }, [isStreaming, startTime, setDuration]);
 
-    // Auto-open when streaming starts. Do not auto-close automatically to avoid premature hiding.
     useEffect(() => {
-      if (isStreaming && !isOpen) {
-        setIsOpen(true);
-      } else if (!isStreaming && isOpen && !defaultOpen && !hasAutoClosedRef) {
-        if (AUTO_CLOSE_DELAY > 0) {
-          const timer = setTimeout(() => {
-            setIsOpen(false);
-            setHasAutoClosedRef(true);
-          }, AUTO_CLOSE_DELAY);
-          return () => clearTimeout(timer);
+      if (isStreaming) {
+        setHasAutoClosed(false);
+        if (!isOpen) {
+          setIsOpen(true);
         }
+        return;
       }
-    }, [isStreaming, isOpen, defaultOpen, setIsOpen, hasAutoClosedRef]);
 
-    const handleOpenChange = (newOpen: boolean) => {
-      setIsOpen(newOpen);
+      if (!defaultOpen && isOpen && !hasAutoClosed && AUTO_CLOSE_DELAY_MS > 0) {
+        const timer = setTimeout(() => {
+          setIsOpen(false);
+          setHasAutoClosed(true);
+        }, AUTO_CLOSE_DELAY_MS);
+
+        return () => clearTimeout(timer);
+      }
+
+      return undefined;
+    }, [defaultOpen, hasAutoClosed, isOpen, isStreaming, setIsOpen]);
+
+    const handleOpenChange = (nextOpen: boolean) => {
+      if (process.env.NODE_ENV === 'test') {
+        // eslint-disable-next-line no-console
+        console.log('[Reasoning] handleOpenChange', nextOpen);
+      }
+      setIsOpen(nextOpen);
     };
 
+    const contextValue = useMemo<ReasoningContextValue>(
+      () => ({ isStreaming, isOpen, setIsOpen, duration }),
+      [duration, isOpen, isStreaming, setIsOpen]
+    );
+
     return (
-      <ReasoningContext.Provider
-        value={{ isStreaming, isOpen, setIsOpen, duration }}
-      >
+      <ReasoningContext.Provider value={contextValue}>
         <Collapsible
-          className={cn('not-prose mb-4', className)}
+          className={cn(
+            'not-prose mb-4',
+            'data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 data-[state=closed]:animate-out data-[state=open]:animate-in',
+            className
+          )}
           onOpenChange={handleOpenChange}
           open={isOpen}
           {...props}
@@ -112,10 +140,13 @@ export const Reasoning = memo(
   }
 );
 
-export type ReasoningTriggerProps = ComponentProps<
-  typeof CollapsibleTrigger
-> & {
-  title?: string;
+export type ReasoningTriggerProps = ComponentProps<typeof CollapsibleTrigger>;
+
+const getThinkingMessage = (isStreaming: boolean, duration: number) => {
+  if (isStreaming || duration === 0) {
+    return 'Thinking...';
+  }
+  return `Thought for ${duration} seconds`;
 };
 
 export const ReasoningTrigger = memo(
@@ -125,7 +156,7 @@ export const ReasoningTrigger = memo(
     return (
       <CollapsibleTrigger
         className={cn(
-          'flex items-center gap-2 text-muted-foreground text-sm',
+          'flex w-full items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground',
           className
         )}
         {...props}
@@ -133,14 +164,10 @@ export const ReasoningTrigger = memo(
         {children ?? (
           <>
             <BrainIcon className="size-4" />
-            {isStreaming || duration === 0 ? (
-              <p>Thinking...</p>
-            ) : (
-              <p>Thought for {duration} seconds</p>
-            )}
+            <p>{getThinkingMessage(isStreaming, duration)}</p>
             <ChevronDownIcon
               className={cn(
-                'size-4 text-muted-foreground transition-transform',
+                'size-4 transition-transform',
                 isOpen ? 'rotate-180' : 'rotate-0'
               )}
             />
@@ -159,12 +186,14 @@ export type ReasoningContentProps = ComponentProps<
 
 export const ReasoningContent = memo(
   ({ className, children, ...props }: ReasoningContentProps) => {
-    // Ensure we are within the Reasoning provider for clearer error message
-    useReasoning();
+    const { isOpen } = useReasoning();
+
     return (
       <CollapsibleContent
+        forceMount
+        style={{ display: isOpen ? undefined : 'none' }}
         className={cn(
-          'mt-4 text-sm grid gap-2',
+          'mt-4 grid gap-2 text-sm',
           'data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 text-popover-foreground outline-none data-[state=closed]:animate-out data-[state=open]:animate-in',
           className
         )}

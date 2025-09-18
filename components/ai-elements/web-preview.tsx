@@ -1,12 +1,13 @@
 'use client';
 
+import type React from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 
-type CollapsibleProps = React.HTMLAttributes<HTMLDivElement> & {
+type CollapsibleProps = React.ComponentPropsWithoutRef<'div'> & {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 };
-type CollapsibleContentProps = React.HTMLAttributes<HTMLDivElement>;
+type CollapsibleContentProps = React.ComponentPropsWithoutRef<'div'>;
 type CollapsibleTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   asChild?: boolean;
 };

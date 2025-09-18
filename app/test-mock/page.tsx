@@ -121,7 +121,7 @@ export default function TestMock() {
       </div>
 
       <form
-        onSubmit={(e) => {
+        onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
           e.preventDefault();
           if (input.trim()) {
             sendMessage({ text: input });
@@ -132,7 +132,7 @@ export default function TestMock() {
       >
         <input
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
           className="flex-1 border p-2 rounded"
           placeholder="Type a message..."
           disabled={status !== 'ready'}

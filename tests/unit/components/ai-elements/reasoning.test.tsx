@@ -27,13 +27,12 @@ describe('Reasoning Components', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
-    user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    vi.useRealTimers();
+    user = userEvent.setup();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    vi.useRealTimers();
   });
 
   describe('Reasoning Component', () => {
@@ -112,6 +111,8 @@ describe('Reasoning Components', () => {
     });
 
     it('should track duration during streaming', async () => {
+      vi.useFakeTimers();
+      user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
       const mockDate = new Date('2024-01-01T10:00:00.000Z');
       vi.setSystemTime(mockDate);
 
@@ -135,9 +136,10 @@ describe('Reasoning Components', () => {
         </Reasoning>
       );
 
-      await waitFor(() => {
-        expect(screen.getByText('Thought for 3 seconds')).toBeInTheDocument();
-      });
+      vi.runOnlyPendingTimers();
+      expect(screen.getByText('Thought for 3 seconds')).toBeInTheDocument();
+
+      vi.useRealTimers();
     });
 
     it('should handle custom duration prop', () => {
@@ -302,6 +304,7 @@ describe('Reasoning Components', () => {
 
       const trigger = screen.getByRole('button');
       await user.click(trigger);
+      await vi.runOnlyPendingTimersAsync();
 
       await waitFor(() => {
         expect(chevron).toHaveClass('rotate-180');
@@ -320,6 +323,7 @@ describe('Reasoning Components', () => {
 
       const trigger = screen.getByRole('button');
       await user.click(trigger);
+      await vi.runOnlyPendingTimersAsync();
 
       await waitFor(() => {
         expect(screen.getByText('Test reasoning content')).toBeVisible();

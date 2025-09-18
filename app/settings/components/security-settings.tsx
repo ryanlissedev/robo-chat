@@ -409,7 +409,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
               <Input
                 max={365}
                 min={7}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   updateConfig(
                     'rotationDays',
                     Number.parseInt(e.target.value, 10)
@@ -452,7 +452,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
               <Input
                 max={365}
                 min={1}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   updateConfig(
                     'retentionDays',
                     Number.parseInt(e.target.value, 10)
@@ -479,8 +479,8 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         <CardContent className="space-y-4">
           <div className="flex gap-2">
             <Input
-              onChange={(e) => setNewDomain(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addDomain()}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewDomain(e.target.value)}
+              onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && addDomain()}
               placeholder="example.com"
               value={newDomain}
             />

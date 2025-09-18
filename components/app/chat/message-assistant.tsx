@@ -8,6 +8,7 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from '@/components/ai-elements/reasoning';
+import { TextShimmer } from '@/components/ui/text-shimmer';
 
 import {
   Source,
@@ -15,6 +16,11 @@ import {
   SourcesContent,
   SourcesTrigger,
 } from '@/components/ai-elements/source';
+import {
+  ToolActionContainer,
+  ToolActionKind,
+  ToolActionContent,
+} from '@/components/ai-elements/tool-action';
 
 import {
   Tool as AITool,
@@ -327,6 +333,7 @@ const ToolInvocationCard = memo(function ToolInvocationCard({
     return null;
   }, [tp.output]);
 
+  // Use original tool visualization with enhanced styling
   return (
     <AITool key={tp.toolCallId}>
       <AIToolHeader
@@ -469,12 +476,19 @@ export function MessageAssistant({
         ref={messageRef}
         {...(isQuoteEnabled && { 'data-message-id': messageId })}
       >
-        {/* Reasoning */}
+        {/* Reasoning - Enhanced with auto-open/close and duration tracking */}
         {((status === 'streaming' && isLast) || reasoningText) && (
-          <Reasoning defaultOpen={false} isStreaming={status === 'streaming'}>
+          <Reasoning
+            defaultOpen={false}
+            isStreaming={status === 'streaming'}
+          >
             <ReasoningTrigger />
             {reasoningText ? (
               <ReasoningContent>{reasoningText}</ReasoningContent>
+            ) : status === 'streaming' && isLast ? (
+              <ReasoningContent>
+                <TextShimmer>Thinking...</TextShimmer>
+              </ReasoningContent>
             ) : null}
           </Reasoning>
         )}

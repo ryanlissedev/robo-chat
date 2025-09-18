@@ -22,17 +22,20 @@ export class RequestValidator {
     model,
     isAuthenticated,
     hasGuestCredentials,
+    request,
   }: {
     userId: string;
     model: string;
     isAuthenticated: boolean;
     hasGuestCredentials: boolean;
+    request?: Request;
   }): Promise<SupabaseClientType | null> {
     return await validateAndTrackUsage({
       userId,
       model,
       isAuthenticated,
       hasGuestCredentials,
+      request,
     });
   }
 
@@ -45,7 +48,40 @@ export class RequestValidator {
     if (!h) return false;
     if (h.get('x-provider-api-key')) return true;
     if (h.get('X-Provider-Api-Key')) return true;
+
+    // Check for guest mode headers from our new guest auth system
+    if (h.get('X-Guest-Mode') === 'true') return true;
+    if (h.get('x-guest-user-id')) return true;
+
     return false;
+  }
+
+  /**
+   * Checks if the request is from a guest user based on headers.
+   */
+  static isGuestRequest(req: Request): boolean {
+    const h = req.headers;
+    if (!h) return false;
+
+    // Check for explicit guest mode header
+    if (h.get('X-Guest-Mode') === 'true') return true;
+    if (h.get('x-guest-mode') === 'true') return true;
+
+    // Check for guest user ID header
+    const guestUserId = h.get('X-Guest-User-ID') || h.get('x-guest-user-id');
+    if (guestUserId) return true;
+
+    return false;
+  }
+
+  /**
+   * Gets the guest user ID from request headers.
+   */
+  static getGuestUserId(req: Request): string | null {
+    const h = req.headers;
+    if (!h) return null;
+
+    return h.get('X-Guest-User-ID') || h.get('x-guest-user-id') || null;
   }
 
   /**

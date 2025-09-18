@@ -16,6 +16,8 @@ const baseConfig = {
       '@': path.resolve(__dirname, '.'),
       '~': path.resolve(__dirname, '.'),
       'ai/react': '@ai-sdk/react',
+      // Handle CSS imports in tests
+      '\\.css$': path.resolve(__dirname, 'tests/__mocks__/styleMock.js'),
     },
   },
   define: {
@@ -97,8 +99,21 @@ const getTestConfig = () => {
           '@supabase/ssr',
           'framer-motion',
           'motion/react',
+          'katex',
         ],
       },
+    },
+
+    // Handle CSS and static assets
+    css: {
+      include: [], // Disable CSS processing
+    },
+
+    // Define how to handle various file types that might be imported
+    alias: {
+      // Handle CSS imports as empty modules
+      '~/katex/dist/katex.min.css': 'data:text/css,',
+      '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     },
 
     // Execution settings

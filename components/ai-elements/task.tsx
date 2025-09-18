@@ -2,10 +2,10 @@
 
 import type React from 'react';
 
-type CollapsibleProps = React.HTMLAttributes<HTMLDivElement> & {
+type CollapsibleProps = React.ComponentPropsWithoutRef<'div'> & {
   defaultOpen?: boolean;
 };
-type CollapsibleContentProps = React.HTMLAttributes<HTMLDivElement>;
+type CollapsibleContentProps = React.ComponentPropsWithoutRef<'div'>;
 type CollapsibleTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   asChild?: boolean;
 };

@@ -54,6 +54,7 @@ function MessageComponent({
         copyToClipboard={copyToClipboard}
         hasScrollAnchor={hasScrollAnchor}
         id={id}
+        isLast={isLast}
         onDelete={onDelete}
         onEdit={onEdit}
         onReload={onReload}

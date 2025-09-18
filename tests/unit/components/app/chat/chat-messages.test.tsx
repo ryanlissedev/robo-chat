@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Conversation } from '@/components/app/chat/conversation';
 import type { UIMessage } from '@ai-sdk/react';
 import type { ExtendedUIMessage } from '@/app/types/ai-extended';
+import * as aiExtended from '@/app/types/ai-extended';
 
 // Mock components are now handled in setup.ts
 
@@ -166,8 +167,7 @@ describe('Conversation (ChatMessages)', () => {
 
   describe('Message Attachments', () => {
     it('should pass attachments to messages with attachments', () => {
-      const { hasAttachments } = require('@/app/types/ai-extended');
-      hasAttachments.mockReturnValue(true);
+      vi.mocked(aiExtended.hasAttachments).mockReturnValue(true);
 
       const messages = [
         createMockMessage('msg-1', 'user', 'Message with attachment', {
@@ -184,8 +184,7 @@ describe('Conversation (ChatMessages)', () => {
     });
 
     it('should not render attachments for messages without them', () => {
-      const { hasAttachments } = require('@/app/types/ai-extended');
-      hasAttachments.mockReturnValue(false);
+      vi.mocked(aiExtended.hasAttachments).mockReturnValue(false);
 
       const messages = [
         createMockMessage('msg-1', 'user', 'Message without attachment'),
@@ -238,8 +237,7 @@ describe('Conversation (ChatMessages)', () => {
     });
 
     it('should show loader when last assistant message is empty and streaming', () => {
-      const { getMessageContent } = require('@/app/types/ai-extended');
-      getMessageContent.mockReturnValue('');
+      vi.mocked(aiExtended.getMessageContent).mockReturnValue('');
 
       const messages = [
         createMockMessage('msg-1', 'user', 'User question'),

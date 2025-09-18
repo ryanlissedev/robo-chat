@@ -4,9 +4,9 @@ import type { ChatStatus } from 'ai';
 import { Loader2Icon, SendIcon, SquareIcon, XIcon } from 'lucide-react';
 import type {
   ComponentProps,
-  HTMLAttributes,
   KeyboardEventHandler,
 } from 'react';
+import type React from 'react';
 import { Children } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +19,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
-export type PromptInputProps = HTMLAttributes<HTMLFormElement>;
+export type PromptInputProps = React.ComponentPropsWithoutRef<'form'>;
 
 export const PromptInput = ({ className, ...props }: PromptInputProps) => (
   <form
@@ -72,7 +72,7 @@ export const PromptInputTextarea = ({
         className
       )}
       name="message"
-      onChange={(e) => {
+      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
         onChange?.(e);
       }}
       onKeyDown={handleKeyDown}
@@ -82,7 +82,7 @@ export const PromptInputTextarea = ({
   );
 };
 
-export type PromptInputToolbarProps = HTMLAttributes<HTMLDivElement>;
+export type PromptInputToolbarProps = React.ComponentPropsWithoutRef<'div'>;
 
 export const PromptInputToolbar = ({
   className,
@@ -94,7 +94,7 @@ export const PromptInputToolbar = ({
   />
 );
 
-export type PromptInputToolsProps = HTMLAttributes<HTMLDivElement>;
+export type PromptInputToolsProps = React.ComponentPropsWithoutRef<'div'>;
 
 export const PromptInputTools = ({
   className,

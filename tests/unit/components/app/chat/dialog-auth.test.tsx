@@ -126,6 +126,12 @@ function getFirstAuthButton() {
   return buttons[0];
 }
 
+async function clickAuthButton(button: HTMLElement) {
+  await act(async () => {
+    await userEvent.click(button);
+  });
+}
+
 describe('DialogAuth', () => {
   let user: ReturnType<typeof userEvent.setup>;
   let mockSupabaseClient: any;
@@ -205,7 +211,7 @@ describe('DialogAuth', () => {
 
       const button = getFirstAuthButton();
 
-      await user.click(button);
+      await clickAuthButton(button);
 
       await waitFor(() => {
         expect(mockSignInWithGoogle).toHaveBeenCalledWith(mockSupabaseClient);
@@ -223,9 +229,7 @@ describe('DialogAuth', () => {
 
       const button = getFirstAuthButton();
 
-      await act(async () => {
-        await user.click(button);
-      });
+      await clickAuthButton(button);
 
       // Wait for the async operation and redirect
       await waitFor(() => {
@@ -249,7 +253,7 @@ describe('DialogAuth', () => {
 
       const button = getFirstAuthButton();
 
-      await user.click(button);
+      await clickAuthButton(button);
 
       // Wait for loading state to appear
       await waitFor(() => {
@@ -275,7 +279,7 @@ describe('DialogAuth', () => {
 
       const button = getFirstAuthButton();
 
-      await user.click(button);
+      await clickAuthButton(button);
 
       await waitFor(() => {
         expect(window.location.href).toBe('');
@@ -289,7 +293,7 @@ describe('DialogAuth', () => {
 
       const button = getFirstAuthButton();
 
-      await user.click(button);
+      await clickAuthButton(button);
 
       await waitFor(() => {
         expect(window.location.href).toBe('');
@@ -308,9 +312,7 @@ describe('DialogAuth', () => {
 
       const button = getFirstAuthButton();
 
-      await act(async () => {
-        await user.click(button);
-      });
+      await clickAuthButton(button);
 
       // Wait for the button to become disabled and show loading text
       await waitFor(() => {
@@ -334,7 +336,7 @@ describe('DialogAuth', () => {
 
       const button = getFirstAuthButton();
 
-      await user.click(button);
+      await clickAuthButton(button);
 
       await waitFor(() => {
         expect(screen.queryByText('Connecting...')).not.toBeInTheDocument();
@@ -350,7 +352,7 @@ describe('DialogAuth', () => {
       const button = getFirstAuthButton();
 
       await act(async () => {
-        await user.click(button);
+        await clickAuthButton(button);
       });
 
       // Wait for the error to be processed and displayed
@@ -370,7 +372,7 @@ describe('DialogAuth', () => {
 
       const button = getFirstAuthButton();
 
-      await user.click(button);
+      await clickAuthButton(button);
 
       await waitFor(() => {
         expect(
@@ -386,7 +388,7 @@ describe('DialogAuth', () => {
 
       const button = getFirstAuthButton();
 
-      await user.click(button);
+      await clickAuthButton(button);
 
       await waitFor(() => {
         const errorMessage = screen.getByText('Test error');
@@ -403,7 +405,7 @@ describe('DialogAuth', () => {
 
       const button = getFirstAuthButton();
 
-      await user.click(button);
+      await clickAuthButton(button);
 
       await waitFor(() => {
         expect(screen.getByText('First error')).toBeInTheDocument();
@@ -415,7 +417,7 @@ describe('DialogAuth', () => {
         url: 'success',
       });
 
-      await user.click(button);
+      await clickAuthButton(button);
 
       await waitFor(() => {
         expect(screen.queryByText('First error')).not.toBeInTheDocument();
@@ -429,7 +431,7 @@ describe('DialogAuth', () => {
 
       const button = getFirstAuthButton();
 
-      await user.click(button);
+      await clickAuthButton(button);
 
       await waitFor(() => {
         expect(button).not.toBeDisabled();
@@ -454,7 +456,7 @@ describe('DialogAuth', () => {
 
       // Click once and wait for state changes
       await act(async () => {
-        await user.click(button);
+        await clickAuthButton(button);
       });
 
       // Wait for first click to process and button to disable
@@ -464,8 +466,8 @@ describe('DialogAuth', () => {
       });
 
       // Try clicking again - should not trigger additional calls
-      await user.click(button);
-      await user.click(button);
+      await clickAuthButton(button);
+      await clickAuthButton(button);
 
       // Should only call once due to loading state disabling button
       expect(mockSignInWithGoogle).toHaveBeenCalledTimes(1);
@@ -487,14 +489,14 @@ describe('DialogAuth', () => {
       const button = getFirstAuthButton();
 
       // First attempt
-      await user.click(button);
+      await clickAuthButton(button);
 
       await waitFor(() => {
         expect(screen.getByText('Network error')).toBeInTheDocument();
       });
 
       // Second attempt
-      await user.click(button);
+      await clickAuthButton(button);
 
       await waitFor(() => {
         expect(window.location.href).toBe('success');
@@ -546,7 +548,7 @@ describe('DialogAuth', () => {
       button.focus();
       expect(document.activeElement).toBe(button);
 
-      await user.click(button);
+      await clickAuthButton(button);
 
       // Wait for loading state to kick in
       await waitFor(() => {
@@ -580,7 +582,7 @@ describe('DialogAuth', () => {
       const button = getFirstAuthButton();
 
       await act(async () => {
-        await user.click(button);
+        await clickAuthButton(button);
       });
 
       await waitFor(() => {
@@ -598,7 +600,7 @@ describe('DialogAuth', () => {
 
       const button = getFirstAuthButton();
 
-      await user.click(button);
+      await clickAuthButton(button);
 
       await waitFor(() => {
         expect(screen.getByText(longError)).toBeInTheDocument();

@@ -9,6 +9,7 @@ import {
   setPersistentCredential,
   setSessionCredential,
 } from '@/lib/security/web-crypto';
+import { guestSettings } from '@/lib/guest-settings';
 import type {
   ApiKeyTestResult,
   GuestCredential,
@@ -95,6 +96,12 @@ export class GuestCredentialService implements IGuestCredentialService {
         break;
     }
 
+    // Store metadata in guest settings for display purposes
+    guestSettings.saveApiKeyMeta(request.provider, {
+      masked: result.masked,
+      storage: request.storageScope,
+    });
+
     return {
       masked: result.masked,
       plaintext: request.storageScope === 'request' ? '' : request.key,
@@ -106,6 +113,9 @@ export class GuestCredentialService implements IGuestCredentialService {
 
   async deleteCredential(provider: string): Promise<void> {
     clearAllGuestCredentialsFor(provider);
+
+    // Also remove metadata from guest settings
+    guestSettings.removeApiKeyMeta(provider);
   }
 
   async loadPersistentCredential(

@@ -1,89 +1,48 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import type { UserPreferencesUpdate } from '@/lib/types/api-errors';
+import {
+  authenticateRequest,
+  getUserPreferences,
+  updateUserPreferences,
+  createErrorResponse,
+} from '@/lib/api-auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    // Authenticate request (supports both guest and authenticated users)
+    const authResult = await authenticateRequest(request);
 
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database connection failed' },
-        { status: 500 }
-      );
-    }
+    // Get user preferences (handles both guest and authenticated users)
+    const { preferences, headers } = await getUserPreferences(request, authResult);
 
-    // Get the current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get the user's preferences
-    const { data, error } = await supabase
-      .from('user_preferences')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (error) {
-      // If no preferences exist, return defaults
-      if (error.code === 'PGRST116') {
-        return NextResponse.json({
-          layout: 'fullscreen',
-          prompt_suggestions: true,
-          show_tool_invocations: true,
-          show_conversation_previews: true,
-          multi_model_enabled: false,
-          hidden_models: [],
-        });
-      }
-      return NextResponse.json(
-        { error: 'Failed to fetch user preferences' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      layout: data.layout,
-      prompt_suggestions: data.prompt_suggestions,
-      show_tool_invocations: data.show_tool_invocations,
-      show_conversation_previews: data.show_conversation_previews,
-      multi_model_enabled: data.multi_model_enabled,
-      hidden_models: data.hidden_models || [],
+    const response = NextResponse.json({
+      layout: preferences.layout,
+      prompt_suggestions: preferences.prompt_suggestions,
+      show_tool_invocations: preferences.show_tool_invocations,
+      show_conversation_previews: preferences.show_conversation_previews,
+      multi_model_enabled: preferences.multi_model_enabled,
+      hidden_models: preferences.hidden_models,
     });
-  } catch {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+
+    // Set headers for guest users (cookies)
+    if (headers) {
+      Object.entries(headers).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+    }
+
+    return response;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const status = errorMessage.includes('Unauthorized') ? 401 : 500;
+    return createErrorResponse(errorMessage, status);
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database connection failed' },
-        { status: 500 }
-      );
-    }
-
-    // Get the current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Authenticate request (supports both guest and authenticated users)
+    const authResult = await authenticateRequest(request);
 
     // Parse the request body
     const body = await request.json();
@@ -132,41 +91,34 @@ export async function PUT(request: NextRequest) {
       updateData.hidden_models = hidden_models;
     }
 
-    // Try to update first, then insert if doesn't exist
-    const { data, error } = await supabase
-      .from('user_preferences')
-      .upsert(
-        {
-          user_id: user.id,
-          ...updateData,
-        } as never,
-        {
-          onConflict: 'user_id',
-        }
-      )
-      .select('*')
-      .single();
+    // Update preferences (handles both guest and authenticated users)
+    const { preferences, headers } = await updateUserPreferences(
+      request,
+      authResult,
+      updateData
+    );
 
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to update user preferences' },
-        { status: 500 }
-      );
+    const response = NextResponse.json({
+      success: true,
+      layout: preferences.layout,
+      prompt_suggestions: preferences.prompt_suggestions,
+      show_tool_invocations: preferences.show_tool_invocations,
+      show_conversation_previews: preferences.show_conversation_previews,
+      multi_model_enabled: preferences.multi_model_enabled,
+      hidden_models: preferences.hidden_models,
+    });
+
+    // Set headers for guest users (cookies)
+    if (headers) {
+      Object.entries(headers).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
     }
 
-    return NextResponse.json({
-      success: true,
-      layout: data.layout,
-      prompt_suggestions: data.prompt_suggestions,
-      show_tool_invocations: data.show_tool_invocations,
-      show_conversation_previews: data.show_conversation_previews,
-      multi_model_enabled: data.multi_model_enabled,
-      hidden_models: data.hidden_models || [],
-    });
-  } catch {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return response;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const status = errorMessage.includes('Unauthorized') ? 401 : 500;
+    return createErrorResponse(errorMessage, status);
   }
 }

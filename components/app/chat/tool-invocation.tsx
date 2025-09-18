@@ -55,40 +55,41 @@ export function ToolInvocation({ toolInvocations }: ToolInvocationProps) {
 
   return (
     <div className="mb-6 w-full space-y-3">
-      {displayParts.map((part) => (
-        <AITool key={part.toolCallId}>
-          <AIToolHeader
-            state={
-              part.state as
-                | 'input-streaming'
-                | 'input-available'
-                | 'output-available'
-                | 'output-error'
-            }
-            type={part.type}
-          />
-          <AIToolContent>
-            {'input' in part && part.input ? (
-              <AIToolInput input={JSON.stringify(part.input, null, 2)} />
-            ) : null}
-            {'output' in part && part.output ? (
-              <AIToolOutput
-                errorText={part.errorText}
-                output={
-                  typeof part.output === 'string' ||
-                  (part.output && typeof part.output === 'object') ? (
-                    <pre className="whitespace-pre-wrap text-xs">
-                      {typeof part.output === 'string'
-                        ? part.output
-                        : JSON.stringify(part.output, null, 2)}
-                    </pre>
-                  ) : null
-                }
-              />
-            ) : null}
-          </AIToolContent>
-        </AITool>
-      ))}
+      {displayParts.map((part) => {
+        const typedPart = part as ToolUIPart & {
+          result?: unknown;
+          text?: unknown;
+        };
+        const outputValue =
+          typedPart.output ??
+          typedPart.result ??
+          typedPart.text ??
+          undefined;
+
+        return (
+          <AITool key={part.toolCallId}>
+            <AIToolHeader
+              state={
+                part.state as
+                  | 'input-streaming'
+                  | 'input-available'
+                  | 'output-available'
+                  | 'output-error'
+              }
+              type={part.type}
+            />
+            <AIToolContent>
+              {part.input ? <AIToolInput input={part.input} /> : null}
+              {outputValue !== undefined || part.errorText ? (
+                <AIToolOutput
+                  errorText={part.errorText}
+                  output={outputValue}
+                />
+              ) : null}
+            </AIToolContent>
+          </AITool>
+        );
+      })}
     </div>
   );
 }

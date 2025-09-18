@@ -1,26 +1,15 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import {
+  authenticateRequest,
+  updateUserFavoriteModels,
+  getUserFavoriteModels,
+  createErrorResponse,
+} from '@/lib/api-auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database connection failed' },
-        { status: 500 }
-      );
-    }
-
-    // Get the current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Authenticate request (supports both guest and authenticated users)
+    const authResult = await authenticateRequest(request);
 
     // Parse the request body
     const body = await request.json();
@@ -42,77 +31,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update the user's favorite models
-    const { data, error } = await supabase
-      .from('users')
-      .update({
-        favorite_models,
-      } as never)
-      .eq('id', user.id)
-      .select('favorite_models')
-      .single();
+    // Update favorite models (handles both guest and authenticated users)
+    const { favoriteModels, headers } = await updateUserFavoriteModels(
+      request,
+      authResult,
+      favorite_models
+    );
 
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to update favorite models' },
-        { status: 500 }
-      );
+    const response = NextResponse.json({
+      success: true,
+      favorite_models: favoriteModels,
+    });
+
+    // Set headers for guest users (cookies)
+    if (headers) {
+      Object.entries(headers).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
     }
 
-    return NextResponse.json({
-      success: true,
-      favorite_models: data.favorite_models,
-    });
-  } catch {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return response;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const status = errorMessage.includes('Unauthorized') ? 401 : 500;
+    return createErrorResponse(errorMessage, status);
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    // Authenticate request (supports both guest and authenticated users)
+    const authResult = await authenticateRequest(request);
 
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database connection failed' },
-        { status: 500 }
-      );
-    }
-
-    // Get the current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get the user's favorite models
-    const { data, error } = await supabase
-      .from('users')
-      .select('favorite_models')
-      .eq('id', user.id)
-      .single();
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to fetch favorite models' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      favorite_models: data.favorite_models || ['gpt-5-mini'],
-    });
-  } catch {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    // Get favorite models (handles both guest and authenticated users)
+    const { favoriteModels, headers } = await getUserFavoriteModels(
+      request,
+      authResult
     );
+
+    const response = NextResponse.json({
+      favorite_models: favoriteModels,
+    });
+
+    // Set headers for guest users (cookies)
+    if (headers) {
+      Object.entries(headers).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+    }
+
+    return response;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const status = errorMessage.includes('Unauthorized') ? 401 : 500;
+    return createErrorResponse(errorMessage, status);
   }
 }
