@@ -41,7 +41,7 @@ function usePromptInput() {
   return context;
 }
 
-type PromptInputProps = {
+type PromptInputProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> & {
   isLoading?: boolean;
   value?: string;
   onValueChange?: (value: string) => void;
@@ -59,6 +59,7 @@ function PromptInput({
   onValueChange,
   onSubmit,
   children,
+  ...rest
 }: PromptInputProps) {
   const [internalValue, setInternalValue] = useState(value || '');
 
@@ -82,6 +83,7 @@ function PromptInput({
           'rounded-3xl border border-input bg-background p-2 shadow-xs',
           className
         )}
+        {...rest}
       >
         {children}
       </div>

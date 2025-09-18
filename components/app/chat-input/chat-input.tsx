@@ -16,12 +16,12 @@ import {
   type ReasoningEffort,
   ReasoningEffortSelector,
 } from '../chat/reasoning-effort-selector';
+import { ReasoningSummarySelector } from '../chat/reasoning-summary-selector';
 import { PromptSystem } from '../suggestions/prompt-system';
 import { ButtonFileUpload } from './button-file-upload';
-// Verbosity and summary controls removed - using defaults
+// Reasoning summary controls re-enabled for user control
 // Search is always enabled; toggle removed
 import { FileList } from './file-list';
-
 type ChatInputProps = {
   value: string;
   onValueChange: (value: string) => void;
@@ -70,10 +70,10 @@ export function ChatInput({
   quotedText,
   reasoningEffort,
   onReasoningEffortChange,
-  verbosity: _verbosity,
-  onVerbosityChange: _onVerbosityChange,
-  reasoningSummary: _reasoningSummary,
-  onReasoningSummaryChange: _onReasoningSummaryChange,
+  verbosity,
+  onVerbosityChange,
+  reasoningSummary,
+  onReasoningSummaryChange,
 }: ChatInputProps) {
   // Search is always enabled regardless of model webSearch capability
   const isOnlyWhitespace = useCallback(
@@ -223,6 +223,7 @@ export function ChatInput({
       )}
       <div className="relative order-2 px-2 pb-3 sm:pb-4 md:order-1">
         <PromptInput
+          data-testid="multimodal-input"
           className="relative z-10 bg-popover p-0 pt-1 shadow-xs backdrop-blur-xl"
           maxHeight={200}
           onValueChange={onValueChange}
@@ -256,7 +257,14 @@ export function ChatInput({
                   value={currentReasoningEffort}
                 />
               )}
-              {/* Verbosity and summary controls removed - using defaults: low verbosity and auto summaries */}
+              {/* Reasoning summary control re-enabled for user control */}
+              {reasoningSummary && onReasoningSummaryChange && (
+                <ReasoningSummarySelector
+                  className="rounded-full"
+                  onChange={onReasoningSummaryChange}
+                  value={reasoningSummary}
+                />
+              )}
             </div>
             <div className="flex items-center gap-2">
               {status === 'streaming' || (value && !isOnlyWhitespace(value)) ? (

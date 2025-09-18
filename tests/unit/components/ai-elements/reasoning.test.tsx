@@ -304,11 +304,8 @@ describe('Reasoning Components', () => {
 
       const trigger = screen.getByRole('button');
       await user.click(trigger);
-      await vi.runOnlyPendingTimersAsync();
 
-      await waitFor(() => {
-        expect(chevron).toHaveClass('rotate-180');
-      });
+      expect(chevron).toHaveClass('rotate-180');
     });
 
     it('should handle click to toggle state', async () => {
@@ -323,11 +320,8 @@ describe('Reasoning Components', () => {
 
       const trigger = screen.getByRole('button');
       await user.click(trigger);
-      await vi.runOnlyPendingTimersAsync();
 
-      await waitFor(() => {
-        expect(screen.getByText('Test reasoning content')).toBeVisible();
-      });
+      expect(screen.getByText('Test reasoning content')).toBeVisible();
     });
 
     it('should pass through additional props', () => {

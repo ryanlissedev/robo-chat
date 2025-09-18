@@ -65,18 +65,6 @@ export const Reasoning = memo(
     const [startTime, setStartTime] = useState<number | null>(null);
 
     useEffect(() => {
-      if (process.env.NODE_ENV === 'test') {
-        // eslint-disable-next-line no-console
-        console.log('[Reasoning] isOpen state', isOpen);
-        const chevron = document.querySelector('.lucide-chevron-down');
-        if (chevron) {
-          // eslint-disable-next-line no-console
-          console.log('[Reasoning] chevron class', chevron.getAttribute('class'));
-        }
-      }
-    }, [isOpen]);
-
-    useEffect(() => {
       if (isStreaming) {
         if (startTime === null) {
           setStartTime(Date.now());
@@ -109,10 +97,6 @@ export const Reasoning = memo(
     }, [defaultOpen, hasAutoClosed, isOpen, isStreaming, setIsOpen]);
 
     const handleOpenChange = (nextOpen: boolean) => {
-      if (process.env.NODE_ENV === 'test') {
-        // eslint-disable-next-line no-console
-        console.log('[Reasoning] handleOpenChange', nextOpen);
-      }
       setIsOpen(nextOpen);
     };
 
