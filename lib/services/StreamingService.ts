@@ -283,9 +283,12 @@ const stream = ({
 
   // Decide if we should force the native file_search tool.
   // Only force when tools include the native 'file_search' entry.
-  const shouldForceFileSearch = Boolean(
-    enableSearch && tools && Object.hasOwn(tools, 'file_search')
-  );
+  // DISABLED: Temporarily disabled forcing file_search due to API compatibility issues
+  const shouldForceFileSearch = false;
+  // Original logic:
+  // const shouldForceFileSearch = Boolean(
+  //   enableSearch && tools && Object.hasOwn(tools, 'file_search')
+  // );
 
   // Configure provider options for reasoning models
   const providerOptions = (() => {
@@ -315,10 +318,20 @@ const stream = ({
     temperature: getModelTemperature(resolvedModel),
     maxOutputTokens,
     ...(providerOptions ? { providerOptions } : {}),
-    onError: () => {
-      logger.warn(
-        { at: 'api.chat.streamText', phase, event: 'error' },
-        'Stream encountered an error'
+    onError: (error) => {
+      logger.error(
+        {
+          at: 'api.chat.streamText',
+          phase,
+          event: 'error',
+          error: error instanceof Error ? error.message : error,
+          errorStack: error instanceof Error ? error.stack : undefined,
+          errorName: error instanceof Error ? error.name : undefined,
+          model: resolvedModel,
+          userId,
+          chatId
+        },
+        'Stream encountered an error - detailed'
       );
     },
     onFinish: async ({ response }) => {

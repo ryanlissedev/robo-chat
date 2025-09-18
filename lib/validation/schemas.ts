@@ -21,7 +21,7 @@ const UIMessageSchema = z
   .object({
     id: z.string(),
     role: z.enum(['user', 'assistant', 'system']),
-    content: z.string(),
+    content: z.string().optional().default(''),
     createdAt: z.preprocess(
       (arg) =>
         typeof arg === 'string' || arg instanceof Date
@@ -51,8 +51,8 @@ const UIMessageSchema = z
 export const ChatRequestSchema = z
   .object({
     messages: z.array(UIMessageSchema),
-    chatId: z.string(),
-    userId: z.string(),
+    chatId: z.string().default(''),
+    userId: z.string().default('guest_user'),
     model: z.string(),
     isAuthenticated: z.boolean(),
     systemPrompt: z.string(),

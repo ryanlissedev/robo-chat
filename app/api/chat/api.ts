@@ -18,10 +18,12 @@ export async function validateAndTrackUsage({
   model,
   isAuthenticated,
   hasGuestCredentials = false,
+  request,
 }: ChatApiParams & {
   hasGuestCredentials?: boolean;
+  request?: Request;
 }): Promise<SupabaseClientType | null> {
-  const supabase = await validateUserIdentity(userId, isAuthenticated);
+  const supabase = await validateUserIdentity(userId, isAuthenticated, request);
   if (!supabase) {
     return null;
   }
