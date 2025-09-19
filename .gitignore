@@ -9,6 +9,8 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+.pnpm-store/
+.pnpm-debug.log*
 
 # testing
 /coverage
@@ -16,6 +18,11 @@ coverage-analysis/
 test-results.json
 coverage-report.json
 debug-test.js
+/playwright-report/
+/playwright-test-results/
+/test-results/
+coverage-results.json
+*.test-results.json
 
 # next.js
 /.next/
@@ -63,6 +70,8 @@ bun.lockb
 bun.lock
 
 /.cursor
+.devcontainer/
+.gitpod/
 
 
 # START Ruler Generated Files

@@ -47,6 +47,36 @@ vi.mock('@/lib/user-preference-store/provider', () => ({
   useUserPreferences: vi.fn(),
 }));
 
+// Mock the button component with buttonVariants
+vi.mock('@/components/ui/button', () => ({
+  Button: ({ children, className, ...props }: any) =>
+    React.createElement('button', { ...props, className }, children),
+  buttonVariants: ({ variant = 'default', size = 'default', className }: any = {}) => {
+    const base = 'inline-flex items-center justify-center';
+    const variants = {
+      default: 'bg-primary text-primary-foreground',
+      destructive: 'bg-destructive text-white',
+      outline: 'border border-input bg-background',
+      secondary: 'bg-secondary text-secondary-foreground',
+      ghost: 'hover:bg-accent hover:text-accent-foreground',
+      link: 'text-primary underline-offset-4 hover:underline',
+    };
+    const sizes = {
+      default: 'h-9 px-4 py-2',
+      sm: 'h-8 px-3',
+      lg: 'h-10 px-6',
+      icon: 'size-9',
+    };
+    
+    return [
+      base,
+      variants[variant as keyof typeof variants] || variants.default,
+      sizes[size as keyof typeof sizes] || sizes.default,
+      className
+    ].filter(Boolean).join(' ');
+  },
+}));
+
 // Mock fetchClient to return our test data
 vi.mock('@/lib/fetch', () => ({
   fetchClient: vi.fn(),
@@ -589,7 +619,37 @@ describe('ModelSelector', () => {
       }
     );
 
-    // Mock fetchClient to return our test data
+    // Mock the button component with buttonVariants
+vi.mock('@/components/ui/button', () => ({
+  Button: ({ children, className, ...props }: any) =>
+    React.createElement('button', { ...props, className }, children),
+  buttonVariants: ({ variant = 'default', size = 'default', className }: any = {}) => {
+    const base = 'inline-flex items-center justify-center';
+    const variants = {
+      default: 'bg-primary text-primary-foreground',
+      destructive: 'bg-destructive text-white',
+      outline: 'border border-input bg-background',
+      secondary: 'bg-secondary text-secondary-foreground',
+      ghost: 'hover:bg-accent hover:text-accent-foreground',
+      link: 'text-primary underline-offset-4 hover:underline',
+    };
+    const sizes = {
+      default: 'h-9 px-4 py-2',
+      sm: 'h-8 px-3',
+      lg: 'h-10 px-6',
+      icon: 'size-9',
+    };
+    
+    return [
+      base,
+      variants[variant as keyof typeof variants] || variants.default,
+      sizes[size as keyof typeof sizes] || sizes.default,
+      className
+    ].filter(Boolean).join(' ');
+  },
+}));
+
+// Mock fetchClient to return our test data
     vi.mocked(fetchClient).mockImplementation(async (url: string) => {
       if (url.includes('/api/models')) {
         return {

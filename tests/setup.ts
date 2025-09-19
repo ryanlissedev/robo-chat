@@ -530,12 +530,42 @@ afterEach(() => {
 // Partial mock for ui/button to provide buttonVariants for tests that import it
 vi.mock('@/components/ui/button', async (importOriginal) => {
   const actual = (await importOriginal()) as any;
+  
+  // Create a proper buttonVariants function that matches the cva signature
+  const buttonVariants = ({ variant = 'default', size = 'default', className }: any = {}) => {
+    const base = 'inline-flex items-center justify-center';
+    const variants = {
+      default: 'bg-primary text-primary-foreground',
+      destructive: 'bg-destructive text-white',
+      outline: 'border border-input bg-background',
+      secondary: 'bg-secondary text-secondary-foreground',
+      ghost: 'hover:bg-accent hover:text-accent-foreground',
+      link: 'text-primary underline-offset-4 hover:underline',
+    };
+    const sizes = {
+      default: 'h-9 px-4 py-2',
+      sm: 'h-8 px-3',
+      lg: 'h-10 px-6',
+      icon: 'size-9',
+    };
+    
+    return [
+      base,
+      variants[variant as keyof typeof variants] || variants.default,
+      sizes[size as keyof typeof sizes] || sizes.default,
+      className
+    ].filter(Boolean).join(' ');
+  };
+
   return {
     ...actual,
-    buttonVariants: actual.buttonVariants ?? (({ variant, size, className }: any) => {
-      const base = 'inline-flex items-center justify-center';
-      return [base, className].filter(Boolean).join(' ');
-    }),
+    buttonVariants: actual.buttonVariants || buttonVariants,
+    Button: actual.Button || (({ children, className, variant, size, ...props }: any) =>
+      React.createElement('button', {
+        ...props,
+        className: buttonVariants({ variant, size, className })
+      }, children)
+    ),
   };
 });
 

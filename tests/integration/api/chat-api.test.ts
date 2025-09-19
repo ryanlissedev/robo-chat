@@ -140,7 +140,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
       const result = await validateAndTrackUsage(params);
 
       expect(result).toBeNull();
-      expect(validateUserIdentity).toHaveBeenCalledWith(mockUserId, true);
+      expect(validateUserIdentity).toHaveBeenCalledWith(mockUserId, true, undefined);
     });
 
     it('should return supabase client when validation succeeds', async () => {
@@ -160,7 +160,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
       const result = await validateAndTrackUsage(params);
 
       expect(result).toBe(mockSupabaseClient);
-      expect(validateUserIdentity).toHaveBeenCalledWith(mockUserId, true);
+      expect(validateUserIdentity).toHaveBeenCalledWith(mockUserId, true, undefined);
       expect(checkUsageByModel).toHaveBeenCalledWith(
         mockSupabaseClient,
         mockUserId,
@@ -194,7 +194,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
       });
 
       expect(result).toBe(mockSupabaseClient);
-      expect(validateUserIdentity).toHaveBeenCalledWith(mockUserId, true);
+      expect(validateUserIdentity).toHaveBeenCalledWith(mockUserId, true, undefined);
       expect(getUserKey).toHaveBeenCalledWith(mockUserId, 'openai');
       expect(checkUsageByModel).toHaveBeenCalledWith(
         mockSupabaseClient,
@@ -311,7 +311,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
       const result = await validateAndTrackUsage(params);
 
       expect(result).toBe(mockSupabaseClient);
-      expect(validateUserIdentity).toHaveBeenCalledWith(mockGuestUserId, false);
+      expect(validateUserIdentity).toHaveBeenCalledWith(mockGuestUserId, false, undefined);
       expect(checkUsageByModel).toHaveBeenCalledWith(
         mockSupabaseClient,
         mockGuestUserId,
@@ -330,7 +330,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
       const result = await validateAndTrackUsage(params);
 
       expect(result).toBe(mockSupabaseClient);
-      expect(validateUserIdentity).toHaveBeenCalledWith(mockGuestUserId, false);
+      expect(validateUserIdentity).toHaveBeenCalledWith(mockGuestUserId, false, undefined);
       expect(checkUsageByModel).toHaveBeenCalledWith(
         mockSupabaseClient,
         mockGuestUserId,
@@ -350,7 +350,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
       const result = await validateAndTrackUsage(params);
 
       expect(result).toBe(mockSupabaseClient);
-      expect(validateUserIdentity).toHaveBeenCalledWith(mockGuestUserId, false);
+      expect(validateUserIdentity).toHaveBeenCalledWith(mockGuestUserId, false, undefined);
       expect(checkUsageByModel).toHaveBeenCalledWith(
         mockSupabaseClient,
         mockGuestUserId,
@@ -369,7 +369,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
       await expect(validateAndTrackUsage(params)).rejects.toThrow(
         'This model requires authentication or an API key. Please sign in or provide your API key to access this model.'
       );
-      expect(validateUserIdentity).toHaveBeenCalledWith(mockGuestUserId, false);
+      expect(validateUserIdentity).toHaveBeenCalledWith(mockGuestUserId, false, undefined);
     });
 
     it('should handle edge case with model name containing ollama but not starting with ollama:', async () => {
@@ -447,7 +447,7 @@ describe('app/api/chat/api.ts - Chat API Business Logic', () => {
 
       await validateAndTrackUsage(params);
 
-      expect(validateUserIdentity).toHaveBeenCalledWith(mockGuestUserId, false);
+      expect(validateUserIdentity).toHaveBeenCalledWith(mockGuestUserId, false, undefined);
       expect(checkUsageByModel).toHaveBeenCalledWith(
         mockSupabaseClient,
         mockGuestUserId,
