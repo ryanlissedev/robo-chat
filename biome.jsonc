@@ -2,7 +2,16 @@
   "$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
   "files": {
     "ignoreUnknown": true,
-    "maxSize": 1024000
+    "maxSize": 2048000,
+    "ignore": [
+      "node_modules/**",
+      ".next/**",
+      "dist/**",
+      "build/**",
+      "coverage/**",
+      "playwright-report/**",
+      "playwright-test-results/**"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -14,14 +23,19 @@
   "linter": {
     "enabled": true,
     "rules": {
+      "recommended": true,
       "correctness": {
         "noUnusedImports": "error",
-        "noUnusedVariables": "error"
+        "noUnusedVariables": "error",
+        "useExhaustiveDependencies": "warn"
       },
       "suspicious": {
         "noConsole": "error",
         "noDebugger": "error",
         "noExplicitAny": "warn"
+      },
+      "performance": {
+        "noDelete": "error"
       },
       "style": {
         "noNonNullAssertion": "warn",

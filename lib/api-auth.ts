@@ -1,20 +1,27 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createGuestServerClient } from '@/lib/supabase/server-guest';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
+import type { Database } from '@/app/types/database.types';
 import {
   isGuestUser,
   getGuestUserId,
   DEFAULT_GUEST_PREFERENCES,
   createGuestCookie,
   generateGuestUserId,
-  isValidUUID
 } from '@/lib/utils';
+import { rateLimit, type RateLimitEndpoint } from '@/lib/middleware/rate-limit';
+import {
+  sanitizeInput,
+  validateOrigin,
+  securityHeaders,
+} from '@/lib/security/middleware';
 
 export interface AuthResult {
   isGuest: boolean;
   userId: string | null;
-  supabase: any;
-  user: any;
+  supabase: SupabaseClient<Database> | null;
+  user: User | { id: string; anonymous: true } | null;
 }
 
 export interface GuestPreferences {
@@ -23,38 +30,69 @@ export interface GuestPreferences {
   show_tool_invocations: boolean;
   show_conversation_previews: boolean;
   multi_model_enabled: boolean;
-  hidden_models: string[];
-  favorite_models: string[];
+  hidden_models: readonly string[];
+  favorite_models: readonly string[];
 }
 
 /**
- * Authenticate user or handle guest access
+ * Enhanced authentication with security checks
  * Returns authentication result with proper Supabase client
  */
-export async function authenticateRequest(request: NextRequest): Promise<AuthResult> {
-  const isGuest = isGuestUser(request);
-
-  if (isGuest) {
-    const guestUserId = getGuestUserId(request);
-    const supabase = await createGuestServerClient();
-
-    return {
-      isGuest: true,
-      userId: guestUserId,
-      supabase,
-      user: guestUserId ? { id: guestUserId, anonymous: true } : null,
-    };
+export async function authenticateRequest(
+  request: NextRequest,
+  options: {
+    requireAuth?: boolean;
+    rateLimit?: RateLimitEndpoint;
+    validateOrigin?: boolean;
+  } = {}
+): Promise<AuthResult> {
+  // Security checks
+  if (options.validateOrigin && !validateOrigin(request)) {
+    throw new Error('Invalid origin');
   }
 
-  // Regular authenticated user
+  // Rate limiting check
+  if (options.rateLimit) {
+    const rateLimitResponse = await rateLimit(request, options.rateLimit);
+    if (rateLimitResponse) {
+      throw new Error('Rate limit exceeded');
+    }
+  }
+
+  // Database connection check
   const supabase = await createClient();
   if (!supabase) {
     throw new Error('Database connection failed');
   }
 
+  const isGuest = isGuestUser(request);
+
+  if (isGuest) {
+    const guestUserId = getGuestUserId(request);
+    const guestSupabase = await createGuestServerClient();
+
+    return {
+      isGuest: true,
+      userId: guestUserId,
+      supabase: guestSupabase || supabase, // Fallback to main client if guest client fails
+      user: guestUserId ? { id: guestUserId, anonymous: true } : null,
+    };
+  }
+
+  // Regular authenticated user
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+
+  // Handle authentication errors
+  if (authError) {
+    // Log auth error for debugging (remove in production)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Authentication error:', authError);
+    }
+    throw new Error('Unauthorized');
+  }
 
   if (user?.id) {
     return {
@@ -65,14 +103,20 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
     };
   }
 
-  // Fallback to guest session when no authenticated user is present
-  const guestUserId = getGuestUserId(request) || generateGuestUserId();
+  // If auth is required and no user found, throw error
+  if (options.requireAuth) {
+    throw new Error('Authentication required');
+  }
+
+  // Return a guest user result when no authenticated user is found
+  // The middleware will decide whether to allow this based on allowGuests option
+  const guestUserId = generateGuestUserId();
   const guestSupabase = await createGuestServerClient();
 
   return {
     isGuest: true,
     userId: guestUserId,
-    supabase: guestSupabase,
+    supabase: guestSupabase || supabase, // Fallback to main client if guest client fails
     user: { id: guestUserId, anonymous: true },
   };
 }
@@ -83,7 +127,10 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
 export async function getUserPreferences(
   request: NextRequest,
   authResult: AuthResult
-): Promise<{ preferences: GuestPreferences; headers?: Record<string, string> }> {
+): Promise<{
+  preferences: GuestPreferences;
+  headers?: Record<string, string>;
+}> {
   if (authResult.isGuest) {
     return getGuestPreferences(request, authResult.userId);
   }
@@ -93,6 +140,10 @@ export async function getUserPreferences(
   }
 
   // Get authenticated user preferences
+  if (!authResult.supabase) {
+    throw new Error('Database not available');
+  }
+
   const { data, error } = await authResult.supabase
     .from('user_preferences')
     .select('*')
@@ -103,15 +154,17 @@ export async function getUserPreferences(
     throw new Error('Failed to fetch user preferences');
   }
 
-  const preferences = data ? {
-    layout: data.layout,
-    prompt_suggestions: data.prompt_suggestions,
-    show_tool_invocations: data.show_tool_invocations,
-    show_conversation_previews: data.show_conversation_previews,
-    multi_model_enabled: data.multi_model_enabled,
-    hidden_models: data.hidden_models || [],
-    favorite_models: [], // Will be fetched separately
-  } : DEFAULT_GUEST_PREFERENCES;
+  const preferences: GuestPreferences = data
+    ? {
+        layout: data.layout || 'fullscreen',
+        prompt_suggestions: data.prompt_suggestions ?? true,
+        show_tool_invocations: data.show_tool_invocations ?? true,
+        show_conversation_previews: data.show_conversation_previews ?? true,
+        multi_model_enabled: data.multi_model_enabled ?? false,
+        hidden_models: (data.hidden_models || []) as readonly string[],
+        favorite_models: [] as readonly string[], // Will be fetched separately
+      }
+    : DEFAULT_GUEST_PREFERENCES;
 
   return { preferences };
 }
@@ -125,19 +178,22 @@ export function getGuestPreferences(
 ): { preferences: GuestPreferences; headers?: Record<string, string> } {
   const cookieHeader = request.headers.get('cookie') || '';
   const cookies = Object.fromEntries(
-    cookieHeader.split('; ').map(cookie => {
-      const [name, value] = cookie.split('=');
-      return [name, decodeURIComponent(value || '')];
-    })
+    cookieHeader
+      .split('; ')
+      .filter(Boolean)
+      .map((cookie) => {
+        const [name, value] = cookie.split('=');
+        return [name, decodeURIComponent(value || '')];
+      })
   );
 
   // Parse preferences from cookies or use defaults
   let preferences: GuestPreferences;
   try {
     const savedPrefs = cookies['guest-preferences'];
-    preferences = savedPrefs ?
-      { ...DEFAULT_GUEST_PREFERENCES, ...JSON.parse(savedPrefs) } :
-      { ...DEFAULT_GUEST_PREFERENCES };
+    preferences = savedPrefs
+      ? { ...DEFAULT_GUEST_PREFERENCES, ...JSON.parse(savedPrefs) }
+      : { ...DEFAULT_GUEST_PREFERENCES };
   } catch {
     preferences = { ...DEFAULT_GUEST_PREFERENCES };
   }
@@ -148,8 +204,8 @@ export function getGuestPreferences(
   const headers = {
     'Set-Cookie': [
       createGuestCookie('guest-user-id', finalGuestId),
-      createGuestCookie('guest-preferences', JSON.stringify(preferences))
-    ].join(', ')
+      createGuestCookie('guest-preferences', JSON.stringify(preferences)),
+    ].join(', '),
   };
 
   return { preferences, headers };
@@ -170,8 +226,11 @@ export function updateGuestPreferences(
   const headers = {
     'Set-Cookie': [
       createGuestCookie('guest-user-id', guestUserId),
-      createGuestCookie('guest-preferences', JSON.stringify(updatedPreferences))
-    ].join(', ')
+      createGuestCookie(
+        'guest-preferences',
+        JSON.stringify(updatedPreferences)
+      ),
+    ].join(', '),
   };
 
   return { preferences: updatedPreferences, headers };
@@ -184,7 +243,10 @@ export async function updateUserPreferences(
   request: NextRequest,
   authResult: AuthResult,
   updates: Partial<GuestPreferences>
-): Promise<{ preferences: GuestPreferences; headers?: Record<string, string> }> {
+): Promise<{
+  preferences: GuestPreferences;
+  headers?: Record<string, string>;
+}> {
   if (authResult.isGuest) {
     return updateGuestPreferences(request, updates);
   }
@@ -194,6 +256,10 @@ export async function updateUserPreferences(
   }
 
   // Update authenticated user preferences
+  if (!authResult.supabase) {
+    throw new Error('Database not available');
+  }
+
   const { data, error } = await authResult.supabase
     .from('user_preferences')
     .upsert(
@@ -213,13 +279,13 @@ export async function updateUserPreferences(
   }
 
   const preferences: GuestPreferences = {
-    layout: data.layout,
-    prompt_suggestions: data.prompt_suggestions,
-    show_tool_invocations: data.show_tool_invocations,
-    show_conversation_previews: data.show_conversation_previews,
-    multi_model_enabled: data.multi_model_enabled,
-    hidden_models: data.hidden_models || [],
-    favorite_models: [], // Not stored in user_preferences table
+    layout: data.layout || 'fullscreen',
+    prompt_suggestions: data.prompt_suggestions ?? true,
+    show_tool_invocations: data.show_tool_invocations ?? true,
+    show_conversation_previews: data.show_conversation_previews ?? true,
+    multi_model_enabled: data.multi_model_enabled ?? false,
+    hidden_models: (data.hidden_models || []) as readonly string[],
+    favorite_models: [] as readonly string[], // Not stored in user_preferences table
   };
 
   return { preferences };
@@ -231,10 +297,19 @@ export async function updateUserPreferences(
 export async function getUserFavoriteModels(
   request: NextRequest,
   authResult: AuthResult
-): Promise<{ favoriteModels: string[]; headers?: Record<string, string> }> {
+): Promise<{
+  favoriteModels: readonly string[];
+  headers?: Record<string, string>;
+}> {
   if (authResult.isGuest) {
-    const { preferences, headers } = getGuestPreferences(request, authResult.userId);
-    return { favoriteModels: preferences.favorite_models, headers };
+    const { preferences, headers } = getGuestPreferences(
+      request,
+      authResult.userId
+    );
+    return {
+      favoriteModels: preferences.favorite_models as readonly string[],
+      headers,
+    };
   }
 
   if (!authResult.user) {
@@ -242,6 +317,10 @@ export async function getUserFavoriteModels(
   }
 
   // Get authenticated user's favorite models
+  if (!authResult.supabase) {
+    throw new Error('Database not available');
+  }
+
   const { data, error } = await authResult.supabase
     .from('users')
     .select('favorite_models')
@@ -252,7 +331,11 @@ export async function getUserFavoriteModels(
     throw new Error('Failed to fetch favorite models');
   }
 
-  return { favoriteModels: data.favorite_models || ['gpt-5-mini'] };
+  return {
+    favoriteModels: (data.favorite_models || [
+      'gpt-5-mini',
+    ]) as readonly string[],
+  };
 }
 
 /**
@@ -261,11 +344,14 @@ export async function getUserFavoriteModels(
 export async function updateUserFavoriteModels(
   request: NextRequest,
   authResult: AuthResult,
-  favoriteModels: string[]
-): Promise<{ favoriteModels: string[]; headers?: Record<string, string> }> {
+  favoriteModels: readonly string[]
+): Promise<{
+  favoriteModels: readonly string[];
+  headers?: Record<string, string>;
+}> {
   if (authResult.isGuest) {
     const { preferences, headers } = updateGuestPreferences(request, {
-      favorite_models: favoriteModels
+      favorite_models: favoriteModels,
     });
     return { favoriteModels: preferences.favorite_models, headers };
   }
@@ -275,6 +361,10 @@ export async function updateUserFavoriteModels(
   }
 
   // Update authenticated user's favorite models
+  if (!authResult.supabase) {
+    throw new Error('Database not available');
+  }
+
   const { data, error } = await authResult.supabase
     .from('users')
     .update({ favorite_models: favoriteModels } as never)
@@ -286,31 +376,45 @@ export async function updateUserFavoriteModels(
     throw new Error('Failed to update favorite models');
   }
 
-  return { favoriteModels: data.favorite_models };
+  return { favoriteModels: data.favorite_models as readonly string[] };
 }
 
 /**
- * Create error response for unauthorized access
+ * Create enhanced unauthorized response with security headers
  */
-export function createUnauthorizedResponse(message = 'Unauthorized'): NextResponse {
-  return NextResponse.json({ error: message }, { status: 401 });
+export function createUnauthorizedResponse(
+  message = 'Unauthorized',
+  headers?: Record<string, string>
+): NextResponse {
+  return createErrorResponse(message, 401, headers);
 }
 
 /**
- * Create error response with proper headers for guests
+ * Create error response with proper headers and security
  */
 export function createErrorResponse(
   error: string,
   status = 500,
   headers?: Record<string, string>
 ): NextResponse {
-  const response = NextResponse.json({ error }, { status });
+  const response = NextResponse.json(
+    {
+      error: String(sanitizeInput(error)),
+      timestamp: new Date().toISOString(),
+      status,
+    },
+    { status }
+  );
 
+  // Apply security headers
+  const secureResponse = securityHeaders(response);
+
+  // Apply custom headers
   if (headers) {
     Object.entries(headers).forEach(([key, value]) => {
-      response.headers.set(key, value);
+      secureResponse.headers.set(key, value);
     });
   }
 
-  return response;
+  return secureResponse;
 }

@@ -132,7 +132,9 @@ export default function TestMock() {
       >
         <input
           value={input}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setInput(e.target.value)
+          }
           className="flex-1 border p-2 rounded"
           placeholder="Type a message..."
           disabled={status !== 'ready'}

@@ -64,6 +64,7 @@ interface ReasoningPart {
   delta?: string;
   reasoningText?: string;
   toolName?: string;
+  output?: unknown;
 }
 
 interface TypedToolPart {
@@ -338,7 +339,7 @@ const ToolInvocationCard = memo(function ToolInvocationCard({
     <AITool key={tp.toolCallId}>
       <AIToolHeader
         state={tp.state ?? 'input-available'}
-        type={tp.type as `tool-${string}`}
+        type={tp.type}
       />
       <AIToolContent>
         {tp.input ? <AIToolInput input={tp.input} /> : null}
@@ -464,7 +465,7 @@ export function MessageAssistant({
         status === 'error' && 'border-red-200 bg-red-50',
         className
       )}
-      data-testid="chat-message"
+      data-testid="message-assistant"
       data-role="assistant"
       data-status={status}
     >

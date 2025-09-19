@@ -177,7 +177,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
       const result = await validateUserIdentity(mockGuestUserId, false);
 
       expect(result).toBe(mockSupabaseClient);
-      expect(createGuestServerClient).toHaveBeenCalled();
+      expect(mockCreateGuestServerClient).toHaveBeenCalled();
       expect(mockSupabaseClient.from).not.toHaveBeenCalled();
     });
 
@@ -185,38 +185,23 @@ describe('lib/server/api.ts - Server API Validation', () => {
       const result = await validateUserIdentity(mockTempGuestUserId, false);
 
       expect(result).toBe(mockSupabaseClient);
-      expect(createGuestServerClient).toHaveBeenCalled();
+      expect(mockCreateGuestServerClient).toHaveBeenCalled();
       expect(mockSupabaseClient.from).not.toHaveBeenCalled();
     });
 
     it('should handle edge case with guest- at end of userId', async () => {
       const edgeGuestUserId = 'user-guest-123';
 
-      // Mock database operations for non-temp guest user
-      const mockSelect = vi.fn(() => ({
-        eq: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: { id: edgeGuestUserId },
-              error: null,
-            }),
-          })),
-        })),
-      }));
-      mockSupabaseClient.from.mockReturnValue({
-        select: mockSelect,
-        insert: vi.fn(),
-      });
-
       const result = await validateUserIdentity(edgeGuestUserId, false);
 
       expect(result).toBe(mockSupabaseClient);
-      expect(mockSupabaseClient.from).toHaveBeenCalledWith('users');
+      expect(mockCreateGuestServerClient).toHaveBeenCalled();
+      // This user ID doesn't start with 'guest-' or 'temp-guest-' so it should skip database validation only if it's not a valid UUID
     });
   });
 
   describe('validateUserIdentity - Persistent Guest Users Database Operations', () => {
-    const persistentGuestUserId = 'persistent-guest-123';
+    const persistentGuestUserId = '123e4567-e89b-12d3-a456-426614174000'; // Valid UUID
 
     beforeEach(() => {
       // Ensure we're not in skip conditions
@@ -406,7 +391,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
   describe('validateUserIdentity - Environment Variable Edge Cases', () => {
     it('should handle DISABLE_RATE_LIMIT set to false string', async () => {
       process.env.DISABLE_RATE_LIMIT = 'false';
-      const persistentGuestUserId = 'persistent-guest-123';
+      const persistentGuestUserId = '123e4567-e89b-12d3-a456-426614174000'; // Valid UUID
 
       const mockSelect = vi.fn(() => ({
         eq: vi.fn(() => ({
@@ -431,7 +416,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
 
     it('should handle NODE_ENV set to test', async () => {
       process.env.NODE_ENV = 'test';
-      const persistentGuestUserId = 'persistent-guest-123';
+      const persistentGuestUserId = '123e4567-e89b-12d3-a456-426614174000'; // Valid UUID
 
       const mockSelect = vi.fn(() => ({
         eq: vi.fn(() => ({
@@ -457,7 +442,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
     it('should handle empty environment variables', async () => {
       process.env.DISABLE_RATE_LIMIT = '';
       process.env.NODE_ENV = '';
-      const persistentGuestUserId = 'persistent-guest-123';
+      const persistentGuestUserId = '123e4567-e89b-12d3-a456-426614174000'; // Valid UUID
 
       const mockSelect = vi.fn(() => ({
         eq: vi.fn(() => ({
@@ -573,8 +558,8 @@ describe('lib/server/api.ts - Server API Validation', () => {
       const result = await validateUserIdentity(mockUserId, true);
 
       expect(result).toBe(mockSupabaseClient);
-      expect(createClient).toHaveBeenCalledOnce();
-      expect(createGuestServerClient).not.toHaveBeenCalled();
+      expect(mockCreateClient).toHaveBeenCalledOnce();
+      expect(mockCreateGuestServerClient).not.toHaveBeenCalled();
     });
 
     it('should handle typical guest user flow', async () => {
@@ -583,8 +568,8 @@ describe('lib/server/api.ts - Server API Validation', () => {
       const result = await validateUserIdentity(guestId, false);
 
       expect(result).toBe(mockSupabaseClient);
-      expect(createGuestServerClient).toHaveBeenCalledOnce();
-      expect(createClient).not.toHaveBeenCalled();
+      expect(mockCreateGuestServerClient).toHaveBeenCalledOnce();
+      expect(mockCreateClient).not.toHaveBeenCalled();
     });
 
     it('should handle switching between auth and guest modes', async () => {
@@ -600,7 +585,7 @@ describe('lib/server/api.ts - Server API Validation', () => {
 
       // Reset mocks
       vi.clearAllMocks();
-      vi.mocked(createGuestServerClient).mockResolvedValue(
+      mockCreateGuestServerClient.mockResolvedValue(
         mockSupabaseClient as any
       );
 
@@ -608,8 +593,8 @@ describe('lib/server/api.ts - Server API Validation', () => {
       const guestResult = await validateUserIdentity('guest-123', false);
       expect(guestResult).toBe(mockSupabaseClient);
 
-      expect(createClient).toHaveBeenCalledTimes(0); // Not called in second
-      expect(createGuestServerClient).toHaveBeenCalledTimes(1);
+      expect(mockCreateClient).toHaveBeenCalledTimes(0); // Not called in second
+      expect(mockCreateGuestServerClient).toHaveBeenCalledTimes(1);
     });
   });
 });

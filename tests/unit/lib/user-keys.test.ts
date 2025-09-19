@@ -29,16 +29,8 @@ vi.mock('next/headers', () => ({
   cookies: vi.fn(),
 }));
 
-// Import the actual module to be tested (use importOriginal to bypass global mocks)
-const { getUserKey, getEffectiveApiKey } = (await vi.importActual(
-  '@/lib/user-keys'
-)) as {
-  getUserKey: (userId: string, provider: any) => Promise<string | null>;
-  getEffectiveApiKey: (
-    userId: string | null,
-    provider: any
-  ) => Promise<string | null>;
-};
+// Import the actual module to be tested
+import { getUserKey, getEffectiveApiKey } from '@/lib/user-keys';
 
 import { cookies } from 'next/headers';
 

@@ -158,6 +158,47 @@ vi.mock('@/components/ui/button', () => ({
   ),
 }));
 
+// Mock UI Select components
+vi.mock('@/components/ui/select', () => ({
+  Select: ({ children, onValueChange, value, open, onOpenChange, disabled }: any) => (
+    <div data-testid="select-root" data-value={value} data-disabled={disabled}>
+      {React.Children.map(children, (child) =>
+        React.isValidElement(child)
+          ? React.cloneElement(child, { onValueChange, value, open, onOpenChange })
+          : child
+      )}
+    </div>
+  ),
+  SelectTrigger: ({ children, className, ...props }: any) => (
+    <button
+      type="button"
+      data-testid="select-trigger"
+      className={className}
+      {...props}
+    >
+      {children}
+    </button>
+  ),
+  SelectValue: ({ children }: any) => (
+    <div data-testid="select-value">{children}</div>
+  ),
+  SelectContent: ({ children, className }: any) => (
+    <div data-testid="select-content" className={className}>
+      {children}
+    </div>
+  ),
+  SelectItem: ({ children, value, className, onClick }: any) => (
+    <div
+      data-testid="select-item"
+      data-value={value}
+      className={className}
+      onClick={onClick}
+    >
+      {children}
+    </div>
+  ),
+}));
+
 vi.mock('@/components/app/chat-input/button-file-upload', () => ({
   ButtonFileUpload: ({ isUserAuthenticated, model, onFileUpload }: any) => (
     <button
@@ -222,6 +263,8 @@ vi.mock('lucide-react', () => ({
   ArrowUpRight: () => <div data-testid="arrow-up-right-icon" />,
   Gauge: () => <div data-testid="gauge-icon" />,
   Zap: () => <div data-testid="zap-icon" />,
+  ListTree: () => <div data-testid="list-tree-icon" />,
+  FileText: () => <div data-testid="file-text-icon" />,
 }));
 
 describe('ChatInput', () => {

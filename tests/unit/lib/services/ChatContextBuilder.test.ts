@@ -25,6 +25,7 @@ vi.mock('@/lib/tools/file-search');
 vi.mock('@/lib/utils/logger');
 vi.mock('ai', () => ({
   convertToModelMessages: vi.fn(),
+  tool: vi.fn(),
 }));
 
 describe('ChatContextBuilder', () => {

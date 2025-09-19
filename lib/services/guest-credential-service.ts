@@ -78,7 +78,7 @@ export class GuestCredentialService implements IGuestCredentialService {
 
     switch (request.storageScope) {
       case 'request':
-        // For request-only, we don't store it anywhere
+        // For request-only scope, just mask the key without storing
         result = { masked: maskKey(request.key) };
         break;
       case 'tab':
@@ -94,13 +94,17 @@ export class GuestCredentialService implements IGuestCredentialService {
           request.passphrase || ''
         );
         break;
+      default:
+        throw new Error(`Unsupported storage scope: ${request.storageScope}`);
     }
 
-    // Store metadata in guest settings for display purposes
-    guestSettings.saveApiKeyMeta(request.provider, {
-      masked: result.masked,
-      storage: request.storageScope,
-    });
+    // Store metadata in guest settings for display purposes (except for request-only scope)
+    if (request.storageScope !== 'request') {
+      guestSettings.saveApiKeyMeta(request.provider, {
+        masked: result.masked,
+        storage: request.storageScope,
+      });
+    }
 
     return {
       masked: result.masked,

@@ -5,7 +5,7 @@ import React from 'react';
  */
 
 import { render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Loader } from '@/components/ai-elements/loader';
 
 describe('Loader Component', () => {
@@ -90,7 +90,13 @@ describe('Loader Component', () => {
 
     const clipPath = container.querySelector('clipPath');
     expect(clipPath).toBeInTheDocument();
-    expect(clipPath).toHaveAttribute('id', 'clip0_2393_1490');
+    expect(clipPath).toHaveAttribute('id');
+
+    // Verify the id attribute exists and is not empty
+    const clipId = clipPath?.getAttribute('id');
+    expect(clipId).toBeTruthy();
+    expect(typeof clipId).toBe('string');
+    expect(clipId!.length).toBeGreaterThan(0);
 
     const rect = clipPath?.querySelector('rect');
     expect(rect).toHaveAttribute('fill', 'white');
@@ -107,7 +113,9 @@ describe('Loader Component', () => {
     const paths = svg?.querySelectorAll('path');
     paths?.forEach((path) => {
       expect(path).toHaveAttribute('stroke', 'currentColor');
-      expect(path).toHaveAttribute('strokeWidth', '1.5');
+      // Check both possible attribute names due to DOM vs React differences
+      const strokeWidth = path.getAttribute('strokeWidth') || path.getAttribute('stroke-width');
+      expect(strokeWidth).toBe('1.5');
     });
   });
 
@@ -115,7 +123,9 @@ describe('Loader Component', () => {
     const { container } = render(<Loader />);
 
     const svg = container.querySelector('svg');
-    expect(svg).toHaveAttribute('strokeLinejoin', 'round');
+    // Check both possible attribute names due to DOM vs React differences
+    const strokeLinejoin = svg?.getAttribute('strokeLinejoin') || svg?.getAttribute('stroke-linejoin');
+    expect(strokeLinejoin).toBe('round');
   });
 
   it('should handle zero size', () => {

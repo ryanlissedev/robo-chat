@@ -159,7 +159,9 @@ export default function SimpleTest() {
         >
           <input
             value={input}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setInput(e.target.value)
+            }
             className="flex-1 border border-gray-300 p-3 rounded-lg"
             placeholder="Type 'test' to see reasoning and response..."
             disabled={status !== 'ready'}

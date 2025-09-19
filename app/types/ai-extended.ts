@@ -146,25 +146,24 @@ export function hasAttachments(
  * Extracts text content from AI SDK v5 messages
  */
 export function getMessageContent(message: ExtendedUIMessage): string {
-  // AI SDK v5 content array format (new)
-  if (message.content && Array.isArray(message.content)) {
-    return message.content
-      .filter((part: ContentPart) => part.type === 'text')
-      .map((part: ContentPart) => part.text)
-      .join('');
-  }
-
-  // AI SDK v4 string content format
+  // AI SDK v4 string content format (prioritize this for backward compatibility)
   if (typeof message.content === 'string') {
     return message.content;
+  }
+
+  // AI SDK v5 content array format (new)
+  if (message.content && Array.isArray(message.content)) {
+    const textParts = message.content
+      .filter((part: ContentPart) => part.type === 'text')
+      .map((part: ContentPart) => part.text || '')
+      .join('');
+    return textParts;
   }
 
   // AI SDK v5 parts array format
   if (message.parts && Array.isArray(message.parts)) {
     const textParts = extractTextContent(message.parts as MessagePart[]);
-    if (textParts) {
-      return textParts;
-    }
+    return textParts;
   }
 
   // Handle direct text property (edge case)

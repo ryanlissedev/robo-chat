@@ -390,7 +390,8 @@ describe('Guest User Authentication and Authorization', () => {
             array[i] = Math.floor(Math.random() * 256);
           }
         }
-        return btoa(String.fromCharCode(...array));
+        // Use Buffer-based btoa implementation that works in tests
+        return Buffer.from(String.fromCharCode(...array)).toString('base64');
       };
 
       const token = generateSessionToken();
@@ -403,17 +404,17 @@ describe('Guest User Authentication and Authorization', () => {
     it('should validate session token integrity', () => {
       const validateSessionToken = (token: string) => {
         try {
-          const decoded = atob(token);
+          const decoded = Buffer.from(token, 'base64').toString();
           return decoded.length === 32; // 32 bytes when decoded
         } catch {
           return false;
         }
       };
 
-      const validToken = btoa('a'.repeat(32)); // Valid 32-byte token
+      const validToken = Buffer.from('a'.repeat(32)).toString('base64'); // Valid 32-byte token
       const invalidTokens = [
         'invalid-token',
-        btoa('short'),
+        Buffer.from('short').toString('base64'),
         '',
         'not-base64-!!!',
       ];

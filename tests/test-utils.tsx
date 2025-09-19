@@ -39,6 +39,7 @@ export const mockUserProfile = {
   daily_reset: '2024-01-02T00:00:00Z',
   daily_pro_message_count: 0,
   daily_pro_reset: '2024-01-02T00:00:00Z',
+  verbosity: 'low' as const,
 } as const;
 
 export const mockModelConfig = {

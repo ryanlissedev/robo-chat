@@ -1,0 +1,94 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - region "Notifications alt+T"
+    - generic:
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - link [ref=e1] [cursor=pointer]:
+                - /url: /
+                - img [ref=e2] [cursor=pointer]
+                - text: RoboRail Assistant
+              - generic [ref=e3]:
+                - button [ref=e4]:
+                  - img [ref=e5]
+                - generic [ref=e8]:
+                  - heading [level=2] [ref=e9]: Chat History
+                  - paragraph [ref=e10]: Search through your past conversations
+                - button [ref=e11]:
+                  - generic [ref=e13]: G
+        - generic:
+          - generic:
+            - heading [level=1]: How can we help you today?
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                    - text: Operation
+                  - button:
+                    - img
+                    - text: Troubleshooting
+                  - button:
+                    - img
+                    - text: Maintenance
+                  - button:
+                    - img
+                    - text: Safety
+                  - button:
+                    - img
+                    - text: Specifications
+                  - button:
+                    - img
+                    - text: Setup
+              - generic:
+                - generic:
+                  - textbox
+                  - generic:
+                    - generic:
+                      - button:
+                        - img
+                      - generic:
+                        - button [expanded]:
+                          - generic:
+                            - generic: Select model
+                          - img
+                      - combobox:
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: Medium
+                        - img
+                      - combobox:
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: Auto summary
+                        - img
+                    - generic:
+                      - button:
+                        - img
+          - generic:
+            - generic:
+              - generic:
+                - button:
+                  - generic: Help
+                  - generic:
+                    - img
+  - button "Open Next.js Dev Tools" [ref=e19] [cursor=pointer]:
+    - img [ref=e20] [cursor=pointer]
+  - alert
+  - menu "Select model" [active] [ref=e23]:
+    - generic [ref=e25]:
+      - img [ref=e26]
+      - textbox "Search models..." [ref=e29]
+    - generic [ref=e31]:
+      - paragraph [ref=e32]: No results found.
+      - link "Request a new model" [ref=e33] [cursor=pointer]:
+        - /url: https://github.com/ibelick/zola/issues/new?title=Model%20Request%3A%20
+```

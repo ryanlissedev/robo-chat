@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/lib/server/api');
 vi.mock('@/lib/langsmith/client');
 vi.mock('@/lib/supabase/server');
+vi.mock('@/lib/api-auth');
 vi.mock('@/lib/providers/index', () => ({
   PROVIDERS: [
     { id: 'openai', name: 'OpenAI', available: true, icon: () => null },
@@ -448,7 +449,7 @@ describe('API Routes', () => {
 
   describe('/api/user-key-status', () => {
     describe('GET', () => {
-      it('should return 500 when Supabase is not configured', async () => {
+      it('should return default status when Supabase is not configured', async () => {
         const { createClient } = await import('@/lib/supabase/server');
 
         vi.mocked(createClient).mockResolvedValue(null);
@@ -456,11 +457,11 @@ describe('API Routes', () => {
         const response = await userKeyStatusGET();
         const json = await response.json();
 
-        expect(response.status).toBe(500);
-        expect(json.error).toBe('Supabase not available');
+        expect(response.status).toBe(200);
+        expect(json).toEqual({ openai: false, anthropic: false });
       });
 
-      it('should return 401 when user is not authenticated', async () => {
+      it('should return default status when user is not authenticated', async () => {
         const { createClient } = await import('@/lib/supabase/server');
 
         const mockSupabase = {
@@ -476,8 +477,8 @@ describe('API Routes', () => {
         const response = await userKeyStatusGET();
         const json = await response.json();
 
-        expect(response.status).toBe(401);
-        expect(json.error).toBe('Unauthorized');
+        expect(response.status).toBe(200);
+        expect(json).toEqual({ openai: false, anthropic: false });
       });
 
       it('should return provider status based on user keys', async () => {
@@ -548,8 +549,8 @@ describe('API Routes', () => {
         const response = await userKeyStatusGET();
         const json = await response.json();
 
-        expect(response.status).toBe(500);
-        expect(json.error).toBe('Internal server error');
+        expect(response.status).toBe(200);
+        expect(json).toEqual({ openai: false, anthropic: false });
       });
     });
   });
@@ -557,58 +558,65 @@ describe('API Routes', () => {
   describe('/api/user-preferences/favorite-models', () => {
     describe('GET', () => {
       it('should return 500 when Supabase is not configured', async () => {
-        const { createClient } = await import('@/lib/supabase/server');
-        vi.mocked(createClient).mockResolvedValue(null);
+        const { authenticateRequest, createErrorResponse } = await import('@/lib/api-auth');
 
-        const response = await favoriteModelsGet();
+        vi.mocked(authenticateRequest).mockRejectedValue(
+          new Error('Database connection failed')
+        );
+
+        vi.mocked(createErrorResponse).mockReturnValue(
+          {
+            json: () => Promise.resolve({ error: 'Database connection failed' }),
+            status: 500,
+          } as any
+        );
+
+        const mockRequest = { headers: new Headers() } as NextRequest;
+        const response = await favoriteModelsGet(mockRequest);
         const json = await response.json();
 
         expect(response.status).toBe(500);
         expect(json.error).toBe('Database connection failed');
       });
 
-      it('should return 401 when user is not authenticated', async () => {
-        const { createClient } = await import('@/lib/supabase/server');
-        const mockSupabase = {
-          auth: {
-            getUser: vi.fn().mockResolvedValue({
-              data: { user: null },
-              error: null,
-            }),
-          },
-        };
-        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+      it('should return empty favorite models for unauthenticated users (guest mode)', async () => {
+        const { authenticateRequest, getUserFavoriteModels } = await import('@/lib/api-auth');
 
-        const response = await favoriteModelsGet();
+        vi.mocked(authenticateRequest).mockResolvedValue({
+          isGuest: true,
+          userId: 'guest-123',
+          supabase: null,
+          user: { id: 'guest-123', anonymous: true },
+        });
+
+        vi.mocked(getUserFavoriteModels).mockResolvedValue({
+          favoriteModels: [],
+        });
+
+        const mockRequest = { headers: new Headers() } as NextRequest;
+        const response = await favoriteModelsGet(mockRequest);
         const json = await response.json();
 
-        expect(response.status).toBe(401);
-        expect(json.error).toBe('Unauthorized');
+        expect(response.status).toBe(200);
+        expect(json.favorite_models).toEqual([]);
       });
 
       it('should return user favorite models', async () => {
-        const { createClient } = await import('@/lib/supabase/server');
-        const mockSupabase = {
-          auth: {
-            getUser: vi.fn().mockResolvedValue({
-              data: { user: { id: 'test-user-id' } },
-              error: null,
-            }),
-          },
-          from: vi.fn().mockReturnValue({
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: { favorite_models: ['gpt-4', 'claude-3-opus'] },
-                  error: null,
-                }),
-              }),
-            }),
-          }),
-        };
-        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+        const { authenticateRequest, getUserFavoriteModels } = await import('@/lib/api-auth');
 
-        const response = await favoriteModelsGet();
+        vi.mocked(authenticateRequest).mockResolvedValue({
+          isGuest: false,
+          userId: 'test-user-id',
+          supabase: {} as any,
+          user: { id: 'test-user-id' } as any,
+        });
+
+        vi.mocked(getUserFavoriteModels).mockResolvedValue({
+          favoriteModels: ['gpt-4', 'claude-3-opus'],
+        });
+
+        const mockRequest = { headers: new Headers() } as NextRequest;
+        const response = await favoriteModelsGet(mockRequest);
         const json = await response.json();
 
         expect(response.status).toBe(200);
@@ -618,28 +626,28 @@ describe('API Routes', () => {
       });
 
       it('should handle database error', async () => {
-        const { createClient } = await import('@/lib/supabase/server');
-        const mockSupabase = {
-          auth: {
-            getUser: vi.fn().mockResolvedValue({
-              data: { user: { id: 'test-user-id' } },
-              error: null,
-            }),
-          },
-          from: vi.fn().mockReturnValue({
-            select: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: null,
-                  error: { message: 'Database error' },
-                }),
-              }),
-            }),
-          }),
-        };
-        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+        const { authenticateRequest, getUserFavoriteModels, createErrorResponse } = await import('@/lib/api-auth');
 
-        const response = await favoriteModelsGet();
+        vi.mocked(authenticateRequest).mockResolvedValue({
+          isGuest: false,
+          userId: 'test-user-id',
+          supabase: {} as any,
+          user: { id: 'test-user-id' } as any,
+        });
+
+        vi.mocked(getUserFavoriteModels).mockRejectedValue(
+          new Error('Failed to fetch favorite models')
+        );
+
+        vi.mocked(createErrorResponse).mockReturnValue(
+          {
+            json: () => Promise.resolve({ error: 'Failed to fetch favorite models' }),
+            status: 500,
+          } as any
+        );
+
+        const mockRequest = { headers: new Headers() } as NextRequest;
+        const response = await favoriteModelsGet(mockRequest);
         const json = await response.json();
 
         expect(response.status).toBe(500);
@@ -649,13 +657,24 @@ describe('API Routes', () => {
 
     describe('POST', () => {
       it('should return 500 when Supabase is not configured', async () => {
-        const { createClient } = await import('@/lib/supabase/server');
-        vi.mocked(createClient).mockResolvedValue(null);
+        const { authenticateRequest, createErrorResponse } = await import('@/lib/api-auth');
+
+        vi.mocked(authenticateRequest).mockRejectedValue(
+          new Error('Database connection failed')
+        );
+
+        vi.mocked(createErrorResponse).mockReturnValue(
+          {
+            json: () => Promise.resolve({ error: 'Database connection failed' }),
+            status: 500,
+          } as any
+        );
 
         const mockRequest = {
           json: vi.fn().mockResolvedValue({
             favorite_models: ['gpt-4'],
           }),
+          headers: new Headers(),
         } as unknown as NextRequest;
 
         const response = await favoriteModelsPost(mockRequest);
@@ -666,21 +685,20 @@ describe('API Routes', () => {
       });
 
       it('should return 400 if favorite_models is not an array', async () => {
-        const { createClient } = await import('@/lib/supabase/server');
-        const mockSupabase = {
-          auth: {
-            getUser: vi.fn().mockResolvedValue({
-              data: { user: { id: 'test-user-id' } },
-              error: null,
-            }),
-          },
-        };
-        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+        const { authenticateRequest } = await import('@/lib/api-auth');
+
+        vi.mocked(authenticateRequest).mockResolvedValue({
+          isGuest: false,
+          userId: 'test-user-id',
+          supabase: {} as any,
+          user: { id: 'test-user-id' } as any,
+        });
 
         const mockRequest = {
           json: vi.fn().mockResolvedValue({
             favorite_models: 'not-an-array',
           }),
+          headers: new Headers(),
         } as unknown as NextRequest;
 
         const response = await favoriteModelsPost(mockRequest);
@@ -691,21 +709,20 @@ describe('API Routes', () => {
       });
 
       it('should return 400 if favorite_models contains non-string values', async () => {
-        const { createClient } = await import('@/lib/supabase/server');
-        const mockSupabase = {
-          auth: {
-            getUser: vi.fn().mockResolvedValue({
-              data: { user: { id: 'test-user-id' } },
-              error: null,
-            }),
-          },
-        };
-        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+        const { authenticateRequest } = await import('@/lib/api-auth');
+
+        vi.mocked(authenticateRequest).mockResolvedValue({
+          isGuest: false,
+          userId: 'test-user-id',
+          supabase: {} as any,
+          user: { id: 'test-user-id' } as any,
+        });
 
         const mockRequest = {
           json: vi.fn().mockResolvedValue({
             favorite_models: ['gpt-4', 123, 'claude-3-opus'],
           }),
+          headers: new Headers(),
         } as unknown as NextRequest;
 
         const response = await favoriteModelsPost(mockRequest);
@@ -716,33 +733,24 @@ describe('API Routes', () => {
       });
 
       it('should successfully update favorite models', async () => {
-        const { createClient } = await import('@/lib/supabase/server');
-        const mockSupabase = {
-          auth: {
-            getUser: vi.fn().mockResolvedValue({
-              data: { user: { id: 'test-user-id' } },
-              error: null,
-            }),
-          },
-          from: vi.fn().mockReturnValue({
-            update: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                select: vi.fn().mockReturnValue({
-                  single: vi.fn().mockResolvedValue({
-                    data: { favorite_models: ['gpt-4', 'claude-3-opus'] },
-                    error: null,
-                  }),
-                }),
-              }),
-            }),
-          }),
-        };
-        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+        const { authenticateRequest, updateUserFavoriteModels } = await import('@/lib/api-auth');
+
+        vi.mocked(authenticateRequest).mockResolvedValue({
+          isGuest: false,
+          userId: 'test-user-id',
+          supabase: {} as any,
+          user: { id: 'test-user-id' } as any,
+        });
+
+        vi.mocked(updateUserFavoriteModels).mockResolvedValue({
+          favoriteModels: ['gpt-4', 'claude-3-opus'],
+        });
 
         const mockRequest = {
           json: vi.fn().mockResolvedValue({
             favorite_models: ['gpt-4', 'claude-3-opus'],
           }),
+          headers: new Headers(),
         } as unknown as NextRequest;
 
         const response = await favoriteModelsPost(mockRequest);
@@ -756,33 +764,31 @@ describe('API Routes', () => {
       });
 
       it('should handle database update error', async () => {
-        const { createClient } = await import('@/lib/supabase/server');
-        const mockSupabase = {
-          auth: {
-            getUser: vi.fn().mockResolvedValue({
-              data: { user: { id: 'test-user-id' } },
-              error: null,
-            }),
-          },
-          from: vi.fn().mockReturnValue({
-            update: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                select: vi.fn().mockReturnValue({
-                  single: vi.fn().mockResolvedValue({
-                    data: null,
-                    error: { message: 'Update failed' },
-                  }),
-                }),
-              }),
-            }),
-          }),
-        };
-        vi.mocked(createClient).mockResolvedValue(mockSupabase as any);
+        const { authenticateRequest, updateUserFavoriteModels, createErrorResponse } = await import('@/lib/api-auth');
+
+        vi.mocked(authenticateRequest).mockResolvedValue({
+          isGuest: false,
+          userId: 'test-user-id',
+          supabase: {} as any,
+          user: { id: 'test-user-id' } as any,
+        });
+
+        vi.mocked(updateUserFavoriteModels).mockRejectedValue(
+          new Error('Failed to update favorite models')
+        );
+
+        vi.mocked(createErrorResponse).mockReturnValue(
+          {
+            json: () => Promise.resolve({ error: 'Failed to update favorite models' }),
+            status: 500,
+          } as any
+        );
 
         const mockRequest = {
           json: vi.fn().mockResolvedValue({
             favorite_models: ['gpt-4'],
           }),
+          headers: new Headers(),
         } as unknown as NextRequest;
 
         const response = await favoriteModelsPost(mockRequest);

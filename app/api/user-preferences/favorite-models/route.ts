@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   authenticateRequest,
-  updateUserFavoriteModels,
-  getUserFavoriteModels,
   createErrorResponse,
+  getUserFavoriteModels,
+  updateUserFavoriteModels,
 } from '@/lib/api-auth';
 
 export async function POST(request: NextRequest) {
@@ -52,7 +52,8 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Internal server error';
     const status = errorMessage.includes('Unauthorized') ? 401 : 500;
     return createErrorResponse(errorMessage, status);
   }
@@ -82,7 +83,8 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Internal server error';
     const status = errorMessage.includes('Unauthorized') ? 401 : 500;
     return createErrorResponse(errorMessage, status);
   }

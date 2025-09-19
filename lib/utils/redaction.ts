@@ -79,31 +79,40 @@ export function redactSensitiveHeaders(
       // key is already lowercase from Headers API
 
       // Check if this is a sensitive header (case-insensitive)
+      const lowerKey = key.toLowerCase();
       const isSensitive =
         SENSITIVE_HEADERS.some(
-          (sensitiveHeader) => sensitiveHeader.toLowerCase() === key
+          (sensitiveHeader) => sensitiveHeader.toLowerCase() === lowerKey
         ) ||
-        key.includes('api-key') ||
-        key.includes('api_key') ||
-        key.includes('apikey') ||
-        key.includes('authorization') ||
-        key.includes('token') ||
-        key.includes('secret') ||
-        key.includes('password') ||
-        key.includes('credential');
+        lowerKey.includes('api-key') ||
+        lowerKey.includes('api_key') ||
+        lowerKey.includes('apikey') ||
+        lowerKey.includes('authorization') ||
+        lowerKey.includes('token') ||
+        lowerKey.includes('secret') ||
+        lowerKey.includes('password') ||
+        lowerKey.includes('credential');
 
       if (isSensitive) {
-        // Store with the lowercase key (Headers forEach lowercases keys)
+        // Store with the original key (as it appears in Headers)
         redacted[key] = REDACTION_PLACEHOLDER;
-        // Also store with a canonical cased key to satisfy tests expecting original casing
-        const canonical = canonicalHeaderName(key);
-        redacted[canonical] = REDACTION_PLACEHOLDER;
+        // Also store with lowercase key for consistent access
+        redacted[lowerKey] = REDACTION_PLACEHOLDER;
+        // Also store with canonical cased key to satisfy tests expecting original casing
+        const canonical = canonicalHeaderName(lowerKey);
+        if (canonical !== key && canonical !== lowerKey) {
+          redacted[canonical] = REDACTION_PLACEHOLDER;
+        }
       } else {
-        // Keep lowercase key
+        // Keep original key
         redacted[key] = value;
+        // Also store with lowercase key for consistent access
+        if (key !== lowerKey) {
+          redacted[lowerKey] = value;
+        }
         // Also include canonical common header casing (e.g., Content-Type)
-        const canonical = canonicalHeaderName(key);
-        if (canonical !== key) {
+        const canonical = canonicalHeaderName(lowerKey);
+        if (canonical !== key && canonical !== lowerKey) {
           redacted[canonical] = value;
         }
       }

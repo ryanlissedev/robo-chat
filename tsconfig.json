@@ -1,42 +1,55 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "types": ["vitest/globals", "@testing-library/jest-dom/vitest"],
+    "target": "ES2020",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "types": [
+      "vitest/globals",
+      "@testing-library/jest-dom/vitest"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "forceConsistentCasingInFileNames": true,
     "plugins": [
       {
         "name": "next"
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     },
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "lib/types.d.ts",
     "next-env.d.ts",
-    ".next/types/**/*.ts",
-    "lib/types.d.ts"
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "tests",
     "vitest.config.ts",
     "playwright.config.ts",
-
     "playwright-test-results",
     "coverage-results.json",
     "coverage",

@@ -1,7 +1,7 @@
 'use client';
 
 import { Brain, Filter, RefreshCw, Search } from 'lucide-react';
-import { useCallback, useEffect, useId, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,10 +54,13 @@ type RetrievalSettingsProps = {
   userId: string;
 };
 
-export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
-  const queryRewritingId = useId();
-  const useHydeId = useId();
-  const rerankingId = useId();
+export const RetrievalSettings = React.memo(function RetrievalSettings({ userId }: RetrievalSettingsProps) {
+  // Memoized unique IDs to prevent re-generation on each render
+  const ids = useMemo(() => ({
+    queryRewriting: useId(),
+    useHyde: useId(),
+    reranking: useId(),
+  }), []);
 
   const [config, setConfig] = useState<RetrievalConfig>({
     queryRewriting: true,
@@ -161,30 +164,33 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
     }
   };
 
-  const updateConfig = <K extends keyof RetrievalConfig>(
+  const updateConfig = useCallback(<K extends keyof RetrievalConfig>(
     key: K,
     value: RetrievalConfig[K]
   ) => {
-    setConfig({ ...config, [key]: value });
+    setConfig(prev => ({ ...prev, [key]: value }));
     setSaved(false);
-  };
+  }, []);
 
-  const resetToDefaults = () => {
-    setConfig({
-      queryRewriting: true,
-      rewriteStrategy: 'expansion',
-      reranking: true,
-      rerankingMethod: 'semantic',
-      topK: 5,
-      temperature: 0.3,
-      minScore: 0.7,
-      useHyDE: false,
-      diversityLambda: 0.5,
-      chunkSize: 1000,
-      chunkOverlap: 200,
-    });
+  // Memoize default config to prevent object recreation
+  const defaultConfig = useMemo(() => ({
+    queryRewriting: true,
+    rewriteStrategy: 'expansion' as const,
+    reranking: true,
+    rerankingMethod: 'semantic' as const,
+    topK: 5,
+    temperature: 0.3,
+    minScore: 0.7,
+    useHyDE: false,
+    diversityLambda: 0.5,
+    chunkSize: 1000,
+    chunkOverlap: 200,
+  }), []);
+
+  const resetToDefaults = useCallback(() => {
+    setConfig(defaultConfig);
     setSaved(false);
-  };
+  }, [defaultConfig]);
 
   return (
     <div className="space-y-4">
@@ -200,7 +206,7 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label htmlFor={queryRewritingId}>Enable Query Rewriting</Label>
+            <Label htmlFor={ids.queryRewriting}>Enable Query Rewriting</Label>
             <Switch
               checked={config.queryRewriting}
               onCheckedChange={(checked) =>
@@ -259,11 +265,12 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
           )}
 
           <div className="flex items-center justify-between">
-            <Label htmlFor={useHydeId}>
+            <Label htmlFor={ids.useHyde}>
               Use Hypothetical Document Embedding (HyDE)
             </Label>
             <Switch
               checked={config.useHyDE}
+              id={ids.useHyde}
               onCheckedChange={(checked) => updateConfig('useHyDE', checked)}
             />
           </div>
@@ -282,9 +289,10 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label htmlFor={rerankingId}>Enable Reranking</Label>
+            <Label htmlFor={ids.reranking}>Enable Reranking</Label>
             <Switch
               checked={config.reranking}
+              id={ids.reranking}
               onCheckedChange={(checked) => updateConfig('reranking', checked)}
             />
           </div>
@@ -491,4 +499,4 @@ export function RetrievalSettings({ userId }: RetrievalSettingsProps) {
       </div>
     </div>
   );
-}
+});

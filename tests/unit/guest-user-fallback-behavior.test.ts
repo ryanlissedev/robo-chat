@@ -25,7 +25,10 @@ global.window = {
 describe('Guest User Fallback Behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(window.navigator.onLine) = true;
+    Object.defineProperty(window.navigator, 'onLine', {
+      value: true,
+      configurable: true,
+    });
   });
 
   describe('Authentication Failure Fallbacks', () => {
@@ -266,7 +269,7 @@ describe('Guest User Fallback Behavior', () => {
     it('should detect offline status', () => {
       const networkMonitor = {
         isOnline(): boolean {
-          return navigator.onLine;
+          return window.navigator.onLine;
         },
 
         getNetworkStatus(): {
@@ -299,7 +302,10 @@ describe('Guest User Fallback Behavior', () => {
       expect(networkMonitor.isOnline()).toBe(true);
 
       // Test offline simulation
-      vi.mocked(window.navigator.onLine) = false;
+      Object.defineProperty(window.navigator, 'onLine', {
+        value: false,
+        configurable: true,
+      });
       expect(networkMonitor.isOnline()).toBe(false);
 
       // Test network status
@@ -438,7 +444,7 @@ describe('Guest User Fallback Behavior', () => {
       expect(stats.expired).toBe(0); // Expired entries are cleaned up on access
     });
 
-    it('should queue operations for when network returns', () => {
+    it('should queue operations for when network returns', async () => {
       const operationQueue = {
         queue: [] as Array<{ id: string; operation: () => Promise<any>; retries: number }>,
         maxRetries: 3,
@@ -492,7 +498,7 @@ describe('Guest User Fallback Behavior', () => {
       expect(operationQueue.getQueuedOperations()).toEqual(['op1', 'op2']);
 
       // Test processing queue
-      operationQueue.process();
+      await operationQueue.process();
 
       expect(mockOp1).toHaveBeenCalled();
       expect(mockOp2).toHaveBeenCalled();

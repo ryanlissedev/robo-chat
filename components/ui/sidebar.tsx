@@ -86,7 +86,7 @@ function SidebarProvider({
       if ('cookieStore' in window) {
         try {
           (
-            window as Window & {
+            window as unknown as {
               cookieStore?: {
                 set: (options: {
                   name: string;

@@ -184,33 +184,74 @@ export async function validateAuthentication(
 
 /**
  * Parse and validate JSON request body with test-compatible API
+ * Supports both simple parsing and validation with required fields
  */
 export async function parseRequestBody<T>(
   request: Request
-): Promise<{ success: true; data: T } | { success: false; error: string }> {
+): Promise<{ success: true; data: T } | { success: false; error: string }>;
+export async function parseRequestBody<T>(
+  request: Request,
+  requiredFields: string[]
+): Promise<ApiValidationResult<T>>;
+export async function parseRequestBody<T>(
+  request: Request,
+  requiredFields?: string[]
+): Promise<
+  | { success: true; data: T }
+  | { success: false; error: string }
+  | ApiValidationResult<T>
+> {
   try {
     const text = await request.text();
 
     if (!text.trim()) {
+      if (requiredFields) {
+        return {
+          isValid: false,
+          error: 'Empty request body',
+          statusCode: 400,
+        };
+      }
       return { success: false, error: 'Empty request body' };
     }
 
     const data = JSON.parse(text);
-    return { success: true, data };
-  } catch (error) {
-    if (error instanceof Error) {
-      if (
-        error.message.includes('Unexpected token') ||
-        error.message.includes('Expected property name')
-      ) {
-        return { success: false, error: 'Invalid JSON in request body' };
-      }
+
+    // If requiredFields is provided, return ApiValidationResult format
+    if (requiredFields) {
+      const validation = validateRequiredParams(data, requiredFields);
       return {
-        success: false,
-        error: `Failed to parse request body: ${error.message}`,
+        isValid: validation.isValid,
+        data: validation.isValid ? data : undefined,
+        error: validation.error,
+        statusCode: validation.statusCode,
       };
     }
-    return { success: false, error: 'Failed to parse request body' };
+
+    // Otherwise return simple success/error format
+    return { success: true, data };
+  } catch (error) {
+    const errorMessage = (() => {
+      if (error instanceof Error) {
+        if (
+          error.message.includes('Unexpected token') ||
+          error.message.includes('Expected property name')
+        ) {
+          return 'Invalid JSON in request body';
+        }
+        return `Failed to parse request body: ${error.message}`;
+      }
+      return 'Failed to parse request body';
+    })();
+
+    if (requiredFields) {
+      return {
+        isValid: false,
+        error: errorMessage,
+        statusCode: 400,
+      };
+    }
+    return { success: false, error: errorMessage };
   }
 }
 

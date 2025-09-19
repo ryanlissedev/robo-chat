@@ -262,8 +262,8 @@ export class ChatContextBuilder {
   }
 
   private static getLastUserText(messages: ExtendedUIMessage[]): string {
-    const last = messages.at(-1);
-    return last ? (last.content?.toString() ?? '') : '';
+    const lastUserMessage = messages.findLast(msg => msg.role === 'user');
+    return lastUserMessage ? (lastUserMessage.content?.toString() ?? '') : '';
   }
 
   private static getPreview(

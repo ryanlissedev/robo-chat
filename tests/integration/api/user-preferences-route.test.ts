@@ -11,9 +11,23 @@ import {
 
 // Hoisted mocks
 const mockCreateClient = vi.hoisted(() => vi.fn());
+const mockRateLimit = vi.hoisted(() => vi.fn());
+const mockAuthenticateRequest = vi.hoisted(() => vi.fn());
+const mockGetUserPreferences = vi.hoisted(() => vi.fn());
+const mockUpdateUserPreferences = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: mockCreateClient,
+}));
+
+vi.mock('@/lib/middleware/rate-limit', () => ({
+  rateLimit: mockRateLimit,
+}));
+
+vi.mock('@/lib/api-auth', () => ({
+  authenticateRequest: mockAuthenticateRequest,
+  getUserPreferences: mockGetUserPreferences,
+  updateUserPreferences: mockUpdateUserPreferences,
 }));
 
 const mockUser = {
@@ -46,16 +60,32 @@ describe('User Preferences API Route', () => {
   let mockQuery: any;
 
   // Helper function for creating mock requests
-  const createMockRequest = (body: any) => {
-    return new NextRequest('http://localhost:3000/api/user-preferences', {
-      method: 'PUT',
+  const createMockRequest = (body: any, method: string = 'PUT') => {
+    const config: RequestInit = {
+      method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+    };
+
+    if (method !== 'GET' && body) {
+      config.body = JSON.stringify(body);
+    }
+
+    return new NextRequest('http://localhost:3000/api/user-preferences', config);
+  };
+
+  // Helper function for creating GET requests
+  const createMockGetRequest = () => {
+    return new NextRequest('http://localhost:3000/api/user-preferences', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
     });
   };
 
   beforeEach(async () => {
     vi.clearAllMocks();
+
+    // Mock rate limiting to allow all requests
+    mockRateLimit.mockResolvedValue(null);
 
     // Setup test environment
     setupTestEnvironment(true);
@@ -79,6 +109,23 @@ describe('User Preferences API Route', () => {
 
     // Setup client creation
     mockCreateClient.mockResolvedValue(mockSupabaseClient);
+
+    // Setup default authentication
+    mockAuthenticateRequest.mockResolvedValue({
+      isGuest: false,
+      userId: mockUser.id,
+      supabase: mockSupabaseClient,
+      user: mockUser,
+    });
+
+    // Setup default preferences responses (will be overridden in specific tests)
+    mockGetUserPreferences.mockResolvedValue({
+      preferences: defaultPreferences,
+    });
+
+    mockUpdateUserPreferences.mockResolvedValue({
+      preferences: mockUserPreferences,
+    });
   });
 
   afterEach(() => {
@@ -88,57 +135,76 @@ describe('User Preferences API Route', () => {
 
   describe('GET /api/user-preferences', () => {
     describe('Authentication', () => {
-      it('should return 500 when database connection fails', async () => {
-        mockCreateClient.mockResolvedValue(null);
+      it('should return 503 when database connection fails', async () => {
+        mockAuthenticateRequest.mockRejectedValue(new Error('Database connection failed'));
 
-        const response = await GET();
+        const response = await GET(createMockGetRequest());
         const json = await response.json();
 
-        expect(response.status).toBe(500);
+        expect(response.status).toBe(503);
         expect(json).toEqual({
-          error: 'Database connection failed',
+          error: 'Service temporarily unavailable',
+          code: 'SERVICE_UNAVAILABLE',
+          timestamp: expect.any(String),
         });
       });
 
-      it('should return 401 when user is not authenticated', async () => {
-        mockSupabaseClient.auth.getUser.mockResolvedValue({
-          data: { user: null },
-          error: null,
+      it('should return default preferences when user is not authenticated (guest mode)', async () => {
+        mockAuthenticateRequest.mockResolvedValue({
+          isGuest: true,
+          userId: 'guest-user-123',
+          supabase: mockSupabaseClient,
+          user: { id: 'guest-user-123', anonymous: true },
         });
 
-        const response = await GET();
+        mockGetUserPreferences.mockResolvedValue({
+          preferences: defaultPreferences,
+        });
+
+        const response = await GET(createMockGetRequest());
         const json = await response.json();
 
-        expect(response.status).toBe(401);
-        expect(json).toEqual({ error: 'Unauthorized' });
+        expect(response.status).toBe(200);
+        expect(json.success).toBe(true);
+        expect(json.data).toBeDefined();
+        expect(json.data).toEqual(defaultPreferences);
       });
 
       it('should return 401 when auth error occurs', async () => {
-        mockSupabaseClient.auth.getUser.mockResolvedValue({
-          data: { user: null },
-          error: { message: 'Invalid token', status: 401 },
-        });
+        mockAuthenticateRequest.mockRejectedValue(new Error('Unauthorized'));
 
-        const response = await GET();
+        const response = await GET(createMockGetRequest());
         const json = await response.json();
 
         expect(response.status).toBe(401);
-        expect(json).toEqual({ error: 'Unauthorized' });
+        expect(json).toEqual({
+          error: 'Authentication required',
+          code: 'UNAUTHORIZED',
+          timestamp: expect.any(String),
+        });
       });
     });
 
     describe('Successful Preference Retrieval', () => {
       it('should return user preferences when they exist', async () => {
-        mockQuery.single.mockResolvedValue({
-          data: mockUserPreferences,
-          error: null,
+        mockGetUserPreferences.mockResolvedValue({
+          preferences: {
+            layout: 'fullscreen',
+            prompt_suggestions: true,
+            show_tool_invocations: true,
+            show_conversation_previews: true,
+            multi_model_enabled: false,
+            hidden_models: ['model-1', 'model-2'],
+            favorite_models: [],
+          },
         });
 
-        const response = await GET();
+        const response = await GET(createMockGetRequest());
         const json = await response.json();
 
         expect(response.status).toBe(200);
-        expect(json).toEqual({
+        expect(json.success).toBe(true);
+        expect(json.data).toEqual({
           layout: 'fullscreen',
           prompt_suggestions: true,
           show_tool_invocations: true,
@@ -146,13 +212,6 @@ describe('User Preferences API Route', () => {
           multi_model_enabled: false,
           hidden_models: ['model-1', 'model-2'],
         });
-
-        expect(mockSupabaseClient.from).toHaveBeenCalledWith(
-          'user_preferences'
-        );
-        expect(mockQuery.select).toHaveBeenCalledWith('*');
-        expect(mockQuery.eq).toHaveBeenCalledWith('user_id', 'user-123');
-        expect(mockQuery.single).toHaveBeenCalled();
       });
 
       it('should return default preferences when none exist for user', async () => {
@@ -161,11 +220,12 @@ describe('User Preferences API Route', () => {
           error: { code: 'PGRST116', message: 'No rows returned' },
         });
 
-        const response = await GET();
+        const response = await GET(createMockGetRequest());
         const json = await response.json();
 
         expect(response.status).toBe(200);
-        expect(json).toEqual(defaultPreferences);
+        expect(json.success).toBe(true);
+        expect(json.data).toEqual(defaultPreferences);
       });
 
       it('should handle null hidden_models correctly', async () => {
@@ -177,11 +237,12 @@ describe('User Preferences API Route', () => {
           error: null,
         });
 
-        const response = await GET();
+        const response = await GET(createMockGetRequest());
         const json = await response.json();
 
         expect(response.status).toBe(200);
-        expect(json.hidden_models).toEqual([]);
+        expect(json.success).toBe(true);
+        expect(json.data.hidden_models).toEqual([]);
       });
 
       it('should handle undefined hidden_models correctly', async () => {
@@ -193,70 +254,73 @@ describe('User Preferences API Route', () => {
           error: null,
         });
 
-        const response = await GET();
+        const response = await GET(createMockGetRequest());
         const json = await response.json();
 
         expect(response.status).toBe(200);
-        expect(json.hidden_models).toEqual([]);
+        expect(json.success).toBe(true);
+        expect(json.data.hidden_models).toEqual([]);
       });
     });
 
     describe('Database Errors', () => {
       it('should return 500 when database query fails', async () => {
-        mockQuery.single.mockResolvedValue({
-          data: null,
-          error: { code: 'PGRST500', message: 'Database error' },
-        });
+        mockGetUserPreferences.mockRejectedValue(new Error('Failed to fetch user preferences'));
 
-        const response = await GET();
+        const response = await GET(createMockGetRequest());
         const json = await response.json();
 
         expect(response.status).toBe(500);
         expect(json).toEqual({
-          error: 'Failed to fetch user preferences',
+          error: 'Internal server error',
+          code: 'INTERNAL_ERROR',
+          timestamp: expect.any(String),
         });
       });
 
       it('should handle timeout errors gracefully', async () => {
-        mockQuery.single.mockResolvedValue({
-          data: null,
-          error: { code: 'PGRST301', message: 'Timeout' },
-        });
+        mockGetUserPreferences.mockRejectedValue(new Error('Failed to fetch user preferences'));
 
-        const response = await GET();
+        const response = await GET(createMockGetRequest());
         const json = await response.json();
 
         expect(response.status).toBe(500);
         expect(json).toEqual({
-          error: 'Failed to fetch user preferences',
+          error: 'Internal server error',
+          code: 'INTERNAL_ERROR',
+          timestamp: expect.any(String),
         });
       });
     });
 
     describe('Exception Handling', () => {
       it('should return 500 when unexpected error occurs', async () => {
-        mockSupabaseClient.auth.getUser.mockRejectedValue(
+        mockGetUserPreferences.mockRejectedValue(
           new Error('Unexpected error')
         );
 
-        const response = await GET();
+        const response = await GET(createMockGetRequest());
         const json = await response.json();
 
         expect(response.status).toBe(500);
         expect(json).toEqual({
           error: 'Internal server error',
+          code: 'INTERNAL_ERROR',
+          timestamp: expect.any(String),
         });
       });
 
       it('should handle network errors gracefully', async () => {
-        mockCreateClient.mockRejectedValue(new Error('Network error'));
+        mockGetUserPreferences.mockRejectedValue(new Error('Network error'));
 
-        const response = await GET();
+        const response = await GET(createMockGetRequest());
         const json = await response.json();
 
         expect(response.status).toBe(500);
         expect(json).toEqual({
           error: 'Internal server error',
+          code: 'INTERNAL_ERROR',
+          timestamp: expect.any(String),
         });
       });
     });
@@ -264,45 +328,59 @@ describe('User Preferences API Route', () => {
 
   describe('PUT /api/user-preferences', () => {
     describe('Authentication', () => {
-      it('should return 500 when database connection fails', async () => {
-        mockCreateClient.mockResolvedValue(null);
+      it('should return 503 when database connection fails', async () => {
+        mockAuthenticateRequest.mockRejectedValue(new Error('Database connection failed'));
         const request = createMockRequest({ layout: 'sidebar' });
 
         const response = await PUT(request);
         const json = await response.json();
 
-        expect(response.status).toBe(500);
+        expect(response.status).toBe(503);
         expect(json).toEqual({
-          error: 'Database connection failed',
+          error: 'Service temporarily unavailable',
+          code: 'SERVICE_UNAVAILABLE',
+          timestamp: expect.any(String),
         });
       });
 
-      it('should return 401 when user is not authenticated', async () => {
-        mockSupabaseClient.auth.getUser.mockResolvedValue({
-          data: { user: null },
-          error: null,
+      it('should update preferences for unauthenticated users (guest mode)', async () => {
+        mockAuthenticateRequest.mockResolvedValue({
+          isGuest: true,
+          userId: 'guest-user-123',
+          supabase: mockSupabaseClient,
+          user: { id: 'guest-user-123', anonymous: true },
         });
+
+        mockUpdateUserPreferences.mockResolvedValue({
+          preferences: {
+            ...defaultPreferences,
+            layout: 'sidebar',
+          },
+        });
+
         const request = createMockRequest({ layout: 'sidebar' });
 
         const response = await PUT(request);
         const json = await response.json();
 
-        expect(response.status).toBe(401);
-        expect(json).toEqual({ error: 'Unauthorized' });
+        expect(response.status).toBe(200);
+        expect(json.success).toBe(true);
+        expect(json.data.layout).toBe('sidebar');
       });
 
       it('should return 401 when auth error occurs', async () => {
-        mockSupabaseClient.auth.getUser.mockResolvedValue({
-          data: { user: null },
-          error: { message: 'Invalid token', status: 401 },
-        });
+        mockAuthenticateRequest.mockRejectedValue(new Error('Unauthorized'));
         const request = createMockRequest({ layout: 'sidebar' });
 
         const response = await PUT(request);
         const json = await response.json();
 
         expect(response.status).toBe(401);
-        expect(json).toEqual({ error: 'Unauthorized' });
+        expect(json).toEqual({
+          error: 'Authentication required',
+          code: 'UNAUTHORIZED',
+          timestamp: expect.any(String),
+        });
       });
     });
 
@@ -315,7 +393,10 @@ describe('User Preferences API Route', () => {
 
         expect(response.status).toBe(400);
         expect(json).toEqual({
-          error: 'layout must be a string',
+          error: 'Invalid request data',
+          code: 'VALIDATION_ERROR',
+          timestamp: expect.any(String),
+          details: expect.any(Array),
         });
       });
 
@@ -327,7 +408,10 @@ describe('User Preferences API Route', () => {
 
         expect(response.status).toBe(400);
         expect(json).toEqual({
-          error: 'hidden_models must be an array',
+          error: 'Invalid request data',
+          code: 'VALIDATION_ERROR',
+          timestamp: expect.any(String),
+          details: expect.any(Array),
         });
       });
 
@@ -380,6 +464,13 @@ describe('User Preferences API Route', () => {
       });
 
       it('should update layout preference', async () => {
+        mockUpdateUserPreferences.mockResolvedValue({
+          preferences: {
+            ...mockUserPreferences,
+            layout: 'sidebar',
+          },
+        });
+
         const request = createMockRequest({ layout: 'sidebar' });
 
         const response = await PUT(request);
@@ -387,23 +478,30 @@ describe('User Preferences API Route', () => {
 
         expect(response.status).toBe(200);
         expect(json.success).toBe(true);
-        expect(json.layout).toBe('fullscreen'); // From mocked return
+        expect(json.data.layout).toBe('sidebar');
 
-        expect(mockQuery.upsert).toHaveBeenCalledWith(
-          {
-            user_id: 'user-123',
-            layout: 'sidebar',
-          },
-          { onConflict: 'user_id' }
+        expect(mockUpdateUserPreferences).toHaveBeenCalledWith(
+          expect.any(Object),
+          expect.objectContaining({ userId: 'user-123' }),
+          { layout: 'sidebar' }
         );
       });
 
       it('should update boolean preferences', async () => {
-        const request = createMockRequest({
+        const updatedPrefs = {
           prompt_suggestions: false,
           show_tool_invocations: false,
           multi_model_enabled: true,
+        };
+
+        mockUpdateUserPreferences.mockResolvedValue({
+          preferences: {
+            ...mockUserPreferences,
+            ...updatedPrefs,
+          },
         });
+
+        const request = createMockRequest(updatedPrefs);
 
         const response = await PUT(request);
         const json = await response.json();
@@ -411,19 +509,23 @@ describe('User Preferences API Route', () => {
         expect(response.status).toBe(200);
         expect(json.success).toBe(true);
 
-        expect(mockQuery.upsert).toHaveBeenCalledWith(
-          {
-            user_id: 'user-123',
-            prompt_suggestions: false,
-            show_tool_invocations: false,
-            multi_model_enabled: true,
-          },
-          { onConflict: 'user_id' }
+        expect(mockUpdateUserPreferences).toHaveBeenCalledWith(
+          expect.any(Object),
+          expect.objectContaining({ userId: 'user-123' }),
+          updatedPrefs
         );
       });
 
       it('should update hidden_models array', async () => {
         const newHiddenModels = ['gpt-4', 'claude-3'];
+
+        mockUpdateUserPreferences.mockResolvedValue({
+          preferences: {
+            ...mockUserPreferences,
+            hidden_models: newHiddenModels,
+          },
+        });
+
         const request = createMockRequest({
           hidden_models: newHiddenModels,
         });
@@ -434,12 +536,10 @@ describe('User Preferences API Route', () => {
         expect(response.status).toBe(200);
         expect(json.success).toBe(true);
 
-        expect(mockQuery.upsert).toHaveBeenCalledWith(
-          {
-            user_id: 'user-123',
-            hidden_models: newHiddenModels,
-          },
-          { onConflict: 'user_id' }
+        expect(mockUpdateUserPreferences).toHaveBeenCalledWith(
+          expect.any(Object),
+          expect.objectContaining({ userId: 'user-123' }),
+          { hidden_models: newHiddenModels }
         );
       });
 
@@ -450,6 +550,14 @@ describe('User Preferences API Route', () => {
           hidden_models: ['model-1'],
           multi_model_enabled: true,
         };
+
+        mockUpdateUserPreferences.mockResolvedValue({
+          preferences: {
+            ...mockUserPreferences,
+            ...updateData,
+          },
+        });
+
         const request = createMockRequest(updateData);
 
         const response = await PUT(request);
@@ -458,27 +566,30 @@ describe('User Preferences API Route', () => {
         expect(response.status).toBe(200);
         expect(json.success).toBe(true);
 
-        expect(mockQuery.upsert).toHaveBeenCalledWith(
-          {
-            user_id: 'user-123',
-            ...updateData,
-          },
-          { onConflict: 'user_id' }
+        expect(mockUpdateUserPreferences).toHaveBeenCalledWith(
+          expect.any(Object),
+          expect.objectContaining({ userId: 'user-123' }),
+          updateData
         );
       });
 
       it('should only update provided fields', async () => {
+        mockUpdateUserPreferences.mockResolvedValue({
+          preferences: {
+            ...mockUserPreferences,
+            layout: 'sidebar',
+          },
+        });
+
         const request = createMockRequest({ layout: 'sidebar' });
 
         const response = await PUT(request);
 
         expect(response.status).toBe(200);
-        expect(mockQuery.upsert).toHaveBeenCalledWith(
-          {
-            user_id: 'user-123',
-            layout: 'sidebar',
-          },
-          { onConflict: 'user_id' }
+        expect(mockUpdateUserPreferences).toHaveBeenCalledWith(
+          expect.any(Object),
+          expect.objectContaining({ userId: 'user-123' }),
+          { layout: 'sidebar' }
         );
       });
 
@@ -495,10 +606,7 @@ describe('User Preferences API Route', () => {
 
     describe('Database Errors', () => {
       it('should return 500 when upsert fails', async () => {
-        mockQuery.single.mockResolvedValue({
-          data: null,
-          error: { message: 'Database constraint violation' },
-        });
+        mockUpdateUserPreferences.mockRejectedValue(new Error('Failed to update user preferences'));
 
         const request = createMockRequest({ layout: 'sidebar' });
 
@@ -507,15 +615,14 @@ describe('User Preferences API Route', () => {
 
         expect(response.status).toBe(500);
         expect(json).toEqual({
-          error: 'Failed to update user preferences',
+          error: 'Internal server error',
+          code: 'INTERNAL_ERROR',
+          timestamp: expect.any(String),
         });
       });
 
       it('should handle foreign key constraint errors', async () => {
-        mockQuery.single.mockResolvedValue({
-          data: null,
-          error: { code: '23503', message: 'Foreign key violation' },
-        });
+        mockUpdateUserPreferences.mockRejectedValue(new Error('Failed to update user preferences'));
 
         const request = createMockRequest({ layout: 'sidebar' });
 
@@ -524,15 +631,14 @@ describe('User Preferences API Route', () => {
 
         expect(response.status).toBe(500);
         expect(json).toEqual({
-          error: 'Failed to update user preferences',
+          error: 'Internal server error',
+          code: 'INTERNAL_ERROR',
+          timestamp: expect.any(String),
         });
       });
 
       it('should handle database timeout errors', async () => {
-        mockQuery.single.mockResolvedValue({
-          data: null,
-          error: { code: 'PGRST301', message: 'Request timeout' },
-        });
+        mockUpdateUserPreferences.mockRejectedValue(new Error('Failed to update user preferences'));
 
         const request = createMockRequest({ layout: 'sidebar' });
 
@@ -541,13 +647,15 @@ describe('User Preferences API Route', () => {
 
         expect(response.status).toBe(500);
         expect(json).toEqual({
-          error: 'Failed to update user preferences',
+          error: 'Internal server error',
+          code: 'INTERNAL_ERROR',
+          timestamp: expect.any(String),
         });
       });
     });
 
     describe('Exception Handling', () => {
-      it('should return 500 when JSON parsing fails', async () => {
+      it('should return 400 when JSON parsing fails', async () => {
         const request = new NextRequest(
           'http://localhost:3000/api/user-preferences',
           {
@@ -560,14 +668,16 @@ describe('User Preferences API Route', () => {
         const response = await PUT(request);
         const json = await response.json();
 
-        expect(response.status).toBe(500);
+        expect(response.status).toBe(400);
         expect(json).toEqual({
-          error: 'Internal server error',
+          error: 'Invalid JSON in request body',
+          code: 'INVALID_REQUEST',
+          timestamp: expect.any(String),
         });
       });
 
       it('should handle unexpected errors gracefully', async () => {
-        mockSupabaseClient.auth.getUser.mockRejectedValue(
+        mockUpdateUserPreferences.mockRejectedValue(
           new Error('Unexpected error')
         );
 
@@ -579,11 +689,13 @@ describe('User Preferences API Route', () => {
         expect(response.status).toBe(500);
         expect(json).toEqual({
           error: 'Internal server error',
+          code: 'INTERNAL_ERROR',
+          timestamp: expect.any(String),
         });
       });
 
       it('should handle network errors during update', async () => {
-        mockQuery.single.mockRejectedValue(new Error('Network timeout'));
+        mockUpdateUserPreferences.mockRejectedValue(new Error('Network timeout'));
 
         const request = createMockRequest({ layout: 'sidebar' });
 
@@ -593,17 +705,14 @@ describe('User Preferences API Route', () => {
         expect(response.status).toBe(500);
         expect(json).toEqual({
           error: 'Internal server error',
+          code: 'INTERNAL_ERROR',
+          timestamp: expect.any(String),
         });
       });
     });
 
     describe('Edge Cases', () => {
       it('should handle null values in update data', async () => {
-        mockQuery.single.mockResolvedValue({
-          data: mockUserPreferences,
-          error: null,
-        });
-
         const request = createMockRequest({
           layout: null,
           hidden_models: [],
@@ -612,8 +721,13 @@ describe('User Preferences API Route', () => {
         const response = await PUT(request);
         const json = await response.json();
 
-        expect(response.status).toBe(200);
-        expect(json.success).toBe(true);
+        expect(response.status).toBe(400);
+        expect(json).toEqual({
+          error: 'Invalid request data',
+          code: 'VALIDATION_ERROR',
+          timestamp: expect.any(String),
+          details: expect.any(Array),
+        });
       });
 
       it('should handle very large hidden_models arrays', async () => {
@@ -679,9 +793,8 @@ describe('User Preferences API Route', () => {
 
     describe('Concurrent Operations', () => {
       it('should handle concurrent preference updates', async () => {
-        mockQuery.single.mockResolvedValue({
-          data: mockUserPreferences,
-          error: null,
+        mockUpdateUserPreferences.mockResolvedValue({
+          preferences: mockUserPreferences,
         });
 
         const requests = [
@@ -698,19 +811,18 @@ describe('User Preferences API Route', () => {
           expect(response.status).toBe(200);
         });
 
-        expect(mockQuery.upsert).toHaveBeenCalledTimes(3);
+        expect(mockUpdateUserPreferences).toHaveBeenCalledTimes(3);
       });
 
       it('should maintain data consistency during rapid updates', async () => {
         let callCount = 0;
-        mockQuery.single.mockImplementation(() => {
+        mockUpdateUserPreferences.mockImplementation(() => {
           callCount++;
           return Promise.resolve({
-            data: {
+            preferences: {
               ...mockUserPreferences,
               layout: `update-${callCount}`,
             },
-            error: null,
           });
         });
 
@@ -726,24 +838,19 @@ describe('User Preferences API Route', () => {
           expect(response.status).toBe(200);
         });
 
-        expect(mockQuery.upsert).toHaveBeenCalledTimes(10);
+        expect(mockUpdateUserPreferences).toHaveBeenCalledTimes(10);
       });
     });
 
     describe('Performance', () => {
       it('should handle large preference objects efficiently', async () => {
-        const largeHiddenModels = Array.from({ length: 500 }, (_, i) => ({
-          id: `model-${i}`,
-          name: `Model ${i}`,
-          provider: `Provider ${i % 10}`,
-        }));
+        const largeHiddenModels = Array.from({ length: 500 }, (_, i) => `model-${i}`);
 
-        mockQuery.single.mockResolvedValue({
-          data: {
+        mockUpdateUserPreferences.mockResolvedValue({
+          preferences: {
             ...mockUserPreferences,
             hidden_models: largeHiddenModels,
           },
-          error: null,
         });
 
         const request = createMockRequest({ hidden_models: largeHiddenModels });
@@ -791,76 +898,84 @@ describe('User Preferences API Route', () => {
 
   describe('Integration Scenarios', () => {
     it('should maintain preferences across GET and PUT operations', async () => {
-      // First, create preferences with PUT
-      const updateRequest = createMockRequest({
+      // First, update preferences with PUT
+      const updateData = {
         layout: 'sidebar',
         prompt_suggestions: false,
         hidden_models: ['gpt-4'],
-      });
+      };
 
-      mockQuery.single.mockResolvedValue({
-        data: {
+      mockUpdateUserPreferences.mockResolvedValue({
+        preferences: {
           ...mockUserPreferences,
-          layout: 'sidebar',
-          prompt_suggestions: false,
-          hidden_models: ['gpt-4'],
+          ...updateData,
         },
-        error: null,
       });
 
+      const updateRequest = createMockRequest(updateData);
       const putResponse = await PUT(updateRequest);
       expect(putResponse.status).toBe(200);
 
       // Then, retrieve preferences with GET
-      const getResponse = await GET();
+      mockGetUserPreferences.mockResolvedValue({
+        preferences: {
+          ...mockUserPreferences,
+          ...updateData,
+        },
+      });
+
+      const getResponse = await GET(createMockGetRequest());
       const getJson = await getResponse.json();
 
       expect(getResponse.status).toBe(200);
-      expect(getJson.layout).toBe('sidebar');
-      expect(getJson.prompt_suggestions).toBe(false);
-      expect(getJson.hidden_models).toContain('gpt-4');
+      expect(getJson.success).toBe(true);
+      expect(getJson.data.layout).toBe('sidebar');
+      expect(getJson.data.prompt_suggestions).toBe(false);
+      expect(getJson.data.hidden_models).toContain('gpt-4');
     });
 
     it('should handle user switching and different user preferences', async () => {
-      // Mock different users
-      const user1 = { ...mockUser, id: 'user-1' };
-      const user2 = { ...mockUser, id: 'user-2' };
-
       // First user preferences
-      mockSupabaseClient.auth.getUser.mockResolvedValueOnce({
-        data: { user: user1 },
-        error: null,
+      mockAuthenticateRequest.mockResolvedValueOnce({
+        isGuest: false,
+        userId: 'user-1',
+        supabase: mockSupabaseClient,
+        user: { id: 'user-1' },
       });
 
-      mockQuery.single.mockResolvedValueOnce({
-        data: {
+      mockGetUserPreferences.mockResolvedValueOnce({
+        preferences: {
           ...mockUserPreferences,
-          user_id: 'user-1',
           layout: 'fullscreen',
         },
-        error: null,
       });
 
-      const response1 = await GET();
+      const response1 = await GET(createMockGetRequest());
       const json1 = await response1.json();
 
-      expect(json1.layout).toBe('fullscreen');
+      expect(json1.success).toBe(true);
+      expect(json1.data.layout).toBe('fullscreen');
 
       // Second user preferences
-      mockSupabaseClient.auth.getUser.mockResolvedValueOnce({
-        data: { user: user2 },
-        error: null,
+      mockAuthenticateRequest.mockResolvedValueOnce({
+        isGuest: false,
+        userId: 'user-2',
+        supabase: mockSupabaseClient,
+        user: { id: 'user-2' },
       });
 
-      mockQuery.single.mockResolvedValueOnce({
-        data: { ...mockUserPreferences, user_id: 'user-2', layout: 'sidebar' },
-        error: null,
+      mockGetUserPreferences.mockResolvedValueOnce({
+        preferences: {
+          ...mockUserPreferences,
+          layout: 'sidebar',
+        },
       });
 
-      const response2 = await GET();
+      const response2 = await GET(createMockGetRequest());
       const json2 = await response2.json();
 
-      expect(json2.layout).toBe('sidebar');
+      expect(json2.success).toBe(true);
+      expect(json2.data.layout).toBe('sidebar');
     });
   });
 });

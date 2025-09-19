@@ -10,7 +10,9 @@
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {},
+    "metadata": {
+      "actualWorkers": 3
+    },
     "preserveOutput": "always",
     "reporter": [
       [
@@ -46,7 +48,9 @@
         "outputDir": "/Users/cortex-air/Developer/robo-chat/playwright-test-results",
         "repeatEach": 1,
         "retries": 1,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 3
+        },
         "id": "chromium",
         "name": "chromium",
         "testDir": "/Users/cortex-air/Developer/robo-chat/tests/e2e",
@@ -60,7 +64,9 @@
         "outputDir": "/Users/cortex-air/Developer/robo-chat/playwright-test-results",
         "repeatEach": 1,
         "retries": 1,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 3
+        },
         "id": "Mobile Chrome",
         "name": "Mobile Chrome",
         "testDir": "/Users/cortex-air/Developer/robo-chat/tests/e2e",
@@ -85,25 +91,453 @@
       "stderr": "pipe"
     }
   },
-  "suites": [],
-  "errors": [
+  "suites": [
     {
-      "message": "Error: Vitest cannot be imported in a CommonJS module using require(). Please use \"import\" instead.\n\nIf you are using \"import\" in your source code, then it's possible it was bundled into require() automatically by your bundler. In that case, do not bundle CommonJS output since it will never work with Vitest, or use dynamic import() which is available in all CommonJS modules.",
-      "stack": "Error: Vitest cannot be imported in a CommonJS module using require(). Please use \"import\" instead.\n\nIf you are using \"import\" in your source code, then it's possible it was bundled into require() automatically by your bundler. In that case, do not bundle CommonJS output since it will never work with Vitest, or use dynamic import() which is available in all CommonJS modules.\n    at Object.<anonymous> (/Users/cortex-air/Developer/robo-chat/node_modules/.pnpm/vitest@3.2.4_@types+debug@4.1.12_@types+node@24.3.0_@vitest+ui@3.2.4_vitest@3.2.4__happy-dom@_ltddhrtlo5x62cldst5zwdgvby/node_modules/vitest/index.cjs:1:7)\n    at Object.<anonymous> (/Users/cortex-air/Developer/robo-chat/tests/e2e/guest-user-workflow.test.ts:1:1)",
-      "location": {
-        "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/guest-user-workflow.test.ts",
-        "column": 1,
-        "line": 1
-      },
-      "snippet": "\u001b[90m   at \u001b[39mguest-user-workflow.test.ts:1\n\n> 1 | import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';\n    | ^\n  2 |\n  3 | // Mock Playwright for E2E testing simulation\n  4 | const mockPage = {"
+      "title": "reasoning-summary.spec.ts",
+      "file": "reasoning-summary.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Reasoning Summary UI",
+          "file": "reasoning-summary.spec.ts",
+          "line": 7,
+          "column": 6,
+          "specs": [],
+          "suites": [
+            {
+              "title": "GPT-5 Mini (openai)",
+              "file": "reasoning-summary.spec.ts",
+              "line": 49,
+              "column": 10,
+              "specs": [
+                {
+                  "title": "shows reasoning panel while streaming and allows toggling after completion",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 61636,
+                          "error": {
+                            "message": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-gpt-5-mini\"]')\u001b[22m\n",
+                            "stack": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-gpt-5-mini\"]')\u001b[22m\n\n    at /Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts:85:22",
+                            "location": {
+                              "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                              "column": 22,
+                              "line": 85
+                            },
+                            "snippet": "  83 |         if (await trigger.isVisible()) {\n  84 |           await trigger.click();\n> 85 |           await page.click(`[data-testid=\"model-option-${p.id}\"]`);\n     |                      ^\n  86 |         }\n  87 |       });\n  88 |"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                                "column": 22,
+                                "line": 85
+                              },
+                              "message": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-gpt-5-mini\"]')\u001b[22m\n\n\n  83 |         if (await trigger.isVisible()) {\n  84 |           await trigger.click();\n> 85 |           await page.click(`[data-testid=\"model-option-${p.id}\"]`);\n     |                      ^\n  86 |         }\n  87 |       });\n  88 |\n    at /Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts:85:22"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-09-18T19:46:02.473Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-fe36b-s-toggling-after-completion-chromium/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-fe36b-s-toggling-after-completion-chromium/video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-fe36b-s-toggling-after-completion-chromium/error-context.md"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                            "column": 22,
+                            "line": 85
+                          }
+                        },
+                        {
+                          "workerIndex": 5,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 65651,
+                          "error": {
+                            "message": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-gpt-5-mini\"]')\u001b[22m\n",
+                            "stack": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-gpt-5-mini\"]')\u001b[22m\n\n    at /Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts:85:22",
+                            "location": {
+                              "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                              "column": 22,
+                              "line": 85
+                            },
+                            "snippet": "  83 |         if (await trigger.isVisible()) {\n  84 |           await trigger.click();\n> 85 |           await page.click(`[data-testid=\"model-option-${p.id}\"]`);\n     |                      ^\n  86 |         }\n  87 |       });\n  88 |"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                                "column": 22,
+                                "line": 85
+                              },
+                              "message": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-gpt-5-mini\"]')\u001b[22m\n\n\n  83 |         if (await trigger.isVisible()) {\n  84 |           await trigger.click();\n> 85 |           await page.click(`[data-testid=\"model-option-${p.id}\"]`);\n     |                      ^\n  86 |         }\n  87 |       });\n  88 |\n    at /Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts:85:22"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 1,
+                          "startTime": "2025-09-18T19:47:05.703Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-fe36b-s-toggling-after-completion-chromium-retry1/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-fe36b-s-toggling-after-completion-chromium-retry1/video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-fe36b-s-toggling-after-completion-chromium-retry1/error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-fe36b-s-toggling-after-completion-chromium-retry1/trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                            "column": 22,
+                            "line": 85
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "c2df18f528867ea8a974-d02a25ab3b371baeb69b",
+                  "file": "reasoning-summary.spec.ts",
+                  "line": 89,
+                  "column": 11
+                }
+              ]
+            },
+            {
+              "title": "Claude 3 Sonnet (anthropic)",
+              "file": "reasoning-summary.spec.ts",
+              "line": 49,
+              "column": 10,
+              "specs": [
+                {
+                  "title": "shows reasoning panel while streaming and allows toggling after completion",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 1,
+                          "parallelIndex": 1,
+                          "status": "failed",
+                          "duration": 61550,
+                          "error": {
+                            "message": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-claude-3-sonnet\"]')\u001b[22m\n",
+                            "stack": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-claude-3-sonnet\"]')\u001b[22m\n\n    at /Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts:85:22",
+                            "location": {
+                              "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                              "column": 22,
+                              "line": 85
+                            },
+                            "snippet": "  83 |         if (await trigger.isVisible()) {\n  84 |           await trigger.click();\n> 85 |           await page.click(`[data-testid=\"model-option-${p.id}\"]`);\n     |                      ^\n  86 |         }\n  87 |       });\n  88 |"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                                "column": 22,
+                                "line": 85
+                              },
+                              "message": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-claude-3-sonnet\"]')\u001b[22m\n\n\n  83 |         if (await trigger.isVisible()) {\n  84 |           await trigger.click();\n> 85 |           await page.click(`[data-testid=\"model-option-${p.id}\"]`);\n     |                      ^\n  86 |         }\n  87 |       });\n  88 |\n    at /Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts:85:22"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-09-18T19:46:02.413Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-df288-s-toggling-after-completion-chromium/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-df288-s-toggling-after-completion-chromium/video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-df288-s-toggling-after-completion-chromium/error-context.md"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                            "column": 22,
+                            "line": 85
+                          }
+                        },
+                        {
+                          "workerIndex": 4,
+                          "parallelIndex": 1,
+                          "status": "failed",
+                          "duration": 65710,
+                          "error": {
+                            "message": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-claude-3-sonnet\"]')\u001b[22m\n",
+                            "stack": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-claude-3-sonnet\"]')\u001b[22m\n\n    at /Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts:85:22",
+                            "location": {
+                              "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                              "column": 22,
+                              "line": 85
+                            },
+                            "snippet": "  83 |         if (await trigger.isVisible()) {\n  84 |           await trigger.click();\n> 85 |           await page.click(`[data-testid=\"model-option-${p.id}\"]`);\n     |                      ^\n  86 |         }\n  87 |       });\n  88 |"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                                "column": 22,
+                                "line": 85
+                              },
+                              "message": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-claude-3-sonnet\"]')\u001b[22m\n\n\n  83 |         if (await trigger.isVisible()) {\n  84 |           await trigger.click();\n> 85 |           await page.click(`[data-testid=\"model-option-${p.id}\"]`);\n     |                      ^\n  86 |         }\n  87 |       });\n  88 |\n    at /Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts:85:22"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 1,
+                          "startTime": "2025-09-18T19:47:05.701Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-df288-s-toggling-after-completion-chromium-retry1/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-df288-s-toggling-after-completion-chromium-retry1/video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-df288-s-toggling-after-completion-chromium-retry1/error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-df288-s-toggling-after-completion-chromium-retry1/trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                            "column": 22,
+                            "line": 85
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "c2df18f528867ea8a974-bdb64f7e0aa4775f8733",
+                  "file": "reasoning-summary.spec.ts",
+                  "line": 89,
+                  "column": 11
+                }
+              ]
+            },
+            {
+              "title": "Gemini 1.5 Pro (google)",
+              "file": "reasoning-summary.spec.ts",
+              "line": 49,
+              "column": 10,
+              "specs": [
+                {
+                  "title": "shows reasoning panel while streaming and allows toggling after completion",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 2,
+                          "parallelIndex": 2,
+                          "status": "failed",
+                          "duration": 61497,
+                          "error": {
+                            "message": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-gemini-1.5-pro\"]')\u001b[22m\n",
+                            "stack": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-gemini-1.5-pro\"]')\u001b[22m\n\n    at /Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts:85:22",
+                            "location": {
+                              "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                              "column": 22,
+                              "line": 85
+                            },
+                            "snippet": "  83 |         if (await trigger.isVisible()) {\n  84 |           await trigger.click();\n> 85 |           await page.click(`[data-testid=\"model-option-${p.id}\"]`);\n     |                      ^\n  86 |         }\n  87 |       });\n  88 |"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                                "column": 22,
+                                "line": 85
+                              },
+                              "message": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-gemini-1.5-pro\"]')\u001b[22m\n\n\n  83 |         if (await trigger.isVisible()) {\n  84 |           await trigger.click();\n> 85 |           await page.click(`[data-testid=\"model-option-${p.id}\"]`);\n     |                      ^\n  86 |         }\n  87 |       });\n  88 |\n    at /Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts:85:22"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-09-18T19:46:02.502Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-bf59f-s-toggling-after-completion-chromium/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-bf59f-s-toggling-after-completion-chromium/video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-bf59f-s-toggling-after-completion-chromium/error-context.md"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                            "column": 22,
+                            "line": 85
+                          }
+                        },
+                        {
+                          "workerIndex": 3,
+                          "parallelIndex": 2,
+                          "status": "failed",
+                          "duration": 65517,
+                          "error": {
+                            "message": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-gemini-1.5-pro\"]')\u001b[22m\n",
+                            "stack": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-gemini-1.5-pro\"]')\u001b[22m\n\n    at /Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts:85:22",
+                            "location": {
+                              "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                              "column": 22,
+                              "line": 85
+                            },
+                            "snippet": "  83 |         if (await trigger.isVisible()) {\n  84 |           await trigger.click();\n> 85 |           await page.click(`[data-testid=\"model-option-${p.id}\"]`);\n     |                      ^\n  86 |         }\n  87 |       });\n  88 |"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                                "column": 22,
+                                "line": 85
+                              },
+                              "message": "TimeoutError: page.click: Timeout 45000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"model-option-gemini-1.5-pro\"]')\u001b[22m\n\n\n  83 |         if (await trigger.isVisible()) {\n  84 |           await trigger.click();\n> 85 |           await page.click(`[data-testid=\"model-option-${p.id}\"]`);\n     |                      ^\n  86 |         }\n  87 |       });\n  88 |\n    at /Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts:85:22"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 1,
+                          "startTime": "2025-09-18T19:47:05.705Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-bf59f-s-toggling-after-completion-chromium-retry1/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-bf59f-s-toggling-after-completion-chromium-retry1/video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-bf59f-s-toggling-after-completion-chromium-retry1/error-context.md"
+                            },
+                            {
+                              "name": "trace",
+                              "contentType": "application/zip",
+                              "path": "/Users/cortex-air/Developer/robo-chat/playwright-test-results/reasoning-summary-Reasonin-bf59f-s-toggling-after-completion-chromium-retry1/trace.zip"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "/Users/cortex-air/Developer/robo-chat/tests/e2e/reasoning-summary.spec.ts",
+                            "column": 22,
+                            "line": 85
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "c2df18f528867ea8a974-a306a4cf6eede15999e1",
+                  "file": "reasoning-summary.spec.ts",
+                  "line": 89,
+                  "column": 11
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
+  "errors": [],
   "stats": {
-    "startTime": "2025-09-18T10:21:09.097Z",
-    "duration": 31588.474000000002,
+    "startTime": "2025-09-18T19:44:54.330Z",
+    "duration": 198559.54499999998,
     "expected": 0,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 3,
     "flaky": 0
   }
 }

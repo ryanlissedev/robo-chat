@@ -2,6 +2,9 @@ import userEvent from '@testing-library/user-event';
 import type React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Override the global MessageAssistant mock to use the real component for this test
+vi.unmock('@/components/app/chat/message-assistant');
+
 // Mock streamdown (which pulls in katex CSS) BEFORE importing MessageAssistant
 vi.mock('streamdown', () => ({
   Streamdown: ({ children, className }: any) => (
@@ -28,29 +31,25 @@ vi.mock('framer-motion', () => ({
 }));
 
 // Mock the UI toast component that MessageAssistant actually uses
-vi.mock('@/components/ui/toast', () => {
-  // Create a mock toast function that captures its arguments
-  const toastMock = vi.fn((options: any) => {
-    const globalState = (global as any).__toastMockState;
-    if (globalState) {
-      globalState.lastToastOptions = options;
-    }
-    return 'mock-toast-id';
-  });
-
-  // Create global toast mock state for test access
-  const globalToastMockState = {
+// We need to override the global mock from setup.ts for this specific test
+const { toastMockState } = vi.hoisted(() => {
+  const state = {
     lastToastOptions: undefined as any,
-    toast: toastMock,
+    toast: vi.fn((options: any) => {
+      state.lastToastOptions = options;
+      return 'mock-toast-id';
+    }),
   };
 
   // Make it available globally for test access
-  (global as any).__toastMockState = globalToastMockState;
+  (global as any).__toastMockState = state;
 
-  return {
-    toast: toastMock,
-  };
+  return { toastMockState: state };
 });
+
+vi.mock('@/components/ui/toast', () => ({
+  toast: toastMockState.toast,
+}));
 
 // Also mock sonner since it's used by the UI toast component
 vi.mock('sonner', () => ({
@@ -60,6 +59,7 @@ vi.mock('sonner', () => ({
   },
 }));
 
+// Import the actual MessageAssistant component (not mocked)
 import { MessageAssistant } from '@/components/app/chat/message-assistant';
 import { cleanup, renderWithProviders } from '@/tests/test-utils';
 
@@ -100,12 +100,9 @@ describe('MessageAssistant toast on fileSearch failure', () => {
     vi.clearAllMocks();
 
     // Reset toast mock state
-    const globalState = (global as any).__toastMockState;
-    if (globalState) {
-      globalState.lastToastOptions = undefined;
-      if (globalState.toast && vi.isMockFunction(globalState.toast)) {
-        globalState.toast.mockReset();
-      }
+    toastMockState.lastToastOptions = undefined;
+    if (vi.isMockFunction(toastMockState.toast)) {
+      toastMockState.toast.mockReset();
     }
 
     // Clean up React components to reset internal refs
@@ -116,10 +113,8 @@ describe('MessageAssistant toast on fileSearch failure', () => {
     const _user = userEvent.setup({ delay: null });
     const onReload = vi.fn();
 
-    const globalState = (global as any).__toastMockState;
-
     // Reset state for clean test
-    globalState.lastToastOptions = undefined;
+    toastMockState.lastToastOptions = undefined;
 
     const { unmount } = renderWithProviders(
       <MessageAssistant
@@ -138,16 +133,16 @@ describe('MessageAssistant toast on fileSearch failure', () => {
     );
 
     // Toast is called synchronously after render - no need for waitFor
-    expect(globalState.lastToastOptions).toBeDefined();
-    expect(globalState.lastToastOptions.title).toBe('File search failed');
-    expect(globalState.lastToastOptions.button).toBeDefined();
+    expect(toastMockState.lastToastOptions).toBeDefined();
+    expect(toastMockState.lastToastOptions.title).toBe('File search failed');
+    expect(toastMockState.lastToastOptions.button).toBeDefined();
 
     // Verify button configuration
-    expect(globalState.lastToastOptions.button.label).toBe('Retry');
-    expect(typeof globalState.lastToastOptions.button.onClick).toBe('function');
+    expect(toastMockState.lastToastOptions.button.label).toBe('Retry');
+    expect(typeof toastMockState.lastToastOptions.button.onClick).toBe('function');
 
     // Simulate button click
-    globalState.lastToastOptions.button.onClick();
+    toastMockState.lastToastOptions.button.onClick();
 
     // Verify onReload was called
     expect(onReload).toHaveBeenCalledTimes(1);
@@ -157,10 +152,8 @@ describe('MessageAssistant toast on fileSearch failure', () => {
   });
 
   it('shows error toast without button if no onReload provided', async () => {
-    const globalState = (global as any).__toastMockState;
-
     // Reset state for clean test
-    globalState.lastToastOptions = undefined;
+    toastMockState.lastToastOptions = undefined;
 
     const { unmount } = renderWithProviders(
       <MessageAssistant
@@ -197,11 +190,11 @@ describe('MessageAssistant toast on fileSearch failure', () => {
     );
 
     // Toast is called synchronously after render - no need for waitFor
-    expect(globalState.lastToastOptions).toBeDefined();
-    expect(globalState.lastToastOptions.title).toBe('File search failed');
+    expect(toastMockState.lastToastOptions).toBeDefined();
+    expect(toastMockState.lastToastOptions.title).toBe('File search failed');
 
     // Check that no button was provided since onReload is missing
-    expect(globalState.lastToastOptions.button).toBeUndefined();
+    expect(toastMockState.lastToastOptions.button).toBeUndefined();
 
     // Clean up this component instance
     unmount();

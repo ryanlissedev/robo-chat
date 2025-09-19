@@ -48,7 +48,10 @@ export function ProviderKeyInput({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-lg">{provider.badge}</span>
-          <Label htmlFor={`${provider.id}-key`} className="flex items-center gap-2">
+          <Label
+            htmlFor={`${provider.id}-key`}
+            className="flex items-center gap-2"
+          >
             <Key className="h-4 w-4" />
             {provider.name}
             {provider.required && (
@@ -73,9 +76,15 @@ export function ProviderKeyInput({
             <Input
               value={
                 showKey
-                  ? (((existingKey as ApiKey)?.encrypted_key || (existingKey as { encryptedKey?: string })?.encryptedKey) ?? '')
+                  ? (((existingKey as ApiKey)?.encrypted_key ||
+                      (existingKey as { encryptedKey?: string })
+                        ?.encryptedKey) ??
+                    '')
                   : maskKey(
-                      ((existingKey as ApiKey)?.encrypted_key || (existingKey as { encryptedKey?: string })?.encryptedKey) ?? ''
+                      ((existingKey as ApiKey)?.encrypted_key ||
+                        (existingKey as { encryptedKey?: string })
+                          ?.encryptedKey) ??
+                        ''
                     )
               }
               readOnly
@@ -113,7 +122,9 @@ export function ProviderKeyInput({
                 type={showKey ? 'text' : 'password'}
                 placeholder={`Enter your ${provider.name} API key`}
                 value={newKey}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => onKeyChange(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  onKeyChange(e.target.value)
+                }
                 className={`font-mono text-sm ${
                   validation && !validation.isValid ? 'border-destructive' : ''
                 }`}

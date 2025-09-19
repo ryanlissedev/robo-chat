@@ -228,6 +228,11 @@ describe('AIGateway', () => {
 
   describe('Gateway Connection Test', () => {
     it('should handle network errors gracefully', async () => {
+      // Set up environment for auto mode with fallback capability
+      process.env.OPENAI_API_KEY = 'test-openai-key';
+      process.env.AI_GATEWAY_BASE_URL = 'https://gateway.example.com';
+      process.env.AI_GATEWAY_API_KEY = 'test-gateway-key';
+
       (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
       const gateway = new AIGateway({ mode: 'auto' });
@@ -238,6 +243,11 @@ describe('AIGateway', () => {
     });
 
     it('should accept auth errors as gateway working', async () => {
+      // Set up environment for gateway mode
+      process.env.OPENAI_API_KEY = 'test-openai-key';
+      process.env.AI_GATEWAY_BASE_URL = 'https://gateway.example.com';
+      process.env.AI_GATEWAY_API_KEY = 'test-gateway-key';
+
       (global.fetch as any).mockResolvedValueOnce({
         status: 401,
         ok: false,
@@ -251,6 +261,11 @@ describe('AIGateway', () => {
     });
 
     it('should reject 404/405 as gateway not configured', async () => {
+      // Set up environment for auto mode with fallback capability
+      process.env.OPENAI_API_KEY = 'test-openai-key';
+      process.env.AI_GATEWAY_BASE_URL = 'https://gateway.example.com';
+      process.env.AI_GATEWAY_API_KEY = 'test-gateway-key';
+
       (global.fetch as any).mockResolvedValueOnce({
         status: 404,
         ok: false,

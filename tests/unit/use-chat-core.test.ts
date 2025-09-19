@@ -175,12 +175,20 @@ describe('useChatCore', () => {
 
     // Mock useChat hook with fresh implementations - ensure it always returns a valid object
     vi.mocked(useChat).mockImplementation(() => {
+      // Create a stateful messages array that can be updated by setMessages
+      let messagesState: any[] = [];
+
+      const mockSetMessagesStateful = vi.fn((newMessages: any[]) => {
+        messagesState = newMessages;
+        mockSetMessages(newMessages);
+      });
+
       const mockResult = {
-        messages: [],
+        get messages() { return messagesState; },
         status: 'idle' as const,
         error: null,
         stop: mockStop,
-        setMessages: mockSetMessages,
+        setMessages: mockSetMessagesStateful,
         sendMessage: mockSendMessage,
         input: '',
         handleInputChange: mockHandleInputChange,
@@ -449,6 +457,28 @@ describe('useChatCore', () => {
     });
 
     it('should bump chat when there are previous messages', async () => {
+      // Create a fresh mock for this test with stateful messages
+      let testMessages: any[] = [];
+
+      const mockSetMessagesForTest = vi.fn((newMessages: any[]) => {
+        testMessages = newMessages;
+        mockSetMessages(newMessages);
+      });
+
+      // Override the useChat mock for this test only
+      vi.mocked(useChat).mockImplementationOnce(() => ({
+        get messages() { return testMessages; },
+        status: 'idle' as const,
+        error: null,
+        stop: mockStop,
+        setMessages: mockSetMessagesForTest,
+        sendMessage: mockSendMessage,
+        input: '',
+        handleInputChange: mockHandleInputChange,
+        handleSubmit: mockHandleSubmit,
+        isLoading: false,
+      }));
+
       const props = Object.assign({}, defaultProps, {
         user: mockUserProfile,
         chatId: 'test-chat-id',
@@ -479,9 +509,21 @@ describe('useChatCore', () => {
         ] as Message[]);
       });
 
+      // Verify that messages were set correctly
+      expect(testMessages).toHaveLength(1);
+
+      // Debug: check if business logic mocks are called
+      expect(mockSubmitMessageScenario).not.toHaveBeenCalled();
+
       await act(async () => {
         await result.current.submit();
       });
+
+      // Debug: check if business logic mocks were called
+      console.log('mockSubmitMessageScenario called:', mockSubmitMessageScenario.mock.calls.length);
+      console.log('props.bumpChat called:', props.bumpChat.mock.calls.length);
+      console.log('testMessages length at submit time:', testMessages.length);
+      console.log('result.current.messages length:', result.current.messages.length);
 
       expect(props.bumpChat).toHaveBeenCalledWith('test-chat-id');
     });

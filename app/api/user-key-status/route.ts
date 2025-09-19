@@ -48,7 +48,9 @@ export async function GET() {
     return NextResponse.json(providerStatus);
   } catch {
     return NextResponse.json(
-      Object.fromEntries(SUPPORTED_PROVIDERS.map((provider) => [provider, false]))
+      Object.fromEntries(
+        SUPPORTED_PROVIDERS.map((provider) => [provider, false])
+      )
     );
   }
 }

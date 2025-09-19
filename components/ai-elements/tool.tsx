@@ -29,13 +29,15 @@ export const Tool = ({ className, ...props }: ToolProps) => (
   />
 );
 
-export type ToolHeaderProps = ComponentProps<typeof CollapsibleTrigger> & {
-  type: ToolUIPart['type'];
-  state: ToolUIPart['state'];
+export type ToolHeaderProps = {
+  type: string;
+  state: string;
+  className?: string;
+  onClick?: () => void;
 };
 
 const STATUS_META: Record<
-  ToolUIPart['state'],
+  string,
   { icon: ReactNode; label: string }
 > = {
   'input-streaming': {
@@ -56,14 +58,15 @@ const STATUS_META: Record<
   },
 };
 
-export const ToolHeader = ({ className, type, state, ...props }: ToolHeaderProps) => (
-  <CollapsibleTrigger
-    className={cn(
-      'flex w-full items-center justify-between gap-4 p-3 text-left transition-colors hover:bg-muted/50',
-      className
-    )}
-    {...props}
-  >
+export const ToolHeader = ({ className, type, state, onClick }: ToolHeaderProps) => {
+  return (
+    <CollapsibleTrigger
+      className={cn(
+        'flex w-full items-center justify-between gap-4 p-3 text-left transition-colors hover:bg-muted/50',
+        className
+      )}
+      onClick={onClick}
+    >
     <div className="flex items-center gap-2">
       <WrenchIcon className="size-4 text-muted-foreground" />
       <span className="font-medium text-sm">{type}</span>
@@ -74,7 +77,8 @@ export const ToolHeader = ({ className, type, state, ...props }: ToolHeaderProps
     </div>
     <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
   </CollapsibleTrigger>
-);
+  );
+};
 
 export type ToolContentProps = ComponentProps<typeof CollapsibleContent>;
 

@@ -7,9 +7,27 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 const nextConfig: NextConfig = withBundleAnalyzer({
   output: 'standalone',
   experimental: {
-    optimizePackageImports: ['@phosphor-icons/react'],
+    optimizePackageImports: ['@phosphor-icons/react', 'lucide-react', '@radix-ui/react-icons'],
   },
   serverExternalPackages: ['shiki', 'vscode-oniguruma'],
+
+  // Optimize webpack bundle
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
+    // Ignore warnings for react-syntax-highlighter
+    config.ignoreWarnings = [
+      /Failed to parse source map/,
+      /Attempted import error.*refractor/,
+    ];
+
+    // Tree shaking optimization
+    config.optimization = {
+      ...config.optimization,
+      usedExports: true,
+      sideEffects: false,
+    };
+
+    return config;
+  },
   images: {
     remotePatterns: [
       {

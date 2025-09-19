@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'motion';
+import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import { ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -47,7 +47,7 @@ export const ToolActionContainer = React.forwardRef<HTMLDivElement, ToolActionCo
         transition={isLoading ? loadingTransition : staticTransition}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        {...props}
+        {...(props as any)}
       >
         {children}
       </motion.div>

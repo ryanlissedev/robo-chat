@@ -10,9 +10,9 @@ import {
   Trash,
   Upload,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useDropzone } from 'react-dropzone';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DropzoneOptions } from 'react-dropzone';
+import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -52,6 +52,7 @@ type VectorStoreManagerProps = {
   userId?: string;
 };
 
+// Memoized file icons to prevent recreation on each render
 const FILE_ICONS = {
   pdf: FileText, // Using FileText as FilePdf doesn't exist in lucide-react
   txt: FileText,
@@ -61,9 +62,9 @@ const FILE_ICONS = {
   ts: FileCode,
   json: FileCode,
   default: File,
-};
+} as const;
 
-export function VectorStoreManager(_props: VectorStoreManagerProps) {
+export const VectorStoreManager = React.memo(function VectorStoreManager(_props: VectorStoreManagerProps) {
   const [vectorStores, setVectorStores] = useState<VectorStore[]>([]);
   const [selectedStore, setSelectedStore] = useState<VectorStore | null>(null);
   const [storeFiles, setStoreFiles] = useState<VectorStoreFile[]>([]);
@@ -73,30 +74,31 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
   const [newStoreName, setNewStoreName] = useState('');
   // Vector store operations are performed via server API routes backed by OpenAI SDK
 
+  // Memoized store transformation to prevent recreation
+  const transformStore = useMemo(() => (s: {
+    id: string;
+    name: string;
+    created_at?: string;
+    status?: string;
+    usage_bytes?: number;
+    file_counts?: { total: number };
+  }): VectorStore => ({
+    id: s.id,
+    name: s.name,
+    status: (s.status as VectorStore['status']) || 'active',
+    fileCount: s.file_counts?.total ?? 0,
+    usageBytes: s.usage_bytes ?? 0,
+    createdAt: s.created_at || new Date().toISOString(),
+  }), []);
+
   const loadVectorStores = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/vector-stores', { method: 'GET' });
       if (!res.ok) throw new Error('Failed to fetch vector stores');
       const data = await res.json();
-      const stores = (data.stores || []) as Array<{
-        id: string;
-        name: string;
-        created_at?: string;
-        status?: string;
-        usage_bytes?: number;
-        file_counts?: { total: number };
-      }>;
-      setVectorStores(
-        stores.map((s) => ({
-          id: s.id,
-          name: s.name,
-          status: (s.status as VectorStore['status']) || 'active',
-          fileCount: s.file_counts?.total ?? 0,
-          usageBytes: s.usage_bytes ?? 0,
-          createdAt: s.created_at || new Date().toISOString(),
-        }))
-      );
+      const stores = (data.stores || []) as Parameters<typeof transformStore>[0][];
+      setVectorStores(stores.map(transformStore));
     } catch {
       toast.error('Failed to load vector stores');
     } finally {
@@ -243,7 +245,8 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
     [onDrop, selectedStore, uploading]
   );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone(dropzoneOptions);
+  const { getRootProps, getInputProps, isDragActive } =
+    useDropzone(dropzoneOptions);
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) {
@@ -273,7 +276,9 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
         <CardContent>
           <div className="flex gap-2">
             <Input
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewStoreName(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setNewStoreName(e.target.value)
+              }
               placeholder="Enter vector store name"
               value={newStoreName}
             />
@@ -447,4 +452,4 @@ export function VectorStoreManager(_props: VectorStoreManagerProps) {
       </div>
     </div>
   );
-}
+});

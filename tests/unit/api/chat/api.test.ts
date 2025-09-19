@@ -78,6 +78,11 @@ describe('Chat API Functions', () => {
     process.env.NODE_ENV = 'test';
     process.env.DISABLE_RATE_LIMIT = '';
     process.env.AI_GATEWAY_API_KEY = '';
+
+    // Reset all mocked functions to ensure clean state
+    vi.mocked(sanitizeUserInput).mockImplementation((input: string) => input);
+    vi.mocked(logWarning).mockImplementation(() => {});
+    vi.mocked(storeAssistantMessageToDb).mockResolvedValue();
   });
 
   afterEach(() => {
@@ -97,7 +102,7 @@ describe('Chat API Functions', () => {
       const result = await validateAndTrackUsage(baseParams);
 
       expect(result).toBeNull();
-      expect(validateUserIdentity).toHaveBeenCalledWith('user-123', true);
+      expect(validateUserIdentity).toHaveBeenCalledWith('user-123', true, undefined);
     });
 
     it('should validate authenticated user with valid API key', async () => {
@@ -248,14 +253,18 @@ describe('Chat API Functions', () => {
   });
 
   describe('logUserMessage', () => {
-    const baseLogParams = {
-      supabase: mockSupabase,
-      userId: 'user-123',
-      chatId: 'chat-456',
-      content: 'Hello world',
-      attachments: [],
-      message_group_id: 'group-1',
-    };
+    let baseLogParams: any;
+
+    beforeEach(() => {
+      baseLogParams = {
+        supabase: mockSupabase,
+        userId: 'user-123',
+        chatId: 'chat-456',
+        content: 'Hello world',
+        attachments: [],
+        message_group_id: 'group-1',
+      };
+    });
 
     beforeEach(() => {
       // Mock successful chat check
@@ -304,6 +313,10 @@ describe('Chat API Functions', () => {
     });
 
     it('should create chat if it does not exist', async () => {
+      // Ensure clean environment state
+      process.env.NODE_ENV = 'test';
+      process.env.DISABLE_RATE_LIMIT = '';
+
       const mockFrom = vi.fn();
       const mockSelect = vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
@@ -343,27 +356,36 @@ describe('Chat API Functions', () => {
     });
 
     it('should log user message successfully', async () => {
-      const mockInsert = vi.fn().mockResolvedValue({ error: null });
+      // Ensure clean environment state
+      process.env.NODE_ENV = 'test';
+      process.env.DISABLE_RATE_LIMIT = '';
+
+      const mockMessageInsert = vi.fn().mockResolvedValue({ error: null });
+      const mockChatSelect = vi.fn().mockResolvedValue({
+        data: { id: 'chat-456' },
+        error: null,
+      });
+
       mockSupabase.from = vi.fn().mockImplementation((table: string) => {
         if (table === 'chats') {
           return {
             select: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({
-                  data: { id: 'chat-456' },
-                  error: null,
-                }),
+                single: mockChatSelect,
               }),
             }),
           };
         }
-        return { insert: mockInsert };
+        if (table === 'messages') {
+          return { insert: mockMessageInsert };
+        }
+        return { insert: vi.fn() };
       });
 
       await logUserMessage(baseLogParams);
 
       expect(sanitizeUserInput).toHaveBeenCalledWith('Hello world');
-      expect(mockInsert).toHaveBeenCalledWith({
+      expect(mockMessageInsert).toHaveBeenCalledWith({
         chat_id: 'chat-456',
         role: 'user',
         content: 'Hello world',
@@ -374,7 +396,11 @@ describe('Chat API Functions', () => {
     });
 
     it('should handle message insert error gracefully', async () => {
-      const mockInsert = vi.fn().mockResolvedValue({
+      // Ensure clean environment state
+      process.env.NODE_ENV = 'test';
+      process.env.DISABLE_RATE_LIMIT = '';
+
+      const mockMessageInsert = vi.fn().mockResolvedValue({
         error: new Error('Database constraint violation'),
       });
 
@@ -391,7 +417,10 @@ describe('Chat API Functions', () => {
             }),
           };
         }
-        return { insert: mockInsert };
+        if (table === 'messages') {
+          return { insert: mockMessageInsert };
+        }
+        return { insert: vi.fn() };
       });
 
       await logUserMessage(baseLogParams);
@@ -430,15 +459,19 @@ describe('Chat API Functions', () => {
   });
 
   describe('storeAssistantMessage', () => {
-    const baseStoreParams = {
-      supabase: mockSupabase,
-      chatId: 'chat-456',
-      messages: [],
-      userId: 'user-123',
-      message_group_id: 'group-1',
-      model: 'gpt-4',
-      langsmithRunId: 'run-123',
-    };
+    let baseStoreParams: any;
+
+    beforeEach(() => {
+      baseStoreParams = {
+        supabase: mockSupabase,
+        chatId: 'chat-456',
+        messages: [],
+        userId: 'user-123',
+        message_group_id: 'group-1',
+        model: 'gpt-4',
+        langsmithRunId: 'run-123',
+      };
+    });
 
     it('should return early if supabase is null', async () => {
       await storeAssistantMessage({
@@ -472,6 +505,10 @@ describe('Chat API Functions', () => {
     });
 
     it('should store assistant message successfully', async () => {
+      // Ensure environment variables are in correct state
+      process.env.NODE_ENV = 'test';
+      process.env.DISABLE_RATE_LIMIT = '';
+
       vi.mocked(storeAssistantMessageToDb).mockResolvedValue();
 
       await storeAssistantMessage(baseStoreParams);
@@ -502,6 +539,28 @@ describe('Chat API Functions', () => {
   describe('Environment-specific behavior', () => {
     it('should handle production environment correctly', async () => {
       process.env.NODE_ENV = 'production';
+      process.env.DISABLE_RATE_LIMIT = '';
+
+      // Setup mocks for successful chat check and message insert
+      const mockMessageInsert = vi.fn().mockResolvedValue({ error: null });
+      mockSupabase.from = vi.fn().mockImplementation((table: string) => {
+        if (table === 'chats') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { id: 'chat-456' },
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === 'messages') {
+          return { insert: mockMessageInsert };
+        }
+        return { insert: vi.fn() };
+      });
 
       await logUserMessage({
         supabase: mockSupabase,

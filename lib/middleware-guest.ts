@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { isGuestUser, getGuestUserId, generateGuestUserId } from '@/lib/utils';
 
 /**

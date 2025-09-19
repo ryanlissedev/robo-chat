@@ -208,8 +208,12 @@ export default function DemoGPT5() {
               id={inputId}
               type="text"
               value={input}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
-              onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && testModel()}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setInput(e.target.value)
+              }
+              onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) =>
+                e.key === 'Enter' && testModel()
+              }
               placeholder="Enter your message..."
               className="w-full p-3 border rounded-lg"
               disabled={loading}

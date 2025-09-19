@@ -109,7 +109,9 @@ export default function VerifyChat() {
         >
           <input
             value={input}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setInput(e.target.value)
+            }
             className="flex-1 border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Type 'test' to verify reasoning and response display..."
             disabled={status !== 'ready'}

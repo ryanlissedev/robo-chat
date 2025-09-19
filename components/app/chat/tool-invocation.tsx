@@ -69,13 +69,7 @@ export function ToolInvocation({ toolInvocations }: ToolInvocationProps) {
         return (
           <AITool key={part.toolCallId}>
             <AIToolHeader
-              state={
-                part.state as
-                  | 'input-streaming'
-                  | 'input-available'
-                  | 'output-available'
-                  | 'output-error'
-              }
+              state={part.state}
               type={part.type}
             />
             <AIToolContent>

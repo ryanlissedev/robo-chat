@@ -85,7 +85,7 @@ export function MessageUser({
         hasScrollAnchor && 'min-h-scroll-anchor',
         className
       )}
-      data-testid="chat-message"
+      data-testid="message-user"
       data-role="user"
     >
       {attachments?.map((attachment, index) => (

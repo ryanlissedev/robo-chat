@@ -1,8 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import {
-  authenticateRequest,
-  createErrorResponse,
-} from '@/lib/api-auth';
+import { authenticateRequest, createErrorResponse } from '@/lib/api-auth';
 import { generateGuestUserId } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
@@ -41,10 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!authResult.user?.id) {
-      return NextResponse.json(
-        { error: 'Missing userId' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
     }
 
     const { data, error } = await authResult.supabase
@@ -59,7 +53,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : 'Internal server error';
+    const errorMessage =
+      err instanceof Error ? err.message : 'Internal server error';
     return createErrorResponse(errorMessage, 500);
   }
 }
@@ -97,7 +92,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : 'Internal server error';
+    const errorMessage =
+      err instanceof Error ? err.message : 'Internal server error';
     return createErrorResponse(errorMessage, 500);
   }
 }

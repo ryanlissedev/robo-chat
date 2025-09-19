@@ -1,0 +1,126 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - region "Notifications alt+T"
+    - generic:
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - link [ref=e1] [cursor=pointer]:
+                - /url: /
+                - img [ref=e2] [cursor=pointer]
+                - text: RoboRail Assistant
+              - generic [ref=e3]:
+                - button [ref=e4]:
+                  - img [ref=e5]
+                - generic [ref=e8]:
+                  - heading [level=2] [ref=e9]: Chat History
+                  - paragraph [ref=e10]: Search through your past conversations
+                - button [ref=e11]:
+                  - generic [ref=e13]: G
+        - generic:
+          - generic:
+            - heading [level=1]: How can we help you today?
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                    - text: Operation
+                  - button:
+                    - img
+                    - text: Troubleshooting
+                  - button:
+                    - img
+                    - text: Maintenance
+                  - button:
+                    - img
+                    - text: Safety
+                  - button:
+                    - img
+                    - text: Specifications
+                  - button:
+                    - img
+                    - text: Setup
+              - generic:
+                - generic:
+                  - textbox
+                  - generic:
+                    - generic:
+                      - button:
+                        - img
+                      - generic:
+                        - button [expanded]:
+                          - generic:
+                            - generic: GPT-5 Mini
+                          - img
+                      - combobox:
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: Medium
+                        - img
+                      - combobox:
+                        - generic:
+                          - generic:
+                            - img
+                            - generic: Auto summary
+                        - img
+                    - generic:
+                      - button:
+                        - img
+          - generic:
+            - generic:
+              - generic:
+                - button:
+                  - generic: Help
+                  - generic:
+                    - img
+  - button "Open Next.js Dev Tools" [ref=e19] [cursor=pointer]:
+    - img [ref=e20] [cursor=pointer]
+  - alert
+  - menu "GPT-5 Mini" [active] [ref=e23]:
+    - generic [ref=e25]:
+      - img [ref=e26]
+      - textbox "Search models..." [ref=e29]
+    - button "Select model GPT-5 Mini" [ref=e31] [cursor=pointer]:
+      - generic [ref=e34] [cursor=pointer]:
+        - generic [ref=e35] [cursor=pointer]: GPT-5 Mini
+        - generic [ref=e36] [cursor=pointer]: unknown
+      - generic [ref=e38] [cursor=pointer]:
+        - img
+        - generic [ref=e39] [cursor=pointer]: Locked
+    - generic [ref=e42]:
+      - heading "GPT-5 Mini" [level=3] [ref=e44]
+      - paragraph [ref=e45]: OpenAI GPT-5 Mini
+      - generic [ref=e47]:
+        - generic [ref=e48]:
+          - generic [ref=e49]: Context
+          - generic [ref=e50]: 200 000 tokens
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - generic [ref=e53]: Input Pricing
+            - generic [ref=e54]: $0.00 / 1M tokens
+          - generic [ref=e55]:
+            - generic [ref=e56]: Output Pricing
+            - generic [ref=e57]: $0.00 / 1M tokens
+        - generic [ref=e58]:
+          - generic [ref=e59]: Provider
+          - generic [ref=e60]: openai
+        - generic [ref=e61]:
+          - generic [ref=e62]: Id
+          - generic [ref=e63]: gpt-5-mini
+        - generic [ref=e64]:
+          - link "API Docs" [ref=e65] [cursor=pointer]:
+            - /url: ""
+            - generic [ref=e66] [cursor=pointer]: API Docs
+            - img [ref=e67] [cursor=pointer]
+          - link "Model Page" [ref=e70] [cursor=pointer]:
+            - /url: ""
+            - generic [ref=e71] [cursor=pointer]: Model Page
+            - img [ref=e72] [cursor=pointer]
+```

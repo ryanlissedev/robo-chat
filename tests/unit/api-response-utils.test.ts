@@ -57,8 +57,7 @@ describe('api-response-utils', () => {
         body: '{bad-json',
       });
       const res = await parseRequestBody(req);
-      expect(res.isValid).toBe(false);
-      expect(res.statusCode).toBe(400);
+      expect(res.success).toBe(false);
       expect(res.error).toBeDefined();
     });
   });

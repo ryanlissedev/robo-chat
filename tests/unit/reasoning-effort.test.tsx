@@ -1,18 +1,48 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ChatInput } from '@/components/app/chat-input/chat-input';
-import { ModelProvider } from '@/lib/model-store/provider';
 import { getModelInfo } from '@/lib/models';
+import { renderWithProviders } from '../test-utils';
 
 // Mock the model info function
 vi.mock('@/lib/models', () => ({
   getModelInfo: vi.fn(),
 }));
 
-// Mock the ModelProvider
+// Mock user preferences provider
+vi.mock('@/lib/user-preference-store/provider', () => ({
+  UserPreferencesProvider: ({ children }: { children: React.ReactNode }) => children,
+  useUserPreferences: vi.fn(() => ({
+    isModelHidden: vi.fn(() => false),
+  })),
+}));
+
+// Mock user provider
+vi.mock('@/lib/user-store/provider', () => ({
+  UserProvider: ({ children }: { children: React.ReactNode }) => children,
+  useUser: vi.fn(() => ({
+    user: null,
+    isLoading: false,
+  })),
+}));
+
+// Mock model provider
 vi.mock('@/lib/model-store/provider', () => ({
   ModelProvider: ({ children }: { children: React.ReactNode }) => children,
+  useModel: vi.fn(() => ({
+    models: [],
+    userKeyStatus: {},
+    favoriteModels: [],
+    userConfig: {},
+    isLoading: false,
+    refreshModels: vi.fn(),
+    refreshUserKeyStatus: vi.fn(),
+    refreshFavoriteModels: vi.fn(),
+    refreshFavoriteModelsSilent: vi.fn(),
+    refreshUserConfig: vi.fn(),
+    refreshAll: vi.fn(),
+  })),
 }));
 
 describe('Reasoning Effort Selector', () => {
@@ -70,15 +100,13 @@ describe('Reasoning Effort Selector', () => {
       apiSdk: () => null as any,
     });
 
-    render(
-      <ModelProvider>
-        <ChatInput {...mockProps} selectedModel="gpt-5-mini" />
-      </ModelProvider>
+    renderWithProviders(
+      <ChatInput {...mockProps} selectedModel="gpt-5-mini" />
     );
 
-    // Should render reasoning effort selector
+    // Should render reasoning effort selector - look for the select trigger button
     expect(
-      screen.queryByRole('button', { name: /reasoning effort/i })
+      screen.queryByRole('combobox')
     ).toBeTruthy();
   });
 
@@ -111,15 +139,13 @@ describe('Reasoning Effort Selector', () => {
       apiSdk: () => null as any,
     });
 
-    render(
-      <ModelProvider>
-        <ChatInput {...mockProps} selectedModel="gpt-4o-mini" />
-      </ModelProvider>
+    renderWithProviders(
+      <ChatInput {...mockProps} selectedModel="gpt-4o-mini" />
     );
 
-    // Should render reasoning effort selector
+    // Should render reasoning effort selector - look for the select trigger button
     expect(
-      screen.queryByRole('button', { name: /reasoning effort/i })
+      screen.queryByRole('combobox')
     ).toBeTruthy();
   });
 
@@ -152,15 +178,13 @@ describe('Reasoning Effort Selector', () => {
       apiSdk: () => null as any,
     });
 
-    render(
-      <ModelProvider>
-        <ChatInput {...mockProps} selectedModel="gpt-4.1" />
-      </ModelProvider>
+    renderWithProviders(
+      <ChatInput {...mockProps} selectedModel="gpt-4.1" />
     );
 
     // Should NOT render reasoning effort selector
     expect(
-      screen.queryByRole('button', { name: /reasoning effort/i })
+      screen.queryByRole('combobox')
     ).toBeFalsy();
   });
 
@@ -193,15 +217,13 @@ describe('Reasoning Effort Selector', () => {
       apiSdk: () => null as any,
     });
 
-    render(
-      <ModelProvider>
-        <ChatInput {...mockProps} selectedModel="o1-mini" />
-      </ModelProvider>
+    renderWithProviders(
+      <ChatInput {...mockProps} selectedModel="o1-mini" />
     );
 
-    // Should render reasoning effort selector
+    // Should render reasoning effort selector - look for the select trigger button
     expect(
-      screen.queryByRole('button', { name: /reasoning effort/i })
+      screen.queryByRole('combobox')
     ).toBeTruthy();
   });
 });

@@ -34,7 +34,7 @@ export function GuestModeDemo() {
 
   useEffect(() => {
     const currentSettings = loadSettings();
-    setSettings(currentSettings);
+    setSettings(currentSettings as unknown as GuestSettings);
   }, [loadSettings]);
 
   const addTestResult = (message: string) => {
@@ -75,7 +75,7 @@ export function GuestModeDemo() {
       const loadedSettings = loadSettings();
       addTestResult(`✅ Settings loaded: layout=${loadedSettings?.layout}`);
 
-      setSettings(loadedSettings);
+      setSettings(loadedSettings as unknown as GuestSettings);
 
     } catch (error) {
       addTestResult(`❌ Settings test failed: ${error}`);

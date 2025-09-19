@@ -15,8 +15,8 @@ import {
 type Project = {
   id: string;
   name: string;
-  userId: string;
-  createdAt: string;
+  user_id: string;
+  created_at: string;
 };
 
 type SidebarProjectMenuProps = {

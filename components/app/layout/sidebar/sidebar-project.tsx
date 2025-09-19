@@ -9,8 +9,8 @@ import { SidebarProjectItem } from './sidebar-project-item';
 type Project = {
   id: string;
   name: string;
-  userId: string;
-  createdAt: string;
+  user_id: string;
+  created_at: string;
 };
 
 export function SidebarProject() {

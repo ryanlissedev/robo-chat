@@ -85,7 +85,9 @@ export default function TestChat() {
       >
         <input
           value={input}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setInput(e.target.value)
+          }
           className="flex-1 border p-2"
           placeholder="Type a message..."
         />

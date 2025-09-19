@@ -149,8 +149,25 @@ export const DEFAULT_GUEST_PREFERENCES = {
 } as const;
 
 /**
- * Create cookie string for setting guest data
+ * Create secure cookie string for setting guest data
  */
-export function createGuestCookie(name: string, value: string, maxAge = 60 * 60 * 24 * 30): string {
-  return `${name}=${encodeURIComponent(value)}; Max-Age=${maxAge}; Path=/; SameSite=Lax; HttpOnly`;
+export function createGuestCookie(
+  name: string,
+  value: string,
+  maxAge = 60 * 60 * 24 * 30
+): string {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const domain = process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : undefined;
+
+  const cookieOptions = [
+    `${name}=${encodeURIComponent(value)}`,
+    `Max-Age=${maxAge}`,
+    'Path=/',
+    'SameSite=Lax',
+    'HttpOnly',
+    ...(isProduction ? ['Secure'] : []),
+    ...(domain && domain !== 'localhost' ? [`Domain=${domain}`] : []),
+  ];
+
+  return cookieOptions.join('; ');
 }

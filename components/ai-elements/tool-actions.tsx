@@ -17,23 +17,23 @@ export interface SearchResult {
   snippet?: string;
 }
 
-export interface WebSearchToolActionProps extends Omit<ToolActionContainerProps, 'children'> {
+export interface WebSearchToolActionProps {
   query: string;
   results: SearchResult[];
   isLoading?: boolean;
+  className?: string;
 }
 
 /**
  * WebSearchToolAction - Displays web search results with query and results list
  */
 export const WebSearchToolAction = React.forwardRef<HTMLDivElement, WebSearchToolActionProps>(
-  ({ query, results, isLoading = false, className, ...props }, ref) => {
+  ({ query, results, isLoading = false, className }, ref) => {
     return (
       <ToolActionContainer
         ref={ref}
         isLoading={isLoading}
         className={cn('space-y-3', className)}
-        {...props}
       >
         <ToolActionKind icon={Search} name="Web Search" />
 
@@ -73,19 +73,20 @@ export const WebSearchToolAction = React.forwardRef<HTMLDivElement, WebSearchToo
 
 WebSearchToolAction.displayName = 'WebSearchToolAction';
 
-export interface DocumentToolActionProps extends Omit<ToolActionContainerProps, 'children'> {
+export interface DocumentToolActionProps {
   title: string;
   content: string;
   fileType: string;
   url?: string;
   isLoading?: boolean;
+  className?: string;
 }
 
 /**
  * DocumentToolAction - Displays document information with content preview
  */
 export const DocumentToolAction = React.forwardRef<HTMLDivElement, DocumentToolActionProps>(
-  ({ title, content, fileType, url, isLoading = false, className, ...props }, ref) => {
+  ({ title, content, fileType, url, isLoading = false, className }, ref) => {
     const domain = React.useMemo(() => {
       if (!url) return undefined;
       try {
@@ -100,7 +101,6 @@ export const DocumentToolAction = React.forwardRef<HTMLDivElement, DocumentToolA
         ref={ref}
         isLoading={isLoading}
         className={cn('space-y-3', className)}
-        {...props}
       >
         <ToolActionKind icon={FileText} name="Document" />
 
@@ -135,25 +135,25 @@ export const DocumentToolAction = React.forwardRef<HTMLDivElement, DocumentToolA
 
 DocumentToolAction.displayName = 'DocumentToolAction';
 
-export interface CodeExecutionToolActionProps extends Omit<ToolActionContainerProps, 'children'> {
+export interface CodeExecutionToolActionProps {
   language: string;
   code: string;
   output: string;
   error?: boolean;
   isLoading?: boolean;
+  className?: string;
 }
 
 /**
  * CodeExecutionToolAction - Displays code execution with language, code, and output
  */
 export const CodeExecutionToolAction = React.forwardRef<HTMLDivElement, CodeExecutionToolActionProps>(
-  ({ language, code, output, error = false, isLoading = false, className, ...props }, ref) => {
+  ({ language, code, output, error = false, isLoading = false, className }, ref) => {
     return (
       <ToolActionContainer
         ref={ref}
         isLoading={isLoading}
         className={cn('space-y-3', className)}
-        {...props}
       >
         <ToolActionKind icon={Code} name="Code Execution" />
 

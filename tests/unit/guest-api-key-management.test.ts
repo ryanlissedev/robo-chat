@@ -93,6 +93,21 @@ vi.mock('@/lib/guest-settings', () => ({
   },
 }));
 
+// Mock guest-auth module
+vi.mock('@/lib/guest-auth', () => ({
+  guestAuth: {
+    saveGuestSettings: vi.fn(),
+    clearGuestData: vi.fn(),
+  },
+}));
+
+// Mock guest headers
+vi.mock('@/lib/security/guest-headers', () => ({
+  headersForModel: vi.fn(),
+  GUEST_API_KEY_HEADER: 'X-Provider-Api-Key',
+  GUEST_MODEL_PROVIDER_HEADER: 'X-Model-Provider',
+}));
+
 // Mock provider map
 vi.mock('@/lib/openproviders/provider-map', () => ({
   getProviderForModel: vi.fn().mockReturnValue('openai'),
@@ -126,6 +141,12 @@ describe('Guest API Key Management in Browser Environment', () => {
       const provider = 'anthropic';
       const apiKey = 'sk-test-session-key-12345';
 
+      // Setup mock for this test
+      vi.mocked(getSessionCredential).mockResolvedValueOnce({
+        masked: 'sk-test...1234',
+        plaintext: 'sk-test-key',
+      });
+
       // Store in session
       await setSessionCredential(provider, apiKey);
 
@@ -145,6 +166,12 @@ describe('Guest API Key Management in Browser Environment', () => {
       const provider = 'google';
       const apiKey = 'sk-test-persistent-key-12345';
       const passphrase = 'my-secure-passphrase';
+
+      // Setup mock for this test
+      vi.mocked(getPersistentCredential).mockResolvedValueOnce({
+        masked: 'sk-test...1234',
+        plaintext: 'sk-test-key',
+      });
 
       // Store persistently
       await setPersistentCredential(provider, apiKey, passphrase);
@@ -198,6 +225,18 @@ describe('Guest API Key Management in Browser Environment', () => {
 
       const apiKey = 'sk-persistent-key-12345';
       const passphrase = 'user-passphrase-123';
+
+      const expectedEncrypted = {
+        ciphertextB64: 'encrypted-data',
+        ivB64: 'iv-data',
+        saltB64: 'salt-data',
+        alg: 'AES-GCM',
+        v: 1,
+      };
+
+      // Setup mocks for this test
+      vi.mocked(encryptWithPassphrase).mockResolvedValueOnce(expectedEncrypted);
+      vi.mocked(decryptWithPassphrase).mockResolvedValueOnce('decrypted-key');
 
       // Encrypt with passphrase
       const encrypted = await encryptWithPassphrase(apiKey, passphrase);
@@ -308,7 +347,8 @@ describe('Guest API Key Management in Browser Environment', () => {
     it('should validate API keys before making requests', async () => {
       const { headersForModel } = await import('@/lib/security/guest-headers');
 
-      vi.mocked(headersForModel).mockResolvedValue({
+      // Cast to any to access mockResolvedValue since it's enhanced in setup
+      (vi.mocked(headersForModel) as any).mockResolvedValue({
         'X-Model-Provider': 'openai',
         'X-Provider-Api-Key': 'sk-valid-key',
         'X-Credential-Source': 'guest-byok',
@@ -326,10 +366,14 @@ describe('Guest API Key Management in Browser Environment', () => {
   describe('API Key Lifecycle Management', () => {
     it('should create, read, update, and delete API keys', async () => {
       const { GuestCredentialService } = await import('@/lib/services/guest-credential-service');
+      const { setSessionCredential, setPersistentCredential, getMemoryCredential, getSessionCredential, clearAllGuestCredentialsFor } = await import('@/lib/security/web-crypto');
       const service = new GuestCredentialService();
 
       const apiKey = 'sk-test-lifecycle-key';
       const provider = 'openai';
+
+      // Setup mocks for create operation
+      vi.mocked(setSessionCredential).mockResolvedValueOnce({ masked: 'sk-test...1234' });
 
       // Create
       const created = await service.saveCredential({
@@ -341,9 +385,19 @@ describe('Guest API Key Management in Browser Environment', () => {
       expect(created.scope).toBe('session');
       expect(created.masked).toBe('sk-test...1234');
 
+      // Setup mocks for read operation
+      vi.mocked(getMemoryCredential).mockReturnValue(null);
+      vi.mocked(getSessionCredential).mockResolvedValueOnce({
+        masked: 'sk-test...1234',
+        plaintext: apiKey,
+      });
+
       // Read
       const credentials = await service.loadCredentials();
       expect(credentials[provider]).toBeDefined();
+
+      // Setup mocks for update operation
+      vi.mocked(setPersistentCredential).mockResolvedValueOnce({ masked: 'sk-upda...1234' });
 
       // Update (save with different scope)
       const updated = await service.saveCredential({
@@ -359,12 +413,12 @@ describe('Guest API Key Management in Browser Environment', () => {
       // Delete
       await service.deleteCredential(provider);
 
-      const { clearAllGuestCredentialsFor } = await import('@/lib/security/web-crypto');
       expect(clearAllGuestCredentialsFor).toHaveBeenCalledWith(provider);
     });
 
     it('should handle multiple API keys for different providers', async () => {
       const { GuestCredentialService } = await import('@/lib/services/guest-credential-service');
+      const { setSessionCredential, getMemoryCredential, getSessionCredential } = await import('@/lib/security/web-crypto');
       const service = new GuestCredentialService();
 
       const providers = ['openai', 'anthropic', 'google'];
@@ -374,6 +428,12 @@ describe('Guest API Key Management in Browser Environment', () => {
         'google-key-abcdef',
       ];
 
+      // Setup mocks for save operations
+      vi.mocked(setSessionCredential)
+        .mockResolvedValueOnce({ masked: 'sk-open...1234' })
+        .mockResolvedValueOnce({ masked: 'sk-anth...5678' })
+        .mockResolvedValueOnce({ masked: 'goog...cdef' });
+
       // Save keys for different providers
       for (let i = 0; i < providers.length; i++) {
         await service.saveCredential({
@@ -382,6 +442,20 @@ describe('Guest API Key Management in Browser Environment', () => {
           storageScope: 'session',
         });
       }
+
+      // Setup mocks for load operation - need to account for all 8 API_PROVIDERS
+      vi.mocked(getMemoryCredential)
+        .mockReturnValue(null); // All providers return null for memory
+
+      vi.mocked(getSessionCredential)
+        .mockResolvedValueOnce({ masked: 'sk-open...1234', plaintext: keys[0] }) // openai
+        .mockResolvedValueOnce({ masked: 'sk-anth...5678', plaintext: keys[1] }) // anthropic
+        .mockResolvedValueOnce(null) // mistral
+        .mockResolvedValueOnce({ masked: 'goog...cdef', plaintext: keys[2] }) // google
+        .mockResolvedValueOnce(null) // perplexity
+        .mockResolvedValueOnce(null) // xai
+        .mockResolvedValueOnce(null) // openrouter
+        .mockResolvedValueOnce(null); // langsmith
 
       // Load all credentials
       const credentials = await service.loadCredentials();
@@ -394,11 +468,17 @@ describe('Guest API Key Management in Browser Environment', () => {
 
     it('should handle API key rotation', async () => {
       const { GuestCredentialService } = await import('@/lib/services/guest-credential-service');
+      const { setSessionCredential, getMemoryCredential, getSessionCredential } = await import('@/lib/security/web-crypto');
       const service = new GuestCredentialService();
 
       const provider = 'openai';
       const oldKey = 'sk-old-key-12345';
       const newKey = 'sk-new-key-67890';
+
+      // Setup mocks for save operations
+      vi.mocked(setSessionCredential)
+        .mockResolvedValueOnce({ masked: 'sk-old...1234' })
+        .mockResolvedValueOnce({ masked: 'sk-new...7890' });
 
       // Save old key
       await service.saveCredential({
@@ -414,12 +494,23 @@ describe('Guest API Key Management in Browser Environment', () => {
         storageScope: 'session',
       });
 
+      // Setup mocks for load operation
+      vi.mocked(getMemoryCredential).mockReturnValue(null);
+      vi.mocked(getSessionCredential).mockResolvedValueOnce({
+        masked: 'sk-new...7890',
+        plaintext: newKey,
+      });
+
       // Verify new key is stored
       const credentials = await service.loadCredentials();
-      expect(credentials[provider].plaintext).toBe('sk-test-key'); // Mock returns this
+      expect(credentials[provider].plaintext).toBe(newKey);
     });
 
     it('should handle API key backup and restore', () => {
+      // Ensure btoa/atob are working properly for this test
+      const localBtoa = (str: string) => Buffer.from(str).toString('base64');
+      const localAtob = (str: string) => Buffer.from(str, 'base64').toString();
+
       const backupManager = {
         createBackup(credentials: Record<string, any>): string {
           const backup = {
@@ -432,12 +523,12 @@ describe('Guest API Key Management in Browser Environment', () => {
               // Don't backup plaintext for security
             })),
           };
-          return btoa(JSON.stringify(backup));
+          return localBtoa(JSON.stringify(backup));
         },
 
         restoreFromBackup(backupData: string): any {
           try {
-            const backup = JSON.parse(atob(backupData));
+            const backup = JSON.parse(localAtob(backupData));
             if (backup.version !== 1) {
               throw new Error('Unsupported backup version');
             }
@@ -449,7 +540,7 @@ describe('Guest API Key Management in Browser Environment', () => {
 
         validateBackup(backupData: string): boolean {
           try {
-            const backup = JSON.parse(atob(backupData));
+            const backup = JSON.parse(localAtob(backupData));
             return (
               backup.version &&
               backup.timestamp &&

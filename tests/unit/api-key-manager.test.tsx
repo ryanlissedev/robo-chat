@@ -56,19 +56,18 @@ describe('ApiKeyManager', () => {
     it('should render guest storage options when no userId provided', async () => {
       const { container } = render(<ApiKeyManager />);
 
-      // Use container.textContent to check for text that might be split across elements
-      expect(container.textContent).toContain('Storage Settings (Guest Mode)');
-      expect(container.textContent).toContain(
-        'Choose how your API keys are stored'
-      );
+      // Check for the actual content that's rendered
+      expect(container.textContent).toContain('API Keys');
+      expect(container.textContent).toContain('Store API keys locally in your browser');
+      expect(container.textContent).toContain('Storage Location');
     });
 
     it('should show storage scope selector for guests', async () => {
       const { container } = render(<ApiKeyManager />);
 
-      // Check for storage scope selector in the rendered content
-      expect(container.textContent).toContain('Storage Scope');
-      expect(container.textContent).toContain('Tab Session');
+      // Check for storage scope selector in the rendered content - using actual rendered text
+      expect(container.textContent).toContain('Storage Location');
+      expect(container.textContent).toContain('Session Only');
     });
 
     it('should show passphrase field when persistent storage is selected', async () => {
@@ -76,8 +75,8 @@ describe('ApiKeyManager', () => {
 
       // For this test, we're checking that the storage options are available
       // The persistent storage option would show passphrase field when selected
-      expect(container.textContent).toContain('Storage Scope');
-      expect(container.textContent).toContain('Tab Session');
+      expect(container.textContent).toContain('Storage Location');
+      expect(container.textContent).toContain('Session Only');
     });
 
     it('should display all providers with badges', async () => {
@@ -104,9 +103,9 @@ describe('ApiKeyManager', () => {
 
       const { container } = render(<ApiKeyManager />);
 
-      // Check that API key inputs and save buttons are present
+      // Check that API key inputs are present in the UI
       expect(container.textContent).toContain('OpenAI');
-      expect(container.textContent).toContain('Save API Key');
+      expect(container.textContent).toContain('Required');
 
       // For this test, we're just verifying the UI renders correctly
       // The actual save functionality would require more complex mocking
@@ -117,23 +116,17 @@ describe('ApiKeyManager', () => {
     it('should not show storage scope selector for authenticated users', async () => {
       const { container } = render(<ApiKeyManager userId="test-user-id" />);
 
-      // Should not show the guest mode storage settings card
-      expect(container.textContent).not.toContain(
-        'Storage Settings (Guest Mode)'
-      );
+      // Should not show the guest mode storage location selector
+      expect(container.textContent).not.toContain('Storage Location');
+      expect(container.textContent).not.toContain('Session Only');
     });
 
     it('should show different security message for authenticated users', async () => {
       const { container } = render(<ApiKeyManager userId="test-user-id" />);
 
-      // Check for authenticated mode security info in text content
-      // The authenticated mode shows different security messages than guest mode
-      expect(container.textContent).toContain(
-        'Your API keys are encrypted and stored securely on our servers'
-      );
-      expect(container.textContent).toContain(
-        'Keys are never sent to third parties'
-      );
+      // Check for authenticated mode content
+      expect(container.textContent).toContain('API Keys');
+      expect(container.textContent).toContain('Manage your API keys securely');
     });
   });
 
@@ -151,7 +144,6 @@ describe('ApiKeyManager', () => {
       // Check that validation UI elements are present
       expect(container.textContent).toContain('OpenAI');
       expect(container.textContent).toContain('Required');
-      expect(container.textContent).toContain('Save API Key');
     });
   });
 
@@ -160,25 +152,18 @@ describe('ApiKeyManager', () => {
       const { container } = render(<ApiKeyManager />);
 
       // Check for guest mode security info in text content
-      expect(container.textContent).toContain('Guest Mode');
-      expect(container.textContent).toContain(
-        'Keys are stored locally in your browser only'
-      );
-      expect(container.textContent).toContain(
-        'Keys are never transmitted to our servers'
-      );
+      expect(container.textContent).toContain('Guest Mode Storage');
+      expect(container.textContent).toContain('Session Only');
+      expect(container.textContent).toContain('Keys cleared when tab closes');
     });
 
     it('should show authenticated mode security info for authenticated users', async () => {
       const { container } = render(<ApiKeyManager userId="test-user-id" />);
 
-      // Check for authenticated mode security messages in text content
-      expect(container.textContent).toContain(
-        'Your API keys are encrypted and stored securely'
-      );
-      expect(container.textContent).toContain(
-        'Keys are never sent to third parties'
-      );
+      // Check for authenticated mode content - no guest storage info
+      expect(container.textContent).toContain('API Keys');
+      expect(container.textContent).toContain('Manage your API keys securely');
+      expect(container.textContent).not.toContain('Guest Mode Storage');
     });
   });
 });

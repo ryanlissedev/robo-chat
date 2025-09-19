@@ -8,7 +8,7 @@ import {
   Lock,
   Shield,
 } from 'lucide-react';
-import { useCallback, useEffect, useId, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -51,7 +51,7 @@ type SecuritySettingsProps = {
   userId: string;
 };
 
-export function SecuritySettings({ userId }: SecuritySettingsProps) {
+export const SecuritySettings = React.memo(function SecuritySettings({ userId }: SecuritySettingsProps) {
   const [config, setConfig] = useState<SecurityConfig>({
     enableContentFiltering: true,
     blockPromptInjection: true,
@@ -71,15 +71,17 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
   const [newDomain, setNewDomain] = useState('');
   const supabase = createClient();
 
-  // Generate unique IDs for form elements
-  const contentFilteringId = useId();
-  const promptInjectionId = useId();
-  const sanitizeOutputsId = useId();
-  const jailbreakDetectionId = useId();
-  const rateLimitingId = useId();
-  const encryptApiKeysId = useId();
-  const apiKeyRotationId = useId();
-  const logQueriesId = useId();
+  // Memoized unique IDs for form elements to prevent re-generation
+  const ids = useMemo(() => ({
+    contentFiltering: useId(),
+    promptInjection: useId(),
+    sanitizeOutputs: useId(),
+    jailbreakDetection: useId(),
+    rateLimiting: useId(),
+    encryptApiKeys: useId(),
+    apiKeyRotation: useId(),
+    logQueries: useId(),
+  }), []);
 
   const loadSettings = useCallback(async () => {
     if (!supabase) return;
@@ -165,14 +167,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
     }
   };
 
-  const updateConfig = <K extends keyof SecurityConfig>(
+  const updateConfig = useCallback(<K extends keyof SecurityConfig>(
     key: K,
     value: SecurityConfig[K]
   ) => {
-    setConfig({ ...config, [key]: value });
-  };
+    setConfig(prev => ({ ...prev, [key]: value }));
+  }, []);
 
-  const addDomain = () => {
+  const addDomain = useCallback(() => {
     if (!newDomain) {
       return;
     }
@@ -191,16 +193,16 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
       setNewDomain('');
       toast.success('Domain added to allowlist');
     }
-  };
+  }, [newDomain, config.allowedDomains, updateConfig]);
 
-  const removeDomain = (domain: string) => {
+  const removeDomain = useCallback((domain: string) => {
     updateConfig(
       'allowedDomains',
       config.allowedDomains.filter((d) => d !== domain)
     );
-  };
+  }, [config.allowedDomains, updateConfig]);
 
-  const testSecuritySettings = async () => {
+  const testSecuritySettings = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/settings/test-security', {
@@ -221,7 +223,7 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [config]);
 
   return (
     <div className="space-y-4">
@@ -238,14 +240,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor={contentFilteringId}>Content Filtering</Label>
+              <Label htmlFor={ids.contentFiltering}>Content Filtering</Label>
               <p className="text-muted-foreground text-xs">
                 Block harmful or inappropriate content
               </p>
             </div>
             <Switch
               checked={config.enableContentFiltering}
-              id={contentFilteringId}
+              id={ids.contentFiltering}
               onCheckedChange={(checked) =>
                 updateConfig('enableContentFiltering', checked)
               }
@@ -254,14 +256,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor={promptInjectionId}>Block Prompt Injection</Label>
+              <Label htmlFor={ids.promptInjection}>Block Prompt Injection</Label>
               <p className="text-muted-foreground text-xs">
                 Detect and prevent prompt injection attacks
               </p>
             </div>
             <Switch
               checked={config.blockPromptInjection}
-              id={promptInjectionId}
+              id={ids.promptInjection}
               onCheckedChange={(checked) =>
                 updateConfig('blockPromptInjection', checked)
               }
@@ -270,14 +272,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor={sanitizeOutputsId}>Sanitize Outputs</Label>
+              <Label htmlFor={ids.sanitizeOutputs}>Sanitize Outputs</Label>
               <p className="text-muted-foreground text-xs">
                 Remove potentially dangerous content from responses
               </p>
             </div>
             <Switch
               checked={config.sanitizeOutputs}
-              id={sanitizeOutputsId}
+              id={ids.sanitizeOutputs}
               onCheckedChange={(checked) =>
                 updateConfig('sanitizeOutputs', checked)
               }
@@ -286,14 +288,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor={jailbreakDetectionId}>Jailbreak Detection</Label>
+              <Label htmlFor={ids.jailbreakDetection}>Jailbreak Detection</Label>
               <p className="text-muted-foreground text-xs">
                 Identify attempts to bypass safety measures
               </p>
             </div>
             <Switch
               checked={config.enableJailbreakDetection}
-              id={jailbreakDetectionId}
+              id={ids.jailbreakDetection}
               onCheckedChange={(checked) =>
                 updateConfig('enableJailbreakDetection', checked)
               }
@@ -312,10 +314,10 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label htmlFor={rateLimitingId}>Enable Rate Limiting</Label>
+            <Label htmlFor={ids.rateLimiting}>Enable Rate Limiting</Label>
             <Switch
               checked={config.enableRateLimiting}
-              id={rateLimitingId}
+              id={ids.rateLimiting}
               onCheckedChange={(checked) =>
                 updateConfig('enableRateLimiting', checked)
               }
@@ -373,14 +375,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor={encryptApiKeysId}>Encrypt API Keys</Label>
+              <Label htmlFor={ids.encryptApiKeys}>Encrypt API Keys</Label>
               <p className="text-muted-foreground text-xs">
                 Store API keys with encryption at rest
               </p>
             </div>
             <Switch
               checked={config.encryptApiKeys}
-              id={encryptApiKeysId}
+              id={ids.encryptApiKeys}
               onCheckedChange={(checked) =>
                 updateConfig('encryptApiKeys', checked)
               }
@@ -389,14 +391,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor={apiKeyRotationId}>Require Key Rotation</Label>
+              <Label htmlFor={ids.apiKeyRotation}>Require Key Rotation</Label>
               <p className="text-muted-foreground text-xs">
                 Enforce periodic API key rotation
               </p>
             </div>
             <Switch
               checked={config.requireApiKeyRotation}
-              id={apiKeyRotationId}
+              id={ids.apiKeyRotation}
               onCheckedChange={(checked) =>
                 updateConfig('requireApiKeyRotation', checked)
               }
@@ -434,14 +436,14 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor={logQueriesId}>Log Queries</Label>
+              <Label htmlFor={ids.logQueries}>Log Queries</Label>
               <p className="text-muted-foreground text-xs">
                 Store user queries for analysis (with consent)
               </p>
             </div>
             <Switch
               checked={config.logQueries}
-              id={logQueriesId}
+              id={ids.logQueries}
               onCheckedChange={(checked) => updateConfig('logQueries', checked)}
             />
           </div>
@@ -479,8 +481,12 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
         <CardContent className="space-y-4">
           <div className="flex gap-2">
             <Input
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewDomain(e.target.value)}
-              onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && addDomain()}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setNewDomain(e.target.value)
+              }
+              onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) =>
+                e.key === 'Enter' && addDomain()
+              }
               placeholder="example.com"
               value={newDomain}
             />
@@ -581,4 +587,4 @@ export function SecuritySettings({ userId }: SecuritySettingsProps) {
       </div>
     </div>
   );
-}
+});
