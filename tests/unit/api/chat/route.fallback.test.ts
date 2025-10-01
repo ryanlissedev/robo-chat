@@ -89,12 +89,19 @@ function makeRequest(body: any) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       ...body,
-      messages: body.messages.map((msg: any) => ({
-        ...msg,
-        id: msg.id || Math.random().toString(36),
-        createdAt: msg.createdAt || new Date(),
-        content: msg.content || '',
-      })),
+      messages: body.messages.map((msg: any) => {
+        const message: any = {
+          ...msg,
+          id: msg.id || Math.random().toString(36),
+          createdAt: msg.createdAt || new Date(),
+          content: msg.content || '',
+        };
+        // Don't include empty parts array - let transform create parts from content
+        if (msg.parts && msg.parts.length > 0) {
+          message.parts = msg.parts;
+        }
+        return message;
+      }),
     }),
   });
 }

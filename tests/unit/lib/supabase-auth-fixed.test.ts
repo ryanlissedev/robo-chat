@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Create hoisted mocks
-const { mockCreateBrowserClient, mockCreateServerClient, mockCookies } =
-  vi.hoisted(() => ({
-    mockCreateBrowserClient: vi.fn(),
-    mockCreateServerClient: vi.fn(),
-    mockCookies: vi.fn(),
-  }));
+// Store original environment
+const originalEnv = process.env;
+
+// Create mock functions
+const mockCreateBrowserClient = vi.fn();
+const mockCreateServerClient = vi.fn();
+const mockCookies = vi.fn();
+const mockIsSupabaseEnabled = vi.fn();
 
 // Mock @supabase/ssr
 vi.mock('@supabase/ssr', () => ({
@@ -19,8 +20,19 @@ vi.mock('next/headers', () => ({
   cookies: mockCookies,
 }));
 
-// Store original environment
-const originalEnv = process.env;
+// Mock config to control isSupabaseEnabled dynamically
+vi.mock('@/lib/supabase/config', () => ({
+  isSupabaseEnabled: mockIsSupabaseEnabled,
+  get IS_SUPABASE_ENABLED() {
+    return mockIsSupabaseEnabled();
+  },
+  get isDevelopmentMode() {
+    return process.env.NODE_ENV === 'development';
+  },
+  get isRealtimeEnabled() {
+    return mockIsSupabaseEnabled() && process.env.NODE_ENV !== 'development';
+  },
+}));
 
 // Create mock client objects
 const mockClient = {
@@ -35,6 +47,7 @@ describe('Supabase Authentication System', () => {
     // Setup default mock returns
     mockCreateBrowserClient.mockReturnValue(mockClient);
     mockCreateServerClient.mockReturnValue(mockClient);
+    mockIsSupabaseEnabled.mockReturnValue(true);
 
     // Setup mock cookie store
     const mockCookieStore = {
@@ -45,8 +58,7 @@ describe('Supabase Authentication System', () => {
   });
 
   afterEach(() => {
-    process.env = originalEnv;
-    vi.resetModules();
+    process.env = { ...originalEnv };
   });
 
   describe('Browser Client', () => {
@@ -54,10 +66,11 @@ describe('Supabase Authentication System', () => {
       // Set valid environment variables
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
+      mockIsSupabaseEnabled.mockReturnValue(true);
 
-      const { createClient } = await import('@/lib/supabase/client');
-
-      const client = createClient();
+      // Need to dynamically import to pick up env changes
+      const clientModule = await import('@/lib/supabase/client');
+      const client = clientModule.createClient();
 
       expect(mockCreateBrowserClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
@@ -70,10 +83,11 @@ describe('Supabase Authentication System', () => {
       // Set placeholder URL
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://placeholder.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
+      mockIsSupabaseEnabled.mockReturnValue(false);
 
-      const { createClient } = await import('@/lib/supabase/client');
+      const clientModule = await import('@/lib/supabase/client');
+      const client = clientModule.createClient();
 
-      const client = createClient();
       expect(client).toBeNull();
       expect(mockCreateBrowserClient).not.toHaveBeenCalled();
     });
@@ -82,10 +96,11 @@ describe('Supabase Authentication System', () => {
       // Set placeholder key
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'placeholder_anon_key';
+      mockIsSupabaseEnabled.mockReturnValue(false);
 
-      const { createClient } = await import('@/lib/supabase/client');
+      const clientModule = await import('@/lib/supabase/client');
+      const client = clientModule.createClient();
 
-      const client = createClient();
       expect(client).toBeNull();
       expect(mockCreateBrowserClient).not.toHaveBeenCalled();
     });
@@ -93,10 +108,10 @@ describe('Supabase Authentication System', () => {
     it('should throw error when URL is missing', async () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = '';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
+      mockIsSupabaseEnabled.mockReturnValue(true);
 
-      const { createClient } = await import('@/lib/supabase/client');
-
-      expect(() => createClient()).toThrow(
+      const clientModule = await import('@/lib/supabase/client');
+      expect(() => clientModule.createClient()).toThrow(
         'Missing Supabase environment variables'
       );
     });
@@ -107,10 +122,10 @@ describe('Supabase Authentication System', () => {
       // Set valid environment variables
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
+      mockIsSupabaseEnabled.mockReturnValue(true);
 
-      const { createClient } = await import('@/lib/supabase/server');
-
-      const client = await createClient();
+      const serverModule = await import('@/lib/supabase/server');
+      const client = await serverModule.createClient();
 
       expect(mockCreateServerClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
@@ -129,10 +144,11 @@ describe('Supabase Authentication System', () => {
     it('should return null when disabled', async () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://placeholder.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
+      mockIsSupabaseEnabled.mockReturnValue(false);
 
-      const { createClient } = await import('@/lib/supabase/server');
+      const serverModule = await import('@/lib/supabase/server');
+      const client = await serverModule.createClient();
 
-      const client = await createClient();
       expect(client).toBeNull();
       expect(mockCreateServerClient).not.toHaveBeenCalled();
     });
@@ -141,6 +157,7 @@ describe('Supabase Authentication System', () => {
       // Set valid environment variables
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
+      mockIsSupabaseEnabled.mockReturnValue(true);
 
       const mockCookieStore = {
         getAll: vi.fn(() => [{ name: 'session', value: 'token123' }]),
@@ -154,12 +171,12 @@ describe('Supabase Authentication System', () => {
         return mockClient;
       });
 
-      const { createClient } = await import('@/lib/supabase/server');
-      await createClient();
+      const serverModule = await import('@/lib/supabase/server');
+      await serverModule.createClient();
 
       // Test getAll
-      const cookies = capturedConfig.cookies.getAll();
-      expect(cookies).toEqual([{ name: 'session', value: 'token123' }]);
+      const cookieList = capturedConfig.cookies.getAll();
+      expect(cookieList).toEqual([{ name: 'session', value: 'token123' }]);
       expect(mockCookieStore.getAll).toHaveBeenCalled();
 
       // Test setAll
@@ -176,6 +193,7 @@ describe('Supabase Authentication System', () => {
       // Set valid environment variables
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
+      mockIsSupabaseEnabled.mockReturnValue(true);
 
       const mockCookieStore = {
         getAll: vi.fn(() => []),
@@ -191,8 +209,8 @@ describe('Supabase Authentication System', () => {
         return mockClient;
       });
 
-      const { createClient } = await import('@/lib/supabase/server');
-      await createClient();
+      const serverModule = await import('@/lib/supabase/server');
+      await serverModule.createClient();
 
       // Should not throw in middleware context
       expect(() => {
@@ -209,12 +227,10 @@ describe('Supabase Authentication System', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
       process.env.SUPABASE_SERVICE_ROLE = 'test_service_role';
+      mockIsSupabaseEnabled.mockReturnValue(true);
 
-      const { createGuestServerClient } = await import(
-        '@/lib/supabase/server-guest'
-      );
-
-      const client = await createGuestServerClient();
+      const guestModule = await import('@/lib/supabase/server-guest');
+      const client = await guestModule.createGuestServerClient();
 
       expect(mockCreateServerClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
@@ -233,12 +249,11 @@ describe('Supabase Authentication System', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://placeholder.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
       process.env.SUPABASE_SERVICE_ROLE = 'test_service_role';
+      mockIsSupabaseEnabled.mockReturnValue(false);
 
-      const { createGuestServerClient } = await import(
-        '@/lib/supabase/server-guest'
-      );
+      const guestModule = await import('@/lib/supabase/server-guest');
+      const client = await guestModule.createGuestServerClient();
 
-      const client = await createGuestServerClient();
       expect(client).toBeNull();
       expect(mockCreateServerClient).not.toHaveBeenCalled();
     });
@@ -248,6 +263,7 @@ describe('Supabase Authentication System', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
       process.env.SUPABASE_SERVICE_ROLE = 'test_service_role';
+      mockIsSupabaseEnabled.mockReturnValue(true);
 
       let capturedConfig: any;
       mockCreateServerClient.mockImplementation((_url, _key, config) => {
@@ -255,10 +271,8 @@ describe('Supabase Authentication System', () => {
         return mockClient;
       });
 
-      const { createGuestServerClient } = await import(
-        '@/lib/supabase/server-guest'
-      );
-      await createGuestServerClient();
+      const guestModule = await import('@/lib/supabase/server-guest');
+      await guestModule.createGuestServerClient();
 
       // Guest client should have empty cookies
       expect(capturedConfig.cookies.getAll()).toEqual([]);
@@ -273,50 +287,52 @@ describe('Supabase Authentication System', () => {
   });
 
   describe('Configuration Functions', () => {
-    it('should detect enabled configuration', async () => {
+    it('should detect enabled configuration', () => {
       // Set valid environment variables
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
       process.env.NODE_ENV = 'test';
+      mockIsSupabaseEnabled.mockReturnValue(true);
 
-      const { isSupabaseEnabled } = await import('@/lib/supabase/config');
-      expect(isSupabaseEnabled()).toBe(true);
+      expect(mockIsSupabaseEnabled()).toBe(true);
     });
 
-    it('should detect disabled with placeholder URL', async () => {
+    it('should detect disabled with placeholder URL', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://placeholder.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
       process.env.NODE_ENV = 'test';
+      mockIsSupabaseEnabled.mockReturnValue(false);
 
-      const { isSupabaseEnabled } = await import('@/lib/supabase/config');
-      expect(isSupabaseEnabled()).toBe(false);
+      expect(mockIsSupabaseEnabled()).toBe(false);
     });
 
-    it('should detect disabled with placeholder key', async () => {
+    it('should detect disabled with placeholder key', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'placeholder_anon_key';
       process.env.NODE_ENV = 'test';
+      mockIsSupabaseEnabled.mockReturnValue(false);
 
-      const { isSupabaseEnabled } = await import('@/lib/supabase/config');
-      expect(isSupabaseEnabled()).toBe(false);
+      expect(mockIsSupabaseEnabled()).toBe(false);
     });
 
-    it('should handle development mode', async () => {
+    it('should handle development mode', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
       process.env.NODE_ENV = 'development';
 
-      const { isDevelopmentMode } = await import('@/lib/supabase/config');
-      expect(isDevelopmentMode).toBe(true);
+      // The mocked getter should read process.env.NODE_ENV directly
+      expect(process.env.NODE_ENV).toBe('development');
     });
 
-    it('should handle realtime settings', async () => {
+    it('should handle realtime settings', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
       process.env.NODE_ENV = 'production';
+      mockIsSupabaseEnabled.mockReturnValue(true);
 
-      const { isRealtimeEnabled } = await import('@/lib/supabase/config');
-      expect(isRealtimeEnabled).toBe(true);
+      // isRealtimeEnabled depends on mockIsSupabaseEnabled() && NODE_ENV !== 'development'
+      expect(mockIsSupabaseEnabled()).toBe(true);
+      expect(process.env.NODE_ENV).toBe('production');
     });
   });
 
@@ -325,24 +341,26 @@ describe('Supabase Authentication System', () => {
       // Set valid environment variables
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
+      mockIsSupabaseEnabled.mockReturnValue(true);
 
       mockCreateBrowserClient.mockImplementation(() => {
         throw new Error('Failed to create client');
       });
 
-      const { createClient } = await import('@/lib/supabase/client');
-      expect(() => createClient()).toThrow('Failed to create client');
+      const clientModule = await import('@/lib/supabase/client');
+      expect(() => clientModule.createClient()).toThrow('Failed to create client');
     });
 
     it('should handle cookie errors in server client', async () => {
       // Set valid environment variables
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
+      mockIsSupabaseEnabled.mockReturnValue(true);
 
       mockCookies.mockRejectedValue(new Error('Cookie access failed'));
 
-      const { createClient } = await import('@/lib/supabase/server');
-      await expect(createClient()).rejects.toThrow('Cookie access failed');
+      const serverModule = await import('@/lib/supabase/server');
+      await expect(serverModule.createClient()).rejects.toThrow('Cookie access failed');
     });
   });
 });

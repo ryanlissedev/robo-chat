@@ -142,7 +142,7 @@ describe('Guest API Key Management in Browser Environment', () => {
       const apiKey = 'sk-test-session-key-12345';
 
       // Setup mock for this test
-      vi.mocked(getSessionCredential).mockResolvedValueOnce({
+      (getSessionCredential as any).mockResolvedValueOnce({
         masked: 'sk-test...1234',
         plaintext: 'sk-test-key',
       });
@@ -168,7 +168,7 @@ describe('Guest API Key Management in Browser Environment', () => {
       const passphrase = 'my-secure-passphrase';
 
       // Setup mock for this test
-      vi.mocked(getPersistentCredential).mockResolvedValueOnce({
+      (getPersistentCredential as any).mockResolvedValueOnce({
         masked: 'sk-test...1234',
         plaintext: 'sk-test-key',
       });
@@ -193,8 +193,8 @@ describe('Guest API Key Management in Browser Environment', () => {
       const service = new GuestCredentialService();
 
       // Mock both memory and session credentials available
-      vi.mocked(getMemoryCredential).mockReturnValue({ masked: 'sk-memory...1234' });
-      vi.mocked(getSessionCredential).mockResolvedValue({
+      (getMemoryCredential as any).mockReturnValue({ masked: 'sk-memory...1234' });
+      (getSessionCredential as any).mockResolvedValue({
         masked: 'sk-session...5678',
         plaintext: 'sk-session-key',
       });
@@ -235,8 +235,8 @@ describe('Guest API Key Management in Browser Environment', () => {
       };
 
       // Setup mocks for this test
-      vi.mocked(encryptWithPassphrase).mockResolvedValueOnce(expectedEncrypted);
-      vi.mocked(decryptWithPassphrase).mockResolvedValueOnce('decrypted-key');
+      (encryptWithPassphrase as any).mockResolvedValueOnce(expectedEncrypted);
+      (decryptWithPassphrase as any).mockResolvedValueOnce('decrypted-key');
 
       // Encrypt with passphrase
       const encrypted = await encryptWithPassphrase(apiKey, passphrase);
@@ -348,7 +348,7 @@ describe('Guest API Key Management in Browser Environment', () => {
       const { headersForModel } = await import('@/lib/security/guest-headers');
 
       // Cast to any to access mockResolvedValue since it's enhanced in setup
-      (vi.mocked(headersForModel) as any).mockResolvedValue({
+      ((headersForModel as any) as any).mockResolvedValue({
         'X-Model-Provider': 'openai',
         'X-Provider-Api-Key': 'sk-valid-key',
         'X-Credential-Source': 'guest-byok',
@@ -373,7 +373,7 @@ describe('Guest API Key Management in Browser Environment', () => {
       const provider = 'openai';
 
       // Setup mocks for create operation
-      vi.mocked(setSessionCredential).mockResolvedValueOnce({ masked: 'sk-test...1234' });
+      (setSessionCredential as any).mockResolvedValueOnce({ masked: 'sk-test...1234' });
 
       // Create
       const created = await service.saveCredential({
@@ -386,8 +386,8 @@ describe('Guest API Key Management in Browser Environment', () => {
       expect(created.masked).toBe('sk-test...1234');
 
       // Setup mocks for read operation
-      vi.mocked(getMemoryCredential).mockReturnValue(null);
-      vi.mocked(getSessionCredential).mockResolvedValueOnce({
+      (getMemoryCredential as any).mockReturnValue(null);
+      (getSessionCredential as any).mockResolvedValueOnce({
         masked: 'sk-test...1234',
         plaintext: apiKey,
       });
@@ -397,7 +397,7 @@ describe('Guest API Key Management in Browser Environment', () => {
       expect(credentials[provider]).toBeDefined();
 
       // Setup mocks for update operation
-      vi.mocked(setPersistentCredential).mockResolvedValueOnce({ masked: 'sk-upda...1234' });
+      (setPersistentCredential as any).mockResolvedValueOnce({ masked: 'sk-upda...1234' });
 
       // Update (save with different scope)
       const updated = await service.saveCredential({
@@ -429,7 +429,7 @@ describe('Guest API Key Management in Browser Environment', () => {
       ];
 
       // Setup mocks for save operations
-      vi.mocked(setSessionCredential)
+      (setSessionCredential as any)
         .mockResolvedValueOnce({ masked: 'sk-open...1234' })
         .mockResolvedValueOnce({ masked: 'sk-anth...5678' })
         .mockResolvedValueOnce({ masked: 'goog...cdef' });
@@ -444,10 +444,10 @@ describe('Guest API Key Management in Browser Environment', () => {
       }
 
       // Setup mocks for load operation - need to account for all 8 API_PROVIDERS
-      vi.mocked(getMemoryCredential)
+      (getMemoryCredential as any)
         .mockReturnValue(null); // All providers return null for memory
 
-      vi.mocked(getSessionCredential)
+      (getSessionCredential as any)
         .mockResolvedValueOnce({ masked: 'sk-open...1234', plaintext: keys[0] }) // openai
         .mockResolvedValueOnce({ masked: 'sk-anth...5678', plaintext: keys[1] }) // anthropic
         .mockResolvedValueOnce(null) // mistral
@@ -476,7 +476,7 @@ describe('Guest API Key Management in Browser Environment', () => {
       const newKey = 'sk-new-key-67890';
 
       // Setup mocks for save operations
-      vi.mocked(setSessionCredential)
+      (setSessionCredential as any)
         .mockResolvedValueOnce({ masked: 'sk-old...1234' })
         .mockResolvedValueOnce({ masked: 'sk-new...7890' });
 
@@ -495,8 +495,8 @@ describe('Guest API Key Management in Browser Environment', () => {
       });
 
       // Setup mocks for load operation
-      vi.mocked(getMemoryCredential).mockReturnValue(null);
-      vi.mocked(getSessionCredential).mockResolvedValueOnce({
+      (getMemoryCredential as any).mockReturnValue(null);
+      (getSessionCredential as any).mockResolvedValueOnce({
         masked: 'sk-new...7890',
         plaintext: newKey,
       });
@@ -593,7 +593,7 @@ describe('Guest API Key Management in Browser Environment', () => {
       const { setSessionCredential } = await import('@/lib/security/web-crypto');
 
       // Mock storage quota exceeded
-      vi.mocked(window.sessionStorage.setItem).mockImplementation(() => {
+      (window.sessionStorage.setItem as any).mockImplementation(() => {
         throw new DOMException('QuotaExceededError');
       });
 
@@ -614,9 +614,9 @@ describe('Guest API Key Management in Browser Environment', () => {
       const { getSessionCredential } = await import('@/lib/security/web-crypto');
 
       // Mock corrupted data
-      vi.mocked(window.sessionStorage.getItem).mockReturnValue('corrupted-json-{[}');
+      (window.sessionStorage.getItem as any).mockReturnValue('corrupted-json-{[}');
 
-      vi.mocked(getSessionCredential).mockRejectedValue(
+      (getSessionCredential as any).mockRejectedValue(
         new Error('Failed to parse session storage data')
       );
 
@@ -660,7 +660,7 @@ describe('Guest API Key Management in Browser Environment', () => {
       const { decryptWithKey } = await import('@/lib/security/web-crypto');
 
       // Mock decryption failure
-      vi.mocked(decryptWithKey).mockRejectedValue(new Error('Invalid ciphertext'));
+      (decryptWithKey as any).mockRejectedValue(new Error('Invalid ciphertext'));
 
       let decryptionFailed = false;
       try {

@@ -1,7 +1,32 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 // Simulate browser crypto
 import 'happy-dom';
+
+// Unmock web-crypto module for this test file - we need the real implementation
+vi.unmock('@/lib/security/web-crypto');
+
+// Polyfill Web Crypto API for tests using Node.js webcrypto
+if (typeof globalThis.crypto === 'undefined' || !globalThis.crypto.subtle) {
+  const { webcrypto } = require('node:crypto');
+  if (typeof globalThis.crypto === 'undefined') {
+    (globalThis as any).crypto = webcrypto;
+  } else {
+    (globalThis.crypto as any).subtle = webcrypto.subtle;
+  }
+}
+
+// Ensure window.crypto points to globalThis.crypto
+if (typeof window !== 'undefined' && (!window.crypto || !window.crypto.subtle)) {
+  (window as any).crypto = globalThis.crypto;
+}
+
+// Ensure btoa and atob are available (needed for base64 encoding)
+if (typeof globalThis.btoa === 'undefined') {
+  globalThis.btoa = (str: string) => Buffer.from(str, 'binary').toString('base64');
+}
+if (typeof globalThis.atob === 'undefined') {
+  globalThis.atob = (b64: string) => Buffer.from(b64, 'base64').toString('binary');
+}
 
 // Polyfill storages for Bun/vitest node context where happy-dom may not install globals early enough
 if (typeof (globalThis as any).sessionStorage === 'undefined') {

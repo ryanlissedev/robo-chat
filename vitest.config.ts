@@ -89,7 +89,7 @@ const getTestConfig = () => {
     unstubEnvs: true,
     unstubGlobals: true,
 
-    // Dependencies that need to be inlined
+    // Dependencies that need to be inlined for proper mocking
     server: {
       deps: {
         inline: [
@@ -100,6 +100,9 @@ const getTestConfig = () => {
           'framer-motion',
           'motion/react',
           'katex',
+          // Add Next.js modules for mocking support
+          'next/headers',
+          'next/navigation',
         ],
       },
     },

@@ -29,7 +29,7 @@ const UIMessageSchema = z
           : undefined,
       z.date().optional()
     ),
-    parts: z.array(MessagePartSchema).optional().default([]),
+    parts: z.array(MessagePartSchema).optional(),
     experimentalAttachments: z.array(z.any()).optional(),
     model: z.string().optional(),
     provider: z.string().optional(),

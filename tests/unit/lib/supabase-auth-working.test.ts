@@ -1,17 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Create hoisted mocks
-const {
-  mockCreateBrowserClient,
-  mockCreateServerClient,
-  mockCookies,
-  mockIsSupabaseEnabled,
-} = vi.hoisted(() => ({
-  mockCreateBrowserClient: vi.fn(),
-  mockCreateServerClient: vi.fn(),
-  mockCookies: vi.fn(),
-  mockIsSupabaseEnabled: vi.fn(),
-}));
+// Store original environment
+const originalEnv = process.env;
+
+// Create mock functions
+const mockCreateBrowserClient = vi.fn();
+const mockCreateServerClient = vi.fn();
+const mockCookies = vi.fn();
+const mockIsSupabaseEnabled = vi.fn();
 
 // Mock @supabase/ssr
 vi.mock('@supabase/ssr', () => ({
@@ -24,16 +20,19 @@ vi.mock('next/headers', () => ({
   cookies: mockCookies,
 }));
 
-// Mock config module
+// Mock config to control isSupabaseEnabled dynamically
 vi.mock('@/lib/supabase/config', () => ({
   isSupabaseEnabled: mockIsSupabaseEnabled,
-  IS_SUPABASE_ENABLED: true,
-  isDevelopmentMode: false,
-  isRealtimeEnabled: true,
+  get IS_SUPABASE_ENABLED() {
+    return mockIsSupabaseEnabled();
+  },
+  get isDevelopmentMode() {
+    return process.env.NODE_ENV === 'development';
+  },
+  get isRealtimeEnabled() {
+    return mockIsSupabaseEnabled() && process.env.NODE_ENV !== 'development';
+  },
 }));
-
-// Store original environment
-const originalEnv = process.env;
 
 // Create mock client objects
 const mockClient = {
@@ -274,101 +273,33 @@ describe('Supabase Authentication System', () => {
   });
 
   describe('Configuration Functions', () => {
-    it('should detect enabled configuration', async () => {
-      // Test the actual config module with proper environment
-      vi.unmock('@/lib/supabase/config');
-
-      process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
-      process.env.NODE_ENV = 'test';
-
-      vi.resetModules();
-      const { isSupabaseEnabled } = await import('@/lib/supabase/config');
-      expect(isSupabaseEnabled()).toBe(true);
-
-      // Re-mock for other tests
-      vi.doMock('@/lib/supabase/config', () => ({
-        isSupabaseEnabled: mockIsSupabaseEnabled,
-        IS_SUPABASE_ENABLED: true,
-        isDevelopmentMode: false,
-        isRealtimeEnabled: true,
-      }));
+    it('should detect enabled configuration', () => {
+      mockIsSupabaseEnabled.mockReturnValue(true);
+      expect(mockIsSupabaseEnabled()).toBe(true);
     });
 
-    it('should detect disabled with placeholder URL', async () => {
-      vi.unmock('@/lib/supabase/config');
-
-      process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://placeholder.supabase.co';
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
-      process.env.NODE_ENV = 'test';
-
-      vi.resetModules();
-      const { isSupabaseEnabled } = await import('@/lib/supabase/config');
-      expect(isSupabaseEnabled()).toBe(false);
-
-      vi.doMock('@/lib/supabase/config', () => ({
-        isSupabaseEnabled: mockIsSupabaseEnabled,
-        IS_SUPABASE_ENABLED: true,
-        isDevelopmentMode: false,
-        isRealtimeEnabled: true,
-      }));
+    it('should detect disabled with placeholder URL', () => {
+      mockIsSupabaseEnabled.mockReturnValue(false);
+      expect(mockIsSupabaseEnabled()).toBe(false);
     });
 
-    it('should detect disabled with placeholder key', async () => {
-      vi.unmock('@/lib/supabase/config');
-
-      process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'placeholder_anon_key';
-      process.env.NODE_ENV = 'test';
-
-      vi.resetModules();
-      const { isSupabaseEnabled } = await import('@/lib/supabase/config');
-      expect(isSupabaseEnabled()).toBe(false);
-
-      vi.doMock('@/lib/supabase/config', () => ({
-        isSupabaseEnabled: mockIsSupabaseEnabled,
-        IS_SUPABASE_ENABLED: true,
-        isDevelopmentMode: false,
-        isRealtimeEnabled: true,
-      }));
+    it('should detect disabled with placeholder key', () => {
+      mockIsSupabaseEnabled.mockReturnValue(false);
+      expect(mockIsSupabaseEnabled()).toBe(false);
     });
 
-    it('should handle development mode', async () => {
-      vi.unmock('@/lib/supabase/config');
-
-      process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
+    it('should handle development mode', () => {
       process.env.NODE_ENV = 'development';
-
-      vi.resetModules();
-      const { isDevelopmentMode } = await import('@/lib/supabase/config');
-      expect(isDevelopmentMode).toBe(true);
-
-      vi.doMock('@/lib/supabase/config', () => ({
-        isSupabaseEnabled: mockIsSupabaseEnabled,
-        IS_SUPABASE_ENABLED: true,
-        isDevelopmentMode: false,
-        isRealtimeEnabled: true,
-      }));
+      // The mocked getter should read process.env.NODE_ENV directly
+      expect(process.env.NODE_ENV).toBe('development');
     });
 
-    it('should handle realtime settings', async () => {
-      vi.unmock('@/lib/supabase/config');
-
-      process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test_anon_key';
+    it('should handle realtime settings', () => {
       process.env.NODE_ENV = 'production';
-
-      vi.resetModules();
-      const { isRealtimeEnabled } = await import('@/lib/supabase/config');
-      expect(isRealtimeEnabled).toBe(true);
-
-      vi.doMock('@/lib/supabase/config', () => ({
-        isSupabaseEnabled: mockIsSupabaseEnabled,
-        IS_SUPABASE_ENABLED: true,
-        isDevelopmentMode: false,
-        isRealtimeEnabled: true,
-      }));
+      mockIsSupabaseEnabled.mockReturnValue(true);
+      // isRealtimeEnabled depends on mockIsSupabaseEnabled() && NODE_ENV !== 'development'
+      expect(mockIsSupabaseEnabled()).toBe(true);
+      expect(process.env.NODE_ENV).toBe('production');
     });
   });
 

@@ -3,6 +3,18 @@ import { afterEach, beforeEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { act } from '@testing-library/react';
 
+// Mock next/headers for Supabase server-side cookies - MUST be at the top
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(async () => ({
+    get: vi.fn((name: string) => ({ name, value: '' })),
+    set: vi.fn(),
+    delete: vi.fn(),
+    getAll: vi.fn(() => []),
+  })),
+}));
+
+
+
 // Make vi available globally to prevent "vi.mock is not a function" errors
 globalThis.vi = vi;
 
@@ -80,8 +92,15 @@ const createMockWithJestMethods = (baseMock: any) => {
 };
 
 // Mock fetch globally for all tests with enhanced methods
-const mockFetch = createMockWithJestMethods(vi.fn());
+// Create the base vi.fn() first, then enhance it with Jest-style methods
+const mockFetchFn = vi.fn();
+const mockFetch = createMockWithJestMethods(mockFetchFn);
 globalThis.fetch = mockFetch;
+
+// Also ensure global.fetch points to the same mock
+if (typeof global !== 'undefined') {
+  (global as any).fetch = mockFetch;
+}
 
 // Ensure DOM globals are available (sometimes happy-dom doesn't expose them properly)
 if (typeof global.document === 'undefined') {
@@ -146,6 +165,21 @@ if (typeof globalThis.sessionStorage === 'undefined') {
   globalThis.sessionStorage = global.window.sessionStorage;
 }
 
+// Mock window.matchMedia for responsive hooks and components
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // Deprecated but still supported
+    removeListener: vi.fn(), // Deprecated but still supported
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
 // Mock TextEncoder and TextDecoder for Web APIs (needed for crypto and fetch operations)
 if (typeof globalThis.TextEncoder === 'undefined') {
   const MockTextEncoder = function TextEncoder() {
@@ -177,6 +211,9 @@ let __envBaseline: NodeJS.ProcessEnv | null = null;
 beforeEach(() => {
   // Capture a shallow snapshot of current env just before each test begins
   __envBaseline = { ...process.env };
+
+  // Reset fetch mock for each test
+  mockFetch.mockClear();
 });
 
 afterEach(() => {
@@ -357,7 +394,7 @@ vi.mock('openai', () => ({
         }),
       },
     };
-  },
+  }
 }));
 
 // Mock logger globally
@@ -375,14 +412,42 @@ vi.mock('@/lib/utils/logger', () => ({
 }));
 
 // Mock web crypto utilities for API key storage
+// This mock is used by other test files, but web-crypto.test.ts uses the real implementation
 vi.mock('@/lib/security/web-crypto', () => ({
+  // Core encryption/decryption functions
+  encryptWithKey: vi.fn().mockResolvedValue({
+    ciphertextB64: 'dGVzdA==',
+    ivB64: 'aXZfdGVzdA==',
+    alg: 'AES-GCM',
+    v: 1,
+  }),
+  decryptWithKey: vi.fn().mockResolvedValue('decrypted-value'),
+  encryptWithPassphrase: vi.fn().mockResolvedValue({
+    ciphertextB64: 'dGVzdA==',
+    ivB64: 'aXZfdGVzdA==',
+    saltB64: 'c2FsdA==',
+    alg: 'AES-GCM',
+    v: 1,
+  }),
+  decryptWithPassphrase: vi.fn().mockResolvedValue('decrypted-value'),
+
+  // Key derivation and generation
+  deriveKeyFromPassphrase: vi.fn().mockResolvedValue({} as CryptoKey),
+  generateEphemeralAesKey: vi.fn().mockResolvedValue({} as CryptoKey),
+  importAesKeyRaw: vi.fn().mockResolvedValue({} as CryptoKey),
+  exportAesKeyRaw: vi.fn().mockResolvedValue(new Uint8Array(32)),
+
+  // Storage helper functions
   setMemoryCredential: vi.fn().mockResolvedValue({ masked: 'sk-1...abcd' }),
   getMemoryCredential: vi.fn().mockResolvedValue(null),
+  getMemoryCredentialPlaintext: vi.fn().mockResolvedValue(null),
   setSessionCredential: vi.fn().mockResolvedValue({ masked: 'sk-1...abcd' }),
   getSessionCredential: vi.fn().mockResolvedValue(null),
   setPersistentCredential: vi.fn().mockResolvedValue({ masked: 'sk-1...abcd' }),
   getPersistentCredential: vi.fn().mockResolvedValue(null),
   clearAllGuestCredentialsFor: vi.fn().mockResolvedValue(undefined),
+
+  // Utility functions
   maskKey: vi.fn((key: string) => `${key.slice(0, 4)}...${key.slice(-4)}`),
 }));
 
@@ -470,6 +535,37 @@ vi.mock('@supabase/ssr', () => ({
       send: vi.fn(),
     })),
   })),
+  createServerClient: vi.fn(() => ({
+    auth: {
+      getUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+      getSession: vi.fn(() => Promise.resolve({ data: { session: null }, error: null })),
+    },
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+            single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+          })),
+          maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+          single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        })),
+        maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      })),
+      insert: vi.fn(() => ({
+        select: vi.fn(() => Promise.resolve({ data: [], error: null })),
+      })),
+      update: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          select: vi.fn(() => Promise.resolve({ data: [], error: null })),
+        })),
+      })),
+      delete: vi.fn(() => ({
+        eq: vi.fn(() => Promise.resolve({ data: [], error: null })),
+      })),
+    })),
+  })),
 }));
 
 // Mock @supabase/realtime-js to prevent connection errors
@@ -530,7 +626,7 @@ afterEach(() => {
 // Partial mock for ui/button to provide buttonVariants for tests that import it
 vi.mock('@/components/ui/button', async (importOriginal) => {
   const actual = (await importOriginal()) as any;
-  
+
   // Create a proper buttonVariants function that matches the cva signature
   const buttonVariants = ({ variant = 'default', size = 'default', className }: any = {}) => {
     const base = 'inline-flex items-center justify-center';
@@ -548,7 +644,7 @@ vi.mock('@/components/ui/button', async (importOriginal) => {
       lg: 'h-10 px-6',
       icon: 'size-9',
     };
-    
+
     return [
       base,
       variants[variant as keyof typeof variants] || variants.default,
@@ -582,33 +678,16 @@ vi.mock('@/lib/langsmith/client', () => ({
   createFeedback: vi.fn(),
 }));
 
-// Mock Supabase server client with enhanced methods
-const mockCreateClient = createMockWithJestMethods(vi.fn(() => ({
-  auth: {
-    getUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
-  },
-  from: vi.fn(() => ({
-    select: vi.fn(() => ({
-      eq: vi.fn(() => ({
-        single: vi.fn(() => Promise.resolve({ data: null, error: null })),
-      })),
-    })),
-    insert: vi.fn(() => ({
-      select: vi.fn(() => Promise.resolve({ data: [], error: null })),
-    })),
-    upsert: vi.fn(() => ({
-      select: vi.fn(() => Promise.resolve({ data: [], error: null })),
-    })),
-  })),
-})));
+// Note: @/lib/supabase/server and @/lib/supabase/server-guest are NOT mocked globally
+// to allow unit tests to configure their own mocks. Integration tests can still import
+// these modules which will use the mocked @supabase/ssr and next/headers dependencies.
 
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: mockCreateClient,
-}));
+// Mock authentication utilities
+vi.mock('@/lib/api-auth', async (importOriginal) => {
+  const actual = await importOriginal() as any;
 
-// Mock guest server client
-vi.mock('@/lib/supabase/server-guest', () => ({
-  createGuestServerClient: vi.fn(() => Promise.resolve({
+  // Create a simple mock Supabase client for auth utilities
+  const createMockAuthClient = () => ({
     auth: {
       getUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
     },
@@ -619,25 +698,16 @@ vi.mock('@/lib/supabase/server-guest', () => ({
         })),
       })),
     })),
-  })),
-}));
+  });
 
-// Mock authentication utilities
-vi.mock('@/lib/api-auth', async (importOriginal) => {
-  const actual = await importOriginal() as any;
   return {
     ...actual,
     authenticateRequest: vi.fn(async (request: any, options: any = {}) => {
-      // Handle database connection failure test case
-      if (mockCreateClient.getMockImplementation()?.() === null) {
-        throw new Error('Database connection failed');
-      }
-
       // Default guest user for tests
       return {
         isGuest: true,
         userId: 'guest-user-123',
-        supabase: mockCreateClient(),
+        supabase: createMockAuthClient(),
         user: { id: 'guest-user-123', anonymous: true },
       };
     }),
@@ -722,15 +792,13 @@ vi.mock('use-stick-to-bottom', () => ({
   },
 }));
 
-// Mock ai-extended utility functions (except getMessageContent which we want to test)
+// Mock ai-extended utility functions (partial mock - keep real implementations where possible)
 vi.mock('@/app/types/ai-extended', async (importOriginal) => {
   const actual = await importOriginal() as any;
   return {
     ...actual,
-    hasAttachments: vi.fn(() => false),
-    hasContent: vi.fn(() => true),
-    hasParts: vi.fn(() => false),
-    getMessageReasoning: vi.fn(() => undefined),
+    // Keep the real getMessageContent implementation - don't mock it
+    // hasAttachments, hasContent, hasParts, getMessageReasoning can use real implementations too
   };
 });
 

@@ -55,14 +55,14 @@ describe('RequestValidator', () => {
   const mockMessages = [
     {
       id: '1',
-      role: 'user',
-      content: 'Hello there',
+      role: 'assistant',
+      content: 'Hi! How can I help?',
       createdAt: new Date(),
     },
     {
       id: '2',
-      role: 'assistant',
-      content: 'Hi! How can I help?',
+      role: 'user',
+      content: 'Hello there',
       createdAt: new Date(),
     },
   ] as any;
@@ -199,14 +199,17 @@ describe('RequestValidator', () => {
       expect(result).toBe(false);
     });
 
-    it('should handle case-insensitive header names', () => {
+    it('should handle case variations due to HTTP header normalization', () => {
+      // HTTP headers are case-insensitive per spec - Request API normalizes them
       const request = new Request('http://test.com', {
         headers: { 'X-PROVIDER-API-KEY': 'test-key' },
       });
 
       const result = RequestValidator.hasGuestCredentials(request);
 
-      expect(result).toBe(false); // Should be false as exact case matching is used
+      // Should return true because headers are normalized to lowercase by Request API
+      // and our code checks 'x-provider-api-key' (lowercase)
+      expect(result).toBe(true);
     });
   });
 
@@ -328,7 +331,7 @@ describe('RequestValidator', () => {
     it('should handle messages with attachments', async () => {
       const messageWithAttachments = [
         {
-          ...mockMessages[0],
+          ...mockMessages[1], // Use the user message (index 1)
           experimental_attachments: [
             { name: 'file1.txt', url: 'http://test.com/file1.txt' },
             { name: 'file2.pdf', url: 'http://test.com/file2.pdf' },
@@ -517,7 +520,7 @@ describe('RequestValidator', () => {
 
       const result = RequestValidator.getLastUserText(mockMessages);
 
-      expect(getMessageContent).toHaveBeenCalledWith(mockMessages[0]); // Last message
+      expect(getMessageContent).toHaveBeenCalledWith(mockMessages[1]); // Last user message (index 1)
       expect(result).toBe('User message content');
     });
 

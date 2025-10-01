@@ -144,6 +144,12 @@ export function hasAttachments(
 
 /**
  * Extracts text content from AI SDK v5 messages
+ * Handles multiple message formats:
+ * - AI SDK v4: content is a string
+ * - AI SDK v5: content is an array with text parts
+ * - Parts format: message has parts array
+ * - Direct text: message has text property
+ * Always returns a string, never an array
  */
 export function getMessageContent(message: ExtendedUIMessage): string {
   // AI SDK v4 string content format (prioritize this for backward compatibility)
@@ -152,25 +158,25 @@ export function getMessageContent(message: ExtendedUIMessage): string {
   }
 
   // AI SDK v5 content array format (new)
-  if (message.content && Array.isArray(message.content)) {
-    const textParts = message.content
-      .filter((part: ContentPart) => part.type === 'text')
-      .map((part: ContentPart) => part.text || '')
-      .join('');
-    return textParts;
+  if (Array.isArray(message.content)) {
+    const textParts = (message.content as ContentPart[])
+      .filter((part: ContentPart) => part.type === 'text' && part.text)
+      .map((part: ContentPart) => part.text);
+    return textParts.join('');
   }
 
   // AI SDK v5 parts array format
-  if (message.parts && Array.isArray(message.parts)) {
-    const textParts = extractTextContent(message.parts as MessagePart[]);
-    return textParts;
+  if (Array.isArray(message.parts)) {
+    const textContent = extractTextContent(message.parts as MessagePart[]);
+    return textContent;
   }
 
   // Handle direct text property (edge case)
-  if (message.text) {
-    return message.text as string;
+  if (typeof message.text === 'string') {
+    return message.text;
   }
 
+  // Fallback to empty string
   return '';
 }
 

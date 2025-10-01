@@ -342,6 +342,9 @@ describe('EnhancedReasoning Component (London School TDD)', () => {
     });
 
     it('should transition from shimmer to duration display', () => {
+      // Set initial time for start
+      mockDateNow.mockReturnValueOnce(1000);
+
       const { rerender } = render(
         <EnhancedReasoning isStreaming={true}>
           <EnhancedReasoningTrigger />
@@ -352,8 +355,8 @@ describe('EnhancedReasoning Component (London School TDD)', () => {
       // Initially shows shimmer
       expect(screen.getByTestId('text-shimmer')).toBeInTheDocument();
 
-      // Stop streaming with duration
-      mockTimers.Date.now.mockReturnValueOnce(3000); // 2 seconds duration
+      // Stop streaming with duration - 2 seconds later
+      mockDateNow.mockReturnValueOnce(3000); // 2 seconds duration
       rerender(
         <EnhancedReasoning isStreaming={false}>
           <EnhancedReasoningTrigger />

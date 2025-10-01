@@ -63,14 +63,14 @@ describe('RetrievalService', () => {
   const mockMessages = [
     {
       id: '1',
-      role: 'user',
-      content: 'What is machine learning?',
+      role: 'assistant',
+      content: 'Machine learning is...',
       createdAt: new Date(),
     },
     {
       id: '2',
-      role: 'assistant',
-      content: 'Machine learning is...',
+      role: 'user',
+      content: 'What is machine learning?',
       createdAt: new Date(),
     },
   ] as any;

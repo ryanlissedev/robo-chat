@@ -166,12 +166,19 @@ function makeDebugRequest(body: any) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       ...body,
-      messages: body.messages.map((msg: any) => ({
-        ...msg,
-        id: msg.id || Math.random().toString(36),
-        createdAt: msg.createdAt || new Date(),
-        content: msg.content || '',
-      })),
+      messages: body.messages.map((msg: any) => {
+        const message: any = {
+          ...msg,
+          id: msg.id || Math.random().toString(36),
+          createdAt: msg.createdAt || new Date(),
+          content: msg.content || '',
+        };
+        // Don't include empty parts array - let transform create parts from content
+        if (msg.parts && msg.parts.length > 0) {
+          message.parts = msg.parts;
+        }
+        return message;
+      }),
     }),
   });
 }
@@ -180,9 +187,9 @@ describe('Debug Chat API Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Reset mock implementations
-    vi.mocked(performVectorRetrieval).mockImplementation(
-      async (_query, _options) => {
+    // Reset mock implementations using direct vi.fn() access
+    (performVectorRetrieval as any).mockImplementation(
+      async (_query: any, _options: any) => {
         return [
           {
             fileId: '1',
@@ -194,8 +201,8 @@ describe('Debug Chat API Tests', () => {
       }
     );
 
-    vi.mocked(retrieveWithGpt41).mockImplementation(
-      async (_query, _messages, _options) => {
+    (retrieveWithGpt41 as any).mockImplementation(
+      async (_query: any, _messages: any, _options: any) => {
         return [
           {
             fileId: '2',
@@ -207,8 +214,8 @@ describe('Debug Chat API Tests', () => {
       }
     );
 
-    vi.mocked(selectRetrievalMode).mockReturnValue('vector');
-    vi.mocked(shouldUseFallbackRetrieval).mockReturnValue(true);
+    (selectRetrievalMode as any).mockReturnValue('vector');
+    (shouldUseFallbackRetrieval as any).mockReturnValue(true);
   });
 
   it('should handle basic debug chat request', async () => {
@@ -228,7 +235,7 @@ describe('Debug Chat API Tests', () => {
 
   it('should handle debug request with search enabled', async () => {
     // Ensure fallback retrieval is triggered by having no fileSearchTools support
-    vi.mocked(shouldUseFallbackRetrieval).mockReturnValue(true);
+    (shouldUseFallbackRetrieval as any).mockReturnValue(true);
 
     const req = makeDebugRequest({
       messages: [{ role: 'user', content: 'Find debug logs' }],
@@ -251,8 +258,8 @@ describe('Debug Chat API Tests', () => {
       '@/lib/retrieval/gating'
     );
 
-    vi.mocked(selectRetrievalMode).mockReturnValue('two-pass');
-    vi.mocked(shouldUseFallbackRetrieval).mockReturnValue(true);
+    (selectRetrievalMode as any).mockReturnValue('two-pass');
+    (shouldUseFallbackRetrieval as any).mockReturnValue(true);
 
     const req = makeDebugRequest({
       messages: [{ role: 'user', content: 'Complex debug query' }],
@@ -283,7 +290,7 @@ describe('Debug Chat API Tests', () => {
     const res = await POST(req);
     expect(res.status).toBe(200);
 
-    const calls = vi.mocked(streamText).mock.calls;
+    const calls = (streamText as any).mock.calls;
     expect(calls.length).toBeGreaterThan(0);
     const args = calls[0][0];
 
@@ -297,7 +304,7 @@ describe('Debug Chat API Tests', () => {
 
   it('should handle debug request with error scenarios', async () => {
     // Mock retrieval to throw error
-    vi.mocked(performVectorRetrieval).mockRejectedValueOnce(
+    (performVectorRetrieval as any).mockRejectedValueOnce(
       new Error('Retrieval failed')
     );
 
@@ -362,7 +369,7 @@ describe('Debug Chat API Tests', () => {
       systemPrompt: 'Debug assistant',
       enableSearch: true,
       reasoningEffort: 'high',
-      verbosity: 'detailed',
+      verbosity: 'high',
     });
 
     const res = await POST(req);
@@ -406,7 +413,7 @@ describe('Debug Chat API Tests', () => {
     expect(streamText).toHaveBeenCalled();
 
     // Check that streamText was called with the expected arguments structure
-    const calls = vi.mocked(streamText).mock.calls;
+    const calls = (streamText as any).mock.calls;
     expect(calls.length).toBeGreaterThan(0);
     const args = calls[0][0];
     expect(args).toHaveProperty('messages');

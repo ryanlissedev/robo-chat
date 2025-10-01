@@ -81,7 +81,7 @@ describe('Guest User Authentication and Authorization', () => {
     it('should allow guest access with valid API key', async () => {
       const { headersForModel } = await import('@/lib/security/guest-headers');
 
-      vi.mocked(headersForModel).mockResolvedValue({
+      (headersForModel as any).mockResolvedValue({
         'X-Model-Provider': 'openai',
         'X-Provider-Api-Key': 'sk-valid-key',
         'X-Credential-Source': 'guest-byok',
@@ -97,7 +97,7 @@ describe('Guest User Authentication and Authorization', () => {
     it('should reject guest access without API key', async () => {
       const { headersForModel } = await import('@/lib/security/guest-headers');
 
-      vi.mocked(headersForModel).mockResolvedValue(undefined);
+      (headersForModel as any).mockResolvedValue(undefined);
 
       const headers = await headersForModel('gpt-4');
       const hasValidApiKey = headers && headers['X-Provider-Api-Key'];
@@ -335,25 +335,27 @@ describe('Guest User Authentication and Authorization', () => {
     });
 
     it('should verify API key encryption in transit', async () => {
-      const { decryptApiKey } = await import('@/lib/security/web-crypto');
+      const webCryptoModule = await import('@/lib/security/web-crypto');
+      const mockDecryptApiKey = webCryptoModule.decryptApiKey as any;
 
-      vi.mocked(decryptApiKey).mockResolvedValue('sk-decrypted-key');
+      mockDecryptApiKey.mockResolvedValue('sk-decrypted-key');
 
       const encryptedKey = 'encrypted-api-key-data';
-      const decryptedKey = await decryptApiKey(encryptedKey);
+      const decryptedKey = await mockDecryptApiKey(encryptedKey);
 
-      expect(decryptApiKey).toHaveBeenCalledWith(encryptedKey);
+      expect(mockDecryptApiKey).toHaveBeenCalledWith(encryptedKey);
       expect(decryptedKey).toBe('sk-decrypted-key');
     });
 
     it('should handle API key decryption failures', async () => {
-      const { decryptApiKey } = await import('@/lib/security/web-crypto');
+      const webCryptoModule = await import('@/lib/security/web-crypto');
+      const mockDecryptApiKey = webCryptoModule.decryptApiKey as any;
 
-      vi.mocked(decryptApiKey).mockRejectedValue(new Error('Decryption failed'));
+      mockDecryptApiKey.mockRejectedValue(new Error('Decryption failed'));
 
       let decryptionFailed = false;
       try {
-        await decryptApiKey('corrupted-data');
+        await mockDecryptApiKey('corrupted-data');
       } catch (error) {
         decryptionFailed = true;
       }

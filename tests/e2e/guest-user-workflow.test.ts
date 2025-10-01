@@ -74,11 +74,11 @@ vi.mock('@playwright/test', () => ({
 describe('Guest User E2E Workflow', () => {
   beforeAll(async () => {
     // Setup browser and context
-    vi.mocked(mockPage.locator).mockReturnValue(mockLocator);
-    vi.mocked(mockPage.getByRole).mockReturnValue(mockLocator);
-    vi.mocked(mockPage.getByTestId).mockReturnValue(mockLocator);
-    vi.mocked(mockPage.getByText).mockReturnValue(mockLocator);
-    vi.mocked(mockPage.getByPlaceholder).mockReturnValue(mockLocator);
+    (mockPage.locator as any).mockReturnValue(mockLocator);
+    (mockPage.getByRole as any).mockReturnValue(mockLocator);
+    (mockPage.getByTestId as any).mockReturnValue(mockLocator);
+    (mockPage.getByText as any).mockReturnValue(mockLocator);
+    (mockPage.getByPlaceholder as any).mockReturnValue(mockLocator);
   });
 
   beforeEach(async () => {
@@ -92,7 +92,7 @@ describe('Guest User E2E Workflow', () => {
       expect(mockPage.goto).toHaveBeenCalledWith('http://localhost:3000');
 
       // Should see welcome screen for guests
-      vi.mocked(mockLocator.isVisible).mockResolvedValue(true);
+      (mockLocator.isVisible as any).mockResolvedValue(true);
       await mockPage.getByTestId('guest-welcome-banner').waitFor();
 
       // Click on "Start Chatting as Guest" button
@@ -118,7 +118,7 @@ describe('Guest User E2E Workflow', () => {
       expect(mockPage.waitForSelector).toHaveBeenCalledWith('[data-testid="chat-interface"]');
 
       // Verify guest status indicator
-      vi.mocked(mockLocator.textContent).mockResolvedValue('Guest Mode');
+      (mockLocator.textContent as any).mockResolvedValue('Guest Mode');
       const statusText = await mockPage.getByTestId('user-status-indicator').textContent();
       expect(statusText).toBe('Guest Mode');
     });
@@ -132,7 +132,7 @@ describe('Guest User E2E Workflow', () => {
       // Should see limited functionality message
       await mockPage.getByTestId('limited-functionality-banner').waitFor();
 
-      vi.mocked(mockLocator.textContent).mockResolvedValue(
+      (mockLocator.textContent as any).mockResolvedValue(
         'You are in demo mode. Add an API key to unlock full functionality.'
       );
       const bannerText = await mockPage.getByTestId('limited-functionality-banner').textContent();
@@ -166,11 +166,11 @@ describe('Guest User E2E Workflow', () => {
       // Verify preferences persisted
       await mockPage.getByRole('button', { name: 'Settings' }).click();
 
-      vi.mocked(mockLocator.getAttribute).mockResolvedValue('checked');
+      (mockLocator.getAttribute as any).mockResolvedValue('checked');
       const darkModeChecked = await mockPage.getByRole('button', { name: 'Dark Mode' }).getAttribute('aria-checked');
       expect(darkModeChecked).toBe('checked');
 
-      vi.mocked(mockLocator.textContent).mockResolvedValue('GPT-4');
+      (mockLocator.textContent as any).mockResolvedValue('GPT-4');
       const selectedModel = await mockPage.getByRole('combobox', { name: 'Preferred Model' }).textContent();
       expect(selectedModel).toBe('GPT-4');
     });
@@ -196,19 +196,19 @@ describe('Guest User E2E Workflow', () => {
 
       // Verify message appears in chat
       await mockPage.getByTestId('user-message').waitFor();
-      vi.mocked(mockLocator.textContent).mockResolvedValue(testMessage);
+      (mockLocator.textContent as any).mockResolvedValue(testMessage);
       const userMessageText = await mockPage.getByTestId('user-message').textContent();
       expect(userMessageText).toContain(testMessage);
 
       // Wait for assistant response
       await mockPage.getByTestId('assistant-message').waitFor();
 
-      vi.mocked(mockLocator.textContent).mockResolvedValue('Hello! I can help you with various tasks...');
+      (mockLocator.textContent as any).mockResolvedValue('Hello! I can help you with various tasks...');
       const assistantResponse = await mockPage.getByTestId('assistant-message').textContent();
       expect(assistantResponse).toContain('Hello!');
 
       // Verify chat history is maintained
-      vi.mocked(mockLocator.count).mockResolvedValue(2);
+      (mockLocator.count as any).mockResolvedValue(2);
       const messageCount = await mockPage.locator('[data-testid*="message"]').count();
       expect(messageCount).toBe(2);
     });
@@ -227,7 +227,7 @@ describe('Guest User E2E Workflow', () => {
       // Should see error message
       await mockPage.getByTestId('error-message').waitFor();
 
-      vi.mocked(mockLocator.textContent).mockResolvedValue('Invalid API key. Please check your API key and try again.');
+      (mockLocator.textContent as any).mockResolvedValue('Invalid API key. Please check your API key and try again.');
       const errorText = await mockPage.getByTestId('error-message').textContent();
       expect(errorText).toContain('Invalid API key');
 
@@ -257,7 +257,7 @@ describe('Guest User E2E Workflow', () => {
       await mockPage.getByRole('button', { name: 'Send' }).click();
 
       // Verify model indicator updated
-      vi.mocked(mockLocator.textContent).mockResolvedValue('Claude 3 Sonnet');
+      (mockLocator.textContent as any).mockResolvedValue('Claude 3 Sonnet');
       const modelIndicator = await mockPage.getByTestId('current-model-indicator').textContent();
       expect(modelIndicator).toBe('Claude 3 Sonnet');
 
@@ -276,7 +276,7 @@ describe('Guest User E2E Workflow', () => {
       await mockPage.getByRole('button', { name: 'Attach File' }).click();
 
       // Simulate file selection (in real E2E, this would use setInputFiles)
-      vi.mocked(mockPage.evaluate).mockResolvedValue(undefined);
+      (mockPage.evaluate as any).mockResolvedValue(undefined);
       await mockPage.evaluate(() => {
         const input = document.querySelector('input[type="file"]') as HTMLInputElement;
         const file = new File(['test content'], 'test.txt', { type: 'text/plain' });
@@ -289,7 +289,7 @@ describe('Guest User E2E Workflow', () => {
       // Verify file appears in chat input
       await mockPage.getByTestId('attached-file').waitFor();
 
-      vi.mocked(mockLocator.textContent).mockResolvedValue('test.txt');
+      (mockLocator.textContent as any).mockResolvedValue('test.txt');
       const fileName = await mockPage.getByTestId('attached-file').textContent();
       expect(fileName).toBe('test.txt');
 
@@ -315,7 +315,7 @@ describe('Guest User E2E Workflow', () => {
       await mockPage.getByRole('tab', { name: 'API Keys' }).click();
 
       // Verify OpenAI key is saved
-      vi.mocked(mockLocator.textContent).mockResolvedValue('sk-op•••••••key');
+      (mockLocator.textContent as any).mockResolvedValue('sk-op•••••••key');
       const openaiKey = await mockPage.getByTestId('openai-api-key-display').textContent();
       expect(openaiKey).toContain('sk-op•••••••key');
 
@@ -327,7 +327,7 @@ describe('Guest User E2E Workflow', () => {
       await mockPage.getByRole('button', { name: 'Save' }).click();
 
       // Verify both keys are listed
-      vi.mocked(mockLocator.count).mockResolvedValue(2);
+      (mockLocator.count as any).mockResolvedValue(2);
       const keyCount = await mockPage.locator('[data-testid*="api-key-display"]').count();
       expect(keyCount).toBe(2);
 
@@ -335,7 +335,7 @@ describe('Guest User E2E Workflow', () => {
       await mockPage.getByTestId('openai-test-button').click();
       await mockPage.getByTestId('api-test-result').waitFor();
 
-      vi.mocked(mockLocator.textContent).mockResolvedValue('API key is valid');
+      (mockLocator.textContent as any).mockResolvedValue('API key is valid');
       const testResult = await mockPage.getByTestId('api-test-result').textContent();
       expect(testResult).toBe('API key is valid');
     });
@@ -355,7 +355,7 @@ describe('Guest User E2E Workflow', () => {
       await mockPage.getByRole('button', { name: 'Settings' }).click();
       await mockPage.getByRole('tab', { name: 'API Keys' }).click();
 
-      vi.mocked(mockLocator.textContent).mockResolvedValue('Session');
+      (mockLocator.textContent as any).mockResolvedValue('Session');
       const storageScope = await mockPage.getByTestId('openai-storage-scope').textContent();
       expect(storageScope).toBe('Session');
 
@@ -366,7 +366,7 @@ describe('Guest User E2E Workflow', () => {
       await mockPage.getByRole('button', { name: 'Update Storage' }).click();
 
       // Verify updated to persistent
-      vi.mocked(mockLocator.textContent).mockResolvedValue('Persistent');
+      (mockLocator.textContent as any).mockResolvedValue('Persistent');
       const updatedScope = await mockPage.getByTestId('openai-storage-scope').textContent();
       expect(updatedScope).toBe('Persistent');
     });
@@ -389,7 +389,7 @@ describe('Guest User E2E Workflow', () => {
       await mockPage.getByRole('button', { name: 'Export Settings' }).click();
 
       // Simulate download (in real E2E, this would check download)
-      vi.mocked(mockPage.evaluate).mockResolvedValue('{"theme":"dark","temperature":0.8}');
+      (mockPage.evaluate as any).mockResolvedValue('{"theme":"dark","temperature":0.8}');
       const exportData = await mockPage.evaluate(() => {
         return localStorage.getItem('guest-settings');
       });
@@ -404,7 +404,7 @@ describe('Guest User E2E Workflow', () => {
       // In real E2E, would use setInputFiles to upload the export file
 
       // Verify settings restored
-      vi.mocked(mockLocator.getAttribute).mockResolvedValue('checked');
+      (mockLocator.getAttribute as any).mockResolvedValue('checked');
       const darkModeRestored = await mockPage.getByRole('button', { name: 'Dark Mode' }).getAttribute('aria-checked');
       expect(darkModeRestored).toBe('checked');
     });
@@ -425,12 +425,12 @@ describe('Guest User E2E Workflow', () => {
       // Should see upgrade prompts for premium features
       await mockPage.getByTestId('premium-feature-banner').waitFor();
 
-      vi.mocked(mockLocator.textContent).mockResolvedValue('Sign up for advanced features');
+      (mockLocator.textContent as any).mockResolvedValue('Sign up for advanced features');
       const upgradeText = await mockPage.getByTestId('premium-feature-banner').textContent();
       expect(upgradeText).toContain('Sign up for advanced features');
 
       // Analytics should be disabled
-      vi.mocked(mockLocator.isEnabled).mockResolvedValue(false);
+      (mockLocator.isEnabled as any).mockResolvedValue(false);
       const analyticsEnabled = await mockPage.getByRole('button', { name: 'View Analytics' }).isEnabled();
       expect(analyticsEnabled).toBe(false);
 
@@ -459,12 +459,12 @@ describe('Guest User E2E Workflow', () => {
       // Should see rate limit message
       await mockPage.getByTestId('rate-limit-warning').waitFor();
 
-      vi.mocked(mockLocator.textContent).mockResolvedValue('Rate limit reached. Please wait before sending more messages.');
+      (mockLocator.textContent as any).mockResolvedValue('Rate limit reached. Please wait before sending more messages.');
       const rateLimitText = await mockPage.getByTestId('rate-limit-warning').textContent();
       expect(rateLimitText).toContain('Rate limit reached');
 
       // Send button should be disabled
-      vi.mocked(mockLocator.isEnabled).mockResolvedValue(false);
+      (mockLocator.isEnabled as any).mockResolvedValue(false);
       const sendButtonEnabled = await mockPage.getByRole('button', { name: 'Send' }).isEnabled();
       expect(sendButtonEnabled).toBe(false);
     });
@@ -490,7 +490,7 @@ describe('Guest User E2E Workflow', () => {
       // Should prompt to re-enter API key
       await mockPage.getByTestId('session-expired-modal').waitFor();
 
-      vi.mocked(mockLocator.textContent).mockResolvedValue('Your session has expired. Please enter your API key again.');
+      (mockLocator.textContent as any).mockResolvedValue('Your session has expired. Please enter your API key again.');
       const expiredText = await mockPage.getByTestId('session-expired-modal').textContent();
       expect(expiredText).toContain('session has expired');
 
@@ -525,7 +525,7 @@ describe('Guest User E2E Workflow', () => {
       // Should show offline indicator
       await mockPage.getByTestId('offline-indicator').waitFor();
 
-      vi.mocked(mockLocator.textContent).mockResolvedValue('You are currently offline');
+      (mockLocator.textContent as any).mockResolvedValue('You are currently offline');
       const offlineText = await mockPage.getByTestId('offline-indicator').textContent();
       expect(offlineText).toContain('offline');
 
@@ -561,7 +561,7 @@ describe('Guest User E2E Workflow', () => {
 
       await mockPage.getByTestId('api-key-error').waitFor();
 
-      vi.mocked(mockLocator.textContent).mockResolvedValue('API key format is invalid. It should start with "sk-".');
+      (mockLocator.textContent as any).mockResolvedValue('API key format is invalid. It should start with "sk-".');
       const formatError = await mockPage.getByTestId('api-key-error').textContent();
       expect(formatError).toContain('should start with "sk-"');
 
@@ -574,7 +574,7 @@ describe('Guest User E2E Workflow', () => {
 
       await mockPage.getByTestId('permission-error').waitFor();
 
-      vi.mocked(mockLocator.textContent).mockResolvedValue('Your API key does not have sufficient permissions for this model.');
+      (mockLocator.textContent as any).mockResolvedValue('Your API key does not have sufficient permissions for this model.');
       const permissionError = await mockPage.getByTestId('permission-error').textContent();
       expect(permissionError).toContain('sufficient permissions');
 

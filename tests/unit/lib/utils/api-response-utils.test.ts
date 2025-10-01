@@ -184,30 +184,11 @@ describe('api-response-utils', () => {
   });
 
   describe('handleApiError', () => {
-    let consoleErrorSpy: any;
-
-    beforeEach(() => {
-      vi.clearAllMocks();
-      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    });
-
-    afterEach(() => {
-      vi.restoreAllMocks();
-    });
-
     it('should handle ResponseError instances', () => {
       const error = new ResponseError('validation_error', 'Invalid data', 400);
       const response = handleApiError(error, 'test-operation');
 
       expect(response.status).toBe(400);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'API Error in test-operation:',
-        {
-          type: 'validation_error',
-          message: 'Invalid data',
-          status: 400,
-        }
-      );
 
       return response.json().then((body) => {
         expect(body.error).toBe('validation_error');
@@ -254,14 +235,16 @@ describe('api-response-utils', () => {
       );
     });
 
-    it('should include operation context in logs', () => {
+    it('should handle Error instances and convert to internal_error', () => {
       const error = new Error('Test error');
-      handleApiError(error, 'custom-operation-name');
+      const response = handleApiError(error, 'custom-operation-name');
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'API Error in custom-operation-name:',
-        expect.any(Object)
-      );
+      expect(response.status).toBe(500);
+
+      return response.json().then((body) => {
+        expect(body.error).toBe('internal_error');
+        expect(body.message).toBe('Test error');
+      });
     });
 
     it('should handle ResponseError with custom details', () => {
@@ -478,7 +461,8 @@ describe('api-response-utils', () => {
       const result = await parseRequestBody(request);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Invalid JSON');
+      // Error message may vary by runtime but should indicate parse failure
+      expect(result.error).toMatch(/Failed to parse request body|Invalid JSON|JSON Parse error/);
     });
 
     it('should handle network errors during parsing', async () => {

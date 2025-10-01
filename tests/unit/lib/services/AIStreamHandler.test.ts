@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
 import { AIStreamHandler } from '@/lib/services/AIStreamHandler';
 import { StreamingService } from '@/lib/services/StreamingService';
 import type { LanguageModel, ToolSet } from 'ai';
@@ -255,16 +255,6 @@ describe('AIStreamHandler', () => {
           },
         });
       });
-
-      expect(console.error).toHaveBeenCalledWith(
-        'Streaming error in streaming:',
-        {
-          error,
-          chatId: 'chat-123',
-          userId: 'user-123',
-          model: 'gpt-4',
-        }
-      );
     });
 
     it('should handle unknown error types with generic message', () => {

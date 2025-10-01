@@ -183,7 +183,7 @@ describe('Guest User Complete Flow Integration Tests', () => {
       // Based on debug output, it only returns { anonymous: true }
       // when Supabase is unavailable, which is the current behavior
       const { createGuestServerClient } = await import('@/lib/supabase/server-guest');
-      vi.mocked(createGuestServerClient).mockResolvedValueOnce(null);
+      (createGuestServerClient as any).mockResolvedValueOnce(null);
 
       const { POST } = await import('@/app/api/create-guest/route');
 
@@ -357,10 +357,10 @@ describe('Guest User Complete Flow Integration Tests', () => {
 
       // Mock localStorage behavior
       const localStorageData = new Map<string, string>();
-      vi.mocked(window.localStorage.setItem).mockImplementation((key, value) => {
+      (window.localStorage.setItem as any).mockImplementation((key, value) => {
         localStorageData.set(key, value);
       });
-      vi.mocked(window.localStorage.getItem).mockImplementation((key) => {
+      (window.localStorage.getItem as any).mockImplementation((key) => {
         return localStorageData.get(key) || null;
       });
 
@@ -381,7 +381,7 @@ describe('Guest User Complete Flow Integration Tests', () => {
     it('should handle localStorage errors gracefully', async () => {
       // Mock localStorage quota exceeded error
       const domException = new DOMException('QuotaExceededError', 'QuotaExceededError');
-      vi.mocked(window.localStorage.setItem).mockImplementation(() => {
+      (window.localStorage.setItem as any).mockImplementation(() => {
         throw domException;
       });
 
@@ -405,9 +405,9 @@ describe('Guest User Complete Flow Integration Tests', () => {
       const { setMemoryCredential, setSessionCredential, setPersistentCredential } = await import('@/lib/security/web-crypto');
 
       // Ensure mocks return proper values
-      vi.mocked(setMemoryCredential).mockResolvedValue({ masked: 'sk-test...1234' });
-      vi.mocked(setSessionCredential).mockResolvedValue({ masked: 'sk-test...1234' });
-      vi.mocked(setPersistentCredential).mockResolvedValue({ masked: 'sk-test...1234' });
+      (setMemoryCredential as any).mockResolvedValue({ masked: 'sk-test...1234' });
+      (setSessionCredential as any).mockResolvedValue({ masked: 'sk-test...1234' });
+      (setPersistentCredential as any).mockResolvedValue({ masked: 'sk-test...1234' });
 
       const tabResult = await service.saveCredential({
         provider: 'openai',
@@ -443,14 +443,14 @@ describe('Guest User Complete Flow Integration Tests', () => {
       const { getMemoryCredential, getMemoryCredentialPlaintext, getSessionCredential } = await import('@/lib/security/web-crypto');
 
       // Mock memory credential for openai (tab scope has priority)
-      vi.mocked(getMemoryCredential).mockImplementation((provider: string) => {
+      (getMemoryCredential as any).mockImplementation((provider: string) => {
         if (provider === 'openai') {
           return { masked: 'sk-test...1234', scope: 'tab' };
         }
         return null;
       });
 
-      vi.mocked(getMemoryCredentialPlaintext).mockImplementation((provider: string) => {
+      (getMemoryCredentialPlaintext as any).mockImplementation((provider: string) => {
         if (provider === 'openai') {
           return Promise.resolve('sk-test-key');
         }
@@ -458,7 +458,7 @@ describe('Guest User Complete Flow Integration Tests', () => {
       });
 
       // Mock session credential for anthropic
-      vi.mocked(getSessionCredential).mockImplementation((provider: string) => {
+      (getSessionCredential as any).mockImplementation((provider: string) => {
         if (provider === 'anthropic') {
           return Promise.resolve({
             masked: 'sk-test...1234',
@@ -539,7 +539,7 @@ describe('Guest User Complete Flow Integration Tests', () => {
 
     it('should handle Supabase connection failures', async () => {
       const { createGuestServerClient } = await import('@/lib/supabase/server-guest');
-      vi.mocked(createGuestServerClient).mockRejectedValue(new Error('Database connection failed'));
+      (createGuestServerClient as any).mockRejectedValue(new Error('Database connection failed'));
 
       const { POST } = await import('@/app/api/create-guest/route');
 
@@ -612,10 +612,10 @@ describe('Guest User Complete Flow Integration Tests', () => {
 
       // Mock sessionStorage persistence
       const sessionStorageData = new Map<string, string>();
-      vi.mocked(window.sessionStorage.setItem).mockImplementation((key, value) => {
+      (window.sessionStorage.setItem as any).mockImplementation((key, value) => {
         sessionStorageData.set(key, value);
       });
-      vi.mocked(window.sessionStorage.getItem).mockImplementation((key) => {
+      (window.sessionStorage.getItem as any).mockImplementation((key) => {
         return sessionStorageData.get(key) || null;
       });
 

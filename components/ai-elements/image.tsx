@@ -5,9 +5,10 @@ import { cn } from '@/lib/utils';
 export type ImageProps = Experimental_GeneratedImage & {
   className?: string;
   alt?: string;
+  style?: React.CSSProperties;
 };
 
-export const Image = ({ base64, mediaType, ...props }: ImageProps) => (
+export const Image = ({ base64, mediaType, style, ...props }: ImageProps) => (
   <NextImage
     {...props}
     alt={props.alt !== undefined ? props.alt : 'Generated image'}
@@ -17,6 +18,7 @@ export const Image = ({ base64, mediaType, ...props }: ImageProps) => (
     )}
     height={512}
     src={`data:${mediaType};base64,${base64}`}
+    style={style}
     width={512}
   />
 );

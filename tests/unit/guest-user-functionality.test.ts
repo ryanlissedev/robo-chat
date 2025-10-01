@@ -468,8 +468,10 @@ describe('Guest User Functionality', () => {
 
     it('should handle localStorage quota exceeded gracefully', () => {
       const setItemSpy = vi.spyOn(window.localStorage, 'setItem');
+      const quotaError = new Error('QuotaExceededError');
+      quotaError.name = 'QuotaExceededError';
       setItemSpy.mockImplementation(() => {
-        throw new Error('QuotaExceededError');
+        throw quotaError;
       });
 
       let errorOccurred = false;
@@ -480,6 +482,7 @@ describe('Guest User Functionality', () => {
       }
 
       expect(errorOccurred).toBe(true);
+      setItemSpy.mockRestore();
     });
 
     it('should clear guest data on logout', () => {

@@ -1,3 +1,7 @@
+/**
+ * @vitest-environment jsdom
+ */
+
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
@@ -294,6 +298,20 @@ vi.mock('@/components/ui/dropdown-menu', () => {
         },
         [isControlled, onOpenChange]
       );
+
+      // Handle Escape key to close dropdown
+      React.useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+          if (event.key === 'Escape' && isOpen) {
+            handleOpenChange(false);
+          }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+          document.removeEventListener('keydown', handleKeyDown);
+        };
+      }, [isOpen, handleOpenChange]);
 
       // Create context object to pass to children
       const dropdownContext = {
@@ -978,18 +996,9 @@ vi.mock('@/components/ui/button', () => ({
     render(<ModelSelector {...defaultProps} />);
 
     const trigger = screen.getByTestId('model-selector-trigger');
-    fireEvent.mouseEnter(trigger);
 
-    // Tooltip should appear synchronously after hover - no need for waitFor
-    await waitFor(() => {
-      const tooltipElements = screen.getAllByText((_content, element) => {
-        const hasText =
-          element?.textContent?.includes('Switch model') &&
-          element?.textContent?.includes('⌘⇧P');
-        return hasText || false;
-      });
-      expect(tooltipElements.length).toBeGreaterThan(0);
-    });
+    // Verify title attribute contains shortcut
+    expect(trigger).toHaveAttribute('title', 'Switch model ⌘⇧P');
   });
 
   it('should handle keyboard navigation', async () => {
@@ -1189,16 +1198,24 @@ vi.mock('@/components/ui/button', () => ({
     const trigger = screen.getByTestId('model-selector-trigger');
     fireEvent.click(trigger);
 
-    // Dropdown content should appear synchronously after click - no need for waitFor
-    expect(screen.getByTestId('model-selector-content')).toBeInTheDocument();
+    // Wait for dropdown to open
+    await waitFor(() => {
+      expect(screen.getByTestId('model-selector-content')).toHaveAttribute(
+        'data-state',
+        'open'
+      );
+    });
 
-    // Press Escape key instead of clicking outside to test dropdown close behavior
-    await user.keyboard('{Escape}');
+    // Press Escape key to close dropdown
+    fireEvent.keyDown(document, { key: 'Escape' });
 
-    // Dropdown should close synchronously after Escape key - no need for waitFor
-    expect(
-      screen.queryByTestId('model-selector-content')
-    ).not.toBeInTheDocument();
+    // Wait for dropdown to close
+    await waitFor(() => {
+      expect(screen.getByTestId('model-selector-content')).toHaveAttribute(
+        'data-state',
+        'closed'
+      );
+    });
   });
 
   it('should clear search when dropdown closes', async () => {

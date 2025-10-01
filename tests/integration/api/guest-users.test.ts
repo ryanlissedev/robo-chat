@@ -1,4 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// Unmock @/lib/utils for this test file to test the real implementations
+vi.unmock('@/lib/utils');
+
 import {
   isGuestUser,
   getGuestUserId,
@@ -6,6 +10,40 @@ import {
   isValidUUID,
   DEFAULT_GUEST_PREFERENCES
 } from '@/lib/utils';
+
+// Helper function to create a Request with proper cookie header support
+// This is needed because Request in happy-dom doesn't support the cookie header
+function createRequestWithCookies(url: string, cookies: Record<string, string> = {}, headers: Record<string, string> = {}): Request {
+  const cookieString = Object.entries(cookies)
+    .map(([name, value]) => `${name}=${value}`)
+    .join('; ');
+
+  const allHeaders: Record<string, string> = { ...headers };
+  if (cookieString) {
+    allHeaders['cookie'] = cookieString;
+  }
+
+  // Create a mock request that properly supports the cookie header
+  const request = {
+    url,
+    headers: {
+      get(name: string): string | null {
+        const lowerName = name.toLowerCase();
+        for (const [key, value] of Object.entries(allHeaders)) {
+          if (key.toLowerCase() === lowerName) {
+            return value;
+          }
+        }
+        return null;
+      },
+      has(name: string): boolean {
+        return this.get(name) !== null;
+      },
+    },
+  } as Request;
+
+  return request;
+}
 
 describe('Guest User Utility Functions', () => {
   describe('isGuestUser', () => {
@@ -20,10 +58,8 @@ describe('Guest User Utility Functions', () => {
     });
 
     it('should detect guest user from cookie', () => {
-      const request = new Request('http://localhost:3000/test', {
-        headers: {
-          'cookie': 'guest-user-id=12345678-1234-4000-8000-123456789012'
-        }
+      const request = createRequestWithCookies('http://localhost:3000/test', {
+        'guest-user-id': '12345678-1234-4000-8000-123456789012'
       });
 
       expect(isGuestUser(request)).toBe(true);
@@ -49,10 +85,9 @@ describe('Guest User Utility Functions', () => {
 
     it('should extract guest ID from cookie', () => {
       const guestId = '12345678-1234-4000-8000-123456789012';
-      const request = new Request('http://localhost:3000/test', {
-        headers: {
-          'cookie': `guest-user-id=${guestId}; other=value`
-        }
+      const request = createRequestWithCookies('http://localhost:3000/test', {
+        'guest-user-id': guestId,
+        'other': 'value'
       });
 
       expect(getGuestUserId(request)).toBe(guestId);

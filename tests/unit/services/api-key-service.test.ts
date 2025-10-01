@@ -4,7 +4,9 @@ import type { ApiKey, SaveApiKeyRequest } from '@/lib/services/types';
 import { createClient } from '@/lib/supabase/client';
 
 // Mock Supabase client
-vi.mock('@/lib/supabase/client');
+vi.mock('@/lib/supabase/client', () => ({
+  createClient: vi.fn(),
+}));
 const mockSupabase = createClient as any;
 
 describe('ApiKeyService - London School TDD', () => {
@@ -189,10 +191,20 @@ describe('ApiKeyService - London School TDD', () => {
 
   describe('deleteApiKey', () => {
     it('should delete API key by provider', async () => {
-      // Mock the final result of the chained operations
-      mockSupabaseClient.eq.mockResolvedValue({
-        data: null,
-        error: null,
+      // Mock the chained eq calls to properly return the client for chaining
+      // and the final result on the last eq call
+      let eqCallCount = 0;
+      mockSupabaseClient.eq.mockImplementation(() => {
+        eqCallCount++;
+        if (eqCallCount === 2) {
+          // Second eq call (provider) returns the final result
+          return Promise.resolve({
+            data: null,
+            error: null,
+          });
+        }
+        // First eq call (user_id) continues the chain
+        return mockSupabaseClient;
       });
 
       await apiKeyService.deleteApiKey('openai');
@@ -206,9 +218,17 @@ describe('ApiKeyService - London School TDD', () => {
 
     it('should throw error when delete operation fails', async () => {
       const dbError = new Error('Delete failed');
-      mockSupabaseClient.eq.mockResolvedValue({
-        data: null,
-        error: dbError,
+      // Mock the final eq call to return the error at the end of the chain
+      mockSupabaseClient.eq.mockImplementation((field: string, value: string) => {
+        // Return error on the second eq call (provider check)
+        if (field === 'provider') {
+          return Promise.resolve({
+            data: null,
+            error: dbError,
+          });
+        }
+        // Continue chain for first eq call (user_id)
+        return mockSupabaseClient;
       });
 
       await expect(apiKeyService.deleteApiKey('openai')).rejects.toThrow(
@@ -246,7 +266,7 @@ describe('ApiKeyService - London School TDD', () => {
       // Mock successful API response
       vi.mocked(global.fetch).mockResolvedValue({
         ok: true,
-        json: async () => ({ data: [{ id: 'gpt-4' }] }),
+        json: async () => ({ success: true }),
       } as Response);
 
       const result = await apiKeyService.testApiKey('openai');
@@ -313,7 +333,7 @@ describe('ApiKeyService - London School TDD', () => {
     it('should mask API keys before storing', async () => {
       const saveRequest: SaveApiKeyRequest = {
         provider: 'openai',
-        key: 'sk-plaintext-key-123',
+        key: 'sk-plaintext-key-1234',
       };
 
       // Mock successful upsert
@@ -326,9 +346,9 @@ describe('ApiKeyService - London School TDD', () => {
 
       // Verify that the upserted data includes both full key and masked key
       const upsertCall = mockSupabaseClient.upsert.mock.calls[0][0];
-      expect(upsertCall.api_key).toBe('sk-plaintext-key-123'); // Full key stored
-      expect(upsertCall.masked_key).toBe('sk-...123'); // Masked version
-      expect(upsertCall.masked_key).not.toBe('sk-plaintext-key-123');
+      expect(upsertCall.api_key).toBe('sk-plaintext-key-1234'); // Full key stored
+      expect(upsertCall.masked_key).toBe('sk-...1234'); // Masked version (first 3 + last 4 chars)
+      expect(upsertCall.masked_key).not.toBe('sk-plaintext-key-1234');
     });
 
     it('should handle API key testing via internal API', async () => {

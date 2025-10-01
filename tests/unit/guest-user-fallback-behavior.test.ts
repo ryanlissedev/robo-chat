@@ -33,7 +33,7 @@ describe('Guest User Fallback Behavior', () => {
 
   describe('Authentication Failure Fallbacks', () => {
     it('should handle 401 Unauthorized responses gracefully', async () => {
-      vi.mocked(fetch).mockResolvedValue({
+      (global.fetch as any).mockResolvedValue({
         ok: false,
         status: 401,
         statusText: 'Unauthorized',

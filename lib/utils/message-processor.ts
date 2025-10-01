@@ -57,17 +57,38 @@ export function validateAndSanitizeMessages(
 
 /**
  * Get text content from a message
+ * Handles multiple message formats:
+ * - AI SDK v4: content is a string
+ * - AI SDK v5: content is an array with text parts
+ * - Parts format: message has parts array
+ * - Direct text: message has text property
  */
 export function getMessageContent(message: ExtendedUIMessage): string {
+  // Handle string content (AI SDK v4)
   if (typeof message.content === 'string') {
     return message.content;
   }
 
+  // Handle array content (AI SDK v5)
   if (Array.isArray(message.content)) {
-    return (message.content as any[])
-      .filter((part: any) => part.type === 'text')
-      .map((part: any) => part.text)
-      .join(' ');
+    const textParts = (message.content as any[])
+      .filter((part: any) => part.type === 'text' && part.text)
+      .map((part: any) => part.text);
+    return textParts.join('');
+  }
+
+  // Handle parts array format
+  if (Array.isArray((message as any).parts)) {
+    const parts = (message as any).parts;
+    const textParts = parts
+      .filter((part: any) => part && typeof part.text === 'string')
+      .map((part: any) => part.text);
+    return textParts.join('');
+  }
+
+  // Handle direct text property
+  if (typeof (message as any).text === 'string') {
+    return (message as any).text;
   }
 
   return '';

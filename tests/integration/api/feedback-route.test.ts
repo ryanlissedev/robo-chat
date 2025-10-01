@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Use vi.hoisted to ensure mocks are available for dynamic imports
-const mockCreateClient = vi.hoisted(() => vi.fn());
-const mockCreateLangSmithFeedback = vi.hoisted(() => vi.fn());
+// Create mock functions at module level
+const mockCreateClient = vi.fn();
+const mockCreateLangSmithFeedback = vi.fn();
 
 // Mock modules before importing
 vi.mock('@/lib/langsmith/client', () => ({
@@ -16,8 +16,6 @@ vi.mock('@/lib/supabase/server', () => ({
 import { GET, POST } from '@/app/api/feedback/route';
 
 describe('Feedback API Route', () => {
-  // Use the hoisted mocks directly
-
   // Create a proper mock using the working pattern from debug test
   const createMockSupabaseClient = (options: { singleResponse?: any } = {}) => {
     // Create completely fresh spies each time and assign to global variables

@@ -10,13 +10,13 @@ import {
   PLACEHOLDER_ENV_VARS,
 } from '../../utils/supabase-mocks';
 
-// Create hoisted mocks directly
-const mockCreateBrowserClient = vi.hoisted(() => vi.fn());
-const mockCreateServerClient = vi.hoisted(() => vi.fn());
-const mockCookies = vi.hoisted(() => vi.fn());
-const mockIsSupabaseEnabled = vi.hoisted(() => vi.fn());
-const mockIsDevelopmentMode = vi.hoisted(() => vi.fn());
-const mockIsRealtimeEnabled = vi.hoisted(() => vi.fn());
+// Create mock modules at the top level before any imports
+const mockCreateBrowserClient = vi.fn();
+const mockCreateServerClient = vi.fn();
+const mockCookies = vi.fn();
+const mockIsSupabaseEnabled = vi.fn();
+const mockIsDevelopmentMode = vi.fn();
+const mockIsRealtimeEnabled = vi.fn();
 
 // Mock Supabase SSR clients
 vi.mock('@supabase/ssr', () => ({
@@ -29,7 +29,7 @@ vi.mock('next/headers', () => ({
   cookies: mockCookies,
 }));
 
-// Mock Supabase config functions with proper hoisting
+// Mock Supabase config functions
 vi.mock('@/lib/supabase/config', () => ({
   get IS_SUPABASE_ENABLED() {
     return mockIsSupabaseEnabled();
@@ -42,7 +42,7 @@ vi.mock('@/lib/supabase/config', () => ({
 describe('Supabase Authentication System', () => {
   let mockClient: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     vi.resetModules();
 
@@ -59,7 +59,7 @@ describe('Supabase Authentication System', () => {
     mockIsDevelopmentMode.mockReturnValue(false);
     mockIsRealtimeEnabled.mockReturnValue(true);
 
-    // Setup default cookie store
+    // Setup default cookie store - must return a function that returns the store
     const mockCookieStore = createMockCookieStore([
       { name: 'supabase-auth-token', value: 'mock-token' }
     ]);

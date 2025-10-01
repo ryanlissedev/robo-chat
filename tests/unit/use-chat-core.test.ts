@@ -1,3 +1,7 @@
+/**
+ * @vitest-environment jsdom
+ */
+
 import { act, renderHook } from '@testing-library/react';
 import type { UIMessage as Message } from 'ai';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -458,7 +462,13 @@ describe('useChatCore', () => {
 
     it('should bump chat when there are previous messages', async () => {
       // Create a fresh mock for this test with stateful messages
-      let testMessages: any[] = [];
+      let testMessages: any[] = [
+        {
+          id: '1',
+          parts: [{ type: 'text', text: 'Previous message' }],
+          role: 'user',
+        },
+      ];
 
       const mockSetMessagesForTest = vi.fn((newMessages: any[]) => {
         testMessages = newMessages;
@@ -498,33 +508,14 @@ describe('useChatCore', () => {
       expect(result.current).not.toBeNull();
       expect(result.current.input).toBe('New message');
 
-      // Set up messages manually after hook initialization to simulate existing messages
-      await act(async () => {
-        result.current.setMessages([
-          {
-            id: '1',
-            parts: [{ type: 'text', text: 'Previous message' }],
-            role: 'user',
-          },
-        ] as Message[]);
-      });
-
-      // Verify that messages were set correctly
-      expect(testMessages).toHaveLength(1);
-
-      // Debug: check if business logic mocks are called
-      expect(mockSubmitMessageScenario).not.toHaveBeenCalled();
+      // Verify that messages were loaded from initialMessages
+      expect(result.current.messages).toHaveLength(1);
 
       await act(async () => {
         await result.current.submit();
       });
 
-      // Debug: check if business logic mocks were called
-      console.log('mockSubmitMessageScenario called:', mockSubmitMessageScenario.mock.calls.length);
-      console.log('props.bumpChat called:', props.bumpChat.mock.calls.length);
-      console.log('testMessages length at submit time:', testMessages.length);
-      console.log('result.current.messages length:', result.current.messages.length);
-
+      // bumpChat should be called because messages.length > 0 at submit time
       expect(props.bumpChat).toHaveBeenCalledWith('test-chat-id');
     });
   });
@@ -691,6 +682,7 @@ describe('useChatCore', () => {
         isAuthenticated: true,
         systemPrompt: mockUserProfile.system_prompt,
         reasoningEffort: 'medium',
+        verbosity: 'low', // verbosity is passed from mockUserProfile
       });
       // In AI SDK v5, reload is done via setMessages instead of reload()
       expect(mockSetMessages).toHaveBeenCalledWith(expect.any(Array));
