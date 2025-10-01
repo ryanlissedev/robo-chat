@@ -98,7 +98,7 @@ describe('ApiKeyManager', () => {
     });
 
     it('should save API key to memory storage for tab scope', async () => {
-      const mockSetMemoryCredential = vi.mocked(webCrypto.setMemoryCredential);
+      const mockSetMemoryCredential = (webCrypto.setMemoryCredential as any);
       mockSetMemoryCredential.mockResolvedValue({ masked: 'sk-1...abcd' });
 
       const { container } = render(<ApiKeyManager />);

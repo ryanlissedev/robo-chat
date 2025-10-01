@@ -103,8 +103,8 @@ describe('Guest User Functionality', () => {
     describe('loadCredentials', () => {
       it('should return empty object when no credentials are stored', async () => {
         const { getMemoryCredential, getSessionCredential } = await import('@/lib/security/web-crypto');
-        vi.mocked(getMemoryCredential).mockReturnValue(null);
-        vi.mocked(getSessionCredential).mockResolvedValue(null);
+        (getMemoryCredential as any).mockReturnValue(null);
+        (getSessionCredential as any).mockResolvedValue(null);
 
         const credentials = await service.loadCredentials();
 
@@ -114,9 +114,9 @@ describe('Guest User Functionality', () => {
       it('should load tab-scoped credentials first', async () => {
         const { getMemoryCredential, getMemoryCredentialPlaintext, getSessionCredential } = await import('@/lib/security/web-crypto');
 
-        vi.mocked(getMemoryCredential).mockReturnValue({ masked: 'sk-test...1234' });
-        vi.mocked(getMemoryCredentialPlaintext).mockResolvedValue('sk-test-plaintext-key');
-        vi.mocked(getSessionCredential).mockResolvedValue(null);
+        (getMemoryCredential as any).mockReturnValue({ masked: 'sk-test...1234' });
+        (getMemoryCredentialPlaintext as any).mockResolvedValue('sk-test-plaintext-key');
+        (getSessionCredential as any).mockResolvedValue(null);
 
         const credentials = await service.loadCredentials();
 
@@ -130,8 +130,8 @@ describe('Guest User Functionality', () => {
       it('should load session-scoped credentials when tab credentials are not available', async () => {
         const { getMemoryCredential, getSessionCredential } = await import('@/lib/security/web-crypto');
 
-        vi.mocked(getMemoryCredential).mockReturnValue(null);
-        vi.mocked(getSessionCredential).mockResolvedValue({
+        (getMemoryCredential as any).mockReturnValue(null);
+        (getSessionCredential as any).mockResolvedValue({
           masked: 'sk-session...5678',
           plaintext: 'sk-session-plaintext-key',
         });
@@ -148,9 +148,9 @@ describe('Guest User Functionality', () => {
       it('should prioritize tab over session credentials', async () => {
         const { getMemoryCredential, getMemoryCredentialPlaintext, getSessionCredential } = await import('@/lib/security/web-crypto');
 
-        vi.mocked(getMemoryCredential).mockReturnValue({ masked: 'sk-tab...1234' });
-        vi.mocked(getMemoryCredentialPlaintext).mockResolvedValue('sk-tab-key');
-        vi.mocked(getSessionCredential).mockResolvedValue({
+        (getMemoryCredential as any).mockReturnValue({ masked: 'sk-tab...1234' });
+        (getMemoryCredentialPlaintext as any).mockResolvedValue('sk-tab-key');
+        (getSessionCredential as any).mockResolvedValue({
           masked: 'sk-session...5678',
           plaintext: 'sk-session-key',
         });
@@ -168,13 +168,13 @@ describe('Guest User Functionality', () => {
         const { getMemoryCredential, getMemoryCredentialPlaintext, getSessionCredential } = await import('@/lib/security/web-crypto');
 
         // Reset mocks for this test
-        vi.mocked(getMemoryCredential).mockReset();
-        vi.mocked(getMemoryCredentialPlaintext).mockReset();
-        vi.mocked(getSessionCredential).mockReset();
+        (getMemoryCredential as any).mockReset();
+        (getMemoryCredentialPlaintext as any).mockReset();
+        (getSessionCredential as any).mockReset();
 
         // Set up mock call sequence for all API_PROVIDERS (openai, anthropic, mistral, google, perplexity, xai, openrouter, langsmith)
         // For each provider, getMemoryCredential is called first
-        vi.mocked(getMemoryCredential)
+        (getMemoryCredential as any)
           .mockReturnValueOnce({ masked: 'sk-openai...1234' }) // openai - has memory credential
           .mockReturnValueOnce(null) // anthropic - no memory credential
           .mockReturnValueOnce(null) // mistral
@@ -184,11 +184,11 @@ describe('Guest User Functionality', () => {
           .mockReturnValueOnce(null) // openrouter
           .mockReturnValueOnce(null); // langsmith
 
-        vi.mocked(getMemoryCredentialPlaintext)
+        (getMemoryCredentialPlaintext as any)
           .mockResolvedValueOnce('sk-openai-key');
 
         // For providers without memory credentials, getSessionCredential is called
-        vi.mocked(getSessionCredential)
+        (getSessionCredential as any)
           .mockResolvedValueOnce({
             masked: 'sk-anthropic...5678',
             plaintext: 'sk-anthropic-key',
@@ -239,7 +239,7 @@ describe('Guest User Functionality', () => {
         const { maskKey } = await import('@/lib/security/web-crypto');
 
         // Set up maskKey mock for this test
-        vi.mocked(maskKey).mockReturnValueOnce('sk-t…t-key');
+        (maskKey as any).mockReturnValueOnce('sk-t…t-key');
 
         const request: SaveApiKeyRequest = {
           provider: 'openai',
@@ -261,7 +261,7 @@ describe('Guest User Functionality', () => {
         const { setMemoryCredential } = await import('@/lib/security/web-crypto');
 
         // Reset and setup mock for this test
-        vi.mocked(setMemoryCredential).mockResolvedValueOnce({ masked: 'sk-test...1234' });
+        (setMemoryCredential as any).mockResolvedValueOnce({ masked: 'sk-test...1234' });
 
         const request: SaveApiKeyRequest = {
           provider: 'openai',
@@ -283,7 +283,7 @@ describe('Guest User Functionality', () => {
         const { setSessionCredential } = await import('@/lib/security/web-crypto');
 
         // Reset and setup mock for this test
-        vi.mocked(setSessionCredential).mockResolvedValueOnce({ masked: 'sk-test...1234' });
+        (setSessionCredential as any).mockResolvedValueOnce({ masked: 'sk-test...1234' });
 
         const request: SaveApiKeyRequest = {
           provider: 'openai',
@@ -305,7 +305,7 @@ describe('Guest User Functionality', () => {
         const { setPersistentCredential } = await import('@/lib/security/web-crypto');
 
         // Reset and setup mock for this test
-        vi.mocked(setPersistentCredential).mockResolvedValueOnce({ masked: 'sk-test...1234' });
+        (setPersistentCredential as any).mockResolvedValueOnce({ masked: 'sk-test...1234' });
 
         const request: SaveApiKeyRequest = {
           provider: 'openai',
@@ -340,7 +340,7 @@ describe('Guest User Functionality', () => {
       it('should load persistent credential with correct passphrase', async () => {
         const { getPersistentCredential } = await import('@/lib/security/web-crypto');
 
-        vi.mocked(getPersistentCredential).mockResolvedValue({
+        (getPersistentCredential as any).mockResolvedValue({
           masked: 'sk-persist...9999',
           plaintext: 'sk-persistent-key',
         });
@@ -359,7 +359,7 @@ describe('Guest User Functionality', () => {
       it('should throw error for invalid passphrase', async () => {
         const { getPersistentCredential } = await import('@/lib/security/web-crypto');
 
-        vi.mocked(getPersistentCredential).mockResolvedValue(null);
+        (getPersistentCredential as any).mockResolvedValue(null);
 
         await expect(service.loadPersistentCredential('openai', 'wrong-passphrase'))
           .rejects.toThrow('Invalid passphrase or no stored credential found');
@@ -504,7 +504,7 @@ describe('Guest User Functionality', () => {
       const { setSessionCredential } = await import('@/lib/security/web-crypto');
 
       // Setup mock for this test
-      vi.mocked(setSessionCredential).mockResolvedValueOnce({ masked: 'sk-very...1234' });
+      (setSessionCredential as any).mockResolvedValueOnce({ masked: 'sk-very...1234' });
 
       const request: SaveApiKeyRequest = {
         provider: 'openai',
@@ -525,7 +525,7 @@ describe('Guest User Functionality', () => {
       const { setSessionCredential } = await import('@/lib/security/web-crypto');
 
       // Setup mock for this test
-      vi.mocked(setSessionCredential).mockResolvedValueOnce({ masked: 'sk-sens...1234' });
+      (setSessionCredential as any).mockResolvedValueOnce({ masked: 'sk-sens...1234' });
 
       const request: SaveApiKeyRequest = {
         provider: 'openai',
@@ -556,7 +556,7 @@ describe('Guest User Functionality', () => {
       const { getSessionCredential } = await import('@/lib/security/web-crypto');
 
       // Mock corrupted data
-      vi.mocked(getSessionCredential).mockRejectedValue(new Error('Failed to parse session storage data'));
+      (getSessionCredential as any).mockRejectedValue(new Error('Failed to parse session storage data'));
 
       const credentials = await service.loadCredentials();
 

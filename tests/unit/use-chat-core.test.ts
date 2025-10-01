@@ -10,7 +10,7 @@ const mockSetDraftValue = vi.fn();
 const mockHandleInputChange = vi.fn();
 const mockHandleSubmit = vi.fn();
 
-// Mock functions are now declared after imports using vi.mocked()
+// Mock functions are now declared after imports using ()
 
 vi.mock('@ai-sdk/react', () => ({
   useChat: vi.fn(),
@@ -64,11 +64,11 @@ import { SYSTEM_PROMPT_DEFAULT } from '@/lib/config';
 import { createMockFile, mockUserProfile } from '../test-utils';
 
 // Get references to the mocked functions
-const mockToastFn = vi.mocked(toast);
-const mockSubmitMessageScenario = vi.mocked(submitMessageScenario);
-const mockSubmitSuggestionScenario = vi.mocked(submitSuggestionScenario);
-const mockPrepareReloadScenario = vi.mocked(prepareReloadScenario);
-const mockHandleChatError = vi.mocked(handleChatError);
+const mockToastFn = (toast as any);
+const mockSubmitMessageScenario = (submitMessageScenario as any);
+const mockSubmitSuggestionScenario = (submitSuggestionScenario as any);
+const mockPrepareReloadScenario = (prepareReloadScenario as any);
+const mockHandleChatError = (handleChatError as any);
 
 // TDD London Style: Focus on behavior and interactions
 describe('useChatCore', () => {
@@ -174,7 +174,7 @@ describe('useChatCore', () => {
     mockHandleChatError.mockClear().mockImplementation(() => {});
 
     // Mock useChat hook with fresh implementations - ensure it always returns a valid object
-    vi.mocked(useChat).mockImplementation(() => {
+    (useChat as any).mockImplementation(() => {
       // Create a stateful messages array that can be updated by setMessages
       let messagesState: any[] = [];
 
@@ -199,12 +199,12 @@ describe('useChatCore', () => {
     });
 
     // Mock useChatDraft hook
-    vi.mocked(useChatDraft).mockImplementation(() => ({
+    (useChatDraft as any).mockImplementation(() => ({
       setDraftValue: mockSetDraftValue,
     }));
 
     // Mock useSearchParams hook
-    vi.mocked(useSearchParams).mockImplementation(
+    (useSearchParams as any).mockImplementation(
       () =>
         ({
           get: vi.fn().mockReturnValue(null),
@@ -259,7 +259,7 @@ describe('useChatCore', () => {
     it('should handle prompt parameter from URL', async () => {
       // Mock the search params to return a URL parameter
       const mockGet = vi.fn().mockReturnValue('Hello from URL');
-      vi.mocked(useSearchParams).mockReturnValue({ get: mockGet } as any);
+      (useSearchParams as any).mockReturnValue({ get: mockGet } as any);
 
       // Mock requestAnimationFrame for the effect
       const originalRAF = global.requestAnimationFrame;
@@ -466,7 +466,7 @@ describe('useChatCore', () => {
       });
 
       // Override the useChat mock for this test only
-      vi.mocked(useChat).mockImplementationOnce(() => ({
+      (useChat as any).mockImplementationOnce(() => ({
         get messages() { return testMessages; },
         status: 'idle' as const,
         error: null,

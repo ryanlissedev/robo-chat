@@ -22,7 +22,7 @@ import { getOrCreateGuestUserId } from '@/lib/api';
 describe('Guest User System', () => {
   it('should handle guest users without Supabase', async () => {
     // Mock the function to return a guest ID
-    const mockGetOrCreateGuestUserId = vi.mocked(getOrCreateGuestUserId);
+    const mockGetOrCreateGuestUserId = (getOrCreateGuestUserId as any);
     mockGetOrCreateGuestUserId.mockResolvedValue('550e8400-e29b-41d4-a716-446655440000');
 
     const result = await getOrCreateGuestUserId(null);
@@ -41,7 +41,7 @@ describe('Guest User System', () => {
       anonymous: true,
     };
 
-    const mockGetOrCreateGuestUserId = vi.mocked(getOrCreateGuestUserId);
+    const mockGetOrCreateGuestUserId = (getOrCreateGuestUserId as any);
     mockGetOrCreateGuestUserId.mockResolvedValue(mockUser.id);
 
     const result = await getOrCreateGuestUserId(mockUser);

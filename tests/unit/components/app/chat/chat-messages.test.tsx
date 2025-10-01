@@ -167,7 +167,7 @@ describe('Conversation (ChatMessages)', () => {
 
   describe('Message Attachments', () => {
     it('should pass attachments to messages with attachments', () => {
-      vi.mocked(aiExtended.hasAttachments).mockReturnValue(true);
+      (aiExtended.hasAttachments as any).mockReturnValue(true);
 
       const messages = [
         createMockMessage('msg-1', 'user', 'Message with attachment', {
@@ -184,7 +184,7 @@ describe('Conversation (ChatMessages)', () => {
     });
 
     it('should not render attachments for messages without them', () => {
-      vi.mocked(aiExtended.hasAttachments).mockReturnValue(false);
+      (aiExtended.hasAttachments as any).mockReturnValue(false);
 
       const messages = [
         createMockMessage('msg-1', 'user', 'Message without attachment'),
@@ -237,7 +237,7 @@ describe('Conversation (ChatMessages)', () => {
     });
 
     it('should show loader when last assistant message is empty and streaming', () => {
-      vi.mocked(aiExtended.getMessageContent).mockReturnValue('');
+      (aiExtended.getMessageContent as any).mockReturnValue('');
 
       const messages = [
         createMockMessage('msg-1', 'user', 'User question'),
